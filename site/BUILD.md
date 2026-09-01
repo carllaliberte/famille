@@ -1,122 +1,84 @@
 # BUILD — publier sans inventer d’hôte
 
-On ne crée pas onze `*.grok.me`.
-FAMILLE est la carte. Les pages manquantes se servent **sur l’hôte déjà live**.
-
 Carte citée : https://acorn-royal-dune-blend.grok.me
 Remix en cours : https://yarrow-dawn-maple-brave.grok.me
 Ne pas citer : https://cedar-tango-coral-arch.grok.me
 
-## Ce que le kit publie
-
-| Route | Nature |
-|---|---|
-| `#/` ou `#/carte` | carte Delft |
-| `#/offre` | cas public |
-| `#/projets` | dix portes usagers — [PROJETS.md](../PROJETS.md) |
-| `#/demain` | industrie → rails — [INDUSTRIE.md](../INDUSTRIE.md) |
-| `#/film` | page Famille |
-| `#/compose` | page Famille |
-| `#/garde` | page Famille |
-| `#/mode` `#/recu` `#/dossier` `#/quelle` `#/temoin` `#/epsilon` `#/horizon` `#/bruit` `#/figure` `#/situs` `#/unforge` | juges, slug cible |
-
-Hors lattice : QUANTUM, Estoc, CreatorFlow, Filon-nœud, unforge sas, formal-layer.
-
-## Comment ça arrive sur grok.me
-
-1. Ouvrir l’app → **Remix**.
-2. Coller un prompt ci-dessous.
-3. Republish **sur le même** hôte. Ne pas créer un nouveau slug.
-4. Si Build invente un slug, le noter dans GROKME comme remix, pas comme carte.
-
-## Prompt — industrie → rails (`#/demain`)
+## Prompt — attestation publique
 
 ```
 Remix this Famille app. Same host. Do not create a new grok.me.
-Do not rebuild the carte canvas. Add one page.
+Do not rebuild the carte canvas. Do not publish QUANTUM.
 
-Keep:
-- Title Famille · tagline « the map — not a rail »
-- #0a0a0a brushed gold grain Cormorant italic
+Keep chrome exactly:
+- title Famille · tagline the map — not a rail
+- background #0a0a0a, brushed gold, grain, Cormorant italic
+- NOT neon, NOT crypto-green UI, NOT Discovery branding
+- green only as a verdict chip on allow — never the theme
 - three acts Inscrire · Juger · Exporter registre.json
 - QUANTUM — kernel that signs — off Git — not this host
 - Unforge checks, never signs
-- no coin, no neon, no qubit, no Discovery branding
-- no Qiskit, Cirq, QPU, AIOps dashboard, Filon node, FAMILLE bot
+- cents ≤ 0 deny · ε = 0 deny · not a chain, not consensus, not money
 
-Add nav « Demain » next to Projets.
-Route #/demain — phone first, bilingual short lines.
+Add nav: Attester · Docs · Public
+Routes: #/attest #/docs #/public
 
-Hero:
-Hier : labels that lie.
-Demain : typed refusal.
-Intent in, verdict out. Not a lab. Not a cloud.
+#/attest — public attestation preview
+Left: form POST /attest body
+  source:  os | qrng | qkd
+  witness: aucun | stat | fabricant | di
+  epsilon: none | asymptotic | iid | composable
+  horizon: ed25519 | UFHY1 | mldsa87
+  until:   date
+Button « Attester » runs the SAME juge as Juger.
+Right: JSON response + inline SVG badge.
 
-Table, two columns « Industrie » / « Famille »:
-- Agentic engineering → FIGURE + SITUS + Silence. One agent, one licence. Expired = mute.
-- Intent-driven → Inscrire · Juger · Exporter. The lattice stays behind « source ».
-- Self-healing QA → GARDE must DENY. unforge-check Action: file still matches card.
-- Low-code → this phone preview. Truth remains the Python CLI on GitHub.
-- Sovereign / edge → LOCAL + QUELLE os | enclave named. No entropy cloud.
-- Zero Trust → no perimeter. FIGURE who. GARDE deny.
-- Post-quantum → name the suite and the date. HORIZON CNSA-2027. UFHY1. Never « quantum-safe ».
-- Quantum computing → TÉMOIN cites Hensen et al. 2015 S = 2.420 as reference, not a live experiment here.
+Contract:
+POST /attest  (same-origin mock is fine; no new backend host)
+Request {source, witness, epsilon, horizon, until}
+Response {
+  mode, verdict: allow|deny,
+  epsilon, horizon,
+  sig: "preview",
+  why: "host does not sign. QUANTUM off Git.",
+  badge: data-url svg
+}
+Hard deny if epsilon missing or 0.
+Hard deny if any cents field > 0.
+Quantum mode only if QUELLE + TÉMOIN + EPSILON + HORIZON all hold;
+otherwise classique. S = 2.420 only as Hensen 2015 named reference.
 
-Refuse row, visible:
-Not on this map: AIOps, 800G, Qiskit, a FAMILLE agent-bot, a token, a published QUANTUM kernel.
+Badge SVG 140×20:
+  famille | preview | allow   or   famille | preview | deny
+  footer line: not a chain · not money
+  colors: #0a0a0a + gold stroke; green fill only on allow chip
 
-Footer links:
-https://github.com/carllaliberte/famille
-https://github.com/carllaliberte/unforge-check
-https://github.com/carllaliberte/garde
+#/docs — Stripe-style, phone first, bilingual
+Sections: Quickstart · POST /attest · Errors · Badge · SDK · Verify for real
+Errors:
+  400 epsilon_zero   « ε = 0 est un mensonge »
+  400 cents_nonzero  « cette app ne déplace pas d'argent »
+  422 missing_bound  « sans bornes = classique »
+  403 seal_expired   « HORIZON morte — re-press, fichier pas faux »
+SDK block, copyable:
+  import { attest } from '@famille/attest'
+  const r = await attest({ source:'os', witness:'aucun', epsilon:'iid', horizon:'UFHY1' })
+  document.body.insertAdjacentHTML('beforeend', r.svg)
+Footer of docs: Juges ici = preview. Vérité = CLI
+  git clone https://github.com/carllaliberte/unforge-check
+  uses: carllaliberte/unforge-check@main
 
+#/public — same three-act form, vulgarized labels only
+  QUELLE  → D'où vient le bit
+  TÉMOIN → Avec quelle force
+  EPSILON → Marge d'erreur   (zéro = mensonge = deny)
+  HORIZON → Fin de garantie du sceau
+  RECU    → Reçu, pas un paiement
+  MODE    → Classique par défaut
+Toggle « termes techniques » reveals the rail names.
+Do not dumb down the denies.
+
+Do not add a token, a chain, a FAMILLE bot, Qiskit, Filon, Estoc.
+Do not put a real signing key in the browser.
 Republish on this same host only.
-```
-
-## Prompt — portes usagers
-
-```
-Remix this Famille app. Same host. Do not create a new grok.me.
-Do not rebuild the carte canvas. Add one door.
-
-Keep:
-- Title Famille · tagline « the map — not a rail »
-- chrome #0a0a0a brushed gold grain Cormorant italic
-- three acts Inscrire · Juger · Exporter registre.json
-- QUANTUM — kernel that signs — off Git — not this host
-- Unforge checks, never signs
-- no coin, no neon, no qubit, no Discovery branding
-
-Add nav item « Projets » next to Offre.
-Route #/projets — ten cards, phone first, bilingual short lines.
-
-1. Crédits photo (C2PA) — FIGURE UNFORGE QUELLE
-2. Reçu Interac — RECU interac · cents ≤ 0 deny
-3. Billet QR — HORIZON FIGURE SITUS · expired = re-press
-4. Carte Wallet — unforge-press · not a payment card
-5. Badge CI — unforge-check Action · file still matches card
-6. Minute / lot — DOSSIER SITUS FIGURE · QC cadastre
-7. Garantie — RECU HORIZON UNFORGE
-8. Kit presse — FIGURE UNFORGE MESURE · embargo consumes
-9. Bail — SITUS FIGURE HORIZON · expired licence = silence
-10. Archive + retrait — unforge-retract · history stays
-
-Each card footer: « Juges ici = preview. Vérité = CLI GitHub. »
-Link out to github.com/carllaliberte/famille and
-github.com/carllaliberte/unforge-check.
-
-Do not publish QUANTUM, Estoc, CreatorFlow, Filon-nœud.
-Republish on this same host only.
-```
-
-## Prompt — pages manquantes sur acorn
-
-```
-Remix Famille. Same host. Do not create a new grok.me.
-Do not move the live canvas off acorn-royal-dune-blend.grok.me.
-Do not rebuild the published carte. Add routes. Keep chrome.
-
-Serve #/offre #/projets #/demain #/film #/garde #/compose on THIS app only.
-Title stays Famille. Tagline stays the map — not a rail.
-QUANTUM — kernel that signs — off Git — not this host.
 ```
