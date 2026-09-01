@@ -2,6 +2,8 @@
 
 FAMILLE est la carte. Un seul hôte live.
 
+**Gelé 2026-09-01 — [HOTE.md](HOTE.md)**
+
 https://acorn-royal-dune-blend.grok.me
 
 Pas QUANTUM. Pas Estoc. Pas CreatorFlow. Pas Unforge sas. Pas Filon-nœud.
@@ -19,7 +21,7 @@ Vocabulaire — ne pas mélanger :
 
 Grok Build assigne parfois un sous-domaine aléatoire.
 Dès qu’un URL réel existe, on remplit le tableau. On ne déplace pas Famille
-sans réécrire cette page.
+sans réécrire [HOTE.md](HOTE.md).
 
 Titre public : **Famille**. Jamais « Discovery Famille ».
 QUANTUM = kernel that signs = hors Git = pas cet hôte.
@@ -36,84 +38,22 @@ Kit à remixer : [`site/BUILD.md`](site/BUILD.md)
 
 | Slug | Rôle | Cité comme live |
 |---|---|---|
-| https://yarrow-dawn-maple-brave.grok.me | Remix 2026-09-01 : trois actes, Offre, Film, Compose, Garde, label QUANTUM off Git | non — brouillon jusqu’à bascule de cette page |
-| https://cedar-tango-coral-arch.grok.me | doublon | non — ne plus citer |
+| https://yarrow-dawn-maple-brave.grok.me | brouillon Build | **non** |
+| https://cedar-tango-coral-arch.grok.me | doublon | **non** |
 
-Si yarrow devient la carte : on bascule la ligne « Publié » ici,
-puis on arrête de citer acorn. Pas les deux à la fois.
+Ne plus coller yarrow dans un post, un README public, une ad, un footer « carte ».
 
 ## Pages sur Famille — pas des apps
 
 Servir dans le chat Build *existant*. Pas de nouveau `*.grok.me`.
-
-| Page | Route kit | acorn 2026-09-01 | yarrow 2026-09-01 | Git |
-|---|---|---|---|---|
-| OFFRE | `#/offre` | non | oui (nav) | PROJETS.md · CROISSANCE.md |
-| PROJETS | `#/projets` | non | à remixer | PROJETS.md |
-| FILM | `#/film` | lien /film | oui (nav) | FILM.md |
-| GARDE | `#/garde` | non | oui (nav) | https://github.com/carllaliberte/garde |
-| COMPOSE | `#/compose` | non | oui (nav) | COMPOSE.md |
-
-## Juges sur la carte — slugs encore cibles
-
-Un slug, une app, un juge — plus tard.
-Aujourd’hui : même chrome, servi en `#/nom`, bandeau « slug cible, pas live ».
-
-| App | Question | Route kit | Slug cible | Git |
-|---|---|---|---|---|
-| MODE | classique ou quantique | `#/mode` | mode.grok.me | https://github.com/carllaliberte/mode-protocol |
-| RECU | l’argent a-t-il bougé | `#/recu` | recu.grok.me | https://github.com/carllaliberte/recu-protocol |
-| DOSSIER | l’enveloppe | `#/dossier` | dossier.grok.me | https://github.com/carllaliberte/dossier-protocol |
-| QUELLE | origine du bit | `#/quelle` | quelle.grok.me | https://github.com/carllaliberte/quelle |
-| TÉMOIN | force du bit | `#/temoin` | temoin.grok.me | https://github.com/carllaliberte/temoin-protocol |
-| EPSILON | avec quel ε | `#/epsilon` | epsilon.grok.me | https://github.com/carllaliberte/epsilon-protocol |
-| HORIZON | jusqu’à quand le sceau tient | `#/horizon` | horizon.grok.me | https://github.com/carllaliberte/horizon-protocol |
-| BRUIT | par quel canal | `#/bruit` | bruit.grok.me | https://github.com/carllaliberte/bruit-protocol |
-| FIGURE | qui | `#/figure` | figure.grok.me | https://github.com/carllaliberte/figure-protocol |
-| SITUS | où | `#/situs` | situs.grok.me | https://github.com/carllaliberte/situs-protocol |
-| UNFORGE | quoi | `#/unforge` | unforge.grok.me | https://github.com/carllaliberte/unforge-check |
-
-Ordre tenu : MODE → RECU → DOSSIER → quatre cartes → BRUIT → FIGURE/SITUS → UNFORGE.
-
-## Onglets UNFORGE — pas trois apps
-
-Hôte unique plus tard : `unforge.grok.me`.
-Aujourd’hui : onglets sur `#/unforge`.
-Le sas qui signe reste privé (`unforge`, off publish).
-
-| Onglet | Rôle | Git |
-|---|---|---|
-| Check | le fichier match encore la carte | https://github.com/carllaliberte/unforge-check |
-| Press | imprimer la carte de poche | https://github.com/carllaliberte/unforge-press |
-| Trail | itinéraire des tampons | https://github.com/carllaliberte/unforge-trail |
-| Retract | retrait signé, l’historique reste | https://github.com/carllaliberte/unforge-retract |
+Les routes `#/…` se publient **sur acorn** quand on bascule un remix.
+Tant que acorn est gelé, yarrow peut avancer en brouillon seulement.
 
 ## Hors lattice — ne jamais publier ici
 
-| Nom | Pourquoi |
-|---|---|
-| QUANTUM | kernel who signs — privé, off Git |
-| Unforge sas | même raison |
-| Estoc | rituel — off file |
-| CreatorFlow / contract | autre chantier |
-| Filon-nœud | nœud local, pas une app Famille |
-| filon-spec | spec de locale, pas un slug |
-| formal-layer | admitted, pas une surface |
+QUANTUM, Unforge sas, Estoc, CreatorFlow, Filon-nœud, filon-spec, formal-layer.
 
-## Chrome — identique partout
-
-Cloner Famille au pixel.
-
-Carte → toujours https://acorn-royal-dune-blend.grok.me tant que cette ligne tient
-Reçu → `#/recu` aujourd’hui · recu.grok.me plus tard
-Merge → `#/dossier` aujourd’hui · dossier.grok.me plus tard
-Offre → `#/offre`
-Projets → `#/projets`
-Film → `#/film`
-Compose → `#/compose`
-Garde → `#/garde` de Famille seulement
+## Chrome
 
 Fond `#0a0a0a`. Or brossé. Grain. Pas de néon. Pas de qubit. Pas de coin.
-Loopholes default open. ε = 0 refusé. S = 2.420 seulement dans Témoin / Famille Delft.
-Téléphone d’abord. Trois actes : Inscrire · Juger · Exporter.
-QUANTUM — kernel that signs — off Git — not this host.
+ε = 0 refusé. QUANTUM — kernel that signs — off Git — not this host.

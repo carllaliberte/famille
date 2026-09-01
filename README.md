@@ -13,11 +13,10 @@ Keys stay off Git. Physics enters as source and as bound. Never as décor.
 
 ## App
 
-Carte citée : https://acorn-royal-dune-blend.grok.me
+**Carte citée (gelée 2026-09-01) :** https://acorn-royal-dune-blend.grok.me
 
-Remix (trois actes, Offre, Garde) : https://yarrow-dawn-maple-brave.grok.me
-
-Ne pas citer cedar-tango. Un hôte live à la fois — [GROKME.md](GROKME.md).
+Un seul hôte. Voir [HOTE.md](HOTE.md).
+Ne pas citer yarrow. Ne pas citer cedar-tango.
 
 Titre public : Famille. Jamais Discovery Famille.
 QUANTUM — kernel that signs — off Git — not this host.
