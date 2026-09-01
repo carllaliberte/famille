@@ -11,4 +11,6 @@
 9. Silence — expired FIGURE licence, the agent shuts up.
 10. 2-of-2 — two phones, both Ed25519, not QUANTUM.
 
+Portes usagers (objets connus) : [PROJETS.md](PROJETS.md).
+
 No coin. No QPU.

@@ -3,63 +3,75 @@
 On ne crée pas onze `*.grok.me`.
 FAMILLE est la carte. Les pages manquantes se servent **sur l’hôte déjà live**.
 
-Hôte : https://acorn-royal-dune-blend.grok.me
+Carte citée : https://acorn-royal-dune-blend.grok.me
+Remix en cours : https://yarrow-dawn-maple-brave.grok.me
+Ne pas citer : https://cedar-tango-coral-arch.grok.me
 
-## Ce que ce kit publie
-
-Sur le même hôte, en hash routes (téléphone, pas de serveur) :
+## Ce que le kit publie
 
 | Route | Nature |
 |---|---|
-| `#/` ou `#/carte` | carte Delft — déjà l’esprit de l’app live |
+| `#/` ou `#/carte` | carte Delft |
+| `#/offre` | cas public |
+| `#/projets` | dix portes usagers — [PROJETS.md](../PROJETS.md) |
 | `#/film` | page Famille |
 | `#/compose` | page Famille |
 | `#/garde` | page Famille |
-| `#/mode` `#/recu` `#/dossier` | juges, slug cible annoncé, pas d’URL fantôme |
-| `#/quelle` `#/temoin` `#/epsilon` `#/horizon` `#/bruit` | quatre cartes + canal |
-| `#/figure` `#/situs` `#/unforge` | qui / où / quoi · Unforge = onglets, pas trois apps |
+| `#/mode` `#/recu` `#/dossier` `#/quelle` `#/temoin` `#/epsilon` `#/horizon` `#/bruit` `#/figure` `#/situs` `#/unforge` | juges, slug cible |
 
 Hors lattice : QUANTUM, Estoc, CreatorFlow, Filon-nœud, unforge sas, formal-layer.
 
 ## Comment ça arrive sur grok.me
 
-Grok Build possède le bouton Publish. Ce dépôt ne l’a pas.
+1. Ouvrir l’app → **Remix**.
+2. Coller un prompt ci-dessous.
+3. Republish **sur le même** hôte. Ne pas créer un nouveau slug.
+4. Si Build invente un slug, le noter dans GROKME comme remix, pas comme carte.
 
-1. Ouvrir l’app live → **Remix**.
-2. Coller le prompt ci-dessous.
-3. Republish **sur le même hôte**. Ne pas créer un nouveau slug.
-4. Vérifier `/#/garde` `/#/film` `/#/compose`. Les slugs `mode.grok.me` etc. restent cibles jusqu’à un domaine perso.
+## Prompt — portes usagers
 
-## Prompt Remix (chat Build existant)
+```
+Remix this Famille app. Same host. Do not create a new grok.me.
+Do not rebuild the carte canvas. Add one door.
+
+Keep:
+- Title Famille · tagline « the map — not a rail »
+- chrome #0a0a0a brushed gold grain Cormorant italic
+- three acts Inscrire · Juger · Exporter registre.json
+- QUANTUM — kernel that signs — off Git — not this host
+- Unforge checks, never signs
+- no coin, no neon, no qubit, no Discovery branding
+
+Add nav item « Projets » next to Offre.
+Route #/projets — ten cards, phone first, bilingual short lines.
+
+1. Crédits photo (C2PA) — FIGURE UNFORGE QUELLE
+2. Reçu Interac — RECU interac · cents ≤ 0 deny
+3. Billet QR — HORIZON FIGURE SITUS · expired = re-press
+4. Carte Wallet — unforge-press · not a payment card
+5. Badge CI — unforge-check Action · file still matches card
+6. Minute / lot — DOSSIER SITUS FIGURE · QC cadastre
+7. Garantie — RECU HORIZON UNFORGE
+8. Kit presse — FIGURE UNFORGE MESURE · embargo consumes
+9. Bail — SITUS FIGURE HORIZON · expired licence = silence
+10. Archive + retrait — unforge-retract · history stays
+
+Each card footer: « Juges ici = preview. Vérité = CLI GitHub. »
+Link out to github.com/carllaliberte/famille and
+github.com/carllaliberte/unforge-check.
+
+Do not publish QUANTUM, Estoc, CreatorFlow, Filon-nœud.
+Republish on this same host only.
+```
+
+## Prompt — pages manquantes sur acorn
 
 ```
 Remix Famille. Same host. Do not create a new grok.me.
+Do not move the live canvas off acorn-royal-dune-blend.grok.me.
+Do not rebuild the published carte. Add routes. Keep chrome.
 
-Replace missing routes with the kit in github.com/carllaliberte/famille/site/index.html
-Keep the live chrome: #0a0a0a, brushed gold, grain, Cormorant italic title, no neon, no qubit, no coin.
-
-Serve these views on THIS app only:
-- Carte (default) — Delft map + dossier panel
-- Film, Compose, Garde as pages, not new apps
-- Mode, Reçu, Dossier, Quelle, Témoin, Epsilon, Horizon, Bruit, Figure, Situs, Unforge as judges on the map
-- Hash routes: #/film #/garde #/compose #/mode #/recu …
-
-Doctrine:
-- classique by default
-- ε = 0 denied
-- loopholes default open
-- S = 2.420 only on Témoin / Delft
-- no invented photon, no webcam as qrng
-- Unforge checks, never signs
-- Garde: every attack DENY
-- banners must say slug cible is not live
-
-Do not publish QUANTUM, Estoc, CreatorFlow, Filon, unforge sas.
-Do not move Famille off acorn-royal-dune-blend.grok.me.
+Serve #/offre #/projets #/film #/garde #/compose on THIS app only.
+Title stays Famille. Tagline stays the map — not a rail.
+QUANTUM — kernel that signs — off Git — not this host.
 ```
-
-## Slugs séparés — plus tard
-
-Un slug, une app, un juge. Seulement après que la carte serve les pages.
-Quand Grok Build rend un hôte réel, on remplit la colonne « publié » dans GROKME.md.
-On ne prétend pas que `mode.grok.me` existe avant.

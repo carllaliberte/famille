@@ -9,15 +9,20 @@ Pas formal-layer (obligations EasyCrypt, pas une app).
 
 Vocabulaire — ne pas mélanger :
 
-- **publié** : l’URL grok.me répond aujourd’hui
-- **servi sur la carte** : route `#/…` dans le kit `site/` — pas un nouvel hôte
+- **publié** : l’URL grok.me répond aujourd’hui *et* c’est la carte citée
+- **remix** : un autre slug que Grok Build a inventé. On y travaille. On ne le cite pas comme deuxième carte.
+- **servi sur la carte** : route `#/…` — pas un nouvel hôte
 - **cible** : slug à coller dans Publish / domaine perso. Pas live.
 - **page** : route sur l’hôte Famille. Pas une nouvelle app.
 - **onglet** : surface d’une app déjà nommée. Pas trois apps.
 - **git live** : le protocole existe. Ça n’ouvre pas grok.me.
 
 Grok Build assigne parfois un sous-domaine aléatoire.
-Dès qu’un URL réel existe, on remplit « publié ». On ne déplace pas Famille.
+Dès qu’un URL réel existe, on remplit le tableau. On ne déplace pas Famille
+sans réécrire cette page.
+
+Titre public : **Famille**. Jamais « Discovery Famille ».
+QUANTUM = kernel that signs = hors Git = pas cet hôte.
 
 ## Publié
 
@@ -25,19 +30,29 @@ Dès qu’un URL réel existe, on remplit « publié ». On ne déplace pas Fami
 |---|---|---|---|
 | FAMILLE | acorn-royal-dune-blend.grok.me | https://acorn-royal-dune-blend.grok.me | https://github.com/carllaliberte/famille |
 
-Kit à remixer : [`site/index.html`](site/index.html) · mode d’emploi [`site/BUILD.md`](site/BUILD.md)
+Kit à remixer : [`site/BUILD.md`](site/BUILD.md)
+
+## Remix — pas une deuxième carte
+
+| Slug | Rôle | Cité comme live |
+|---|---|---|
+| https://yarrow-dawn-maple-brave.grok.me | Remix 2026-09-01 : trois actes, Offre, Film, Compose, Garde, label QUANTUM off Git | non — brouillon jusqu’à bascule de cette page |
+| https://cedar-tango-coral-arch.grok.me | doublon | non — ne plus citer |
+
+Si yarrow devient la carte : on bascule la ligne « Publié » ici,
+puis on arrête de citer acorn. Pas les deux à la fois.
 
 ## Pages sur Famille — pas des apps
 
-Servir dans le chat Build *existant* de Famille. Pas de nouveau `*.grok.me`.
+Servir dans le chat Build *existant*. Pas de nouveau `*.grok.me`.
 
-| Page | Route kit | Servi le 2026-09-01 sur l’hôte live | Git |
-|---|---|---|---|
-| FILM | `#/film` | non (404 `/film`) | FILM.md |
-| GARDE | `#/garde` | non (404 `/garde`) | https://github.com/carllaliberte/garde |
-| COMPOSE | `#/compose` | non | COMPOSE.md |
-
-Le kit sert ces trois pages. Remix + republish sur le **même** hôte.
+| Page | Route kit | acorn 2026-09-01 | yarrow 2026-09-01 | Git |
+|---|---|---|---|---|
+| OFFRE | `#/offre` | non | oui (nav) | PROJETS.md · CROISSANCE.md |
+| PROJETS | `#/projets` | non | à remixer | PROJETS.md |
+| FILM | `#/film` | lien /film | oui (nav) | FILM.md |
+| GARDE | `#/garde` | non | oui (nav) | https://github.com/carllaliberte/garde |
+| COMPOSE | `#/compose` | non | oui (nav) | COMPOSE.md |
 
 ## Juges sur la carte — slugs encore cibles
 
@@ -77,7 +92,7 @@ Le sas qui signe reste privé (`unforge`, off publish).
 
 | Nom | Pourquoi |
 |---|---|
-| QUANTUM | kernel qui signe — privé, off Git |
+| QUANTUM | kernel who signs — privé, off Git |
 | Unforge sas | même raison |
 | Estoc | rituel — off file |
 | CreatorFlow / contract | autre chantier |
@@ -89,13 +104,16 @@ Le sas qui signe reste privé (`unforge`, off publish).
 
 Cloner Famille au pixel.
 
-Carte → toujours https://acorn-royal-dune-blend.grok.me
+Carte → toujours https://acorn-royal-dune-blend.grok.me tant que cette ligne tient
 Reçu → `#/recu` aujourd’hui · recu.grok.me plus tard
 Merge → `#/dossier` aujourd’hui · dossier.grok.me plus tard
+Offre → `#/offre`
+Projets → `#/projets`
 Film → `#/film`
 Compose → `#/compose`
 Garde → `#/garde` de Famille seulement
 
 Fond `#0a0a0a`. Or brossé. Grain. Pas de néon. Pas de qubit. Pas de coin.
 Loopholes default open. ε = 0 refusé. S = 2.420 seulement dans Témoin / Famille Delft.
-Téléphone d’abord. Juger. Sign. Discard.
+Téléphone d’abord. Trois actes : Inscrire · Juger · Exporter.
+QUANTUM — kernel that signs — off Git — not this host.

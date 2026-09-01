@@ -11,6 +11,21 @@ Keys stay off Git. Physics enters as source and as bound. Never as décor.
 
 © 2026 Carl Laliberté. MIT for listed protocols. Estoc stays off the file. QUANTUM stays off Git.
 
+## App
+
+Carte citée : https://acorn-royal-dune-blend.grok.me
+
+Remix (trois actes, Offre, Garde) : https://yarrow-dawn-maple-brave.grok.me
+
+Ne pas citer cedar-tango. Un hôte live à la fois — [GROKME.md](GROKME.md).
+
+Titre public : Famille. Jamais Discovery Famille.
+QUANTUM — kernel that signs — off Git — not this host.
+
+Portes usagers : [PROJETS.md](PROJETS.md) · croissance : [CROISSANCE.md](CROISSANCE.md)
+Juge fichier : [unforge-check](https://github.com/carllaliberte/unforge-check)
+Merge : [garde/MERGE.md](https://github.com/carllaliberte/garde/blob/main/MERGE.md)
+
 ## What this is
 
 FAMILLE is not a bot, not a rail, not a bank, not a coin.
