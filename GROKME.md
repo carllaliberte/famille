@@ -10,6 +10,7 @@ Pas formal-layer (obligations EasyCrypt, pas une app).
 Vocabulaire — ne pas mélanger :
 
 - **publié** : l’URL grok.me répond aujourd’hui
+- **servi sur la carte** : route `#/…` dans le kit `site/` — pas un nouvel hôte
 - **cible** : slug à coller dans Publish / domaine perso. Pas live.
 - **page** : route sur l’hôte Famille. Pas une nouvelle app.
 - **onglet** : surface d’une app déjà nommée. Pas trois apps.
@@ -24,48 +25,45 @@ Dès qu’un URL réel existe, on remplit « publié ». On ne déplace pas Fami
 |---|---|---|---|
 | FAMILLE | acorn-royal-dune-blend.grok.me | https://acorn-royal-dune-blend.grok.me | https://github.com/carllaliberte/famille |
 
+Kit à remixer : [`site/index.html`](site/index.html) · mode d’emploi [`site/BUILD.md`](site/BUILD.md)
+
 ## Pages sur Famille — pas des apps
 
 Servir dans le chat Build *existant* de Famille. Pas de nouveau `*.grok.me`.
 
-| Page | Route cible | Servi le 2026-09-01 | Git |
+| Page | Route kit | Servi le 2026-09-01 sur l’hôte live | Git |
 |---|---|---|---|
-| FILM | /film | non (404) | FILM.md dans famille |
-| GARDE | /garde | non (404) | https://github.com/carllaliberte/garde |
-| COMPOSE | /compose | non | — |
+| FILM | `#/film` | non (404 `/film`) | FILM.md |
+| GARDE | `#/garde` | non (404 `/garde`) | https://github.com/carllaliberte/garde |
+| COMPOSE | `#/compose` | non | COMPOSE.md |
 
-## Slugs cibles — apps pas encore publiées
+Le kit sert ces trois pages. Remix + republish sur le **même** hôte.
 
-Un slug, une app, un juge. Chrome identique à Famille.
-Les dépôts existent. Les hôtes `nom.grok.me` répondent 404.
+## Juges sur la carte — slugs encore cibles
 
-| App | Question | Slug cible | Git |
-|---|---|---|---|
-| MODE | classique ou quantique | mode.grok.me | https://github.com/carllaliberte/mode-protocol |
-| QUELLE | origine du bit | quelle.grok.me | https://github.com/carllaliberte/quelle |
-| TÉMOIN | force du bit | temoin.grok.me | https://github.com/carllaliberte/temoin-protocol |
-| HORIZON | jusqu’à quand le sceau tient | horizon.grok.me | https://github.com/carllaliberte/horizon-protocol |
-| EPSILON | avec quel ε | epsilon.grok.me | https://github.com/carllaliberte/epsilon-protocol |
-| BRUIT | par quel canal | bruit.grok.me | https://github.com/carllaliberte/bruit-protocol |
-| RECU | l’argent a-t-il bougé, sur quel rail | recu.grok.me | https://github.com/carllaliberte/recu-protocol |
-| DOSSIER | l’enveloppe | dossier.grok.me | https://github.com/carllaliberte/dossier-protocol |
-| FIGURE | qui | figure.grok.me | https://github.com/carllaliberte/figure-protocol |
-| SITUS | où | situs.grok.me | https://github.com/carllaliberte/situs-protocol |
-| UNFORGE | quoi | unforge.grok.me | https://github.com/carllaliberte/unforge-check |
+Un slug, une app, un juge — plus tard.
+Aujourd’hui : même chrome, servi en `#/nom`, bandeau « slug cible, pas live ».
 
-Ordre de publication suggéré (téléphone d’abord) :
+| App | Question | Route kit | Slug cible | Git |
+|---|---|---|---|---|
+| MODE | classique ou quantique | `#/mode` | mode.grok.me | https://github.com/carllaliberte/mode-protocol |
+| RECU | l’argent a-t-il bougé | `#/recu` | recu.grok.me | https://github.com/carllaliberte/recu-protocol |
+| DOSSIER | l’enveloppe | `#/dossier` | dossier.grok.me | https://github.com/carllaliberte/dossier-protocol |
+| QUELLE | origine du bit | `#/quelle` | quelle.grok.me | https://github.com/carllaliberte/quelle |
+| TÉMOIN | force du bit | `#/temoin` | temoin.grok.me | https://github.com/carllaliberte/temoin-protocol |
+| EPSILON | avec quel ε | `#/epsilon` | epsilon.grok.me | https://github.com/carllaliberte/epsilon-protocol |
+| HORIZON | jusqu’à quand le sceau tient | `#/horizon` | horizon.grok.me | https://github.com/carllaliberte/horizon-protocol |
+| BRUIT | par quel canal | `#/bruit` | bruit.grok.me | https://github.com/carllaliberte/bruit-protocol |
+| FIGURE | qui | `#/figure` | figure.grok.me | https://github.com/carllaliberte/figure-protocol |
+| SITUS | où | `#/situs` | situs.grok.me | https://github.com/carllaliberte/situs-protocol |
+| UNFORGE | quoi | `#/unforge` | unforge.grok.me | https://github.com/carllaliberte/unforge-check |
 
-1. MODE — le juge, sinon les autres pages mentent
-2. RECU — rail nommé, pas de mint
-3. DOSSIER — merge / composition
-4. QUELLE + TÉMOIN + EPSILON + HORIZON — les quatre cartes du verdict quantique
-5. BRUIT — trous ouverts par défaut
-6. FIGURE + SITUS — qui / où
-7. UNFORGE — check seulement ; le sas reste privé
+Ordre tenu : MODE → RECU → DOSSIER → quatre cartes → BRUIT → FIGURE/SITUS → UNFORGE.
 
 ## Onglets UNFORGE — pas trois apps
 
-Hôte unique : `unforge.grok.me`.
+Hôte unique plus tard : `unforge.grok.me`.
+Aujourd’hui : onglets sur `#/unforge`.
 Le sas qui signe reste privé (`unforge`, off publish).
 
 | Onglet | Rôle | Git |
@@ -92,11 +90,11 @@ Le sas qui signe reste privé (`unforge`, off publish).
 Cloner Famille au pixel.
 
 Carte → toujours https://acorn-royal-dune-blend.grok.me
-Reçu → recu.grok.me (cible, pas encore servi)
-Merge → dossier.grok.me (cible, pas encore servi)
-Film → /film de l’app courante
-Compose → /compose de l’app courante
-Garde → /garde de Famille seulement
+Reçu → `#/recu` aujourd’hui · recu.grok.me plus tard
+Merge → `#/dossier` aujourd’hui · dossier.grok.me plus tard
+Film → `#/film`
+Compose → `#/compose`
+Garde → `#/garde` de Famille seulement
 
 Fond `#0a0a0a`. Or brossé. Grain. Pas de néon. Pas de qubit. Pas de coin.
 Loopholes default open. ε = 0 refusé. S = 2.420 seulement dans Témoin / Famille Delft.
