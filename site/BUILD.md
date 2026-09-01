@@ -14,6 +14,7 @@ Ne pas citer : https://cedar-tango-coral-arch.grok.me
 | `#/` ou `#/carte` | carte Delft |
 | `#/offre` | cas public |
 | `#/projets` | dix portes usagers — [PROJETS.md](../PROJETS.md) |
+| `#/demain` | industrie → rails — [INDUSTRIE.md](../INDUSTRIE.md) |
 | `#/film` | page Famille |
 | `#/compose` | page Famille |
 | `#/garde` | page Famille |
@@ -27,6 +28,50 @@ Hors lattice : QUANTUM, Estoc, CreatorFlow, Filon-nœud, unforge sas, formal-lay
 2. Coller un prompt ci-dessous.
 3. Republish **sur le même** hôte. Ne pas créer un nouveau slug.
 4. Si Build invente un slug, le noter dans GROKME comme remix, pas comme carte.
+
+## Prompt — industrie → rails (`#/demain`)
+
+```
+Remix this Famille app. Same host. Do not create a new grok.me.
+Do not rebuild the carte canvas. Add one page.
+
+Keep:
+- Title Famille · tagline « the map — not a rail »
+- #0a0a0a brushed gold grain Cormorant italic
+- three acts Inscrire · Juger · Exporter registre.json
+- QUANTUM — kernel that signs — off Git — not this host
+- Unforge checks, never signs
+- no coin, no neon, no qubit, no Discovery branding
+- no Qiskit, Cirq, QPU, AIOps dashboard, Filon node, FAMILLE bot
+
+Add nav « Demain » next to Projets.
+Route #/demain — phone first, bilingual short lines.
+
+Hero:
+Hier : labels that lie.
+Demain : typed refusal.
+Intent in, verdict out. Not a lab. Not a cloud.
+
+Table, two columns « Industrie » / « Famille »:
+- Agentic engineering → FIGURE + SITUS + Silence. One agent, one licence. Expired = mute.
+- Intent-driven → Inscrire · Juger · Exporter. The lattice stays behind « source ».
+- Self-healing QA → GARDE must DENY. unforge-check Action: file still matches card.
+- Low-code → this phone preview. Truth remains the Python CLI on GitHub.
+- Sovereign / edge → LOCAL + QUELLE os | enclave named. No entropy cloud.
+- Zero Trust → no perimeter. FIGURE who. GARDE deny.
+- Post-quantum → name the suite and the date. HORIZON CNSA-2027. UFHY1. Never « quantum-safe ».
+- Quantum computing → TÉMOIN cites Hensen et al. 2015 S = 2.420 as reference, not a live experiment here.
+
+Refuse row, visible:
+Not on this map: AIOps, 800G, Qiskit, a FAMILLE agent-bot, a token, a published QUANTUM kernel.
+
+Footer links:
+https://github.com/carllaliberte/famille
+https://github.com/carllaliberte/unforge-check
+https://github.com/carllaliberte/garde
+
+Republish on this same host only.
+```
 
 ## Prompt — portes usagers
 
@@ -71,7 +116,7 @@ Remix Famille. Same host. Do not create a new grok.me.
 Do not move the live canvas off acorn-royal-dune-blend.grok.me.
 Do not rebuild the published carte. Add routes. Keep chrome.
 
-Serve #/offre #/projets #/film #/garde #/compose on THIS app only.
+Serve #/offre #/projets #/demain #/film #/garde #/compose on THIS app only.
 Title stays Famille. Tagline stays the map — not a rail.
 QUANTUM — kernel that signs — off Git — not this host.
 ```
