@@ -1,24 +1,22 @@
-# Chantier FAMILLE
+# Chantier unique
 
-One branch. Commits accumulate. Carl squash ONCE when he says FIN.
+One branch. Commits accumulate. Carl squash once when he says FIN.
 
-## Standing
-
+## Forced
 - Never stop FAMILLE for contract / figure / OS screenshots.
-- Quantum mode = source → channel → bound → seal → measure. Not a button.
-- Host locked: https://acorn-royal-dune-blend.grok.me
-- Default classical. ε=0 refused as a lie. Horizon is a calendar date.
-- No token. No chain. No new grok.me. No restart of delivered files.
-- Recheck before ship.
+- Quantum mode = flux (source → channel → bound → seal → measure). Not a button.
+- Host: https://acorn-royal-dune-blend.grok.me only.
+- Do not restart a deliverable. Recheck, then enrich.
+- Fat blocks. High bar. Preview free. Named stamp invoiced when four cards hold.
 
 ## Cost
+Hourly factory rails paused. No 1 000 PRs. Each PR burns the plan and goes dirty.
+Grok bots first. Heavy leads this thread.
 
-Hourly factory PAUSED. Do not open 1000 PRs. That burns the plan and recreates dirty merges.
-Grok bots first. One fat commit > twenty thin PRs.
+## Cannot promise
+Permanent Rapid + Expert + Heavy + Build + third-party AIs on one socket.
+QUANTUM vault on GitHub.
 
-## Not claimed
-
-This chat cannot keep Rapid/Expert/Heavy/Build/other AIs logged in.
-QUANTUM node stays off GitHub.
-
-Say FIN to open the single PR.
+## Done when
+/attest, /docs, badge PREVIEW, sdk/juger.js on acorn.
+ε=0 → 400. Horizon slogan → 400.
