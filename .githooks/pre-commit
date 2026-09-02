@@ -1,0 +1,7 @@
+#!/bin/sh
+# refuse data/ and obvious secrets in the index
+if git diff --cached --name-only | grep -E '(^|/)data/|quantum\.db|\.ecriture|^\.env$'; then
+  echo "pre-commit: data/ or secret path staged"
+  exit 1
+fi
+exit 0
