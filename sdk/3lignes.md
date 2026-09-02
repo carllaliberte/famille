@@ -10,3 +10,5 @@ const v = await juger(carte)
 ```
 
 Même JSON que le juge public. Pas un second produit.
+
+Run 2026-09-02 — SDK prêt.
