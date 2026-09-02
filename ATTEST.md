@@ -1,11 +1,23 @@
-# Étage 2 — Attestation preview
+# Ville Preview — POST /attest
+
+Hôte : https://acorn-royal-dune-blend.grok.me
+Pas QUANTUM. Pas de signature nœud.
 
 ```
-POST /attest  {quelle, temoin, epsilon, horizon}
-→ JSON + badge SVG
+POST /attest
+Content-Type: application/json
+
+{
+  "quelle": "os",
+  "temoin": "aucun",
+  "epsilon": null,
+  "horizon": ""
+}
 ```
 
-Le badge dit PREVIEW. Ce n'est pas une quittance UNFORGE.
-L'hôte n'ouvre pas QUANTUM. ε=0 → 400.
+Réponses :
+- 200 `{quantique:false, manques:[...], phrase}` + badge PREVIEW
+- 422 si ε=0 ou horizon = UFHY1
 
-Implémentation : plus tard sur acorn. Contrat ici.
+Schéma : schema/juge.v0.json
+Badge ≠ quittance UNFORGE.
