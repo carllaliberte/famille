@@ -15,5 +15,13 @@ PR ouverte → CI verte → Carl squash
 | famille + rails | `ville/*` | Carl | `lattice-merge` seulement |
 | Dependabot | n'importe | workflow | — |
 
-Interdit : 2 PR kernel. 2 PR même repo. `lattice-suivant` pause. `lattice-relance` n'ouvre que si 0 PR partout.
-Dirty = fermer, recrer depuis main. Ne pas rebase à la main sur le téléphone.
+## Fichiers froids (kernel)
+
+Ne plus réécrire à chaque lettre :
+- `BLOC.md`
+- `FEED.md`
+
+Nouvelle commande CLI = `quantum/cli_<nom>.py` + 2 lignes dans `__main__.py`.
+Dirty = fermer, recrer depuis main. Pas de rebase téléphone.
+
+Interdit : 2 PR kernel. 2 PR même repo. `lattice-suivant` pause.
