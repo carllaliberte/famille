@@ -1,19 +1,24 @@
-# Mode quantique — consigne Carl 2026-09-01
+# Mode quantique — consigne Carl
 
-Quand Carl dit « Mode quantique », ce n’est **pas** un bouton, pas un onglet, pas un mood UI.
+Pas un bouton. Pas un onglet. Pas un QPU dans Build.
 
-C’est un ordre de pensée pour Grok :
+Ordre de pensée : suivre le flux.
 
-- physique quantique réelle (bornes, témoins, loopholes, ε composable)
-- flux quantique comme *source et borne*, jamais comme décor
-- QUELLE / TÉMOIN / EPSILON / HORIZON comme questions, pas comme chrome
-- S = 2.420 = Hensen et al. 2015, référence nommée, pas une expérience live dans le navigateur
-- MODE classique par défaut dans le produit ; le verdict `quantique` seulement si les quatre cartes tiennent
+```
+source → canal (trous ouverts) → borne (ε, témoin) → sceau → mesure
+```
 
-Interdit de répondre à cette phrase par :
-- un toggle « Mode quantique »
-- un néon, un qubit animé, un QPU dans Build
-- un photon inventé
-- publier QUANTUM sur grok.me
+Cryptographie quantique **autorisée** :
+- QRNG si appareil nommé
+- QKD si témoin `di` + transcript
+- PQC (UFHY1 / ML-DSA) comme horizon de suite, pas comme défaut du sas
 
-Physique entre comme source et comme borne. Jamais comme décor.
+Toujours refusé : ε=0, `iid` pris pour un nombre, di+simule,
+photon logiciel, relabel `os`→`qkd` sans secret du nœud.
+
+S = 2.420 = Hensen et al. 2015. Pas un run dans le navigateur.
+Produit : MODE classique par défaut. Verdict quantique seulement
+si les quatre cartes tiennent.
+
+Partout à la fois = rails publics. Versions infinies = git + suites.
+Un hôte cité. QUANTUM hors Git.
