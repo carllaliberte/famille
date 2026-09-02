@@ -1,14 +1,7 @@
-# SDK — 3 lignes
+# SDK 3 lignes
 
-1. Importer le juge.
-2. Passer la carte.
-3. Lire quantique / manques.
+1. Install @famille/attest
+2. Attest os/temoin/epsilon
+3. Badge SVG
 
-```js
-import { juger } from '@famille/juge'
-const v = await juger(carte)
-```
-
-Même JSON que le juge public. Pas un second produit.
-
-Run 2026-09-02 — SDK prêt.
+Contrat preview.
