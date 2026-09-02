@@ -1,0 +1,12 @@
+name: branche
+on:
+  pull_request:
+jobs:
+  nom:
+    runs-on: ubuntu-latest
+    steps:
+      - name: valider head_ref
+        env:
+          REF: ${{ github.head_ref }}
+        run: |
+          echo "$REF" | grep -Eq '^(ville/(juge|conso|preview|sdk|rente|garde)-[a-z0-9-]+|ville/noms)$'

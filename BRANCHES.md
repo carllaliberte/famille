@@ -4,13 +4,19 @@
 ville/<quartier>-<piece>
 ```
 
-Quartiers : `juge` `preview` `conso` `rente` `garde`
-
-Exemples :
-- `ville/juge-cli-schema`
-- `ville/preview-badge`
-- `ville/conso-action`
-- `ville/rente-recu`
+Quartiers : `juge` `preview` `conso` `sdk` `rente` `garde`
 
 Titre PR : `Ville <quartier> — <pièce>`
-1 branche à la fois par repo. Squash. Ne pas renommer l'historique A–N / bloc/*.
+
+## Validation
+
+GitHub : `.github/workflows/branche.yml` (le mobile n'a pas de hook).
+Local :
+
+```bash
+git config core.hooksPath .githooks
+chmod +x .githooks/pre-push
+```
+
+unforge reste `bloc/<lettre>-<verbe>` — l'usine squash `bloc/*`.
+Ne pas renommer l'historique.
