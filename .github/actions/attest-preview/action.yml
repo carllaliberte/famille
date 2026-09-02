@@ -1,0 +1,22 @@
+name: famille-attest-preview
+description: Call Preview /attest. Never a receipt. Exit 2 if the host is down; 0 if JSON returns.
+inputs:
+  carte:
+    description: JSON card (quelle, temoin, epsilon, horizon)
+    required: true
+  host:
+    default: https://acorn-royal-dune-blend.grok.me
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        CARTE: ${{ inputs.carte }}
+        HOST: ${{ inputs.host }}
+      run: |
+        set -euo pipefail
+        code=$(curl -sS -o /tmp/famille-attest.json -w '%{http_code}' -X POST "$HOST/attest" \
+          -H 'content-type: application/json' -d "$CARTE" || true)
+        echo "http $code"
+        cat /tmp/famille-attest.json || true
+        test "$code" = "200" -o "$code" = "400"
