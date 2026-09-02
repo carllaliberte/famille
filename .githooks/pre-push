@@ -1,14 +1,10 @@
 #!/bin/sh
-# FAMILLE — refuse un push hors convention.
-# Installer: git config core.hooksPath .githooks && chmod +x .githooks/pre-push
-
 ref=$(git symbolic-ref --short HEAD 2>/dev/null) || exit 0
 case "$ref" in
   main) exit 0 ;;
   ville/juge-*|ville/conso-*|ville/preview-*|ville/sdk-*|ville/rente-*|ville/garde-*) exit 0 ;;
-  ville/noms) exit 0 ;;
+  ville/noms|ville/preview-build|ville/preview-langue|ville/preview-attest|ville/preview-badge*) exit 0 ;;
 esac
 echo "Branche refusée: $ref"
 echo "Attendu: ville/<quartier>-<piece>"
-echo "Quartiers: juge conso preview sdk rente garde"
 exit 1

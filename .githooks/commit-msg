@@ -1,0 +1,10 @@
+#!/bin/sh
+# allow merge commits; otherwise prefer Ville|Bloc prefix when not on main
+msg=$(head -n1 "$1")
+ref=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+case "$ref" in
+  main) exit 0 ;;
+esac
+echo "$msg" | grep -Eq '^(Ville |Bloc |Merge |Ville preview|Ville garde|Ville sdk|Ville rente)' && exit 0
+# do not block old history style hard — warn only
+exit 0
