@@ -1,126 +1,119 @@
 # FAMILLE
 
-**Not fourteen scripts. One framework.**
+**The map — not a rail.**
 
-A cadastre of typed evidence for post-quantum cybersecurity
-and composable proof.
+A typed-evidence lattice for post-quantum cybersecurity and composable proof.
+Not fourteen scripts. Not a blockchain. Not a coin.
 
-QUANTUM signs. MODE judges. DOSSIER composes. RECU attests a payment
-that moved somewhere else.
-Keys stay off Git. Physics enters as source and as bound. Never as décor.
+Before anyone may say *quantique*, four fields must hold on the card.
+A missing field keeps the label **classique**. That is the product.
 
-© 2026 Carl Laliberté. MIT for listed protocols. Estoc stays off the file. QUANTUM stays off Git.
+**Carte citée :** https://acorn-royal-dune-blend.grok.me
+Un seul hôte. Voir [HOTE.md](HOTE.md). Titre public : Famille.
 
-## App
+## Four fields
 
-**Carte citée (gelée 2026-09-01) :** https://acorn-royal-dune-blend.grok.me
+| Field | Question | Honest default |
+|---|---|---|
+| `quelle` | Where did the bits come from? | `os` (phone entropy) |
+| `temoin` | With what force? | `aucun` |
+| `epsilon` | What error margin? | must be a number **> 0** |
+| `horizon` | Until which calendar day? | `YYYY-MM-DD` — never `UFHY1` |
 
-Un seul hôte. Voir [HOTE.md](HOTE.md).
-Ne pas citer yarrow. Ne pas citer cedar-tango.
+`mode` is not a fifth field. **MODE is the collapse** of the four.
 
-Titre public : Famille. Jamais Discovery Famille.
-QUANTUM — kernel that signs — off Git — not this host.
+```js
+import { peutDire } from './sdk/peut-dire.js'
 
-Portes usagers : [PROJETS.md](PROJETS.md) · croissance : [CROISSANCE.md](CROISSANCE.md)
-Juge fichier : [unforge-check](https://github.com/carllaliberte/unforge-check)
-Merge : [garde/MERGE.md](https://github.com/carllaliberte/garde/blob/main/MERGE.md)
+peutDire({ quelle: 'os', temoin: 'aucun', epsilon: null, horizon: '' })
+// { quantique: false, mode: 'classique', manques: ['epsilon','horizon'], preview: true }
+```
 
-## What this is
+```bash
+npm test
+node sdk/cli.js examples/attest-os.json   # exit 2 = classique — correct
+```
 
-FAMILLE is not a bot, not a rail, not a bank, not a coin.
-It is the index of a single claim lattice.
+This repo **consumes** the card. It does not sign. QUANTUM stays off Git.
 
-Each rail is a typed evidence object: a schema, a judge, an INTERDIT.
-Refusal is the type error of the framework.
-`mode: quantique` is a verdict, not a mood.
+## Architecture
 
-## Money (named rail, not a mint)
+Fields on a stage. Source → channel → bound → check → read.
+The seal is elsewhere.
 
-X Money, Visa, Interac, ACH, cash — those rails exist.
-FAMILLE does not hold the dollar. It signs the receipt.
+```mermaid
+flowchart TB
+  subgraph map [FAMILLE — this repo]
+    Schema["schema/juge.v0.json"]
+    Dire["sdk/peut-dire.js"]
+    Interop["map/interop.v0.json"]
+  end
 
-See [RECU](https://github.com/carllaliberte/recu-protocol).
-Do not invent a « quantum payment ». That label is a type error.
+  subgraph rails [One question each — own repo]
+    Quelle["quelle"]
+    Temoin["temoin-protocol"]
+    Epsilon["epsilon-protocol"]
+    Horizon["horizon-protocol"]
+  end
 
-X is a publication surface (posts, ads). It is not a backend we patch.
+  subgraph verify [Verify — do not sign]
+    Check["unforge-check"]
+    Press["unforge-press"]
+    Trail["unforge-trail"]
+    Retract["unforge-retract"]
+  end
 
-## Formal layer (honest)
+  Canal["acorn-juge · GET /juge"]
+  Garde["garde · deny lying labels"]
+  Host["acorn-royal-dune-blend.grok.me · vitrine"]
+  Seal["QUANTUM · signs off Git"]
 
-Theories live in [formal-layer](https://github.com/carllaliberte/formal-layer).
-Every lemma there is `admitted` until a CI log says otherwise.
-This is not Coq. This is not a completed EasyCrypt proof.
-See [FORMAL.md](FORMAL.md).
+  rails --> Schema
+  Schema --> Dire
+  Interop -.-> rails
+  Interop -.-> verify
+  Dire -->|"preview, not a receipt"| Host
+  Canal --> Host
+  Check -->|"file still matches the card"| Schema
+  Garde -->|"if one attack passes, the label is broken"| Dire
+  Seal -.->|"not this repository"| Check
+```
 
-| Primitive | Role |
-|---|---|
-| JSON schema | contract of the claim |
-| judge (`juger`) | total decision procedure |
-| INTERDIT | negative specification |
-| UFHY1 AND | both signatures verify today |
-| ε-budget | composable security, `ε = 0` refused |
-| MODE | classical by default |
-| RECU | receipt on a named rail |
-| DOSSIER | composition root |
+Machine table of the same edges: [`map/interop.v0.json`](map/interop.v0.json).
 
-## Post-quantum layer (named)
+## How this map talks to siblings
 
-Do not write « quantum-safe ». Name the suite and the date.
+Siblings stay siblings. FAMILLE does not vendor them.
+
+| Node | Repo | Talks to the map by |
+|---|---|---|
+| Protocol v0s | [quelle](https://github.com/carllaliberte/quelle) · [témoin](https://github.com/carllaliberte/temoin-protocol) · [epsilon](https://github.com/carllaliberte/epsilon-protocol) · [horizon](https://github.com/carllaliberte/horizon-protocol) · [mode](https://github.com/carllaliberte/mode-protocol) · [bruit](https://github.com/carllaliberte/bruit-protocol) · [figure](https://github.com/carllaliberte/figure-protocol) · [situs](https://github.com/carllaliberte/situs-protocol) · [recu](https://github.com/carllaliberte/recu-protocol) · [dossier](https://github.com/carllaliberte/dossier-protocol) | emit or read the same four keys |
+| unforge-check | [check](https://github.com/carllaliberte/unforge-check) | file + `.unforge.json` still match |
+| unforge-press / trail / retract | [press](https://github.com/carllaliberte/unforge-press) · [trail](https://github.com/carllaliberte/unforge-trail) · [retract](https://github.com/carllaliberte/unforge-retract) | print, itinerary, signed withdrawal |
+| acorn-juge | [canal](https://github.com/carllaliberte/acorn-juge) | Worker `GET /juge` — display, not a second grok.me |
+| garde | [garde](https://github.com/carllaliberte/garde) | attacks that must deny |
+| formal-layer | [formal-layer](https://github.com/carllaliberte/formal-layer) | admitted obligations, not theorems |
+
+AI agents read the same JSON. They call `peutDire`. They are not the judge.
+
+Out of this map: `contract`, CreatorFlow, Estoc, filon-spec, QUANTUM.
+
+## Named suites — not « quantum-safe »
 
 | Suite | Claim |
 |---|---|
 | `ed25519` | Shor is not yet assumed at this size |
-| `UFHY1` | Ed25519 + ML-DSA-65 — at least one survives |
+| `UFHY1` | Ed25519 + ML-DSA-65 — both verify today |
 | `mldsa87` | elliptic is no longer trusted |
 
-Threat model: harvest-now-decrypt-later.
-HORIZON expires the cryptographic hypothesis.
+Threat model: harvest-now-decrypt-later. HORIZON expires the hypothesis.
+Do not write « formally verified ». See [FORMAL.md](FORMAL.md).
 
-## The lattice
+## What this is not
 
-```
-QUANTUM     kernel that signs          (private, off Git)
-    |
-FIGURE      who
-SITUS       where                      + CLÔTURE (when)
-UNFORGE     what                       + OUBLI  (forget)
-QUELLE      origin of the bit          os | qrng | qkd
-TÉMOIN      force of the bit           aucun | stat | fabricant | di
-BRUIT       channel / loopholes        default open
-EPSILON     composable ε + Hmin
-HORIZON     PQC suite + reseal date
-ANCRAGE     re-measure date
-MESURE      reading consumes
-RECU        receipt                    rail named, no mint
-MODE        judge: classical | quantum
-DOSSIER     composition root
-FAMILLE     the map — not a rail
-```
+A bot, a rail, a bank, a mint, a second grok.me, a photon in the index.
+ε = 0 is a lie. UFHY1 is not a date. Preview ≠ quittance.
 
-## Rails
+See [INTERDIT.md](INTERDIT.md) · [JUGE.md](JUGE.md) · [CURSOR.md](CURSOR.md).
 
-| Rail | Question | State |
-|---|---|---|
-| [FIGURE](https://github.com/carllaliberte/figure-protocol) | who | live |
-| [SITUS](https://github.com/carllaliberte/situs-protocol) | where | live |
-| [UNFORGE](https://github.com/carllaliberte/unforge-check) | what | live |
-| [QUELLE](https://github.com/carllaliberte/quelle) | where the bit comes from | live |
-| [TÉMOIN](https://github.com/carllaliberte/temoin-protocol) | with what force | live |
-| [HORIZON](https://github.com/carllaliberte/horizon-protocol) | until when the seal holds | live |
-| [EPSILON](https://github.com/carllaliberte/epsilon-protocol) | with what ε | live |
-| [MODE](https://github.com/carllaliberte/mode-protocol) | classical or quantum | live |
-| [DOSSIER](https://github.com/carllaliberte/dossier-protocol) | the envelope | live |
-| [BRUIT](https://github.com/carllaliberte/bruit-protocol) | through which channel | live |
-| [RECU](https://github.com/carllaliberte/recu-protocol) | did money move, on which rail | live |
-| [formal-layer](https://github.com/carllaliberte/formal-layer) | EasyCrypt obligations | admitted |
-| [Filon](https://github.com/carllaliberte/filon-spec) | the node that speaks | live |
-| QUANTUM | the sas that signs | private, off Git |
-| Estoc | the ritual | off file |
-
-## Doctrine in one line
-
-The only bug is a lying label.
-
-Phone first. Zero token. Zero L1. Zero entropy cloud. Zero quantum coin.
-A missing card keeps the label honest.
-
-See [INTERDIT.md](INTERDIT.md).
+© 2026 Carl Laliberté. MIT for listed protocols. Estoc stays off the file. QUANTUM stays off Git.

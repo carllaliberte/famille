@@ -1,0 +1,149 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/map/interop.v0.json",
+  "title": "famille.interop.v0",
+  "role": "map",
+  "not": ["rail", "blockchain", "mint", "bot", "receipt"],
+  "host": "https://acorn-royal-dune-blend.grok.me",
+  "contract": "schema/juge.v0.json",
+  "consumer": "sdk/peut-dire.js",
+  "talk": "Siblings keep their own repo. They share the four keys (quelle, temoin, epsilon, horizon). FAMILLE does not vendor their code. A card is JSON. A missing card keeps MODE classique.",
+  "faces": {
+    "display": "https://acorn-royal-dune-blend.grok.me",
+    "canal": "https://github.com/carllaliberte/acorn-juge",
+    "note": "Verified 2026-09-03: acorn GET /juge and POST /attest return HTML 404. The typed path in this repo is local. Canal deploys GET /juge on workers.dev — not a second grok.me slug."
+  },
+  "nodes": [
+    {
+      "id": "famille",
+      "kind": "map",
+      "repo": "https://github.com/carllaliberte/famille",
+      "asks": "how do the rails compose",
+      "talks": "publishes the card schema and interop table; consumes, does not sign"
+    },
+    {
+      "id": "quelle",
+      "kind": "protocol-v0",
+      "repo": "https://github.com/carllaliberte/quelle",
+      "asks": "where the bits came from",
+      "keys": ["quelle"],
+      "values": ["os", "qrng", "qkd"]
+    },
+    {
+      "id": "temoin",
+      "kind": "protocol-v0",
+      "repo": "https://github.com/carllaliberte/temoin-protocol",
+      "asks": "with what force",
+      "keys": ["temoin"],
+      "values": ["aucun", "stat", "fabricant", "di"]
+    },
+    {
+      "id": "epsilon",
+      "kind": "protocol-v0",
+      "repo": "https://github.com/carllaliberte/epsilon-protocol",
+      "asks": "with what error margin",
+      "keys": ["epsilon"],
+      "refuse": [0, "none", "iid"]
+    },
+    {
+      "id": "horizon",
+      "kind": "protocol-v0",
+      "repo": "https://github.com/carllaliberte/horizon-protocol",
+      "asks": "until when the seal hypothesis holds",
+      "keys": ["horizon"],
+      "note": "On the card, horizon is a calendar day. UFHY1 is a suite name, never a date."
+    },
+    {
+      "id": "mode",
+      "kind": "protocol-v0",
+      "repo": "https://github.com/carllaliberte/mode-protocol",
+      "asks": "classical or quantum",
+      "keys": ["mode"],
+      "note": "MODE is the collapse of the four cards, not a fifth card."
+    },
+    {
+      "id": "bruit",
+      "kind": "protocol-v0",
+      "repo": "https://github.com/carllaliberte/bruit-protocol",
+      "asks": "through which channel / which loopholes stay open"
+    },
+    {
+      "id": "figure",
+      "kind": "protocol-v0",
+      "repo": "https://github.com/carllaliberte/figure-protocol",
+      "asks": "who"
+    },
+    {
+      "id": "situs",
+      "kind": "protocol-v0",
+      "repo": "https://github.com/carllaliberte/situs-protocol",
+      "asks": "where"
+    },
+    {
+      "id": "recu",
+      "kind": "protocol-v0",
+      "repo": "https://github.com/carllaliberte/recu-protocol",
+      "asks": "did money move, on which named rail",
+      "note": "Receipt, not a mint. No quantum coin."
+    },
+    {
+      "id": "dossier",
+      "kind": "protocol-v0",
+      "repo": "https://github.com/carllaliberte/dossier-protocol",
+      "asks": "how are cards enveloped"
+    },
+    {
+      "id": "unforge-check",
+      "kind": "verify",
+      "repo": "https://github.com/carllaliberte/unforge-check",
+      "asks": "does this file still match the card that sealed it",
+      "talks": "reads optional quelle/horizon cards; never signs"
+    },
+    {
+      "id": "unforge-press",
+      "kind": "verify",
+      "repo": "https://github.com/carllaliberte/unforge-press",
+      "asks": "can the proof fit in a pocket",
+      "talks": "prints a card; cites schema/juge.v0.json"
+    },
+    {
+      "id": "unforge-trail",
+      "kind": "verify",
+      "repo": "https://github.com/carllaliberte/unforge-trail",
+      "asks": "did every passage name the same SHA-256"
+    },
+    {
+      "id": "unforge-retract",
+      "kind": "verify",
+      "repo": "https://github.com/carllaliberte/unforge-retract",
+      "asks": "can a proof be withdrawn without erasing history"
+    },
+    {
+      "id": "acorn-juge",
+      "kind": "canal",
+      "repo": "https://github.com/carllaliberte/acorn-juge",
+      "asks": "GET /juge preview on a Worker",
+      "talks": "display canal; same refusal as the local path; not a second grok.me"
+    },
+    {
+      "id": "garde",
+      "kind": "deny",
+      "repo": "https://github.com/carllaliberte/garde",
+      "asks": "which lying labels must deny",
+      "talks": "merge guardian; if one listed attack passes, the FAMILLE label is broken"
+    },
+    {
+      "id": "formal-layer",
+      "kind": "obligations",
+      "repo": "https://github.com/carllaliberte/formal-layer",
+      "asks": "which claims are admitted, not theorems",
+      "talks": "EasyCrypt obligations. Do not write formally verified."
+    }
+  ],
+  "out_of_map": [
+    "contract",
+    "creatorflow",
+    "estoc-proto",
+    "filon-spec",
+    "QUANTUM"
+  ]
+}

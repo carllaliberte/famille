@@ -9,4 +9,4 @@ jobs:
         env:
           REF: ${{ github.head_ref }}
         run: |
-          echo "$REF" | grep -Eq '^(ville/(juge|conso|preview|sdk|rente|garde)-[a-z0-9-]+|ville/noms)$'
+          echo "$REF" | grep -Eq '^(ville/(juge|conso|preview|sdk|rente|garde)-[a-z0-9-]+|ville/noms|cursor/[a-z0-9-]+)$'
