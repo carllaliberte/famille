@@ -30,10 +30,11 @@ L'hôte acorn **affiche** le jugement. Il ne signe pas.
 ## Consommateurs (même contrat)
 
 ```
-CLI     python -m quantum peut-dire --fichier carte.json
+CLI     node sdk/cli.js carte.json
+        python -m quantum peut-dire --fichier carte.json   (unforge, hors repo)
 CI      exit 0/2 dans un workflow
-Preview formulaire acorn (badge PREVIEW)
-SDK     plus tard, 3 lignes, même JSON
+Preview formulaire acorn (badge PREVIEW) — /attest pas live au 2026-09-03
+SDK     sdk/peut-dire.js — même JSON, 0 réseau, pas un sceau
 IA      Grok, Claude, autre — elles *appellent*, elles ne *sont* pas le juge
 ```
 

@@ -2,11 +2,14 @@
 
 ```
 ville/<quartier>-<piece>
+cursor/<piece>
 ```
 
 Quartiers : `juge` `preview` `conso` `sdk` `rente` `garde`
 
 Titre PR : `Ville <quartier> — <pièce>`
+
+Cursor Cloud agents use `cursor/<piece>`. Carl still squashes. One PR per repo.
 
 ## Validation
 

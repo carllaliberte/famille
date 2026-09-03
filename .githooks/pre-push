@@ -4,7 +4,8 @@ case "$ref" in
   main) exit 0 ;;
   ville/juge-*|ville/conso-*|ville/preview-*|ville/sdk-*|ville/rente-*|ville/garde-*) exit 0 ;;
   ville/noms|ville/preview-build|ville/preview-langue|ville/preview-attest|ville/preview-badge*) exit 0 ;;
+  cursor/*) exit 0 ;;
 esac
 echo "Branche refusée: $ref"
-echo "Attendu: ville/<quartier>-<piece>"
+echo "Attendu: ville/<quartier>-<piece> ou cursor/<piece>"
 exit 1

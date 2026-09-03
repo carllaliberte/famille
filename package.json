@@ -1,0 +1,16 @@
+{
+  "name": "famille",
+  "private": true,
+  "type": "module",
+  "description": "FAMILLE typed-evidence map — local card consumer, not a seal",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "peut-dire": "node sdk/cli.js"
+  },
+  "exports": {
+    "./peut-dire": "./sdk/peut-dire.js",
+    "./juger": "./sdk/juger.js",
+    "./schema": "./schema/juge.v0.json",
+    "./interop": "./map/interop.v0.json"
+  }
+}
