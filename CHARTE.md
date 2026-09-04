@@ -29,6 +29,7 @@ QUANTUM parké. Pas de matrix. Pas de self-hosted. Cache et builds incrémentaux
 [GARDE.md](GARDE.md) — une attaque qui passe casse le label.
 
 ## 7. Architecture
+[ARCHITECTURE.md](ARCHITECTURE.md) — modulaire, classique par défaut, pas de sur-ingénierie PQC.
 [JUGE.md](JUGE.md) · [MODE-QUANTIQUE.md](MODE-QUANTIQUE.md) · [FORMAL.md](FORMAL.md)
 Classique par défaut. Quantique seulement si QUELLE + TÉMOIN + EPSILON + HORIZON.
 Modulaire. Pas de sur-ingénierie crypto maintenant.
