@@ -2,11 +2,19 @@
 
 Quantum + Cursor share one file.
 
-1. Audit last 24h on carllaliberte/* except estoc-proto, contract, creatorflow.
-2. Close dead issues with a URL proof.
-3. One rail or one docs PR.
-4. Imagine prompt of the day in imagine/YYYY-MM-DD.md
-5. Legal glance: LICENSE matches the layer (Acorn ARR / rails MIT / Unforge Apache).
-6. Log on an issue. Then the next hole.
+## Priorité
 
-Carl deploys Cloudflare. Bots do not invent a second grok.me.
+1. Expérience client — [EXPERIENCE.md](EXPERIENCE.md)
+2. Technologie déjà ouverte (pas un nouveau protocole)
+3. Supporter Grok Bot et Cursor (AGENTS, BOTS, .cursorrules)
+
+## Boucle
+
+1. Audit 24h carllaliberte/* sauf estoc-proto, contract, creatorflow.
+2. Un acte CX s'il existe un trou de phrase / porte / couleur.
+3. Sinon un acte tech (test, deny, digest, bind doc).
+4. Sinon un acte bot (fichier manquant pour Cursor/Quantum).
+5. Imagine du jour. Legal glance.
+6. Log issue. Trou suivant.
+
+Carl déploie Cloudflare. Pas de second grok.me.
