@@ -1,0 +1,11 @@
+{
+  "tag": "pt-BR",
+  "titre": "Famille",
+  "ligne": "As certezas têm data de validade.",
+  "vert": "o arquivo corresponde ao cartão",
+  "ambre": "corresponde; uma data vence de novo",
+  "rouge": "recusado",
+  "classique": "Não se sustenta. Clássico.",
+  "apercu": "Prévia — não é um recibo",
+  "silence": "licença vencida. o agente cala."
+}
