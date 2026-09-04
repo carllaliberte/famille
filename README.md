@@ -1,6 +1,7 @@
 # FAMILLE
 
-**The map — not a rail.**
+**Les certitudes ont une date de fin.**
+Certainties expire.
 
 A typed-evidence lattice for post-quantum cybersecurity and composable proof.
 Not fourteen scripts. Not a blockchain. Not a coin.

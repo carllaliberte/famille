@@ -1,5 +1,12 @@
 # site — kit de publication Famille
 
+**Les certitudes ont une date de fin.**
+Certainties expire.
+
+- VERT — the file matches the card
+- AMBRE — match, a satellite is due again
+- ROUGE — refuse
+
 Un hôte cité. Pas onze.
 
 - [`BUILD.md`](BUILD.md) — prompts Remix
