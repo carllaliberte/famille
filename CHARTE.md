@@ -35,6 +35,7 @@ Classique par défaut. Quantique seulement si QUELLE + TÉMOIN + EPSILON + HORIZ
 Modulaire. Pas de sur-ingénierie crypto maintenant.
 
 ## 8. Autonomie
+[AUTONOMIE.md](AUTONOMIE.md) — automatiser le répétitif ; humain sur fort impact.
 [AUTO.md](AUTO.md) — vingt rails. Humain = merge, wrangler, budget, Stop.
 
 ## Interdit
