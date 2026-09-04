@@ -1,1 +1,1 @@
-Documentary hands holding Unforge card; Montréal/Delson dusk; caption if spoken: Hands. A printed card. Not a receipt.
+Documentary, Montréal/Delson dusk. Hands hold a dark cotton-paper card. On the card: a date-only embossed seal — never print UNFORGE or POCKET CARD on the card face (no brand splash). Sticky note OFF the card: Unforge does not sign. Not a receipt. Caption: Hands. A date on the seal. Not a receipt.
