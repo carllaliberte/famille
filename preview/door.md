@@ -13,7 +13,7 @@ https://acorn-royal-dune-blend.grok.me only
 ## Couleurs
 
 - VERT — the file matches the card
-- AMBRE — match, a satellite is due again
+- AMBRE — match; a date is due again
 - ROUGE — refuse
 
 ## Deny public
