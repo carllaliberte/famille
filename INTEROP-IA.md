@@ -7,6 +7,7 @@ Un contrat. N'importe quel modèle *lit*. Aucun n'est juge.
 Quatre clés : `quelle` · `temoin` · `epsilon` · `horizon`
 Schéma : `schema/juge.v0.json`
 Consommateur : `peut-dire` (Cursor, Claude, Grok, Ollama — même JSON)
+Parcours inconnu (Cursor) : [`examples/interop-juge-v0.md`](examples/interop-juge-v0.md)
 
 ## Règles machine
 
