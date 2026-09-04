@@ -8,3 +8,5 @@ Out: estoc · contract · creatorflow · QUANTUM node keys.
 Goût Expert → Quantum vert → Carl merge.
 GitHub live est la source de vérité des PR mergées.
 Interdiction d'arrêter.
+
+Cold start : [examples/bots-cold-start.md](examples/bots-cold-start.md)
