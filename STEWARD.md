@@ -25,3 +25,5 @@ Hôte : https://acorn-royal-dune-blend.grok.me — Preview ≠ receipt. Unforge 
 Audit → un acte sur le chantier le plus vide → log quantum-daily → suivant.
 Assignation + critères : [ASSIGN.md](ASSIGN.md).
 Carl : wrangler. Pas de token. Pas de second slug. Revue + squash : [MERGE.md](MERGE.md).
+
+Cadence Imagine — sortie : prompts `imagine/YYYY-MM-DD.md` (+ optional `-cx`) ; packs site `site/imagine/YYYY-MM-DD/` quand on publie à la porte / film.
