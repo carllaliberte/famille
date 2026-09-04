@@ -25,8 +25,8 @@ QUANTUM parké. Pas de matrix. Pas de self-hosted. Cache et builds incrémentaux
 [RENTE.md](RENTE.md) — œuvre + marque + acte, pas un token.
 
 ## 6. Sécurité
+[SECURITE.md](SECURITE.md) — tests + scan à chaque PR. Réduire les critiques. Pas « zéro faille ».
 [GARDE.md](GARDE.md) — une attaque qui passe casse le label.
-Tests + scan à chaque PR. Réduire les critiques. Pas « zéro faille ».
 
 ## 7. Architecture
 [JUGE.md](JUGE.md) · [MODE-QUANTIQUE.md](MODE-QUANTIQUE.md) · [FORMAL.md](FORMAL.md)

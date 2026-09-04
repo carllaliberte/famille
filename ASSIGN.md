@@ -7,7 +7,7 @@ Grok Chef. Quantum QC last word + coord. Expert = assignation + goût. Cursor co
 ## Ouvre
 
 Quantum (steward) ou Expert (assignation).
-Clash physique → Quantum. Legal / Security via Quantum.
+Clash physique → Quantum. Legal / Security via Quantum. Discipline : [SECURITE.md](SECURITE.md).
 
 ## Rédige
 
