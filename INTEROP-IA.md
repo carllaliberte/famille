@@ -19,7 +19,8 @@ Parcours inconnu (Cursor) : [`examples/interop-juge-v0.md`](examples/interop-jug
 
 ## Packs lieu
 
-BCP 47 : `fr-CA` · `en-CA` · `es-MX` · `en-NG` — même schéma, phrases locales.
+BCP 47 : `fr-CA` · `en-CA` · `es-MX` · `en-NG` · `pt-BR` — même schéma, phrases locales.
+Tag inconnu → spoken en / classique.
 
 ## Ce que ça vend
 
