@@ -4,12 +4,16 @@ Projet informatique, pas une startup de slugs.
 
 ## Locales
 
-| Tag | Porte | Note |
-|---|---|---|
-| fr-CA | défaut | Québec, Loi 25 |
-| en-CA / en | narration Imagine, docs agents |
-| es-MX | pack lieu, même juge |
-| en-NG | pack lieu, même juge |
+| Tag | Pack | Porte | Note |
+|---|---|---|---|
+| fr-CA | [packs/fr-CA.json](packs/fr-CA.json) | défaut | Québec, Loi 25 |
+| en / en-CA | [packs/en.json](packs/en.json) | spoken EN / docs agents | tag file is `en` |
+| es-MX | [packs/es-MX.json](packs/es-MX.json) | pack lieu | même juge |
+| en-NG | [packs/en-NG.json](packs/en-NG.json) | pack lieu | même juge |
+
+Même schéma [`schema/juge.v0.json`](schema/juge.v0.json) ; phrases locales only ; new country = new packs file, never a second slug.
+
+Inconnu : [`examples/world-bcp47.md`](examples/world-bcp47.md).
 
 ## Droit
 
