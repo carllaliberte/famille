@@ -1,7 +1,8 @@
 # Nom — gelé
 
 Le nom public est **Famille**.
-Tagline : **the map — not a rail**.
+Tagline : **Les certitudes ont une date de fin.**
+English under the line : **Certainties expire.**
 
 Build n’a pas le droit de le changer.
 Le slug `*.grok.me` (yarrow, acorn, cedar-…) n’est **pas** le nom.
