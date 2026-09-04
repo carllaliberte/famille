@@ -1,20 +1,19 @@
 # Steward — do not stop
 
-Quantum + Cursor share one file.
+Quantum ouvre. Bots Grok finissent. Cursor consomme le juge. Carl merge.
 
 ## Priorité
 
-1. Expérience client — [EXPERIENCE.md](EXPERIENCE.md)
-2. Technologie déjà ouverte (pas un nouveau protocole)
-3. Supporter Grok Bot et Cursor (AGENTS, BOTS, .cursorrules)
+1. Client — EXPERIENCE.md
+2. Techno née — FLUX.md (pas de nouveau QPU)
+3. Bots — ce fichier + AGENTS + CURSOR
+
+## Chantiers (un acte / heure, tourner)
+
+1 Flux · 2 Interop IA · 3 CX · 4 Coordination · 5 International · 6 Rente
+Voir CHANTIERS.md. Ne pas ouvrir un 7e chantier.
 
 ## Boucle
 
-1. Audit 24h carllaliberte/* sauf estoc-proto, contract, creatorflow.
-2. Un acte CX s'il existe un trou de phrase / porte / couleur.
-3. Sinon un acte tech (test, deny, digest, bind doc).
-4. Sinon un acte bot (fichier manquant pour Cursor/Quantum).
-5. Imagine du jour. Legal glance.
-6. Log issue. Trou suivant.
-
-Carl déploie Cloudflare. Pas de second grok.me.
+Audit → un acte sur le chantier le plus vide → log quantum-daily → suivant.
+Carl : wrangler. Pas de token. Pas de second slug.
