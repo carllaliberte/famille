@@ -20,6 +20,17 @@ Goût Expert → Quantum vert → Carl squash (humain). `merged=true` sur GitHub
 Imagine : parole et écran EN ; docs FR OK.
 Hôte : https://acorn-royal-dune-blend.grok.me — Preview ≠ receipt. Unforge does not sign. ε=0 is a lie.
 
+### Cadence Imagine
+
+Le client voit, un matin de semaine à Montréal, une image en anglais née d'un fait déjà git. Champagne, or, dusk Québec. Un seul hôte. Pas le week-end par défaut. Pas chaque release.
+
+- **Cadence** — jours ouvrables, steward matin America/Montreal. Pas le week-end par défaut. Pas chaque release sauf si Carl le demande.
+- **Langue** — parole et écran EN. Docs FR OK.
+- **Sortie** — still et/ou court film, prompts sous `imagine/YYYY-MM-DD.md`. Titre PR `imagine: YYYY-MM-DD`. Un artefact / jour minimum, lié à un fait git déjà shippé.
+- **Charte** — champagne / or / dusk Québec. Hôte : https://acorn-royal-dune-blend.grok.me seulement.
+- **QC** — Expert goût → Quantum vert → Carl si post.
+- **Interdit** — inventer un photon ; deuxième slug ; mux / post sans Quantum vert.
+
 ## Boucle
 
 Audit → un acte sur le chantier le plus vide → log quantum-daily → suivant.
