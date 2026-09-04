@@ -1,5 +1,7 @@
 # Tarif rente
 
+Voir [RENTE.md](../RENTE.md) · [ACTES.md](../ACTES.md).
+
 Attestation payante : org d'abord.
 Licence unforge-check pour CI.
 Dongle QRNG nommé.

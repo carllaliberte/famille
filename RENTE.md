@@ -2,6 +2,15 @@
 
 Interdit : token, L1, coin quantique, second slug payant, « quantum-safe as a service ».
 
+## Payer
+
+Pay = acte / org si les 4 cartes tiennent. Jamais un token, coin, L1.
+
+- Chemin : [ACTES.md](ACTES.md). Carl écrit les prix. Les bots n'inventent pas.
+- Locale : packs BCP 47 via [INTERNATIONAL.md](INTERNATIONAL.md) · [examples/world-bcp47.md](examples/world-bcp47.md). Même acte, pack du lieu.
+- Preview ≠ receipt. Unforge ne signe pas. Hôte seul : https://acorn-royal-dune-blend.grok.me
+- Compteur honnête : 0 licences Acorn écrites. Ne pas fictifier.
+
 ## Ce qui peut rapporter
 
 1. **Acorn** — œuvre réservée. Licence écrite, pas MIT.
