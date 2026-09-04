@@ -1,15 +1,24 @@
-# Rente — plus tard, pas un coin
+# Rentabiliser — sans monnaie inventée
 
-RECU nomme un rail d'argent. Ce n'est pas de l'argent.
-Rails possibles : x-money | visa | interac | ach | cash.
-Interdit : token, mint, L1, quantum coin, cents sur l'hôte preview.
+Interdit : token, L1, coin quantique, second slug payant, « quantum-safe as a service ».
 
-Quand le juge est stable :
-1. Attestation payante (API + badge) — org, pas grand public d'abord.
-2. Licence unforge-check / Action GitHub pour CI d'entreprises.
-3. Dongle QRNG nommé — appareil sur la carte QUELLE, pas un slogan.
+## Ce qui peut rapporter
 
-Mesure de croissance : `uses: unforge-check` + exports registre.
-Pas le nombre de slugs grok.me.
+1. **Acorn** — œuvre réservée. Licence écrite, pas MIT.
+2. **UNFORGE** — marque. Press / audit / carte de poche pour un dossier réel.
+3. **Acte** — Inscrire · Juger · Exporter pour un client (photo, garantie, bail, kit presse).
+4. **CI** — Action `unforge-check` chez d'autres repos (gratuit wedge, offre audit).
+5. **Formation / pack lieu** — BCP 47 + silence agent.
 
-Cette nuit on ne facture rien. On ferme le juge.
+## Ce qui reste gratuit
+
+Schémas MIT, preview grok.me, check.py, Garde deny examples.
+Preview ≠ quittance. Quittance = acte signé hors de ce compte, ou carte Unforge locale.
+
+## Compteur de rente (honnête)
+
+- `uses: carllaliberte/unforge-check`
+- `registre.json` exportés par des tiers
+- Licences Acorn écrites (zéro aujourd'hui — ne pas fictifier)
+
+Pas le nombre d'hôtes. Pas le nombre de PR bots.
