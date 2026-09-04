@@ -1,0 +1,1 @@
+Pocket card 4:5 photoreal dark cotton paper champagne-gold foil typography; PREVIEW badge; English line Preview is not a receipt.; © 2026 Carl Laliberté; Québec Saturday window light; no QR/second host/coin/invented-hash/quantum seal.
