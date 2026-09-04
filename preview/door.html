@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Famille</title>
+  <meta name="description" content="Les certitudes ont une date de fin. Certainties expire. Preview is not a receipt.">
+  <style>
+    :root {
+      --dusk: #0a0a0a;
+      --dusk-mid: #16110c;
+      --champagne: #e4d2a8;
+      --gold: #c9a227;
+      --muted: #9a8b6e;
+      --vert: #7d9b76;
+      --ambre: #c9a227;
+      --rouge: #8a4a4a;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--dusk);
+      color: var(--champagne);
+    }
+
+    body {
+      font-family: "Iowan Old Style", Palatino, "Palatino Linotype", "Times New Roman", serif;
+      line-height: 1.45;
+      background:
+        radial-gradient(ellipse at 50% -10%, #2a2218 0%, transparent 52%),
+        radial-gradient(ellipse at 80% 110%, #1a1410 0%, transparent 45%),
+        var(--dusk);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.07;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    main {
+      position: relative;
+      max-width: 36rem;
+      margin: 0 auto;
+      padding: 4.5rem 1.5rem 3.5rem;
+    }
+
+    h1 {
+      margin: 0 0 1.75rem;
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .phrase {
+      margin: 0;
+      font-size: clamp(1.65rem, 5vw, 2.15rem);
+      font-style: italic;
+      font-weight: 400;
+      line-height: 1.25;
+    }
+
+    .en {
+      margin: 0.7rem 0 0;
+      font-size: 1.05rem;
+      font-style: normal;
+      color: var(--muted);
+    }
+
+    .host {
+      margin: 2.4rem 0 0;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.01em;
+    }
+
+    .host span {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 0.68rem;
+    }
+
+    a {
+      color: var(--champagne);
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+    }
+
+    a:hover { color: var(--gold); }
+
+    ul.colors {
+      list-style: none;
+      margin: 2.4rem 0 0;
+      padding: 0;
+    }
+
+    ul.colors li {
+      display: flex;
+      gap: 0.85rem;
+      align-items: baseline;
+      margin: 0 0 0.85rem;
+      font-size: 0.98rem;
+    }
+
+    .chip {
+      flex: 0 0 4.6rem;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+    }
+
+    .chip.vert { color: var(--vert); }
+    .chip.ambre { color: var(--ambre); }
+    .chip.rouge { color: var(--rouge); }
+
+    .locks {
+      margin: 2.4rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .locks li {
+      margin: 0 0 0.65rem;
+      font-size: 0.98rem;
+    }
+
+    .never {
+      margin: 2.4rem 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .never strong {
+      display: block;
+      margin-bottom: 0.4rem;
+      color: var(--champagne);
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+
+    footer {
+      margin-top: 3rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Famille</h1>
+    <p class="phrase">Les certitudes ont une date de fin.</p>
+    <p class="en">Certainties expire.</p>
+
+    <p class="host">
+      <span>Host</span>
+      <a href="https://acorn-royal-dune-blend.grok.me">https://acorn-royal-dune-blend.grok.me</a> only
+    </p>
+
+    <ul class="colors">
+      <li><span class="chip vert">VERT</span> the file matches the card</li>
+      <li><span class="chip ambre">AMBRE</span> match, a satellite is due again</li>
+      <li><span class="chip rouge">ROUGE</span> refuse</li>
+    </ul>
+
+    <ul class="locks">
+      <li>ε = 0 is a lie — refuse in public (never a form that claims ε=0)</li>
+      <li>Preview ≠ receipt</li>
+      <li>Unforge does not sign</li>
+    </ul>
+
+    <p class="never">
+      <strong>Never</strong>
+      sealed forever, quantum-safe, Discovery Famille, second grok.me, token, App Store
+    </p>
+
+    <footer>
+      Local preview. Not Cloudflare. Preview ≠ receipt.
+    </footer>
+  </main>
+</body>
+</html>
