@@ -9,8 +9,9 @@ Il ne voit pas un rail, un Worker, un ε.
 
 Hôte unique : https://acorn-royal-dune-blend.grok.me
 Titre : Famille
-Ligne : Les certitudes ont une date de fin.
-English under the line if spoken : Certainties expire.
+Ligne (`packs/fr-CA.json`) : Les certitudes ont une date de fin.
+Spoken (`packs/en.json`) : Certainties expire.
+Aussi : `packs/es-MX.json`, `packs/en-NG.json`.
 
 ## Couleurs (humain)
 
