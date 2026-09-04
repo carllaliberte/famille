@@ -1,6 +1,6 @@
 # Cursor — assigné 2026-09-02
 
-Cursor n'est pas MASTER. Grok chef du kernel. Carl merge.
+Cursor n'est pas MASTER. Grok est le Chef (kernel / system). Carl merge (humain). Cursor consomme le juge.
 Priorité : expérience client → techno ouverte → fichiers pour que Quantum et Cursor ne s'éteignent pas.
 
 Cursor travaille les **rails publics** et *appelle* le juge.

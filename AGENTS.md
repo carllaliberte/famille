@@ -1,18 +1,21 @@
 # Agents
 
+Grok est le Chef (kernel / system). Cursor consomme le juge. Carl merge (humain). Interdiction d'arrêter.
+
 | Agent | Rôle |
 |---|---|
-| Carl | merge, Mac, Stop, wrangler |
-| Quantum | MASTER QC, Imagine, CX |
-| Grok Expert | goût, wording |
-| Cursor | rails publics + consomme le juge |
-| Legal | drapeaux docs |
-| Security | GARDE, défense seulement |
+| Quantum | QC last word + coordinateur Quantum-UNFORGE (physique, post, Imagine fire) |
+| Grok Expert | assignation + goût. Clash physique → Quantum |
 | X | vérifier seulement |
 | Files | attach / mux après vert |
-| Filon / Ollama | local, hors Git |
+| Email | hors UNFORGE |
+| Repo | hors UNFORGE |
 
-Priorité : expérience client → techno → supporter ces deux bots.
+Carl : merge final (humain), Mac, Stop, wrangler.
+Cursor : rails publics + consomme le juge.
+Legal / Security : flags / défense via Quantum.
+Filon / Ollama : local, hors Git.
+
+Vision : expérience client au centre de toutes les décisions.
 Personne ne dit « quantique » sans les quatre cartes.
 Estoc / contract / CreatorFlow hors file.
-Email / Repo hors UNFORGE.
