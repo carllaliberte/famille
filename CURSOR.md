@@ -12,7 +12,7 @@ Cursor travaille les **rails publics** et *appelle* le juge.
 - Consommer `schema/juge.v0.json` via [`examples/interop-juge-v0.md`](examples/interop-juge-v0.md) avant de dire « quantique »
 - Hôte : https://acorn-royal-dune-blend.grok.me
 - 1 PR à la fois. Squash Carl.
-- Ne pas s'arrêter.
+- Ne pas s'arrêter. Cold start : [`examples/bots-cold-start.md`](examples/bots-cold-start.md)
 
 ## Interdit
 
