@@ -1,0 +1,11 @@
+{
+  "tag": "fr-CA",
+  "titre": "Famille",
+  "ligne": "Les certitudes ont une date de fin.",
+  "vert": "le fichier correspond à la carte",
+  "ambre": "ça correspond ; une date est due",
+  "rouge": "refus",
+  "classique": "Ça ne tient pas. Classique.",
+  "apercu": "Aperçu — pas une quittance",
+  "silence": "licence expirée. l'agent se tait."
+}

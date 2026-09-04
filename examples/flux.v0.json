@@ -1,0 +1,17 @@
+{
+  "format": "famille.flux.v0",
+  "note": "Typed flux. Not a QPU. Preview only.",
+  "carte": {
+    "quelle": "os",
+    "temoin": "aucun",
+    "epsilon": 1e-6,
+    "horizon": "2027-12-31"
+  },
+  "satellites": {
+    "mesure": { "lectures": 1, "consomme": true },
+    "ancrage": { "re_mesurer_avant": "2028-08-31" }
+  },
+  "mode_attendu": "classique",
+  "preview": true,
+  "receipt": false
+}

@@ -1,0 +1,11 @@
+{
+  "tag": "es-MX",
+  "titre": "Famille",
+  "ligne": "Las certezas tienen fecha de caducidad.",
+  "vert": "el archivo coincide con la tarjeta",
+  "ambre": "coincide; una fecha vuelve a vencer",
+  "rouge": "rechazado",
+  "classique": "No sostiene. Clásico.",
+  "apercu": "Vista previa — no es un recibo",
+  "silence": "licencia vencida. el agente calla."
+}

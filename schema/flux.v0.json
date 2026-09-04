@@ -1,0 +1,31 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/flux.v0.json",
+  "title": "famille.flux.v0",
+  "description": "Pipeline around juge.v0. Satellites optional. Missing satellite ≠ quantum.",
+  "type": "object",
+  "required": ["carte"],
+  "properties": {
+    "format": { "const": "famille.flux.v0" },
+    "carte": { "$ref": "juge.v0.json" },
+    "satellites": {
+      "type": "object",
+      "properties": {
+        "mesure": {
+          "type": "object",
+          "properties": {
+            "lectures": { "type": "integer", "minimum": 0 },
+            "consomme": { "type": "boolean" }
+          }
+        },
+        "ancrage": {
+          "type": "object",
+          "properties": {
+            "re_mesurer_avant": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" }
+          }
+        }
+      }
+    },
+    "preview": { "const": true },
+    "receipt": { "const": false }
+  }
+}
