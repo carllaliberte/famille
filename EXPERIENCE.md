@@ -11,7 +11,7 @@ Hôte unique : https://acorn-royal-dune-blend.grok.me
 Titre : Famille
 Ligne (`packs/fr-CA.json`) : Les certitudes ont une date de fin.
 Spoken (`packs/en.json`) : Certainties expire.
-Aussi : `packs/es-MX.json`, `packs/en-NG.json`, `packs/pt-BR.json`.
+Aussi : `packs/es-MX.json`, `packs/en-NG.json`, `packs/pt-BR.json`, `packs/de-DE.json`.
 
 ## Couleurs (humain)
 

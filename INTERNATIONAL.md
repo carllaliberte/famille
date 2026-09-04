@@ -11,6 +11,7 @@ Projet informatique, pas une startup de slugs.
 | es-MX | [packs/es-MX.json](packs/es-MX.json) | pack lieu | même juge |
 | en-NG | [packs/en-NG.json](packs/en-NG.json) | pack lieu | même juge |
 | pt-BR | [packs/pt-BR.json](packs/pt-BR.json) | pack lieu | même juge |
+| de-DE | [packs/de-DE.json](packs/de-DE.json) | pack lieu | même juge |
 
 Même schéma [`schema/juge.v0.json`](schema/juge.v0.json) ; phrases locales only ; new country = new packs file, never a second slug.
 
