@@ -54,6 +54,8 @@ flowchart TB
     Temoin["temoin-protocol"]
     Epsilon["epsilon-protocol"]
     Horizon["horizon-protocol"]
+    Mesure["mesure-protocol"]
+    Ancrage["ancrage-protocol"]
   end
 
   subgraph verify [Verify — do not sign]
@@ -87,7 +89,7 @@ Siblings stay siblings. FAMILLE does not vendor them.
 
 | Node | Repo | Talks to the map by |
 |---|---|---|
-| Protocol v0s | [quelle](https://github.com/carllaliberte/quelle) · [témoin](https://github.com/carllaliberte/temoin-protocol) · [epsilon](https://github.com/carllaliberte/epsilon-protocol) · [horizon](https://github.com/carllaliberte/horizon-protocol) · [mode](https://github.com/carllaliberte/mode-protocol) · [bruit](https://github.com/carllaliberte/bruit-protocol) · [figure](https://github.com/carllaliberte/figure-protocol) · [situs](https://github.com/carllaliberte/situs-protocol) · [recu](https://github.com/carllaliberte/recu-protocol) · [dossier](https://github.com/carllaliberte/dossier-protocol) | emit or read the same four keys |
+| Protocol v0s | [quelle](https://github.com/carllaliberte/quelle) · [témoin](https://github.com/carllaliberte/temoin-protocol) · [epsilon](https://github.com/carllaliberte/epsilon-protocol) · [horizon](https://github.com/carllaliberte/horizon-protocol) · [mesure](https://github.com/carllaliberte/mesure-protocol) · [ancrage](https://github.com/carllaliberte/ancrage-protocol) · [mode](https://github.com/carllaliberte/mode-protocol) · [bruit](https://github.com/carllaliberte/bruit-protocol) · [figure](https://github.com/carllaliberte/figure-protocol) · [situs](https://github.com/carllaliberte/situs-protocol) · [recu](https://github.com/carllaliberte/recu-protocol) · [dossier](https://github.com/carllaliberte/dossier-protocol) | emit or read the same four keys |
 | unforge-check | [check](https://github.com/carllaliberte/unforge-check) | file + `.unforge.json` still match |
 | unforge-press / trail / retract | [press](https://github.com/carllaliberte/unforge-press) · [trail](https://github.com/carllaliberte/unforge-trail) · [retract](https://github.com/carllaliberte/unforge-retract) | print, itinerary, signed withdrawal |
 | acorn-juge | [canal](https://github.com/carllaliberte/acorn-juge) | Worker `GET /juge` — display, not a second grok.me |
