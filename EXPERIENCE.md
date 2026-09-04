@@ -16,8 +16,10 @@ Aussi : `packs/es-MX.json`, `packs/en-NG.json`.
 ## Couleurs (humain)
 
 - VERT — the file matches the card
-- AMBRE — match, a satellite is due again
+- AMBRE — match; a date is due again
 - ROUGE — refuse
+
+Phrases porte : `packs/*.json` (source).
 
 Jamais « sealed forever ». Jamais « quantum-safe ».
 Preview is not a receipt.
