@@ -10,8 +10,10 @@ Quantum ouvre. Bots Grok finissent. Cursor consomme le juge. Carl merge.
 
 ## Chantiers (un acte / heure, tourner)
 
-1 Flux · 2 Interop IA · 3 CX · 4 Coordination · 5 International · 6 Rente
+1 `flux:` [FLUX.md](FLUX.md) · 2 `interop:` [INTEROP-IA.md](INTEROP-IA.md) · 3 `cx:` [EXPERIENCE.md](EXPERIENCE.md) · 4 `bot:` STEWARD / AGENTS / CURSOR · 5 `world:` [INTERNATIONAL.md](INTERNATIONAL.md) · 6 `rente:` [RENTE.md](RENTE.md)
 Voir CHANTIERS.md. Ne pas ouvrir un 7e chantier.
+
+Goût Expert → Quantum vert → Carl squash. `merged=true` sur GitHub = fini (jamais un langage leave-draft après merge). Horloge America/Montreal.
 
 ## Boucle
 
