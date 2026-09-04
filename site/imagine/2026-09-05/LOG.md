@@ -1,13 +1,17 @@
 # LOG — 2026-09-05
 
-Judgment = Carl.
+Commit target: `famille/site/imagine/2026-09-05/`
 
-| item | status | note |
-|---|---|---|
-| fact | shipped | recu#12 `7661b61` |
-| still | generated | still-preview-card.png |
-| photo | generated | photo-check-press-trail.png |
-| film | pending | prompt-only pending Imagine fire |
-| blocked | film render only | |
+| Asset | Status | Path / note |
+|-------|--------|-------------|
+| **fact** | shipped | Preview ≠ receipt — recu #12 `7661b61` |
+| **AUDIT** | written | AUDIT.md |
+| **day brief** | written | 2026-09-05.md |
+| **still** | prompt-only | still.md |
+| **photo** | prompt-only | photo.md |
+| **film** | prompt-only 60s | film.md — Preview is not a receipt |
+| **blocked** | film render | Imagine motion not fired |
 
-Issue `quantum-daily 2026-09-05`: create blocked in this agent (GitHub MCP discovery error; `mcp_auth` desktop-only; `gh` read-only).
+Contrast: 2026-09-04 Unforge does not sign / 654d491 / 25s; 2026-09-05 Preview ≠ receipt / 7661b61 / 60s PROCESS.
+
+Judgment = Carl. Leave DRAFT. Do not merge.
