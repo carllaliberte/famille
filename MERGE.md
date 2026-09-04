@@ -9,6 +9,13 @@ PR ouverte → CI verte → Carl squash
                       → SINON ouvrir 1 PR
 ```
 
+## Revue
+
+Avant squash : Grok Expert (goût) + Quantum (QC / physique) — les deux.
+Carl seul merge (humain, fort impact). CI verte exigée.
+Cadence : un merge manuel déclenché par Carl. Pas d'auto-merge bot.
+Même usine : **une** PR suivante. Pas une deuxième file.
+
 | Immeuble | Branche | Qui merge | Qui ouvre la suivante |
 |---|---|---|---|
 | unforge | `bloc/*` | Carl | `unforge-bloc-suivant` seulement |

@@ -23,4 +23,4 @@ Hôte : https://acorn-royal-dune-blend.grok.me — Preview ≠ receipt. Unforge 
 ## Boucle
 
 Audit → un acte sur le chantier le plus vide → log quantum-daily → suivant.
-Carl : wrangler. Pas de token. Pas de second slug.
+Carl : wrangler. Pas de token. Pas de second slug. Revue + squash : [MERGE.md](MERGE.md).
