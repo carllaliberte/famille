@@ -37,3 +37,5 @@ Grok Build owns the grok.me publish button.
 This repo does not host the mp4s (size).
 Assets live in the Grok conversation that generated them.
 Updating the live `/film` page requires that Build chat, or Remix from the owner account.
+
+Cadence Imagine (weekday steward) : [STEWARD.md](STEWARD.md#cadence-imagine).

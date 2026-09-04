@@ -11,8 +11,8 @@ Carl squash. Un bot = un rail. Aucun bot n'est juge.
 Réassignation dans le rail. Pas de dispatcher global.
 
 ## 3. Imagine
-[imagine/README.md](imagine/README.md) · [FILM.md](FILM.md)
-Spoken EN. Steward daily. Assets à chaque release publique. Pas à chaque PR.
+[STEWARD.md](STEWARD.md#cadence-imagine) · [imagine/README.md](imagine/README.md) · [FILM.md](FILM.md)
+Spoken EN. Semaine (America/Montreal). Un artefact / jour lié à un fait git. Pas chaque release sauf Carl. Champagne / or / dusk Québec. Hôte acorn only.
 
 ## 4. Merge
 [MERGE.md](MERGE.md) · [garde/MERGE.md](https://github.com/carllaliberte/garde/blob/main/MERGE.md)
