@@ -20,6 +20,7 @@ Review = les deux : CI GARDE + Quantum vert, squash = Carl.
 Un merge manuel par jour = plafond, pas un quota. Jamais auto-merge.
 
 ## 5. Coûts
+[COUTS.md](COUTS.md) — Cursor léger, pas Heavy par défaut, pas de fire Imagine redondant. Carl tient les chiffres.
 QUANTUM parké. Pas de matrix. Pas de self-hosted. Cache et builds incrémentaux.
 [RENTE.md](RENTE.md) — œuvre + marque + acte, pas un token.
 
