@@ -8,6 +8,7 @@ Il ne voit pas un rail, un Worker, un ε.
 ## Porte
 
 Hôte unique : https://acorn-royal-dune-blend.grok.me
+GET `/juge` : punch-list Carl / wrangler — [HORIZONS.md](HORIZONS.md) Court. Pas « live ».
 Titre : Famille
 Ligne (`packs/fr-CA.json`) : Les certitudes ont une date de fin.
 Spoken (`packs/en.json`) : Certainties expire.
