@@ -7,6 +7,8 @@
     "quelle": { "enum": ["os", "qrng", "qkd"] },
     "temoin": { "enum": ["aucun", "stat", "fabricant", "di"] },
     "epsilon": {
+      "type": "number",
+      "exclusiveMinimum": 0,
       "description": "Nombre > 0. Interdit: 0, none, iid."
     },
     "horizon": {
