@@ -5,6 +5,16 @@ Ce n'est pas un photon. Ce n'est pas un QPU sur Git. QUANTUM reste hors file.
 
 Le client voit VERT / AMBRE / ROUGE et une date. Pas une quittance.
 
+## Porte
+
+L'utilisateur voit [unforge-check](https://github.com/carllaliberte/unforge-check) :
+
+```bash
+python3 check.py examples/bienvenue.txt --human
+```
+
+VERT / AMBRE / ROUGE. C'est la porte. Pas le pipeline entier. Pas une quittance.
+
 ## Pipeline
 
 ```
