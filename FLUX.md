@@ -21,7 +21,11 @@ Un champ de carte manquant → MODE reste classique. Pas d'invention.
 
 ## Consommer les rails nés
 
-Pas un nouveau protocole. Cursor et Grok *lisent* ces READMEs.
+Pas un nouveau protocole. Toute IA *lit* ces READMEs. Pas de clé, pas de plugin, pas de fork.
+
+Activer une IA : lui donner cette page + les deux satellites. Elle suit [`examples/flux-v0.md`](examples/flux-v0.md). Lecture = consommation. Champ manquant = MODE classique.
+
+Cursor et Grok le font déjà. Claude, Codex, Gemini et les autres : même lecture.
 
 | Satellite | Repo public | Consommation |
 |---|---|---|
