@@ -10,6 +10,7 @@ Cursor travaille les **rails publics** et *appelle* le juge.
 - Phrase humaine d'abord (EXPERIENCE.md)
 - 4 cartes + satellites MESURE / ANCRAGE
 - Consommer `schema/juge.v0.json` via [`examples/interop-juge-v0.md`](examples/interop-juge-v0.md) avant de dire « quantique »
+- Packs BCP 47 via [INTEROP-IA.md](INTEROP-IA.md) / [INTERNATIONAL.md](INTERNATIONAL.md) (fr-CA · en · es-MX · en-NG · pt-BR) ; inconnu → spoken en / classique
 - Hôte : https://acorn-royal-dune-blend.grok.me
 - 1 PR à la fois. Squash Carl.
 - Ne pas s'arrêter.
