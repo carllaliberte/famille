@@ -23,9 +23,11 @@ Un champ de carte manquant → MODE reste classique. Pas d'invention.
 
 Pas un nouveau protocole. Toute IA *lit* ces READMEs. Pas de clé, pas de plugin, pas de fork.
 
-Activer une IA : lui donner cette page + les deux satellites. Elle suit [`examples/flux-v0.md`](examples/flux-v0.md). Lecture = consommation. Champ manquant = MODE classique.
+Activer : donner cette page + les deux satellites. Suivre [`examples/flux-v0.md`](examples/flux-v0.md).
+Lecture = consommation = PRÉSENT. Non lu = ABSENT. Champ manquant = MODE classique.
 
-Cursor et Grok le font déjà. Claude, Codex, Gemini et les autres : même lecture.
+Les autres ne sont nulle part d'autre. Ils sont absents jusqu'à lecture.
+Catalogue : [`MODELES.md`](MODELES.md).
 
 | Satellite | Repo public | Consommation |
 |---|---|---|
