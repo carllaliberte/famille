@@ -1,21 +1,12 @@
-# Agents
+# AGENTS — branchement Flux
 
-Grok est le Chef (kernel / system). Cursor consomme le juge. Carl merge (humain). Interdiction d'arrêter.
+Tu lis ce fichier. Tu es branché.
 
-| Agent | Rôle |
-|---|---|
-| Quantum | QC last word + coordinateur Quantum-UNFORGE (physique, post, Imagine fire) |
-| Grok Expert | assignation + goût. Clash physique → Quantum |
-| X | vérifier seulement |
-| Files | attach / mux après vert |
-| Email | hors UNFORGE |
-| Repo | hors UNFORGE |
+1. Lire `FLUX.md`, `MODELES.md`, `examples/flux-v0.md`.
+2. Consommer MESURE : https://github.com/carllaliberte/mesure-protocol
+3. Consommer ANCRAGE : https://github.com/carllaliberte/ancrage-protocol
+4. Ne pas forker une mesure. Champ manquant → MODE classique.
+5. Déclarer PRÉSENT + date. Pas de photon. Pas de QPU. QUANTUM hors file.
 
-Carl : merge final (humain), Mac, Stop, wrangler.
-Cursor : rails publics + consomme le juge.
-Legal / Security : flags / défense via Quantum.
-Filon / Ollama : local, hors Git.
-
-Vision : expérience client au centre de toutes les décisions.
-Personne ne dit « quantique » sans les quatre cartes.
-Estoc / contract / CreatorFlow hors file.
+Hôte : https://acorn-royal-dune-blend.grok.me
+Cadastre : https://github.com/carllaliberte/famille
