@@ -63,9 +63,11 @@ diverge: … ou null
 
 ## État (mettre à jour quand Carl merge)
 
-Fermé : mesure-protocol#4, ancrage-protocol#4, ancrage-protocol#6.
-Ouvert : famille#129, unforge-check#18, acorn-juge#16.
-Vitrine /juge = 404 HTML. Worker code = 400 lie. Manque wrangler deploy (Carl).
+Fermé : mesure-protocol#4, ancrage-protocol#4, ancrage-protocol#6,
+famille#129, famille#131, unforge-check#18, acorn-juge#16.
+Ouvert : aucun PR de code.
+HOLD : wrangler deploy + bind grok.me /juge (Carl seulement).
+Vitrine /juge = 404 HTML. Worker code = 400 lie.
 Porte 60s déjà sur unforge-check main. Ne pas la réécrire.
 
 Client d'abord. Accueil avant rituel.
