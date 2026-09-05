@@ -21,6 +21,12 @@ Un champ de carte manquant → MODE reste classique. Pas d'invention.
 
 La porte client attend encore le binder Carl GET `/juge` ([HORIZONS.md](HORIZONS.md) Court). Pas « live ».
 
+## Deux horizons
+
+`horizon` sur la carte juge est une **date calendrier** (`2028-08-31`).
+`horizon` lu par check est une carte `horizon.v0` : suite + `re_presser_avant`.
+Deux cartes. Ne pas les fusionner.
+
 ## Lire n'est pas consommer
 
 Objectif : la meilleure réponse. Pas piéger une IA.
