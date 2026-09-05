@@ -19,6 +19,8 @@ QUELLE → TÉMOIN → EPSILON → HORIZON
 
 Un champ de carte manquant → MODE reste classique. Pas d'invention.
 
+La porte client attend encore le binder Carl GET `/juge` ([HORIZONS.md](HORIZONS.md) Court). Pas « live ».
+
 ## Consommer les rails nés
 
 Pas un nouveau protocole. Toute IA *lit* ces READMEs. Pas de clé, pas de plugin, pas de fork.

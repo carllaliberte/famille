@@ -26,6 +26,8 @@ Preview is not a receipt.
 
 ## Gestes
 
+Ordre complet : figure → consulter → re-mesurer → check — [`examples/flux-v0.md`](examples/flux-v0.md).
+
 1. Lire une carte — quatre champs ou classique.
 2. Consulter une mesure — la lecture se dépense.
 3. Voir une date — expiré = re-mesurer, pas faux.
