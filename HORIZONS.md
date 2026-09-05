@@ -9,6 +9,11 @@ Hors file : Estoc, contract, CreatorFlow, nœud QUANTUM.
 Le client voit une porte qui dit vrai.
 
 - Binder GET `/juge` sur https://acorn-royal-dune-blend.grok.me (Carl / wrangler)
+  - wrangler bind GET `/juge` sur l’hôte acorn seulement
+  - même contrat juge.v0 / peut-dire — [JUGE.md](JUGE.md)
+  - Preview visible ≠ quittance
+  - ε=0 refuse en public
+  - pas de deuxième slug grok.me
 - Phrase unique FR + sous-titre EN : Les certitudes ont une date de fin. / Certainties expire.
 - VERT / AMBRE / ROUGE lisibles (check.py --human + mobile digest)
 - ε=0 refuse en public. Preview badge visible.
