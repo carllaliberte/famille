@@ -21,24 +21,28 @@ Un champ de carte manquant → MODE reste classique. Pas d'invention.
 
 La porte client attend encore le binder Carl GET `/juge` ([HORIZONS.md](HORIZONS.md) Court). Pas « live ».
 
-## Consommer les rails nés
+## Lire n'est pas consommer
 
-Pas un nouveau protocole. Toute IA *lit* ces READMEs. Pas de clé, pas de plugin, pas de fork.
+Objectif : la meilleure réponse. Pas piéger une IA.
 
-Activer : donner cette page + les deux satellites. Suivre [`examples/flux-v0.md`](examples/flux-v0.md).
-Lecture = consommation = PRÉSENT. Non lu = ABSENT. Champ manquant = MODE classique.
+Lecture = réflexion. Citation mot à mot + trous nommés.
+`LU` = le texte a été vu. Ce n'est pas un nœud MESURE.
+`PRÉSENT` comme consommation est retiré pour les IA.
+La consommation (`consulter`) reste un acte CLI / humain, pas une phrase.
 
-Les autres ne sont nulle part d'autre. Ils sont absents jusqu'à lecture.
-Catalogue : [`MODELES.md`](MODELES.md).
+Toute IA est invitée à réfléchir sur ces rails. Pas de clé. Pas de plugin. Pas de fork.
+Catalogue : [`MODELES.md`](MODELES.md). Conduite : [`REFLEXION.md`](REFLEXION.md).
 
-| Satellite | Repo public | Consommation |
+| Satellite | Repo public | Acte |
 |---|---|---|
-| MESURE | https://github.com/carllaliberte/mesure-protocol | `consulter` consomme une lecture ; détruire ici / naître là ; pas de fork |
+| MESURE | https://github.com/carllaliberte/mesure-protocol | `consulter` dépense une lecture ; détruire ici / naître là ; pas de fork |
 | ANCRAGE | https://github.com/carllaliberte/ancrage-protocol | re-mesurer avant la date ; périmé ≠ faux ; à refaire |
 
 Carte : [`schema/juge.v0.json`](schema/juge.v0.json).  
 Satellites optionnels : [`schema/flux.v0.json`](schema/flux.v0.json) — satellite manquant ≠ quantique.  
 Parcours inconnu : [`examples/flux-v0.md`](examples/flux-v0.md).
+
+Pas de monde sans l'humain. Pas d'acte hors du fil. Pas de carte juge à une IA toute seule.
 
 ## Évolution prévue (sans mentir)
 
