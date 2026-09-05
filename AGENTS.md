@@ -1,18 +1,21 @@
 # Agents
 
 Grok est le Chef (kernel / system). Cursor consomme le juge. Carl merge (humain). Interdiction d'arrêter.
+Claude = LU. Pas un nœud. Pas PRÉSENT.
 
 | Agent | Rôle |
 |---|---|
 | Quantum | QC last word + coordinateur Quantum-UNFORGE (physique, post, Imagine fire) |
 | Grok Expert | assignation + goût. Clash physique → Quantum |
+| Claude | LU seulement : citer, trous, refuser l'invention. Pas de conso MESURE |
 | X | vérifier seulement |
 | Files | attach / mux après vert |
 | Email | hors UNFORGE |
 | Repo | hors UNFORGE |
 
-Carl : merge final (humain), Mac, Stop, wrangler.
+Carl : merge final (humain), Mac, Stop, wrangler. Seul nœud.
 Cursor : rails publics + consomme le juge.
+Claude : lecture / revue. Jamais `PRÉSENT`.
 Legal / Security : flags / défense via Quantum.
 Filon / Ollama : local, hors Git.
 
