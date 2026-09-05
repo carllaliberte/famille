@@ -10,7 +10,8 @@ Cursor *appelle* `peut-dire`. Cursor n'est pas le juge.
 
 1. Lire `schema/juge.v0.json`. Requis : `quelle` · `temoin` · `epsilon` · `horizon`.
 2. Remplir une carte. Champ manquant → MODE classique. Ne pas inventer le champ.
-3. Juger (Unforge, 0 réseau) :
+3. Packs lieu : `fr-CA` · `en-CA` · `es-MX` · `en-NG` · `pt-BR` · `de-DE` — même schéma, phrases locales. Tag inconnu → spoken en / classique.
+4. Juger (Unforge, 0 réseau) :
 
 ```bash
 node sdk/cli.js <carte.json>
