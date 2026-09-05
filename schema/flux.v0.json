@@ -14,7 +14,8 @@
           "type": "object",
           "properties": {
             "lectures": { "type": "integer", "minimum": 0 },
-            "detruit": { "type": "boolean" }
+            "detruit": { "type": "boolean" },
+            "sha_sur": { "enum": ["fichier", "payload"] }
           }
         },
         "ancrage": {
