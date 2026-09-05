@@ -2,6 +2,9 @@
 
 Structure. Pas un script d'agent. Carl squash / merge. Jamais main automatique.
 
+Nœud = Carl seulement. Revue = lire une URL et dire si c'est juste.
+Carl choisit l'URL. Plusieurs revues de la même page = OK.
+
 ## Rôles
 
 | Qui | Fait | Ne fait pas |
