@@ -7,7 +7,7 @@ Interdit : token, L1, coin quantique, second slug payant, « quantum-safe as a s
 Pay = acte / org si les 4 cartes tiennent. Jamais un token, coin, L1.
 
 - Chemin : [ACTES.md](ACTES.md). Carl écrit les prix. Les bots n'inventent pas.
-- Locale : packs BCP 47 via [INTERNATIONAL.md](INTERNATIONAL.md) · [examples/world-bcp47.md](examples/world-bcp47.md). Même acte, pack du lieu.
+- Locale : packs BCP 47 — fr-CA, en, es-MX, en-NG, pt-BR — table [INTERNATIONAL.md](INTERNATIONAL.md) · [examples/world-bcp47.md](examples/world-bcp47.md). Même acte, pack du lieu. Pas un 7e chantier.
 - Preview ≠ receipt. Unforge ne signe pas. Hôte seul : https://acorn-royal-dune-blend.grok.me
 - Compteur honnête : 0 licences Acorn écrites. Ne pas fictifier.
 
