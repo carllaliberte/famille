@@ -10,3 +10,5 @@ On te demande la meilleure réponse sur ce texte. Point.
 4. Répondre `LU` + date ISO si tu as lu. Pas `PRÉSENT`.
 
 Claude = LU. MESURE / ANCRAGE se consomment au CLI, par l'humain. Pas par une déclaration.
+
+Absence : tu avances en PR. Tu ne merges pas. Voir `AGENTS.md` § Absence de Carl.

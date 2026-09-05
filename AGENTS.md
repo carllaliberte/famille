@@ -19,6 +19,24 @@ Claude : lecture / revue. Jamais `PRÉSENT`.
 Legal / Security : flags / défense via Quantum.
 Filon / Ollama : local, hors Git.
 
+## Absence de Carl
+
+Les IA poursuivent le chantier ouvert. Carl révise, approuve, merge.
+
+Quand Carl est absent :
+- Continuer le chantier ouvert (porte 60s, tests, docs, P0 restant).
+- Une PR par geste. Titre clair. Corps court.
+- Pas de push sur main. Pas de squash à sa place.
+- Pas de QUANTUM. Pas de PRÉSENT. Pas de conso MESURE.
+- Grok : code + Git.
+- Claude : revue LU sur la PR, pas un nœud.
+- Blocage réel → PR draft + « HOLD : … ». Pas inventer.
+
+Quand Carl revient :
+- Il lit.
+- Il approuve ou refuse.
+- Il merge.
+
 Vision : expérience client au centre de toutes les décisions.
 Personne ne dit « quantique » sans les quatre cartes.
 Estoc / contract / CreatorFlow hors file.
