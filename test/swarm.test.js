@@ -410,7 +410,7 @@ describe("mesh interoperability", () => {
 describe("mesh trace — FILE.md is state, envelope is the log", () => {
   const SHA = "0123456789abcdef0123456789abcdef01234567";
 
-  it("schema names ts, sha, pr and unique from; no instruction field", () => {
+  it("schema names ts, sha, pr and unique from; forbids next and instruction", () => {
     const mesh = JSON.parse(
       readFileSync(join(ROOT, "schema/mesh.v0.json"), "utf8"),
     );
@@ -418,10 +418,39 @@ describe("mesh trace — FILE.md is state, envelope is the log", () => {
     assert.ok(mesh.properties.ts);
     assert.ok(mesh.properties.sha);
     assert.ok(mesh.properties.pr);
-    assert.equal(mesh.properties.instruction, undefined);
-    assert.equal(mesh.properties.next, undefined);
+    assert.equal(mesh.properties.instruction, false);
+    assert.equal(mesh.properties.next, false);
+    assert.deepEqual(mesh.required, ["from", "to", "act", "mode", "grade", "body"]);
+    assert.ok(mesh.not.anyOf.some((c) => c.required?.includes("next")));
+    assert.ok(mesh.not.anyOf.some((c) => c.required?.includes("instruction")));
     assert.match(mesh.description, /FILE.md is state/);
-    assert.match(mesh.description, /No next-action field/);
+    assert.match(mesh.description, /Forbids next and instruction/);
+  });
+
+  it("valid envelope with from+ts+sha+pr passes; next or instruction fails", () => {
+    const base = {
+      from: "grok",
+      to: "chatgpt",
+      act: "HANDOFF",
+      mode: "PROPOSITION",
+      grade: "PROPOSED",
+      body: "Never QUANTUM. FILE.md is state.",
+      ts: "2026-09-06T22:42:00.000Z",
+      sha: SHA,
+      pr: 185,
+    };
+    const ok = accept(base);
+    assert.equal(ok.ok, true);
+    assert.equal(ok.packet.from, "grok");
+    assert.equal(ok.packet.ts, "2026-09-06T22:42:00.000Z");
+    assert.equal(ok.packet.sha, SHA);
+    assert.equal(ok.packet.pr, 185);
+    const withNext = accept({ ...base, next: "do-this" });
+    assert.equal(withNext.ok, false);
+    assert.equal(withNext.code, "FORBIDDEN_NEXT");
+    const withInstruction = accept({ ...base, instruction: "do-this" });
+    assert.equal(withInstruction.ok, false);
+    assert.equal(withInstruction.code, "FORBIDDEN_NEXT");
   });
 
   it("accept stamps ISO ts and keeps sha/pr as pointers", () => {

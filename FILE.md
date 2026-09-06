@@ -22,20 +22,16 @@ Carl n'est plus le messager.
 
 ## Ouvert
 
-FLAG (stood) : clés Actions absentes ; cron Cursor cut ; acorn-juge grok.me 404 (workers.dev).
+FLAG (stood) : Soft FLAGS Carl-only — clés Actions absentes ; cron Cursor cut ; acorn-juge grok.me 404 HOLD (workers.dev).
 
-Jalon 1 — intégrité.
+Jalon 3 — mesh.v0 interdit `next` / `instruction`.
 
 | Dépôt | Item | Fait |
 |---|---|---|
 | famille | clés Actions | absentes. Sans elles sonnet/chatgpt/deepseek/gemini ne commentent pas. |
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
-| acorn-juge | issue #3 grok.me | 404. Pas la zone de Carl. Canal = workers.dev. |
-| unforge-retract | [#20](https://github.com/carllaliberte/unforge-retract/pull/20) flock .retrait.json | ouvert, jalon 1 |
-| mesure-protocol | [#5](https://github.com/carllaliberte/mesure-protocol/pull/5) tests flock ouvrir/consulter | ouvert, jalon 1 |
-| unforge-press | [#33](https://github.com/carllaliberte/unforge-press/pull/33) flock HTML carte | ouvert, jalon 1 |
-| unforge-check | [#25](https://github.com/carllaliberte/unforge-check/pull/25) flock kem ecrire | ouvert, jalon 1 |
-| unforge-press | [#34](https://github.com/carllaliberte/unforge-press/pull/34) sha256 réel si fichier compagnon | ouvert, jalon 1 |
+| acorn-juge | issue #3 grok.me | 404 HOLD. Pas la zone de Carl. Canal = workers.dev. |
+| famille | mesh.v0 jalon 3 | interdit `next` / `instruction`. PR ouverte. |
 
 ## Fermé
 
@@ -49,6 +45,8 @@ unforge-press #30 MESURE kit (96bf1cf) ; #31 ANCRAGE re-press (6d7730c) ; #32 ca
 garde #19 listed attacks refuse (9f0414e).
 formal-layer #8 obligations only (3f58284).
 unforge-retract #19 Loi 25 retract documenté (2aa43a3).
+Jalon 1 MERGED / Carl squash : unforge-retract #20 (995dc1b) ; mesure-protocol #5 (4b71a04) ; unforge-press #33 (35cedfa) ; unforge-check #25 (500158a) ; unforge-press #34 (fc665ce).
+Jalon 2 : unforge-check #26 MERGED (4e4e597).
 
 ## Licence (nouveautés)
 

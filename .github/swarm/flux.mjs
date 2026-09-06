@@ -257,6 +257,9 @@ export function accept(input) {
   const mode = String(raw.mode || "ECHANGE").toUpperCase();
   const grade = String(raw.grade || "PROPOSED").toUpperCase();
   const body = clipBody(raw.body);
+  if (Object.hasOwn(raw, "next") || Object.hasOwn(raw, "instruction")) {
+    return fail("FORBIDDEN_NEXT", "mesh forbids next and instruction. Stigmergic only.");
+  }
   if (!isAgent(from)) return fail("UNKNOWN_AGENT", `unknown from: ${from || "(empty)"}`);
   if (to !== "*" && !isAgent(to)) return fail("UNKNOWN_AGENT", `unknown to: ${to || "(empty)"}`);
   if (!ACTS.includes(act)) return fail("UNKNOWN_ACT", `unknown act: ${act || "(empty)"}`);

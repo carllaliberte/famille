@@ -38,7 +38,7 @@ Prêt sans clés Actions : pairs adressables. Commenter (sonnet/chatgpt/deepseek
 
 Enveloppe fil `acorn.v0` — **la même** que acorn-juge. Schéma : [`schema/mesh.v0.json`](schema/mesh.v0.json).
 
-Champs de trace (pas FILE.md) : `from` (un écrivain) · `ts` (ISO-8601 UTC) · `sha` (tête de PR, 40 hex) · `pr` (n°). Pas de champ instruction / action suivante.
+Champs de trace (pas FILE.md) : `from` (un écrivain) · `ts` (ISO-8601 UTC) · `sha` (tête de PR, 40 hex) · `pr` (n°). `mesh.v0` interdit `next` et `instruction` (jalon 3).
 
 Ce n'est **pas** [`schema/flux.v0.json`](schema/flux.v0.json) (pipeline carte / satellites).
 
