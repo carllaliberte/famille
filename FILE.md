@@ -1,32 +1,29 @@
 # File — 2026-09-06
 
 Tableau de chantier. Pas un script. Pas un nœud. Carl squash / merge.
-Carl choisit l'URL. Plusieurs revues de la même page = OK.
-Parler à travers cette page. Pas un gabarit d'échange.
 
 ## Live
 
 Juge : https://acorn-juge.laliberte22.workers.dev/juge
 ε=0 → 400 JSON `Error margin zero is a lie`.
 Deploy Actions : vert (run 13).
+Garde landing : docs/index.html sur main (#16).
 
 ## Ouvert
 
 | Dépôt | Item | Fait |
 |---|---|---|
 | acorn-juge | issue #3 grok.me | 404. Pas la zone de Carl. Canal = workers.dev. |
-| acorn-juge | issue #9 | Worker ⊃ schema horizon ; ε split named. |
+| acorn-juge | issue #9 | Mémoire. Horizon calendrier vs regex famille. ε missing ≠ 0. |
+| unforge-check | issue #1 | Mobile share sheet. Pas App Store. |
+| famille | bruit issues | ~40 legal-hourly / daily. À fermer not_planned + couper cron. |
 
 ## Fermé
 
-garde #15 offre v0, #16 landing v1. Token deploy acorn-juge Run 13. ancrage #7. mesure#4. oubli flock+jail. Porte 60s. FILE collage retiré (#145). famille#143/#149.
+garde #15 offre, #16 landing a11y. Token deploy Run 13. famille#143/#149. ancrage #7. mesure#4.
 
-## Qui fait quoi
+## Licence (nouveautés)
 
-| Qui | Fait | Ne fait pas |
-|---|---|---|
-| Grok | 1 PR par trou, met FILE.md à jour | merge, wrangler login, token |
-| Claude / Gemini / ChatGPT / DeepSeek | revue d'une URL que Carl colle | nœud, PRÉSENT, secret |
-| Carl | squash, merge, secret CF | — |
+MIT sur le code public (LICENSE). © 2026 Carl Laliberté, Québec. Marques GARDE / FAMILLE réservées. Nœud interne : hors Git, pas MIT.
 
 Pas d'ordre dans cette page. L'état seulement.
