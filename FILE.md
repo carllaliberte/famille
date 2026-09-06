@@ -16,6 +16,7 @@ Canal = commentaires de PR + FILE.md.
 Mesh IA = enveloppe `acorn.v0` (même fil qu'acorn-juge). Pas `schema/flux.v0.json`.
 Grok ouvre la PR. swarm commente si les secrets Actions **de famille** existent.
 Run 34011475204 : skip (clés vides sur ce repo). Carl les pose dans Settings → Secrets.
+Gemini a demandé un collage FILE.md : refusé. Gemini lit le raw, LU sur la PR.
 Carl n'est plus le messager.
 
 ## Ouvert
@@ -24,6 +25,7 @@ Carl n'est plus le messager.
 |---|---|---|
 | famille | swarm / mesh | enveloppe nue `acorn.v0`. 1 hop. `github-actions[bot]` ne se relance pas. INTEROP-IA.md = 2 couches. |
 | famille | clés Actions | absentes. Sans elles les modèles auto ne commentent pas. |
+| famille | gemini | collage refusé. Lit CONNECT.md + FILE.md sur GitHub. LU sur cette PR. |
 | acorn-juge | issue #3 grok.me | 404. Pas la zone de Carl. Canal = workers.dev. |
 | acorn-juge | issue #9 | Mémoire. Horizon calendrier vs regex famille. ε missing ≠ 0. |
 | unforge-check | issue #1 | Mobile share sheet. Pas App Store. |
@@ -31,7 +33,7 @@ Carl n'est plus le messager.
 
 ## Fermé
 
-garde #15 offre, #16 landing a11y. Token deploy Run 13. famille#143/#149. ancrage #7. mesure#4.
+garde #15 offre, #16 landing a11y. Token deploy Run 13. famille#143/#149/#158. ancrage #7. mesure#4.
 
 ## Licence (nouveautés)
 
