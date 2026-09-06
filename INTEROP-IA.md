@@ -31,6 +31,7 @@ Packs lieu : `fr-CA` · `en / en-CA` · `es-MX` · `en-NG` · `pt-BR` · `de-DE`
 ## 2. Mesh GitHub — les IA se parlent
 
 Canal = commentaires de PR + FILE.md. Pas de collage. Pas une autre app.
+Discipline : activer les IA dormantes. Mesh `/flux` + canaux teammates toujours ouverts. Ne pas laisser idle.
 
 Enveloppe fil `acorn.v0` — **la même** que acorn-juge. Schéma : [`schema/mesh.v0.json`](schema/mesh.v0.json).
 

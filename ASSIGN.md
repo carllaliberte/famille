@@ -14,6 +14,7 @@ Pas un 7e chantier. Détail : [INTEROP-IA.md](INTEROP-IA.md).
 - Quantum — QC
 - Autres IA — mesh / `/flux` (commentaires PR). Aucune n'est juge.
 - Carl — squash + LIVE VERIFIED
+- Discipline — activer les IA dormantes. Canaux toujours ouverts : mesh `/flux` sur les PR, canaux teammates. Ne pas laisser l'interop idle.
 
 Deux couches, jamais fusionnées : `juge.v0` (lit / appelle peut-dire) ≠ `mesh.v0` (canal GitHub).
 
