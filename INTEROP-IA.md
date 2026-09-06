@@ -8,7 +8,7 @@ Deux couches. Ne pas les fusionner. Aucun modèle n'est juge.
 | Cursor | rails + consomme juge.v0 |
 | Expert | assignation + goût |
 | Quantum | QC |
-| Autres IA | mesh / `/flux`. Aucune n'est juge. |
+| Autres IA | mesh / `/flux`. Toujours ouverts. Aucune n'est juge. |
 | Carl | squash + LIVE VERIFIED |
 
 `juge.v0` (lit / appelle peut-dire) ≠ `mesh.v0` (canal GitHub).
