@@ -20,3 +20,10 @@ Verified 2026-09-03: that route returns HTML 404. The function then
 returns the local verdict. Badge / npm wait until the host serves JSON.
 
 Host cited : https://acorn-royal-dune-blend.grok.me
+
+## Horizon
+
+`isCalendarDay` (export SDK) = jour grégorien réel via Date.UTC.
+`2027-02-31` refusé. `2028-02-29` accepté.
+`schema/juge.v0.json` `horizon.pattern` reste `YYYY-MM-DD` (regex).
+Worker acorn-juge ⊃ ce pattern jusqu'au squash Carl. Pas d'unwind du schéma ici.

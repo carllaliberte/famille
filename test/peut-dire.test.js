@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import { createRequire } from 'node:module'
-import { peutDire } from '../sdk/peut-dire.js'
+import { isCalendarDay, peutDire } from '../sdk/peut-dire.js'
 
 const require = createRequire(import.meta.url)
 const TODAY = '2026-09-03'
@@ -182,6 +182,30 @@ describe('peutDire — typed-evidence path', () => {
     assert.equal(r.refus, null)
     assert.ok(r.manques.includes('epsilon'))
     assert.ok(r.manques.includes('horizon'))
+  })
+})
+
+describe('isCalendarDay — Worker ⊃ schema.pattern', () => {
+  it('rejects syntax-valid impossible days', () => {
+    assert.equal(isCalendarDay('2027-02-31'), false)
+    assert.equal(isCalendarDay('2026-11-31'), false)
+    assert.equal(isCalendarDay('2027-02-29'), false)
+    assert.equal(isCalendarDay('2026-13-01'), false)
+    assert.equal(isCalendarDay('2027-00-10'), false)
+    assert.equal(isCalendarDay('2027-01-32'), false)
+    assert.equal(isCalendarDay('UFHY1'), false)
+  })
+
+  it('accepts real days including leap 2028-02-29', () => {
+    assert.equal(isCalendarDay('2027-12-31'), true)
+    assert.equal(isCalendarDay('2028-02-29'), true)
+    assert.equal(isCalendarDay('2026-09-03'), true)
+  })
+
+  it('names the schema pattern écart — regex still accepts 2027-02-31', () => {
+    const pattern = new RegExp(schema.properties.horizon.pattern)
+    assert.equal(pattern.test('2027-02-31'), true)
+    assert.equal(isCalendarDay('2027-02-31'), false)
   })
 })
 
