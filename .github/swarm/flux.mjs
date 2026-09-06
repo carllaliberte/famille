@@ -1,8 +1,8 @@
 /**
- * acorn flux v0 — chef mesh. Interoperability system.
- * Grok is chef. GitHub is memory. Four modes always, for every connected AI.
- * Heavy and Build always consult. Grok decides specialties, then writes in flux/.
- * Not a Worker canal. Not LIVE. Not QUANTUM.
+ * Mesh envelope acorn.v0 — same wire as acorn-juge.
+ * Not schema/flux.v0.json (carte pipeline / satellites).
+ * Grok is chef. GitHub PR comments are memory. Not a Worker canal.
+ * Not LIVE. Not QUANTUM. LIVE VERIFIED is Carl only.
  */
 
 export const FLUX_VERSION = "acorn.v0";
@@ -406,7 +406,7 @@ export function cycle(input) {
       act: "EVIDENCE",
       mode: "ECHANGE",
       grade: "NOT LIVE VERIFIED",
-      body: `GitHub memory first. carllaliberte/acorn-juge. Topic: ${topic}.${never}`,
+      body: `GitHub memory first. carllaliberte/famille. FILE.md + schema. Topic: ${topic}.${never}`,
     },
     {
       from: CHEF,
@@ -446,7 +446,7 @@ export function cycle(input) {
     act: "RISK",
     mode: "CHALLENGE",
     grade: "PROPOSED",
-    body: `Challenge Grok. ${topic} Do not bind /flux on the Worker. Do not wrangler.${never}`,
+    body: `Challenge Grok. ${topic} Mesh is PR comments + FILE.md, not schema/flux.v0.json. Do not wrangler.${never}`,
   });
 
   const packets = [];
@@ -463,14 +463,23 @@ export function cycle(input) {
  */
 export function parseFlux(text = "") {
   const src = String(text || "");
-  const hasHeader = /(?:^|\n)\s*FLUX\b/i.test(src);
+  const header = src.match(/(?:^|\n)\s*FLUX\b([^\n]*)/i);
   const hasCmd = /(?:^|\s)\/flux(?=[\s,;:!?.)]|$)/i.test(src);
-  if (!hasHeader && !hasCmd) return null;
+  if (!header && !hasCmd) return null;
 
   const kv = {};
-  const re = /(\w+):([^\s]+)/g;
-  let m;
-  while ((m = re.exec(src))) kv[m[1].toLowerCase()] = m[2];
+  const take = (chunk) => {
+    const re = /(\w+):([^\s]+)/g;
+    let m;
+    while ((m = re.exec(String(chunk || "")))) kv[m[1].toLowerCase()] = m[2];
+  };
+  // Header line wins. Do not let a body example `/flux to:chatgpt` steal to:.
+  if (header) take(header[1] || "");
+  else {
+    const cmdRe = /(?:^|\s)\/flux((?:\s+\S+)*)/gi;
+    let m;
+    while ((m = cmdRe.exec(src))) take(m[1] || "");
+  }
 
   const from = String(kv.from || "github").toLowerCase();
   const to = String(kv.to || "*").toLowerCase();
@@ -517,6 +526,11 @@ export function modelsForDestination(to) {
   if (isModel(to) && lookup(to)?.kind !== "guest") return [to];
   if (lookup(to)?.kind === "guest") return [];
   return [];
+}
+
+/** True when the comment is already a filed envelope (do not echo). */
+export function isMeshEnvelope(text = "") {
+  return /_flux acorn\.v0/.test(String(text || ""));
 }
 
 export const SEED = Object.freeze([

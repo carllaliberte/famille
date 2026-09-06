@@ -6,7 +6,7 @@ Priorité inchangée : client → techno née → bots.
 | # | Chantier | Repo / fichier | Rente |
 |---|---|---|---|
 | 1 | Flux (avance quantique typée) | [FLUX.md](FLUX.md) · mode · ancrage · témoin | licence Acorn + horizon daté |
-| 2 | Interop IA | [INTEROP-IA.md](INTEROP-IA.md) · schema/juge.v0.json | contrat machine unique |
+| 2 | Interop IA | [INTEROP-IA.md](INTEROP-IA.md) · schema/juge.v0.json · schema/mesh.v0.json | carte juge ≠ mesh `acorn.v0` |
 | 3 | Expérience client | [EXPERIENCE.md](EXPERIENCE.md) | porte payante plus tard, preview gratuite |
 | 4 | Coordination bots | [STEWARD.md](STEWARD.md) · AGENTS · CURSOR | temps bot ≠ produit |
 | 5 | Projet international | [INTERNATIONAL.md](INTERNATIONAL.md) | packs BCP 47 |

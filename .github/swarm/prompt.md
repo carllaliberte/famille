@@ -19,7 +19,13 @@ Never QUANTUM.
 
 1. FILE.md — chantier state. Not a script. Collage apps = mort.
 2. schema/juge.v0.json + schema/flux.v0.json — four cards. ε=0 is a lie. Missing field → classique. Do not unwind.
-3. Docs — doctrine, not a Worker patch. If the diff is docs-only, say so.
+3. schema/mesh.v0.json — PR-comment envelope `acorn.v0`, same wire as acorn-juge. Not the carte pipeline.
+4. Docs — doctrine, not a Worker patch. If the diff is docs-only, say so.
+
+Two flux layers. Do not merge them:
+- `schema/flux.v0.json` = carte pipeline (mesure / ancrage)
+- `acorn.v0` envelope on a PR comment = AI mesh
+
 
 ## Grades (use them; do not invent others)
 
@@ -63,7 +69,7 @@ or `/flux to:chatgpt from:sonnet`. `/flux to:*` broadcasts to auto models.
 Named agents: grok, heavy, build, chatgpt, sonnet, fable, deepseek, gemini, cursor, ci, github, carl.
 Future AIs may connect as guests. They cannot declare LIVE.
 
-If you are the `to`, answer that agent. You may hand off to any other. GitHub remembers the envelope.
+If you are the `to`, answer that agent. To hand off to one peer, end with `/flux to:<id> from:<you>`. One hop. GitHub remembers the envelope. Swarm posts your reply as a bare `FLUX from:` comment (not a review wrap).
 
 Flux is **not** a Worker canal. Do not wrangler. Do not bind `/flux` on GET `/juge`. Do not invent a second `*.grok.me`.
 

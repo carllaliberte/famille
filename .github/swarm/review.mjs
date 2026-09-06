@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import {
   accept as acceptFlux,
   formatEnvelope,
+  isMeshEnvelope,
   modelsForDestination,
   parseFlux,
 } from "./flux.mjs";
@@ -22,8 +23,10 @@ const PROMPT_PATH = join(HERE, "prompt.md");
 export const CANON_PATHS = Object.freeze([
   "FILE.md",
   "AUTOMATION.md",
+  "INTEROP-IA.md",
   "schema/juge.v0.json",
   "schema/flux.v0.json",
+  "schema/mesh.v0.json",
   "schema/README.md",
 ]);
 
@@ -135,6 +138,16 @@ export function parseTrigger(
   return autoIds();
 }
 
+
+/** Skip swarm's own posts — otherwise FLUX echo loops. Other bots (Copilot, Cursor) may address the mesh. */
+export function shouldSkipComment({ actor = "", body = "", comment = "" } = {}) {
+  const who = String(actor || "").toLowerCase();
+  if (who === "github-actions[bot]") return true;
+  const src = String(body || comment || "");
+  if (/^## Swarm review\b/m.test(src)) return true;
+  return false;
+}
+
 /** Flux addressing takes precedence. /flux to:chatgpt runs ChatGPT only. */
 export function idsForComment(
   commentBody = "",
@@ -165,6 +178,30 @@ export function addressResult(result, to = "github") {
   });
   if (!r.ok) return { ...result, text: sanitizeReview(result.text) };
   return { ...result, text: formatEnvelope(r.packet) };
+}
+
+/** Peer handoff from a model's raw text. Fable stays on-demand. One extra hop max at the caller. */
+export function handoffIds(text = "", selfId = "") {
+  const flux = parseFlux(text);
+  if (!flux) return [];
+  const self = String(selfId || "").toLowerCase();
+  return modelsForDestination(flux.to).filter(
+    (id) => id && id !== self && id !== "fable",
+  );
+}
+
+export function meshUser(baseUser, flux) {
+  if (!flux) return baseUser;
+  const to = flux.to || "github";
+  const from = flux.from || "github";
+  return (
+    `You are addressed on the flux mesh as ${to} by ${from} (${flux.act || "HANDOFF"}, ${flux.grade || "PROPOSED"}). ` +
+    `Reply in FINDING / EVIDENCE / RISK / ACTION / TEST / RESULT / HANDOFF. ` +
+    `To hand off to one peer, end with \`/flux to:<id> from:${to}\`. One hop. ` +
+    `Do not declare LIVE. Do not say QUANTUM. Do not say PRÉSENT. Do not wrangler deploy. ` +
+    `Wire is acorn.v0 (schema/mesh.v0.json), not schema/flux.v0.json. Flux is not a Worker canal.\n\n` +
+    String(baseUser || "")
+  );
 }
 
 export function keyedModels(ids, env = process.env) {
@@ -348,6 +385,16 @@ export async function reviewOne(spec, system, user, env = process.env) {
   }
 }
 
+/** Mesh replies are bare acorn.v0 envelopes so guests can LU them. Auto PR review stays wrapped. */
+export function commentBodies(kind, payload) {
+  if (kind === "mesh") {
+    return (payload.results || [])
+      .filter((r) => r && r.text && !r.skipped && !r.error)
+      .map((r) => r.text);
+  }
+  return [formatComment(payload)];
+}
+
 export function formatComment({ run, skip, results }) {
   const lines = [
     "## Swarm review — complementary, not a judgment",
@@ -395,6 +442,19 @@ async function gh(path, { method = "GET", token, body } = {}) {
   return json;
 }
 
+async function postComment(body, { token, repo, pr }) {
+  if (token && repo && pr) {
+    const [owner, name] = repo.split("/");
+    await gh(`/repos/${owner}/${name}/issues/${pr}/comments`, {
+      method: "POST",
+      token,
+      body: { body },
+    });
+  } else {
+    console.log(body);
+  }
+}
+
 function prNumberFromEvent(env = process.env) {
   if (env.PR_NUMBER) return String(env.PR_NUMBER);
   try {
@@ -414,6 +474,7 @@ export function eventMeta(env = process.env) {
     event: env.GITHUB_EVENT_NAME || "pull_request",
     action: "",
     comment: env.SWARM_COMMENT || "",
+    actor: env.SWARM_ACTOR || "",
     labels: [],
     label: "",
   };
@@ -423,6 +484,7 @@ export function eventMeta(env = process.env) {
       event: env.GITHUB_EVENT_NAME || fallback.event,
       action: String(ev.action || ""),
       comment: ev.comment?.body || fallback.comment,
+      actor: ev.comment?.user?.login || ev.sender?.login || fallback.actor,
       labels: ev.pull_request?.labels || ev.issue?.labels || [],
       label: ev.label?.name || "",
     };
@@ -436,6 +498,10 @@ export async function main(env = process.env) {
   const repo = env.GITHUB_REPOSITORY; // owner/name
   const pr = prNumberFromEvent(env);
   const meta = eventMeta(env);
+  if (meta.event === "issue_comment" && shouldSkipComment(meta)) {
+    console.log("swarm skip (own comment)");
+    return 0;
+  }
   const routed = idsForComment(
     meta.comment,
     meta.labels,
@@ -446,6 +512,10 @@ export async function main(env = process.env) {
   const ids = routed.ids;
   if (!ids.length) {
     if (routed.flux) {
+      if (isMeshEnvelope(meta.comment)) {
+        console.log("flux already stored");
+        return 0;
+      }
       const accepted = acceptFlux(routed.flux);
       const body = accepted.ok
         ? formatEnvelope(accepted.packet)
@@ -495,28 +565,58 @@ export async function main(env = process.env) {
 
   const system = loadPrompt();
   const canon = loadCanon();
-  let user = buildUserMessage({ title, body, diff, files, canon });
-  if (routed.flux) {
-    user =
-      `You are addressed on the flux mesh as ${routed.flux.to} by ${routed.flux.from} (${routed.flux.act}, ${routed.flux.grade}). Reply in FINDING / EVIDENCE / RISK / ACTION / TEST / RESULT / HANDOFF. You may address any named agent. Do not declare LIVE. Do not say QUANTUM. Do not say PRÉSENT. Do not wrangler deploy. Flux is not a Worker canal.\n\n` +
-      user;
-  }
+  const user = buildUserMessage({ title, body, diff, files, canon });
   const dest = routed.flux?.from || "github";
   const results = [];
-  for (const spec of run) {
-    const one = await reviewOne(spec, system, user, env);
-    results.push(routed.flux ? addressResult(one, dest) : one);
-  }
-  const text = formatComment({ run, skip, results });
-  if (token && repo && pr) {
-    const [owner, name] = repo.split("/");
-    await gh(`/repos/${owner}/${name}/issues/${pr}/comments`, {
-      method: "POST",
-      token,
-      body: { body: text },
-    });
+  const skipAll = [...skip];
+  const seen = new Set();
+
+  if (routed.flux) {
+    const queue = ids.map((id) => ({ id, replyTo: dest }));
+    let extra = 0;
+    while (queue.length) {
+      const job = queue.shift();
+      if (!job?.id || seen.has(job.id)) continue;
+      seen.add(job.id);
+      const keyed = keyedModels([job.id], env);
+      skipAll.push(...keyed.skip);
+      for (const spec of keyed.run) {
+        const one = await reviewOne(
+          spec,
+          system,
+          meshUser(user, {
+            from: job.replyTo,
+            to: spec.id,
+            act: routed.flux.act,
+            grade: routed.flux.grade,
+          }),
+          env,
+        );
+        const raw = one.text || "";
+        results.push(addressResult(one, job.replyTo));
+        if (extra < 1 && !one.skipped && !one.error) {
+          const nid = handoffIds(raw, spec.id).find((id) => !seen.has(id));
+          if (nid) {
+            extra += 1;
+            queue.push({ id: nid, replyTo: spec.id });
+          }
+        }
+      }
+    }
   } else {
-    console.log(text);
+    for (const spec of run) {
+      results.push(await reviewOne(spec, system, user, env));
+    }
+  }
+
+  const kind = routed.flux ? "mesh" : "review";
+  const bodies = commentBodies(kind, { run, skip: skipAll, results });
+  if (!bodies.length) {
+    console.log("swarm skip (no bodies)");
+    return 0;
+  }
+  for (const posted of bodies) {
+    await postComment(posted, { token, repo, pr });
   }
   return 0;
 }

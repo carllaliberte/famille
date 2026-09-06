@@ -14,9 +14,14 @@ import {
   buildUserMessage,
   sanitizeReview,
   formatComment,
+  commentBodies,
   idsForComment,
   addressResult,
+  shouldSkipComment,
+  handoffIds,
+  meshUser,
 } from "../.github/swarm/review.mjs";
+import { isMeshEnvelope, FLUX_VERSION } from "../.github/swarm/flux.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -105,6 +110,17 @@ describe("flux addressing on comments", () => {
     assert.deepEqual(r.ids, []);
   });
 
+  it("FLUX header wins over a /flux example in the body", () => {
+    const r = idsForComment(
+      "FLUX from:grok to:github act:HANDOFF\n\nexample: /flux to:chatgpt from:grok\n",
+      [],
+      "issue_comment",
+    );
+    assert.equal(r.flux.from, "grok");
+    assert.equal(r.flux.to, "github");
+    assert.deepEqual(r.ids, []);
+  });
+
   it("wraps a model FINDING as a flux envelope back to the speaker", () => {
     const out = addressResult(
       {
@@ -166,6 +182,10 @@ describe("prompt locks", () => {
     assert.match(p, /ville\/…/);
     assert.match(p, /cursor\/…/);
     assert.match(p, /Flux is \*\*not\*\* a Worker canal/);
+    assert.match(p, /schema\/mesh\.v0\.json/);
+    assert.match(p, /Two flux layers/);
+    assert.match(p, /One hop/);
+    assert.match(p, /bare `FLUX from:`/);
     assert.doesNotMatch(p, /parler à travers cette page/i);
   });
 });
@@ -175,8 +195,10 @@ describe("canon FILE.md + schema + docs", () => {
     assert.deepEqual(CANON_PATHS, [
       "FILE.md",
       "AUTOMATION.md",
+      "INTEROP-IA.md",
       "schema/juge.v0.json",
       "schema/flux.v0.json",
+      "schema/mesh.v0.json",
       "schema/README.md",
     ]);
   });
@@ -190,6 +212,12 @@ describe("canon FILE.md + schema + docs", () => {
     assert.match(map["AUTOMATION.md"], /n'est plus le messager/);
     assert.match(map["schema/juge.v0.json"], /exclusiveMinimum/);
     assert.match(map["schema/flux.v0.json"], /famille\.flux\.v0/);
+    assert.match(map["schema/mesh.v0.json"], /acorn\.v0/);
+    assert.match(map["INTEROP-IA.md"], /Deux couches/);
+    assert.match(map["INTEROP-IA.md"], /schema\/flux\.v0\.json/);
+    assert.match(map["INTEROP-IA.md"], /schema\/mesh\.v0\.json/);
+    assert.match(map["INTEROP-IA.md"], /acorn\.v0/);
+    assert.match(map["INTEROP-IA.md"], /enveloppe nue/);
   });
 
   it("buildUserMessage includes FILE.md canon and the diff", () => {
@@ -247,5 +275,113 @@ describe("workflow locks", () => {
     assert.match("ville/juge-swarm", re);
     assert.doesNotMatch("docs/swarm", re);
     assert.doesNotMatch("main", re);
+  });
+});
+
+describe("mesh interoperability", () => {
+  it("shares acorn.v0 with acorn-juge and does not collide with carte flux", () => {
+    assert.equal(FLUX_VERSION, "acorn.v0");
+    const mesh = JSON.parse(
+      readFileSync(join(ROOT, "schema/mesh.v0.json"), "utf8"),
+    );
+    const carte = JSON.parse(
+      readFileSync(join(ROOT, "schema/flux.v0.json"), "utf8"),
+    );
+    assert.equal(mesh.properties.flux.const, "acorn.v0");
+    assert.equal(carte.title, "famille.flux.v0");
+    assert.notEqual(mesh.title, carte.title);
+  });
+
+  it("skips github-actions bot and own swarm comments (no loop)", () => {
+    assert.equal(
+      shouldSkipComment({ actor: "github-actions[bot]", comment: "/flux to:chatgpt" }),
+      true,
+    );
+    assert.equal(
+      shouldSkipComment({ actor: "carllaliberte", comment: "/flux to:chatgpt from:grok" }),
+      false,
+    );
+    assert.equal(
+      shouldSkipComment({
+        actor: "Copilot",
+        comment: "/flux to:chatgpt from:copilot",
+      }),
+      false,
+    );
+    assert.equal(
+      shouldSkipComment({
+        actor: "copilot-pull-request-reviewer[bot]",
+        comment: "/flux to:chatgpt from:copilot",
+      }),
+      false,
+    );
+    assert.equal(
+      shouldSkipComment({
+        actor: "carllaliberte",
+        comment: "## Swarm review — complementary, not a judgment\n",
+      }),
+      true,
+    );
+  });
+
+  it("does not echo an envelope that is already filed", () => {
+    assert.equal(isMeshEnvelope("hello"), false);
+    assert.equal(
+      isMeshEnvelope("FLUX from:grok to:carl\n\n_flux acorn.v0 · chef:grok_"),
+      true,
+    );
+  });
+
+  it("workflow listens to /flux and ignores the actions bot", () => {
+    const yml = readFileSync(join(ROOT, ".github/workflows/swarm.yml"), "utf8");
+    assert.match(yml, /\/flux/);
+    assert.match(yml, /FLUX from:/);
+    assert.match(yml, /github-actions\[bot\]/);
+  });
+
+  it("handoffIds reads /flux to:peer from raw review, never fable or self", () => {
+    assert.deepEqual(
+      handoffIds("FINDING ok\n/flux to:deepseek from:sonnet", "sonnet"),
+      ["deepseek"],
+    );
+    assert.deepEqual(handoffIds("ok\n/flux to:fable from:sonnet", "sonnet"), []);
+    assert.deepEqual(handoffIds("/flux to:sonnet from:chatgpt", "sonnet"), []);
+    assert.deepEqual(handoffIds("no address here", "sonnet"), []);
+  });
+
+  it("mesh comments are bare envelopes; auto review stays wrapped", () => {
+    const envBody =
+      "FLUX from:chatgpt to:grok act:FINDING mode:CHALLENGE grade:PROPOSED\n\n_flux acorn.v0 · chef:grok_";
+    const mesh = commentBodies("mesh", {
+      results: [{ id: "chatgpt", text: envBody }],
+    });
+    assert.equal(mesh.length, 1);
+    assert.match(mesh[0], /^FLUX from:chatgpt/);
+    assert.doesNotMatch(mesh[0], /## Swarm review/);
+    const silent = commentBodies("mesh", {
+      results: [{ id: "sonnet", skipped: true, reason: "missing ANTHROPIC_API_KEY" }],
+    });
+    assert.deepEqual(silent, []);
+    const wrapped = commentBodies("review", {
+      run: [],
+      skip: [],
+      results: [
+        { id: "chatgpt", label: "ChatGPT", model: "gpt-5.6-terra", text: "hi" },
+      ],
+    });
+    assert.match(wrapped[0], /## Swarm review/);
+  });
+
+  it("meshUser names the wire and forbids the carte flux schema", () => {
+    const msg = meshUser("PR title: x", {
+      from: "grok",
+      to: "chatgpt",
+      act: "HANDOFF",
+      grade: "PROPOSED",
+    });
+    assert.match(msg, /as chatgpt by grok/);
+    assert.match(msg, /schema\/mesh\.v0\.json/);
+    assert.match(msg, /not schema\/flux\.v0\.json/);
+    assert.match(msg, /One hop/);
   });
 });

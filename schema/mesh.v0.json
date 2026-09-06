@@ -1,0 +1,31 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/mesh.v0.json",
+  "title": "famille.mesh.v0",
+  "description": "PR-comment envelope shared with acorn-juge (wire flux: acorn.v0). Not schema/flux.v0.json (carte pipeline). Preview, not a receipt. LIVE VERIFIED is Carl only.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["from", "to", "act", "mode", "grade", "body"],
+  "properties": {
+    "flux": { "const": "acorn.v0" },
+    "from": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,24}$" },
+    "to": { "type": "string", "pattern": "^(\\*|[a-z][a-z0-9-]{1,24})$" },
+    "act": {
+      "enum": ["FINDING", "EVIDENCE", "RISK", "ACTION", "TEST", "RESULT", "HANDOFF"]
+    },
+    "mode": {
+      "enum": ["PROPOSITION", "CONSULTATION", "ECHANGE", "CHALLENGE"]
+    },
+    "grade": {
+      "enum": [
+        "PROPOSED",
+        "CODE VERIFIED",
+        "TEST VERIFIED",
+        "NOT LIVE VERIFIED",
+        "LIVE VERIFIED"
+      ]
+    },
+    "body": { "type": "string", "minLength": 1 },
+    "preview": { "const": true },
+    "receipt": { "const": false }
+  }
+}

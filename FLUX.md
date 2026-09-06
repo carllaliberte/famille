@@ -55,7 +55,7 @@ Catalogue : [`MODELES.md`](MODELES.md). Conduite : [`REFLEXION.md`](REFLEXION.md
 | ANCRAGE | https://github.com/carllaliberte/ancrage-protocol | re-mesurer avant la date ; périmé ≠ faux ; à refaire |
 
 Carte : [`schema/juge.v0.json`](schema/juge.v0.json).  
-Satellites optionnels : [`schema/flux.v0.json`](schema/flux.v0.json) — satellite manquant ≠ quantique.  
+Satellites optionnels : [`schema/flux.v0.json`](schema/flux.v0.json) — satellite manquant ≠ quantique.  Le bus IA (commentaires PR, fil `acorn.v0`) est [`schema/mesh.v0.json`](schema/mesh.v0.json). Pas ce fichier.  
 Parcours inconnu : [`examples/flux-v0.md`](examples/flux-v0.md).
 
 Pas de monde sans l'humain. Pas d'acte hors du fil. Pas de carte juge à une IA toute seule.
