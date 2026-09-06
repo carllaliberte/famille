@@ -12,11 +12,12 @@ Deploy Actions : vert (run 13).
 
 | Dépôt | Item | Fait |
 |---|---|---|
-| garde | offre v0 #15 | Landing + 3 prix + pin Action. App Marketplace = Carl plus tard. |
+| garde | landing v1 #16 | Media hands+carte, a11y, SHA 40. Pages = Carl. |
 | acorn-juge | issue #3 grok.me | 404. Pas la zone de Carl. Canal = workers.dev. |
 
 ## Fermé
 
-Token deploy acorn-juge : Run 13 success. ancrage #7. mesure#4. oubli flock+jail. Porte 60s. FILE collage retiré (#145).
+famille#143 : conflit + état faux (secret « manquant »). Close. Remplacée ici.
+garde offre #15. Token deploy Run 13. ancrage #7. mesure#4. oubli flock+jail. Porte 60s. FILE état-seul #148.
 
 Pas d'ordre dans cette page. L'état seulement.
