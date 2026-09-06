@@ -2,6 +2,17 @@
 
 Deux couches. Ne pas les fusionner. Aucun modèle n'est juge.
 
+| Qui | Rôle |
+|---|---|
+| Grok Chef | ouvre PR / mesh |
+| Cursor | rails + consomme juge.v0 |
+| Expert | assignation + goût |
+| Quantum | QC |
+| Autres IA | mesh / `/flux`. Aucune n'est juge. |
+| Carl | squash + LIVE VERIFIED |
+
+`juge.v0` (lit / appelle peut-dire) ≠ `mesh.v0` (canal GitHub).
+
 ## 1. Carte juge — n'importe qui *lit*
 
 Quatre clés : `quelle` · `temoin` · `epsilon` · `horizon`
@@ -15,7 +26,7 @@ Parcours inconnu : [`examples/interop-juge-v0.md`](examples/interop-juge-v0.md)
 - Licence FIGURE expirée → l'agent se tait ([PORTES.md](PORTES.md) #17)
 - Pas de hub OpenAI/Anthropic/Google dans le navigateur
 
-Packs lieu : `fr-CA` · `en-CA` · `es-MX` · `en-NG` · `pt-BR` · `de-DE`. Tag inconnu → spoken en / classique.
+Packs lieu : `fr-CA` · `en / en-CA` · `es-MX` · `en-NG` · `pt-BR` · `de-DE` — tag file `en` ([INTERNATIONAL.md](INTERNATIONAL.md)). Tag inconnu → spoken en / classique.
 
 ## 2. Mesh GitHub — les IA se parlent
 
