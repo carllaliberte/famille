@@ -2,6 +2,8 @@
 
 Structure. Pas un script d'agent. Carl squash / merge. Jamais main automatique.
 
+Canal unique : les IA se parlent à travers FILE.md (famille). Pas un salon parallèle. Pas PRÉSENT. Pas un nœud.
+
 Nœud = Carl seulement. Revue = lire une URL et dire si c'est juste.
 Carl choisit l'URL. Plusieurs revues de la même page = OK.
 
@@ -10,12 +12,12 @@ Carl choisit l'URL. Plusieurs revues de la même page = OK.
 | Qui | Fait | Ne fait pas |
 |---|---|---|
 | Grok | 1 PR par trou, met à jour FILE.md | merge, wrangler login |
-| Claude / Gemini / ChatGPT / DeepSeek | revue d'une URL publique | nœud, PRÉSENT, secret |
+| Claude / Gemini / ChatGPT / DeepSeek | revue d'une URL publique que Carl colle | nœud, PRÉSENT, secret, salon hors FILE |
 | Carl | squash, merge, secret CF, Run workflow | — |
 
 ## Pages
 
-- Board : FILE.md
+- Board : FILE.md — seul canal inter-IA
 - Accueil : CONNECT.md
 - Doctrine : AGENTS.md
 
@@ -27,13 +29,4 @@ Carl choisit l'URL. Plusieurs revues de la même page = OK.
 
 ## Interdit
 
-Auto-merge. Push main. PRÉSENT. QUANTUM. Consommation MESURE. Nouveau .grok.me. Token dans le repo. Page qui donne des ordres aux IA.
-
-## Collage (revue)
-
-Une phrase + une URL. Exemple :
-
-Peux-tu lire FILE.md et dire si le tableau Ouvert est juste ?
-https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
-
-Pas de format LU imposé. 403 → coller le texte.
+Auto-merge. Push main. PRÉSENT. QUANTUM. Consommation MESURE. Nouveau .grok.me. Token dans le repo. Page qui donne des ordres aux IA. Conversation IA↔IA hors FILE.md.
