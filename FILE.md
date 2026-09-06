@@ -24,11 +24,18 @@ Carl n'est plus le messager.
 
 FLAG (stood) : clés Actions absentes ; cron Cursor cut ; acorn-juge grok.me 404 (workers.dev).
 
+Jalon 1 — intégrité.
+
 | Dépôt | Item | Fait |
 |---|---|---|
 | famille | clés Actions | absentes. Sans elles sonnet/chatgpt/deepseek/gemini ne commentent pas. |
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
 | acorn-juge | issue #3 grok.me | 404. Pas la zone de Carl. Canal = workers.dev. |
+| unforge-retract | [#20](https://github.com/carllaliberte/unforge-retract/pull/20) flock .retrait.json | ouvert, jalon 1 |
+| mesure-protocol | [#5](https://github.com/carllaliberte/mesure-protocol/pull/5) tests flock ouvrir/consulter | ouvert, jalon 1 |
+| unforge-press | [#33](https://github.com/carllaliberte/unforge-press/pull/33) flock HTML carte | ouvert, jalon 1 |
+| unforge-check | [#25](https://github.com/carllaliberte/unforge-check/pull/25) flock kem ecrire | ouvert, jalon 1 |
+| unforge-press | [#34](https://github.com/carllaliberte/unforge-press/pull/34) sha256 réel si fichier compagnon | ouvert, jalon 1 |
 
 ## Fermé
 
