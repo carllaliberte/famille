@@ -15,6 +15,7 @@ Pas un 7e chantier. Détail : [INTEROP-IA.md](INTEROP-IA.md).
 - Autres IA — mesh / `/flux` (commentaires PR). Aucune n'est juge.
 - Carl — squash + LIVE VERIFIED
 - Canaux IA toujours ouverts (mesh `/flux` + teammates). Activer les dormantes. Ne pas laisser idle.
+- Mesh prêt sans clés Actions : pairs adressables ; commenter = Carl Settings, pas un invent bot.
 
 Deux couches, jamais fusionnées : `juge.v0` (lit / appelle peut-dire) ≠ `mesh.v0` (canal GitHub).
 
