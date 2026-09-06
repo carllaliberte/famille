@@ -1,4 +1,4 @@
-# File — 2026-09-05
+# File — 2026-09-06
 
 Tableau de chantier. Pas un script. Pas un nœud. Carl squash / merge.
 
@@ -9,14 +9,15 @@ Secret Cloudflare : pas encore posé. Donc pas de deploy.
 
 | Dépôt | Item | Fait |
 |---|---|---|
-| ancrage-protocol | issue #5 — test sidecar ≠ flock LOCK_EX | `#6` mergée mais le test n'est pas dans `tests/` sur main. `test_ecrire_sidecar_lock` vérifie encore `.lock` existe. |
+| ancrage-protocol | issue #5 — test sidecar ≠ flock LOCK_EX | `test_ecrire_calls_flock_ex` sur main (LOCK_EX/UN). Sidecar `.lock` toujours testé aussi. Issue #5 ouverte. |
 | acorn-juge | issue #3 — GET /juge STATUS | Worker code = 400 lie. Vitrine grok.me = 404 HTML. Manque deploy + bind. |
-| acorn-juge | deploy depuis le cell | PR à ouvrir : workflow_dispatch + secret `CLOUDFLARE_API_TOKEN`. Pas de token dans le repo. |
+| acorn-juge | deploy depuis le cell | Workflow `deploy.yml` (workflow_dispatch + wrangler 4 + accountId) sur main via #19. Secret `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` manquants. HOLD. |
 
 ## Fermé (code)
 
 mesure-protocol#4 sha_sur. ancrage#4 flock ecrire. unforge-check oubli flock + jail + lock carte.
 Porte 60s déjà sur unforge-check main.
+acorn-juge#19 ci wrangler4 dispatch.
 
 ## Qui peut aider (revue, pas signature)
 
