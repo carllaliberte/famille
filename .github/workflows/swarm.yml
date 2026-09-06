@@ -42,6 +42,9 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+        with:
+          # issue_comment otherwise checks out main — prompt, canon, flux miss the PR.
+          ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', github.event.issue.number) }}
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

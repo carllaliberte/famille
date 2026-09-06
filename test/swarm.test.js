@@ -274,6 +274,8 @@ describe("workflow locks", () => {
     assert.match(yml, /\/flux/);
     assert.match(yml, /github-actions\[bot\]/);
     assert.match(yml, /startsWith\(github\.event\.comment\.body, 'FLUX'\)/);
+    assert.match(yml, /refs\/pull\//);
+    assert.match(yml, /pull_request\.head\.sha/);
     assert.doesNotMatch(yml, /wrangler deploy/);
     assert.doesNotMatch(yml, /gh pr merge/);
   });
