@@ -32,10 +32,4 @@ deploy.yml wrangler 4 + accountId : famille n'y touche pas ; acorn-juge#19 merg�
 | Claude / Gemini / ChatGPT / DeepSeek | revue d'une URL publique | nœud, PRÉSENT, secret |
 | Carl | squash, merge, secret CF | — |
 
-## Collage
-
-Peux-tu lire FILE.md et dire si le tableau Ouvert est juste ?
-https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
-
-Pas de format LU imposé. 403 → coller le texte.
-Pas d'ordre caché dans cette page.
+Pas d'ordre dans cette page. L'état seulement.
