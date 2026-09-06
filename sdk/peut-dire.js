@@ -12,6 +12,18 @@ export const QUELLE = Object.freeze(['os', 'qrng', 'qkd'])
 export const TEMOIN = Object.freeze(['aucun', 'stat', 'fabricant', 'di'])
 export const HORIZON_DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/
 
+/** Date.UTC round-trip. 2027-02-31 is not a day. 2028-02-29 is. */
+export function isCalendarDay(value) {
+  const s = String(value)
+  if (!HORIZON_DATE.test(s)) return false
+  const [ys, ms, ds] = s.split('-')
+  const y = Number(ys)
+  const m = Number(ms)
+  const d = Number(ds)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d
+}
+
 const PHRASE = Object.freeze({
   lie: 'Error margin zero is a lie',
   horizon: 'Guarantee end date must be a future calendar day',
@@ -125,7 +137,7 @@ export function peutDire(carte, opts = {}) {
 
   if (horizon == null || horizon === '') {
     manques.push('horizon')
-  } else if (horizon === 'UFHY1' || !HORIZON_DATE.test(String(horizon))) {
+  } else if (horizon === 'UFHY1' || !isCalendarDay(horizon)) {
     return verdict({
       quantique: false,
       manques,
@@ -150,7 +162,7 @@ export function peutDire(carte, opts = {}) {
     (quelle === 'qrng' || quelle === 'qkd') &&
     temoinTient &&
     eps.kind === 'ok' &&
-    HORIZON_DATE.test(String(horizon)) &&
+    isCalendarDay(horizon) &&
     horizon >= today &&
     carte.simule !== true
 

@@ -60,6 +60,28 @@ describe('peutDire — typed-evidence path', () => {
     assert.match(r.phrase, /calendar/)
   })
 
+  it('refuses 2027-02-31 — not a calendar day', () => {
+    const r = dire({
+      quelle: 'qrng',
+      temoin: 'stat',
+      epsilon: 1e-6,
+      horizon: '2027-02-31',
+    })
+    assert.equal(r.quantique, false)
+    assert.equal(r.refus.code, 'horizon')
+  })
+
+  it('allows leap day 2028-02-29', () => {
+    const r = dire({
+      quelle: 'qrng',
+      temoin: 'stat',
+      epsilon: 1e-6,
+      horizon: '2028-02-29',
+    })
+    assert.equal(r.quantique, true)
+    assert.equal(r.preview, true)
+  })
+
   it('refuses a past horizon', () => {
     const r = dire({
       quelle: 'qrng',
