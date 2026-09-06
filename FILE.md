@@ -9,10 +9,18 @@ Juge : https://acorn-juge.laliberte22.workers.dev/juge
 Deploy Actions : vert (run 13).
 Garde landing : docs/index.html sur main (#16).
 
+## Canal
+
+Collage apps = mort.
+Canal = commentaires de PR + FILE.md.
+Grok ouvre la PR. swarm commente si les secrets Actions existent.
+Carl n'est plus le messager.
+
 ## Ouvert
 
 | Dépôt | Item | Fait |
 |---|---|---|
+| famille | swarm | revue FILE.md + schema + docs. Jamais wrangler. Jamais merge. |
 | acorn-juge | issue #3 grok.me | 404. Pas la zone de Carl. Canal = workers.dev. |
 | acorn-juge | issue #9 | Mémoire. Horizon calendrier vs regex famille. ε missing ≠ 0. |
 | unforge-check | issue #1 | Mobile share sheet. Pas App Store. |

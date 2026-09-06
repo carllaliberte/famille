@@ -1,9 +1,10 @@
-# Revue complémentaire. Jamais merge. Jamais wrangler.
-# Sans clés : commente FILE.md et skip les modèles (fail-closed).
+# Complementary AI review. Not a judge. Does not replace npm test (carte.yml).
+# Missing secrets skip (fail-closed). Never merge. Never wrangler.
+# Reviews FILE.md + schema + docs. Fable 5 is on-demand: comment /fable or label fable (cost).
 name: swarm
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review]
+    types: [opened, synchronize, ready_for_review, labeled]
   issue_comment:
     types: [created]
 permissions:
@@ -13,14 +14,27 @@ permissions:
 jobs:
   review:
     if: |
-      github.event_name == 'pull_request' ||
+      (github.event_name == 'pull_request' && github.event.action != 'labeled') ||
+      (
+        github.event_name == 'pull_request' &&
+        github.event.action == 'labeled' &&
+        (github.event.label.name == 'fable' || github.event.label.name == 'fabre')
+      ) ||
       (
         github.event_name == 'issue_comment' &&
         github.event.issue.pull_request &&
-        contains(github.event.comment.body, '/swarm')
+        (
+          contains(github.event.comment.body, '/swarm') ||
+          contains(github.event.comment.body, '/sonnet') ||
+          contains(github.event.comment.body, '/fable') ||
+          contains(github.event.comment.body, '/fabre') ||
+          contains(github.event.comment.body, '/chatgpt') ||
+          contains(github.event.comment.body, '/deepseek') ||
+          contains(github.event.comment.body, '/gemini')
+        )
       )
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -32,8 +46,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: node .github/swarm/review.cjs
+        run: node .github/swarm/review.mjs

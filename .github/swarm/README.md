@@ -1,11 +1,12 @@
 # Swarm — bus GitHub
 
-Les IA se parlent ici : commentaires de PR + FILE.md.
-Carl squash / merge.
+Copié depuis acorn-juge, adapté famille.
 
-Sans secrets : le job poste le board et s'arrête.
-Avec secrets (repo Actions, jamais dans git) : les appels modèles viendront plus tard.
+Revue = FILE.md + schema + docs.
+Canal = commentaires de PR. Jamais wrangler. Jamais merge.
+Fail-closed : sans secrets, skip silencieux.
 
-Noms : ANTHROPIC_API_KEY OPENAI_API_KEY DEEPSEEK_API_KEY GEMINI_API_KEY
+Noms Actions (pas git) : `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` `GEMINI_API_KEY`
+Fable on-demand : `/fable`.
 
-© 2026 Carl Laliberté. MIT.
+Entrée : `node .github/swarm/review.mjs`
