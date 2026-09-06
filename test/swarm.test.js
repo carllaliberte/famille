@@ -16,7 +16,12 @@ import {
   formatComment,
   idsForComment,
   addressResult,
+  isSwarmEcho,
+  isSwarmActor,
+  clipThread,
+  nextHop,
 } from "../.github/swarm/review.mjs";
+import { cycle, parseFlux } from "../.github/swarm/flux.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -95,6 +100,26 @@ describe("flux addressing on comments", () => {
     assert.deepEqual(r.ids, ["sonnet", "chatgpt", "deepseek", "gemini"]);
   });
 
+  it("does not treat a swarm review comment as a new flux", () => {
+    const body = [
+      "## Swarm review — complementary, not a judgment",
+      "",
+      "FLUX from:chatgpt to:sonnet act:HANDOFF mode:ECHANGE grade:PROPOSED",
+      "path: flux/echange/chatgpt-to-sonnet.md",
+    ].join("\n");
+    const r = idsForComment(body, [], "issue_comment");
+    assert.equal(r.flux, null);
+    assert.deepEqual(r.ids, []);
+  });
+
+  it("does not treat .github/swarm/flux.mjs as /flux", () => {
+    assert.equal(parseFlux("see .github/swarm/flux.mjs"), null);
+    assert.equal(parseFlux("node .github/swarm/flux.mjs"), null);
+    const r = idsForComment("see .github/swarm/flux.mjs", [], "issue_comment");
+    assert.equal(r.flux, null);
+    assert.deepEqual(r.ids, []);
+  });
+
   it("to:carl stores envelope and calls no model", () => {
     const r = idsForComment(
       "FLUX from:grok to:carl act:HANDOFF grade:PROPOSED\nYour merge.",
@@ -166,6 +191,10 @@ describe("prompt locks", () => {
     assert.match(p, /ville\/…/);
     assert.match(p, /cursor\/…/);
     assert.match(p, /Flux is \*\*not\*\* a Worker canal/);
+    assert.match(p, /Two different "flux"/);
+    assert.match(p, /schema\/flux\.v0\.json/);
+    assert.match(p, /acorn\.v0/);
+    assert.match(p, /hop once/);
     assert.doesNotMatch(p, /parler à travers cette page/i);
   });
 });
@@ -188,6 +217,7 @@ describe("canon FILE.md + schema + docs", () => {
     assert.doesNotMatch(map["FILE.md"], /parler à travers cette page/);
     assert.match(map["AUTOMATION.md"], /commentaires de PR \+ FILE\.md/);
     assert.match(map["AUTOMATION.md"], /n'est plus le messager/);
+    assert.match(map["AUTOMATION.md"], /\/flux to:chatgpt from:grok/);
     assert.match(map["schema/juge.v0.json"], /exclusiveMinimum/);
     assert.match(map["schema/flux.v0.json"], /famille\.flux\.v0/);
   });
@@ -199,12 +229,17 @@ describe("canon FILE.md + schema + docs", () => {
       files: ["FILE.md", "schema/juge.v0.json"],
       diff: "horizon calendar",
       canon: loadCanon(ROOT),
+      thread: clipThread([
+        { user: { login: "grok" }, body: "/flux to:chatgpt from:grok\nNeed a challenge." },
+      ]),
     });
     assert.match(msg, /FILE\.md/);
     assert.match(msg, /schema\/juge\.v0\.json/);
     assert.match(msg, /horizon calendar/);
     assert.match(msg, /Do not wrangler/);
     assert.match(msg, /Do not merge/);
+    assert.match(msg, /@grok:/);
+    assert.match(msg, /\/flux to:chatgpt/);
   });
 });
 
@@ -236,16 +271,104 @@ describe("workflow locks", () => {
     assert.match(yml, /Never wrangler/);
     assert.match(yml, /FILE\.md \+ schema \+ docs/);
     assert.match(yml, /contents: read/);
+    assert.match(yml, /\/flux/);
+    assert.match(yml, /github-actions\[bot\]/);
+    assert.match(yml, /startsWith\(github\.event\.comment\.body, 'FLUX'\)/);
     assert.doesNotMatch(yml, /wrangler deploy/);
     assert.doesNotMatch(yml, /gh pr merge/);
   });
 
-  it("branch name cursor/swarm-famille is allowed", () => {
+  it("branch name cursor/interop-ai is allowed", () => {
     const re =
       /^(ville\/(juge|conso|preview|sdk|rente|garde)-[a-z0-9-]+|ville\/noms|cursor\/[a-z0-9-]+)$/;
     assert.match("cursor/swarm-famille", re);
+    assert.match("cursor/interop-ai", re);
     assert.match("ville/juge-swarm", re);
     assert.doesNotMatch("docs/swarm", re);
     assert.doesNotMatch("main", re);
+  });
+});
+
+describe("echo and hop", () => {
+  it("detects swarm echo and the Actions bot", () => {
+    assert.equal(isSwarmEcho("## Swarm review — complementary, not a judgment\n"), true);
+    assert.equal(isSwarmEcho("/flux to:chatgpt from:grok"), false);
+    assert.equal(isSwarmActor("github-actions[bot]"), true);
+    assert.equal(isSwarmActor("carllaliberte"), false);
+  });
+
+  it("clips a thread for the addressed model", () => {
+    const text = clipThread([
+      { user: { login: "carllaliberte" }, body: "open" },
+      { user: { login: "grok" }, body: "/flux to:sonnet from:grok\nReview FILE.md." },
+    ]);
+    assert.match(text, /@carllaliberte:/);
+    assert.match(text, /@grok:/);
+    assert.match(text, /Review FILE\.md/);
+  });
+
+  it("hops once on HANDOFF to a named model that has not run", () => {
+    const hop = nextHop(
+      [
+        {
+          id: "chatgpt",
+          text: "FLUX from:chatgpt to:sonnet act:HANDOFF mode:ECHANGE grade:PROPOSED\nYour turn. Never QUANTUM.",
+        },
+      ],
+      ["chatgpt"],
+    );
+    assert.equal(hop.from, "chatgpt");
+    assert.deepEqual(hop.ids, ["sonnet"]);
+  });
+
+  it("does not hop on FINDING, to:*, self, or an already-run model", () => {
+    assert.equal(
+      nextHop(
+        [
+          {
+            id: "chatgpt",
+            text: "FLUX from:chatgpt to:grok act:FINDING mode:CHALLENGE grade:PROPOSED\nNo hop. Never QUANTUM.",
+          },
+        ],
+        ["chatgpt"],
+      ),
+      null,
+    );
+    assert.equal(
+      nextHop(
+        [
+          {
+            id: "chatgpt",
+            text: "FLUX from:chatgpt to:* act:HANDOFF mode:ECHANGE grade:PROPOSED\nAll. Never QUANTUM.",
+          },
+        ],
+        ["chatgpt"],
+      ),
+      null,
+    );
+    assert.equal(
+      nextHop(
+        [
+          {
+            id: "chatgpt",
+            text: "FLUX from:chatgpt to:sonnet act:HANDOFF mode:ECHANGE grade:PROPOSED\nAlready. Never QUANTUM.",
+          },
+        ],
+        ["chatgpt", "sonnet"],
+      ),
+      null,
+    );
+  });
+});
+
+describe("cycle is the famille bus", () => {
+  it("names famille, PR comments + FILE.md, never writes flux/ as the canal", () => {
+    const r = cycle({ body: "Can the AIs talk on the PR?" });
+    assert.equal(r.ok, true);
+    const bodies = r.packets.map((p) => p.body).join("\n");
+    assert.match(bodies, /carllaliberte\/famille/);
+    assert.match(bodies, /PR comments \+ FILE\.md/);
+    assert.doesNotMatch(bodies, /carllaliberte\/acorn-juge/);
+    assert.match(r.packets[0].body, /Never QUANTUM/);
   });
 });

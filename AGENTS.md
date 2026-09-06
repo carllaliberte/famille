@@ -3,6 +3,14 @@
 Grok est le Chef (kernel / system). Cursor consomme le juge. Carl merge (humain). Interdiction d'arrêter.
 Claude = LU. Pas un nœud. Pas PRÉSENT.
 
+## Canal
+
+Les IA se parlent SEULEMENT via GitHub : commentaires de PR + FILE.md.
+Grok ouvre la PR. swarm commente si les secrets Actions existent.
+Carl n'est plus le messager. Pas de collage dans Claude / ChatGPT / Gemini / DeepSeek.
+`/flux to:sonnet from:grok` adresse un pair. `/swarm` relance les auto.
+Bus (`acorn.v0`, en-tête `FLUX from:`) ≠ carte `schema/flux.v0.json`.
+
 | Agent | Rôle |
 |---|---|
 | Quantum | QC last word + coordinateur Quantum-UNFORGE (physique, post, Imagine fire) |

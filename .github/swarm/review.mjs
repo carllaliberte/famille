@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
  * Swarm review for famille. Complementary, not a judge.
- * Reviews FILE.md + schema + docs. Fail-closed: missing keys skip.
+ * Reviews FILE.md + schema + docs + PR thread. Fail-closed: missing keys skip.
  * Never merge. Never wrangler. Fable 5 is on-demand (cost).
  * Sonnet / ChatGPT / DeepSeek / Gemini auto if keyed.
+ * /flux addresses a peer. One HANDOFF hop. Bot echo is ignored.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -83,10 +84,55 @@ const TRIGGERS = {
   "/gemini": ["gemini"],
 };
 
+const SWARM_BOTS = new Set(["github-actions[bot]", "swarm-review"]);
+
 function autoIds() {
   return Object.values(MODELS)
     .filter((m) => m.auto)
     .map((m) => m.id);
+}
+
+/** Swarm's own comments must not re-enter the bus. */
+export function isSwarmEcho(text = "") {
+  const src = String(text || "").trim();
+  if (!src) return false;
+  if (/^## Swarm review\b/m.test(src)) return true;
+  if (/^_Prompt: `\.github\/swarm\/prompt\.md`/m.test(src)) return true;
+  return false;
+}
+
+export function isSwarmActor(login = "") {
+  return SWARM_BOTS.has(String(login || "").toLowerCase());
+}
+
+/** Last comments, clipped. The models talk here, not in other apps. */
+export function clipThread(comments = [], { limit = 12, each = 1600 } = {}) {
+  const rows = (comments || []).filter((c) => c && (c.body || c.user)).slice(-limit);
+  if (!rows.length) return "";
+  return rows
+    .map((c) => {
+      const user = c.user?.login || c.user || "unknown";
+      const body = String(c.body || "").slice(0, each);
+      return `@${user}:\n${body}`;
+    })
+    .join("\n\n---\n\n");
+}
+
+/**
+ * One hop only. HANDOFF to a single named model that has not already run.
+ * to:* and self are ignored. Fable hops only if explicitly named.
+ */
+export function nextHop(results = [], already = []) {
+  const seen = new Set(already);
+  for (const r of results) {
+    if (!r || r.skipped || r.error || !r.text) continue;
+    const flux = parseFlux(r.text);
+    if (!flux || flux.act !== "HANDOFF") continue;
+    if (flux.to === "*" || flux.to === r.id) continue;
+    const ids = modelsForDestination(flux.to).filter((id) => id !== r.id && !seen.has(id));
+    if (ids.length === 1) return { from: r.id, ids, flux };
+  }
+  return null;
 }
 
 /** Slash commands as tokens, not path fragments (`.github/swarm/...` is not `/swarm`). */
@@ -135,7 +181,7 @@ export function parseTrigger(
   return autoIds();
 }
 
-/** Flux addressing takes precedence. /flux to:chatgpt runs ChatGPT only. */
+/** Flux addressing takes precedence. /flux to:chatgpt runs ChatGPT only. Echo is silent. */
 export function idsForComment(
   commentBody = "",
   labels = [],
@@ -143,6 +189,7 @@ export function idsForComment(
   action = "",
   addedLabel = "",
 ) {
+  if (isSwarmEcho(commentBody)) return { flux: null, ids: [] };
   const flux = parseFlux(commentBody);
   if (flux) return { flux, ids: modelsForDestination(flux.to) };
   return {
@@ -197,7 +244,7 @@ export function loadCanon(root = ROOT) {
   });
 }
 
-export function buildUserMessage({ title, body, diff, files, canon }) {
+export function buildUserMessage({ title, body, diff, files, canon, thread }) {
   const fileList = (files || []).map((f) => `- ${f}`).join("\n") || "(none)";
   const clipped = String(diff || "").slice(0, 80_000);
   const parts = [
@@ -214,6 +261,13 @@ export function buildUserMessage({ title, body, diff, files, canon }) {
     clipped || "(empty diff)",
     "```",
   ];
+  if (thread) {
+    parts.push(
+      "",
+      "Thread — PR comments. AIs talk here, not in other apps. Answer the peer who addressed you.",
+      thread,
+    );
+  }
   if (canon && canon.length) {
     parts.push(
       "",
@@ -416,6 +470,7 @@ export function eventMeta(env = process.env) {
     comment: env.SWARM_COMMENT || "",
     labels: [],
     label: "",
+    actor: env.SWARM_ACTOR || "",
   };
   try {
     const ev = JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8"));
@@ -425,6 +480,7 @@ export function eventMeta(env = process.env) {
       comment: ev.comment?.body || fallback.comment,
       labels: ev.pull_request?.labels || ev.issue?.labels || [],
       label: ev.label?.name || "",
+      actor: ev.comment?.user?.login || ev.sender?.login || fallback.actor,
     };
   } catch {
     return fallback;
@@ -436,6 +492,10 @@ export async function main(env = process.env) {
   const repo = env.GITHUB_REPOSITORY; // owner/name
   const pr = prNumberFromEvent(env);
   const meta = eventMeta(env);
+  if (isSwarmActor(meta.actor) || isSwarmEcho(meta.comment)) {
+    console.log("swarm skip (echo)");
+    return 0;
+  }
   const routed = idsForComment(
     meta.comment,
     meta.labels,
@@ -478,6 +538,7 @@ export async function main(env = process.env) {
   let body = env.PR_BODY || "";
   let files = [];
   let diff = env.PR_DIFF || "";
+  let thread = env.PR_THREAD || "";
 
   if (token && repo && pr) {
     const [owner, name] = repo.split("/");
@@ -491,22 +552,49 @@ export async function main(env = process.env) {
     diff = (fileRows || [])
       .map((f) => `--- ${f.filename}\n${f.patch || ""}`)
       .join("\n\n");
+    const comments = await gh(
+      `/repos/${owner}/${name}/issues/${pr}/comments?per_page=40`,
+      { token },
+    );
+    thread = clipThread(comments || []);
   }
 
   const system = loadPrompt();
   const canon = loadCanon();
-  let user = buildUserMessage({ title, body, diff, files, canon });
+  let user = buildUserMessage({ title, body, diff, files, canon, thread });
   if (routed.flux) {
     user =
-      `You are addressed on the flux mesh as ${routed.flux.to} by ${routed.flux.from} (${routed.flux.act}, ${routed.flux.grade}). Reply in FINDING / EVIDENCE / RISK / ACTION / TEST / RESULT / HANDOFF. You may address any named agent. Do not declare LIVE. Do not say QUANTUM. Do not say PRÉSENT. Do not wrangler deploy. Flux is not a Worker canal.\n\n` +
+      `You are addressed on the flux mesh as ${routed.flux.to} by ${routed.flux.from} (${routed.flux.act}, ${routed.flux.grade}). Reply in FINDING / EVIDENCE / RISK / ACTION / TEST / RESULT / HANDOFF. You may address any named agent. Do not declare LIVE. Do not say QUANTUM. Do not say PRÉSENT. Do not wrangler deploy. Flux bus is not schema/flux.v0.json and not a Worker canal.\n\n` +
       user;
   }
   const dest = routed.flux?.from || "github";
   const results = [];
+  const raw = [];
   for (const spec of run) {
     const one = await reviewOne(spec, system, user, env);
+    raw.push(one);
     results.push(routed.flux ? addressResult(one, dest) : one);
   }
+
+  const hop = nextHop(
+    raw,
+    run.map((s) => s.id),
+  );
+  if (hop) {
+    const { run: hopRun, skip: hopSkip } = keyedModels(hop.ids, env);
+    skip.push(...hopSkip);
+    if (hopRun.length) {
+      const hopUser =
+        `You are addressed on the flux mesh as ${hop.flux.to} by ${hop.flux.from} (HANDOFF, 1 hop). Reply in FINDING / EVIDENCE / RISK / ACTION / TEST / RESULT. Do not HANDOFF again. Do not declare LIVE. Do not say QUANTUM. Do not wrangler.\n\nPeer HANDOFF:\n${hop.flux.body}\n\n` +
+        user;
+      for (const spec of hopRun) {
+        const one = await reviewOne(spec, system, hopUser, env);
+        results.push(addressResult(one, hop.from));
+      }
+      run.push(...hopRun);
+    }
+  }
+
   const text = formatComment({ run, skip, results });
   if (token && repo && pr) {
     const [owner, name] = repo.split("/");

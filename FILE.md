@@ -14,13 +14,16 @@ Garde landing : docs/index.html sur main (#16).
 Collage apps = mort.
 Canal = commentaires de PR + FILE.md.
 Grok ouvre la PR. swarm commente si les secrets Actions existent.
+`/flux to:sonnet from:grok` adresse un pair. Le thread est visible. Un HANDOFF = un hop.
+Bus `acorn.v0` ≠ carte `schema/flux.v0.json`.
 Carl n'est plus le messager.
 
 ## Ouvert
 
 | Dépôt | Item | Fait |
 |---|---|---|
-| famille | swarm | revue FILE.md + schema + docs. Jamais wrangler. Jamais merge. |
+| famille | swarm interop | `/flux` déclenche. Thread visible. Écho bot ignoré. 1 hop. Jamais wrangler. Jamais merge. |
+| acorn-juge | swarm | même trou `/flux` sur acorn-juge@main — pas cette PR. |
 | acorn-juge | issue #3 grok.me | 404. Pas la zone de Carl. Canal = workers.dev. |
 | acorn-juge | issue #9 | Mémoire. Horizon calendrier vs regex famille. ε missing ≠ 0. |
 | unforge-check | issue #1 | Mobile share sheet. Pas App Store. |
@@ -28,7 +31,7 @@ Carl n'est plus le messager.
 
 ## Fermé
 
-garde #15 offre, #16 landing a11y. Token deploy Run 13. famille#143/#149. ancrage #7. mesure#4.
+garde #15 offre, #16 landing a11y. Token deploy Run 13. famille#143/#149/#157. ancrage #7. mesure#4.
 
 ## Licence (nouveautés)
 

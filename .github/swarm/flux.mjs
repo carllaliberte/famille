@@ -1,7 +1,12 @@
 /**
  * acorn flux v0 — chef mesh. Interoperability system.
  * Grok is chef. GitHub is memory. Four modes always, for every connected AI.
- * Heavy and Build always consult. Grok decides specialties, then writes in flux/.
+ * Heavy and Build always consult. Grok decides specialties.
+ *
+ * THIS IS THE BUS, not the card pipeline.
+ * Bus wire: header `FLUX from:…` version `acorn.v0` — PR comments + FILE.md.
+ * Card pipeline: schema/flux.v0.json title `famille.flux.v0` — mesure/ancrage satellites.
+ * Do not mix. Do not write flux/ files into git. Do not bind /flux on GET /juge.
  * Not a Worker canal. Not LIVE. Not QUANTUM.
  */
 
@@ -308,7 +313,11 @@ export function fanout(packet) {
   });
 }
 
-/** Chef files the broadcast itself, then each directed copy. */
+/**
+ * Chef files the broadcast itself, then each directed copy.
+ * Logical path only (envelope metadata). Do not write flux/ into git.
+ * Canal = PR comments + FILE.md.
+ */
 export function filePackets(packet) {
   if (!packet) return [];
   if (packet.to !== "*") return [packet];
@@ -406,7 +415,7 @@ export function cycle(input) {
       act: "EVIDENCE",
       mode: "ECHANGE",
       grade: "NOT LIVE VERIFIED",
-      body: `GitHub memory first. carllaliberte/acorn-juge. Topic: ${topic}.${never}`,
+      body: `GitHub memory first. carllaliberte/famille. Canal = PR comments + FILE.md. Topic: ${topic}.${never}`,
     },
     {
       from: CHEF,
@@ -414,7 +423,7 @@ export function cycle(input) {
       act: "HANDOFF",
       mode: "PROPOSITION",
       grade: "PROPOSED",
-      body: `Grok chef proposes to every connected AI. ${topic} Heavy and Build always consult. Grok decides specialties.${never}`,
+      body: `Grok chef proposes to every connected AI. ${topic} Heavy and Build always consult. Grok decides specialties. Do not write flux/ files. Canal = PR comments + FILE.md.${never}`,
     },
   ];
   for (const id of consult) {
@@ -446,7 +455,7 @@ export function cycle(input) {
     act: "RISK",
     mode: "CHALLENGE",
     grade: "PROPOSED",
-    body: `Challenge Grok. ${topic} Do not bind /flux on the Worker. Do not wrangler.${never}`,
+    body: `Challenge Grok. ${topic} Do not bind /flux on the Worker. Do not wrangler. Bus ≠ schema/flux.v0.json.${never}`,
   });
 
   const packets = [];
@@ -464,7 +473,7 @@ export function cycle(input) {
 export function parseFlux(text = "") {
   const src = String(text || "");
   const hasHeader = /(?:^|\n)\s*FLUX\b/i.test(src);
-  const hasCmd = /(?:^|\s)\/flux(?=[\s,;:!?.)]|$)/i.test(src);
+  const hasCmd = /(?:^|\s)\/flux(?=[\s,;:!?)]|$)/i.test(src);
   if (!hasHeader && !hasCmd) return null;
 
   const kv = {};
@@ -528,7 +537,7 @@ export const SEED = Object.freeze([
     act: "EVIDENCE",
     mode: "ECHANGE",
     grade: "NOT LIVE VERIFIED",
-    body: "GitHub memory first. carllaliberte/acorn-juge. Four modes always. Never QUANTUM.",
+    body: "GitHub memory first. carllaliberte/famille. Canal = PR comments + FILE.md. Four modes always. Never QUANTUM.",
   },
   {
     id: "seed_grok_to_all",
@@ -538,7 +547,7 @@ export const SEED = Object.freeze([
     act: "HANDOFF",
     mode: "PROPOSITION",
     grade: "PROPOSED",
-    body: "Grok chef proposes the mesh. Every connected AI may answer. Heavy and Build always consult. Worker stays GET /juge. Never QUANTUM.",
+    body: "Grok chef proposes the mesh. Every connected AI may answer on the PR. Heavy and Build always consult. FILE.md is state. Never QUANTUM.",
   },
   {
     id: "seed_grok_to_heavy",
@@ -568,7 +577,7 @@ export const SEED = Object.freeze([
     act: "FINDING",
     mode: "CONSULTATION",
     grade: "PROPOSED",
-    body: "Consult: is GitHub memory enough, or must chef write flux/ files in the repo? Unique host only. Never QUANTUM.",
+    body: "Consult: is the PR thread enough memory, or must chef write flux/ files in the repo? Canal = comments + FILE.md. Unique host only. Never QUANTUM.",
   },
   {
     id: "seed_chatgpt_to_grok",
@@ -578,7 +587,7 @@ export const SEED = Object.freeze([
     act: "RISK",
     mode: "CHALLENGE",
     grade: "PROPOSED",
-    body: "Challenge: a sandbox mesh is not LIVE. Do not bind /flux on the Worker. Do not wrangler from this packet. Never QUANTUM.",
+    body: "Challenge: a sandbox mesh is not LIVE. Do not bind /flux on the Worker. Do not wrangler from this packet. Bus ≠ schema/flux.v0.json. Never QUANTUM.",
   },
   {
     id: "seed_heavy_to_build",
@@ -618,6 +627,6 @@ export const SEED = Object.freeze([
     act: "HANDOFF",
     mode: "ECHANGE",
     grade: "NOT LIVE VERIFIED",
-    body: "Chef writes under flux/. Merge and wrangler stay yours. No model deploys. Never QUANTUM.",
+    body: "Chef remembers on the PR comment. FILE.md is state. Merge and wrangler stay yours. No model deploys. Never QUANTUM.",
   },
 ]);
