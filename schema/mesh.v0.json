@@ -1,10 +1,16 @@
 {
   "$id": "https://github.com/carllaliberte/famille/schema/mesh.v0.json",
   "title": "famille.mesh.v0",
-  "description": "PR-comment envelope shared with acorn-juge (wire flux: acorn.v0). Not schema/flux.v0.json (carte pipeline). FILE.md is state, not this envelope. Preview, not a receipt. LIVE VERIFIED is Carl only. No next-action field.",
+  "description": "PR-comment envelope shared with acorn-juge (wire flux: acorn.v0). Not schema/flux.v0.json (carte pipeline). FILE.md is state, not this envelope. Preview, not a receipt. LIVE VERIFIED is Carl only. Forbids next and instruction. Stigmergic only.",
   "type": "object",
   "additionalProperties": true,
   "required": ["from", "to", "act", "mode", "grade", "body"],
+  "not": {
+    "anyOf": [
+      { "required": ["next"] },
+      { "required": ["instruction"] }
+    ]
+  },
   "properties": {
     "flux": { "const": "acorn.v0" },
     "from": {
@@ -45,6 +51,8 @@
       "description": "Pull request number that holds this comment."
     },
     "preview": { "const": true },
-    "receipt": { "const": false }
+    "receipt": { "const": false },
+    "next": false,
+    "instruction": false
   }
 }
