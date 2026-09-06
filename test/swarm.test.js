@@ -220,6 +220,13 @@ describe("canon FILE.md + schema + docs", () => {
     assert.match(map["INTEROP-IA.md"], /enveloppe nue/);
     assert.match(map["INTEROP-IA.md"], /en \/ en-CA/);
     assert.doesNotMatch(map["INTEROP-IA.md"], /Packs lieu : `fr-CA` · `en-CA`/);
+    assert.match(map["INTEROP-IA.md"], /Toujours ouverts/);
+    assert.match(map["INTEROP-IA.md"], /toujours ouverts/);
+    assert.match(map["INTEROP-IA.md"], /activer les IA dormantes/);
+    assert.match(map["INTEROP-IA.md"], /Ne pas laisser idle/);
+    const assign = readFileSync(join(ROOT, "ASSIGN.md"), "utf8");
+    assert.match(assign, /Interop commune/);
+    assert.match(assign, /toujours ouverts/);
   });
 
   it("buildUserMessage includes FILE.md canon and the diff", () => {

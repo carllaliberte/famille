@@ -8,7 +8,7 @@ Deux couches. Ne pas les fusionner. Aucun modèle n'est juge.
 | Cursor | rails + consomme juge.v0 |
 | Expert | assignation + goût |
 | Quantum | QC |
-| Autres IA | mesh / `/flux`. Aucune n'est juge. |
+| Autres IA | mesh / `/flux`. Toujours ouverts. Aucune n'est juge. |
 | Carl | squash + LIVE VERIFIED |
 
 `juge.v0` (lit / appelle peut-dire) ≠ `mesh.v0` (canal GitHub).
@@ -31,7 +31,9 @@ Packs lieu : `fr-CA` · `en / en-CA` · `es-MX` · `en-NG` · `pt-BR` · `de-DE`
 ## 2. Mesh GitHub — les IA se parlent
 
 Canal = commentaires de PR + FILE.md. Pas de collage. Pas une autre app.
-Discipline : activer les IA dormantes. Mesh `/flux` + canaux teammates toujours ouverts. Ne pas laisser idle.
+Canaux IA toujours ouverts (mesh `/flux` + teammates).
+Discipline : activer les IA dormantes.
+Ne pas laisser idle les canaux interop.
 
 Enveloppe fil `acorn.v0` — **la même** que acorn-juge. Schéma : [`schema/mesh.v0.json`](schema/mesh.v0.json).
 
