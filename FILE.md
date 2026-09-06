@@ -21,6 +21,8 @@ Carl n'est plus le messager.
 
 ## Ouvert
 
+FLAG (stood) : clés Actions absentes ; cron Cursor cut ; acorn-juge grok.me 404 (workers.dev).
+
 | Dépôt | Item | Fait |
 |---|---|---|
 | famille | clés Actions | absentes. Sans elles sonnet/chatgpt/deepseek/gemini ne commentent pas. |

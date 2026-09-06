@@ -34,6 +34,7 @@ Canal = commentaires de PR + FILE.md. Pas de collage. Pas une autre app.
 Canaux IA toujours ouverts (mesh `/flux` + teammates).
 Discipline : activer les IA dormantes.
 Ne pas laisser idle les canaux interop.
+Prêt sans clés Actions : pairs adressables. Commenter (sonnet/chatgpt/deepseek/gemini) exige ces clés — Carl Settings seulement, pas un invent bot. LU / `/flux` = canal GitHub (`mesh.v0`).
 
 Enveloppe fil `acorn.v0` — **la même** que acorn-juge. Schéma : [`schema/mesh.v0.json`](schema/mesh.v0.json).
 
