@@ -26,7 +26,7 @@ Carl n'est plus le messager.
 | famille | clés Actions | absentes. Sans elles sonnet/chatgpt/deepseek/gemini ne commentent pas. |
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
 | acorn-juge | issue #3 grok.me | 404. Pas la zone de Carl. Canal = workers.dev. |
-| unforge-check | issue #1 | mobile/index.html sur main (pick + VERT/ROUGE). Share sheet réel = reste. Pas App Store. |
+| unforge-check | issue #1 | mobile/index.html + share sheet (Web Share + fallback) sur main (#22). Pas App Store. |
 
 ## Fermé
 
@@ -34,6 +34,7 @@ garde #15 offre, #16 landing a11y. Token deploy Run 13. famille#143/#149/#158/#1
 26 issues bruit not_planned (legal-hourly / quantum-daily). #89 bots-cold-start déjà sur main.
 ancrage #7. mesure#4.
 acorn-juge #9 SDK isCalendarDay (famille#168).
+unforge-check #22 share sheet.
 
 ## Licence (nouveautés)
 
