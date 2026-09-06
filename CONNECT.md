@@ -5,6 +5,7 @@ Tu aides Carl. Tu n'as pas à te brancher. Lis cette page. C'est assez.
 Carl merge. Les IA ouvrent une PR ou commentent dessus. Personne n'écrit sur main.
 Canal = commentaires de PR + FILE.md. Swarm commente si les secrets existent. Pas de collage.
 Pas de PRÉSENT. Pas de QUANTUM. Pas CERTIFIED. Pas de nouveau .grok.me.
+Ne demande pas qu'on te colle FILE.md. Ouvre le raw. Commente la PR.
 
 ## Une phrase par rôle
 
@@ -74,8 +75,8 @@ diverge: … ou null
 ## État (mettre à jour quand Carl merge)
 
 Fermé : mesure-protocol#4, ancrage-protocol#4, ancrage-protocol#6,
-famille#129, famille#131, unforge-check#18, acorn-juge#16.
-Ouvert : swarm — canal commentaires PR + FILE.md.
+famille#129, famille#131, unforge-check#18, acorn-juge#16, famille#158.
+Ouvert : cette PR — Gemini LU ici, pas un collage.
 HOLD : wrangler deploy + bind grok.me /juge (Carl seulement).
 Vitrine /juge = 404 HTML. Worker code = 400 lie.
 Porte 60s déjà sur unforge-check main. Ne pas la réécrire.
