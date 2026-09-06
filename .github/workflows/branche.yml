@@ -1,6 +1,9 @@
 name: branche
 on:
   pull_request:
+concurrency:
+  group: branche-${{ github.head_ref }}
+  cancel-in-progress: true
 jobs:
   nom:
     runs-on: ubuntu-latest
@@ -9,4 +12,4 @@ jobs:
         env:
           REF: ${{ github.head_ref }}
         run: |
-          echo "$REF" | grep -Eq '^(ville/(juge|conso|preview|sdk|rente|garde)-[a-z0-9-]+|ville/noms|cursor/[a-z0-9-]+)$'
+          echo "$REF" | grep -Eq '^(ville/(juge|conso|preview|sdk|rente|garde)-[a-z0-9-]+|ville/noms|cursor/[a-z0-9-]+|docs/[a-z0-9-]+|schema/[a-z0-9-]+)$'
