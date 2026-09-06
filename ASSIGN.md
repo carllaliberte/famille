@@ -4,6 +4,19 @@ Qui ouvre, qui rédige, ce qui ferme. Pas un 7e chantier. Pas de dashboard.
 
 Grok Chef. Quantum QC last word + coord. Expert = assignation + goût. Cursor consomme le juge. Carl squash (humain). Client au centre.
 
+## Interop commune
+
+Pas un 7e chantier. Détail : [INTEROP-IA.md](INTEROP-IA.md).
+
+- Grok Chef — ouvre PR / mesh (`/flux`)
+- Cursor — rails + consomme juge.v0 (`peut-dire`)
+- Expert — assignation + goût
+- Quantum — QC
+- Autres IA — mesh / `/flux` (commentaires PR). Aucune n'est juge.
+- Carl — squash + LIVE VERIFIED
+
+Deux couches, jamais fusionnées : `juge.v0` (lit / appelle peut-dire) ≠ `mesh.v0` (canal GitHub).
+
 ## Ouvre
 
 Quantum (steward) ou Expert (assignation).

@@ -218,6 +218,8 @@ describe("canon FILE.md + schema + docs", () => {
     assert.match(map["INTEROP-IA.md"], /schema\/mesh\.v0\.json/);
     assert.match(map["INTEROP-IA.md"], /acorn\.v0/);
     assert.match(map["INTEROP-IA.md"], /enveloppe nue/);
+    assert.match(map["INTEROP-IA.md"], /en \/ en-CA/);
+    assert.doesNotMatch(map["INTEROP-IA.md"], /Packs lieu : `fr-CA` · `en-CA`/);
   });
 
   it("buildUserMessage includes FILE.md canon and the diff", () => {
