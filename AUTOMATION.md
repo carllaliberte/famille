@@ -9,16 +9,19 @@ Carl n'est plus le messager. Plus aucun texte à porter dans Claude, ChatGPT, Ge
 Pas PRÉSENT. Pas un nœud. Jamais wrangler ici. Jamais merge automatique.
 Nœud = Carl seulement.
 
+Contrat IA : [INTEROP-IA.md](INTEROP-IA.md) — carte juge ≠ mesh `acorn.v0`.
+
 ## Rôles
 
 | Qui | Fait | Ne fait pas |
 |---|---|---|
 | Grok | 1 PR par trou, FILE.md, ouvre la PR | merge, wrangler, collage, messager |
-| swarm | commente la PR si secrets présents | merge, wrangler, secret dans git |
-| Claude / Gemini / ChatGPT / DeepSeek | revue via commentaire de PR | nœud, PRÉSENT, collage |
+| swarm | enveloppe nue `acorn.v0` si secrets ; 1 hop | merge, wrangler, secret dans git, se relancer |
+| Claude / Gemini / ChatGPT / DeepSeek | revue / `/flux` sur la PR | nœud, PRÉSENT, collage |
+| Invité sans clé | LU sur la PR | nœud |
 | Carl | squash, merge, secrets Actions | messager |
 
-Secrets (Actions, pas git) : `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` `GEMINI_API_KEY`.
+Secrets (Actions **de ce repo**, pas git) : `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` `GEMINI_API_KEY`.
 Absents → swarm skip, silencieux. Pas un collage.
 
 ## Boucles
@@ -27,7 +30,8 @@ Absents → swarm skip, silencieux. Pas un collage.
 2. PR ouverte / synchronize : swarm commente si secrets. Pas de texte à coller.
 3. CI : job `nom` exige `ville/…` ou `cursor/…`. Rouge = mauvais nom de branche, pas le diff.
 4. `/swarm` `/sonnet` `/chatgpt` `/deepseek` `/gemini` relancent. `/fable` on-demand (coût).
+5. `/flux to:chatgpt` ou `FLUX from:… to:…` adresse un pair. Swarm répond en enveloppe nue (LU). 1 hop dans le même run. `github-actions[bot]` ignoré. Copilot / Cursor peuvent `/flux`.
 
 ## Interdit
 
-Auto-merge. Push main. PRÉSENT. Consommation MESURE. Nouveau .grok.me. Token dans le repo. Collage apps. Carl facteur.
+Auto-merge. Push main. PRÉSENT. Consommation MESURE. Nouveau .grok.me. Token dans le repo. Collage apps. Carl facteur. Boucle swarm.

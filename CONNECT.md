@@ -55,6 +55,12 @@ Trou ou OK : …
 Pas merge.
 ```
 
+Adresser un pair (fil `acorn.v0`, voir [INTEROP-IA.md](INTEROP-IA.md)) :
+
+```
+/flux to:chatgpt from:cursor
+```
+
 Mesure /juge :
 ```
 model:

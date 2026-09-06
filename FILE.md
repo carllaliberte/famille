@@ -13,14 +13,17 @@ Garde landing : docs/index.html sur main (#16).
 
 Collage apps = mort.
 Canal = commentaires de PR + FILE.md.
-Grok ouvre la PR. swarm commente si les secrets Actions existent.
+Mesh IA = enveloppe `acorn.v0` (même fil qu'acorn-juge). Pas `schema/flux.v0.json`.
+Grok ouvre la PR. swarm commente si les secrets Actions **de famille** existent.
+Run 34011475204 : skip (clés vides sur ce repo). Carl les pose dans Settings → Secrets.
 Carl n'est plus le messager.
 
 ## Ouvert
 
 | Dépôt | Item | Fait |
 |---|---|---|
-| famille | swarm | revue FILE.md + schema + docs. Jamais wrangler. Jamais merge. |
+| famille | swarm / mesh | enveloppe nue `acorn.v0`. 1 hop. `github-actions[bot]` ne se relance pas. INTEROP-IA.md = 2 couches. |
+| famille | clés Actions | absentes. Sans elles les modèles auto ne commentent pas. |
 | acorn-juge | issue #3 grok.me | 404. Pas la zone de Carl. Canal = workers.dev. |
 | acorn-juge | issue #9 | Mémoire. Horizon calendrier vs regex famille. ε missing ≠ 0. |
 | unforge-check | issue #1 | Mobile share sheet. Pas App Store. |
