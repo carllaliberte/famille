@@ -148,6 +148,15 @@ export function shouldSkipComment({ actor = "", body = "", comment = "" } = {}) 
   return false;
 }
 
+export function envelopeAnchor(env = process.env) {
+  const sha = String(env.GITHUB_SHA || env.PR_SHA || "").toLowerCase();
+  const n = Number(env.PR_NUMBER || "");
+  const out = {};
+  if (/^[0-9a-f]{40}$/.test(sha)) out.sha = sha;
+  if (Number.isInteger(n) && n > 0) out.pr = n;
+  return out;
+}
+
 /** Flux addressing takes precedence. /flux to:chatgpt runs ChatGPT only. */
 export function idsForComment(
   commentBody = "",
@@ -164,7 +173,7 @@ export function idsForComment(
   };
 }
 
-export function addressResult(result, to = "github") {
+export function addressResult(result, to = "github", anchor = {}) {
   if (!result || result.skipped || result.error || !result.text) return result;
   const from = result.id;
   const mode = from === "grok" || to === "grok" ? "CHALLENGE" : "ECHANGE";
@@ -175,6 +184,7 @@ export function addressResult(result, to = "github") {
     mode,
     grade: "PROPOSED",
     body: result.text,
+    ...envelopeAnchor(anchor),
   });
   if (!r.ok) return { ...result, text: sanitizeReview(result.text) };
   return { ...result, text: formatEnvelope(r.packet) };
@@ -498,6 +508,7 @@ export async function main(env = process.env) {
   const repo = env.GITHUB_REPOSITORY; // owner/name
   const pr = prNumberFromEvent(env);
   const meta = eventMeta(env);
+  const anchor = envelopeAnchor({ ...env, PR_NUMBER: env.PR_NUMBER || pr });
   if (meta.event === "issue_comment" && shouldSkipComment(meta)) {
     console.log("swarm skip (own comment)");
     return 0;
@@ -516,7 +527,7 @@ export async function main(env = process.env) {
         console.log("flux already stored");
         return 0;
       }
-      const accepted = acceptFlux(routed.flux);
+      const accepted = acceptFlux({ ...routed.flux, ...anchor });
       const body = accepted.ok
         ? formatEnvelope(accepted.packet)
         : `FLUX refused: ${accepted.code} — ${accepted.error}`;
@@ -593,7 +604,7 @@ export async function main(env = process.env) {
           env,
         );
         const raw = one.text || "";
-        results.push(addressResult(one, job.replyTo));
+        results.push(addressResult(one, job.replyTo, anchor));
         if (extra < 1 && !one.skipped && !one.error) {
           const nid = handoffIds(raw, spec.id).find((id) => !seen.has(id));
           if (nid) {

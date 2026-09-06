@@ -1,13 +1,17 @@
 {
   "$id": "https://github.com/carllaliberte/famille/schema/mesh.v0.json",
   "title": "famille.mesh.v0",
-  "description": "PR-comment envelope shared with acorn-juge (wire flux: acorn.v0). Not schema/flux.v0.json (carte pipeline). Preview, not a receipt. LIVE VERIFIED is Carl only.",
+  "description": "PR-comment envelope shared with acorn-juge (wire flux: acorn.v0). Not schema/flux.v0.json (carte pipeline). FILE.md is state, not this envelope. Preview, not a receipt. LIVE VERIFIED is Carl only. No next-action field.",
   "type": "object",
   "additionalProperties": true,
   "required": ["from", "to", "act", "mode", "grade", "body"],
   "properties": {
     "flux": { "const": "acorn.v0" },
-    "from": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,24}$" },
+    "from": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,24}$",
+      "description": "Unique writer of this envelope. Do not reuse another agent's from."
+    },
     "to": { "type": "string", "pattern": "^(\\*|[a-z][a-z0-9-]{1,24})$" },
     "act": {
       "enum": ["FINDING", "EVIDENCE", "RISK", "ACTION", "TEST", "RESULT", "HANDOFF"]
@@ -25,6 +29,21 @@
       ]
     },
     "body": { "type": "string", "minLength": 1 },
+    "ts": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+      "description": "ISO-8601 UTC of this envelope. Set by accept(). GitHub comments are append-only."
+    },
+    "sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "PR head commit. Pointer, not a copy of FILE.md."
+    },
+    "pr": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Pull request number that holds this comment."
+    },
     "preview": { "const": true },
     "receipt": { "const": false }
   }

@@ -3,6 +3,7 @@
 Structure. Pas un script d'agent. Carl squash / merge. Jamais main automatique.
 
 Canal = commentaires de PR + FILE.md.
+FILE.md = état lisible. Pas un canal d'instruction. Vérité structurée machine-à-machine = enveloppe `acorn.v0` (`schema/mesh.v0.json`) + n° de PR + SHA. Commentaires = append-only. Un `from` par enveloppe.
 Grok ouvre la PR. `.github/workflows/swarm.yml` commente SI les secrets Actions existent.
 Grok répond aussi aux commentaires (automation `famille-mesh-comment`).
 Carl n'est plus le messager. Plus aucun texte à porter dans Claude, ChatGPT, Gemini ou DeepSeek.

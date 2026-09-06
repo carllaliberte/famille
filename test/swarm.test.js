@@ -20,8 +20,15 @@ import {
   shouldSkipComment,
   handoffIds,
   meshUser,
+  envelopeAnchor,
 } from "../.github/swarm/review.mjs";
-import { isMeshEnvelope, FLUX_VERSION } from "../.github/swarm/flux.mjs";
+import {
+  isMeshEnvelope,
+  FLUX_VERSION,
+  accept,
+  formatEnvelope,
+  parseFlux,
+} from "../.github/swarm/flux.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -207,9 +214,14 @@ describe("canon FILE.md + schema + docs", () => {
     const canon = loadCanon(ROOT);
     const map = Object.fromEntries(canon.map((c) => [c.path, c.text]));
     assert.match(map["FILE.md"], /Collage apps = mort/);
+    assert.match(map["FILE.md"], /état, pas un canal/);
+    assert.match(map["FILE.md"], /schema\/mesh\.v0\.json/);
     assert.doesNotMatch(map["FILE.md"], /parler à travers cette page/);
+    assert.doesNotMatch(map["FILE.md"], /action suivante/);
     assert.match(map["AUTOMATION.md"], /commentaires de PR \+ FILE\.md/);
     assert.match(map["AUTOMATION.md"], /n'est plus le messager/);
+    assert.match(map["AUTOMATION.md"], /Vérité structurée/);
+    assert.match(map["AUTOMATION.md"], /Un `from` par enveloppe/);
     assert.match(map["schema/juge.v0.json"], /exclusiveMinimum/);
     assert.match(map["schema/flux.v0.json"], /famille\.flux\.v0/);
     assert.match(map["schema/mesh.v0.json"], /acorn\.v0/);
@@ -392,5 +404,90 @@ describe("mesh interoperability", () => {
     assert.match(msg, /schema\/mesh\.v0\.json/);
     assert.match(msg, /not schema\/flux\.v0\.json/);
     assert.match(msg, /One hop/);
+  });
+});
+
+describe("mesh trace — FILE.md is state, envelope is the log", () => {
+  const SHA = "0123456789abcdef0123456789abcdef01234567";
+
+  it("schema names ts, sha, pr and unique from; no instruction field", () => {
+    const mesh = JSON.parse(
+      readFileSync(join(ROOT, "schema/mesh.v0.json"), "utf8"),
+    );
+    assert.equal(mesh.properties.from.description.includes("Unique writer"), true);
+    assert.ok(mesh.properties.ts);
+    assert.ok(mesh.properties.sha);
+    assert.ok(mesh.properties.pr);
+    assert.equal(mesh.properties.instruction, undefined);
+    assert.equal(mesh.properties.next, undefined);
+    assert.match(mesh.description, /FILE.md is state/);
+    assert.match(mesh.description, /No next-action field/);
+  });
+
+  it("accept stamps ISO ts and keeps sha/pr as pointers", () => {
+    const r = accept({
+      from: "grok",
+      to: "chatgpt",
+      act: "HANDOFF",
+      mode: "PROPOSITION",
+      grade: "PROPOSED",
+      body: "Never QUANTUM. FILE.md is state.",
+      sha: SHA,
+      pr: 170,
+    });
+    assert.equal(r.ok, true);
+    assert.match(r.packet.ts, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+    assert.equal(r.packet.sha, SHA);
+    assert.equal(r.packet.pr, 170);
+    assert.equal(r.packet.from, "grok");
+  });
+
+  it("formatEnvelope puts ts/sha/pr on the header; parseFlux round-trips", () => {
+    const r = accept({
+      from: "gemini",
+      to: "grok",
+      act: "FINDING",
+      mode: "CHALLENGE",
+      grade: "PROPOSED",
+      body: "FILE.md is state. Never QUANTUM.",
+      ts: "2026-09-06T17:42:00.000Z",
+      sha: SHA,
+      pr: 23,
+    });
+    const text = formatEnvelope(r.packet);
+    assert.match(text, /ts:2026-09-06T17:42:00\.000Z/);
+    assert.match(text, new RegExp(`sha:${SHA}`));
+    assert.match(text, /pr:23/);
+    const draft = parseFlux(text);
+    assert.equal(draft.from, "gemini");
+    assert.equal(draft.to, "grok");
+    assert.equal(draft.ts, "2026-09-06T17:42:00.000Z");
+    assert.equal(draft.sha, SHA);
+    assert.equal(draft.pr, 23);
+  });
+
+  it("addressResult with anchor emits sha and pr", () => {
+    const out = addressResult(
+      {
+        id: "chatgpt",
+        label: "ChatGPT",
+        model: "gpt-5.6-terra",
+        text: "Do not wrangler. Never QUANTUM. FILE.md is the canal.",
+      },
+      "grok",
+      { GITHUB_SHA: SHA, PR_NUMBER: "170" },
+    );
+    assert.match(out.text, new RegExp(`sha:${SHA}`));
+    assert.match(out.text, /pr:170/);
+    assert.match(out.text, /ts:\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it("envelopeAnchor ignores short or missing sha", () => {
+    assert.deepEqual(envelopeAnchor({}), {});
+    assert.deepEqual(envelopeAnchor({ GITHUB_SHA: "abc", PR_NUMBER: "x" }), {});
+    assert.deepEqual(envelopeAnchor({ GITHUB_SHA: SHA, PR_NUMBER: "12" }), {
+      sha: SHA,
+      pr: 12,
+    });
   });
 });
