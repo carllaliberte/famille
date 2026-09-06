@@ -27,7 +27,7 @@ Absents → swarm skip, silencieux. Pas un collage.
 
 ## Boucles
 
-1. Grok `famille-daily-file` : 7h–23h Toronto, 1 PR max par run. FILE.md + issues.
+1. Grok `famille-24h-chef` : horaire 24/7 America/Toronto, 1 PR max par run. FILE.md + issues.
 2. PR ouverte / synchronize : swarm commente si secrets. Automation `pr-opened-file` note le verdict.
 3. Commentaire PR/issue (pas bot, pas soi) : `famille-mesh-comment` — Grok répond sur le fil.
 4. PR mergée : `pr-merged-file` aligne FILE.md si le tableau Ouvert est faux.
