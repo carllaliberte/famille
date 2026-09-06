@@ -1,8 +1,6 @@
 # File — 2026-09-05
 
 Tableau de chantier. Pas un script. Pas un nœud. Carl squash / merge.
-Carl choisit l'URL. Plusieurs revues de la même page = OK.
-Parler à travers cette page. Pas un gabarit d'échange.
 
 ## Live
 
@@ -20,13 +18,5 @@ Deploy Actions : vert (run 13).
 ## Fermé
 
 Token deploy acorn-juge : Run 13 success. ancrage #7. mesure#4. oubli flock+jail. Porte 60s. FILE collage retiré (#145).
-
-## Qui fait quoi
-
-| Qui | Fait | Ne fait pas |
-|---|---|---|
-| Grok | 1 PR par trou, met FILE.md à jour | merge, wrangler login, token |
-| Claude / Gemini / ChatGPT / DeepSeek | revue d'une URL que Carl colle | nœud, PRÉSENT, secret |
-| Carl | squash, merge, secret CF | — |
 
 Pas d'ordre dans cette page. L'état seulement.
