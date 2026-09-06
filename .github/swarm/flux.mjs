@@ -79,6 +79,8 @@ const RESERVED = new Set([
   "*",
 ]);
 const ID_RE = /^[a-z][a-z0-9-]{1,24}$/;
+const SHA_RE = /^[0-9a-f]{40}$/;
+const TS_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.\d+)?Z$/;
 
 /** @type {Map<string, { id: string, name: string, role: string, kind: "guest", specialty: string }>} */
 const GUESTS = new Map();
@@ -211,6 +213,20 @@ function newId() {
   return `flux_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function isoTs(value) {
+  const s = String(value || "");
+  return TS_RE.test(s) ? s : new Date().toISOString();
+}
+
+function traceOf(raw) {
+  const sha = String(raw?.sha || "").toLowerCase();
+  const pr = Number(raw?.pr);
+  const out = {};
+  if (SHA_RE.test(sha)) out.sha = sha;
+  if (Number.isInteger(pr) && pr > 0) out.pr = pr;
+  return out;
+}
+
 function modeOk(mode, from, to) {
   if (mode === "PROPOSITION" && from !== CHEF) {
     return fail("MODE_CHEF", "PROPOSITION is Grok chef only");
@@ -281,7 +297,7 @@ export function accept(input) {
   const packet = {
     flux: FLUX_VERSION,
     id: String(raw.id || newId()),
-    ts: String(raw.ts || new Date().toISOString()),
+    ts: isoTs(raw.ts),
     chef: CHEF,
     from,
     to,
@@ -294,6 +310,7 @@ export function accept(input) {
     preview: true,
     receipt: false,
     host: HOST,
+    ...traceOf(raw),
   };
   packet.path = pathFor(packet);
   return { ok: true, packet };
@@ -494,7 +511,7 @@ export function parseFlux(text = "") {
     .replace(/^\s*chef:\s*\S+\s*$/gim, "")
     .trim();
 
-  return {
+  const draft = {
     flux: FLUX_VERSION,
     from,
     to,
@@ -503,13 +520,21 @@ export function parseFlux(text = "") {
     grade,
     body: stripped || src.trim(),
   };
+  if (kv.ts) draft.ts = kv.ts;
+  if (kv.sha) draft.sha = String(kv.sha).toLowerCase();
+  if (kv.pr && /^\d+$/.test(kv.pr)) draft.pr = Number(kv.pr);
+  return draft;
 }
 
 export function formatEnvelope(packet) {
   const p = packet && typeof packet === "object" ? packet : {};
   const path = p.path || pathFor(p);
+  let header = `FLUX from:${p.from} to:${p.to} act:${p.act} mode:${p.mode || "ECHANGE"} grade:${p.grade}`;
+  if (p.ts) header += ` ts:${p.ts}`;
+  if (p.sha) header += ` sha:${p.sha}`;
+  if (p.pr != null && p.pr !== "") header += ` pr:${p.pr}`;
   return [
-    `FLUX from:${p.from} to:${p.to} act:${p.act} mode:${p.mode || "ECHANGE"} grade:${p.grade}`,
+    header,
     `path: ${path}`,
     `chef: ${CHEF}`,
     "",
