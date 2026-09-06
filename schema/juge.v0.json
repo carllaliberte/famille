@@ -13,8 +13,9 @@
     },
     "horizon": {
       "type": "string",
+      "format": "date",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
-      "description": "Date calendrier future. UFHY1 n'est pas une date."
+      "description": "Jour calendrier réel, strictement après aujourd'hui. 2027-02-31 refusé. UFHY1 n'est pas une date."
     },
     "appareil": { "type": "string" },
     "transcript": { "type": "string" },
