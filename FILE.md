@@ -24,14 +24,14 @@ Carl n'est plus le messager.
 
 FLAG (stood) : Soft FLAGS Carl-only — clés Actions absentes ; cron Cursor cut ; acorn-juge grok.me 404 HOLD (workers.dev).
 
-Jalon 3 — mesh.v0 interdit `next` / `instruction`.
+Jalon 4 — Worker validation (acorn-juge PR in flight).
 
 | Dépôt | Item | Fait |
 |---|---|---|
 | famille | clés Actions | absentes. Sans elles sonnet/chatgpt/deepseek/gemini ne commentent pas. |
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
 | acorn-juge | issue #3 grok.me | 404 HOLD. Pas la zone de Carl. Canal = workers.dev. |
-| famille | mesh.v0 jalon 3 | interdit `next` / `instruction`. PR ouverte. |
+| acorn-juge | Worker validation jalon 4 | PR in flight. |
 
 ## Fermé
 
@@ -47,6 +47,7 @@ formal-layer #8 obligations only (3f58284).
 unforge-retract #19 Loi 25 retract documenté (2aa43a3).
 Jalon 1 MERGED / Carl squash : unforge-retract #20 (995dc1b) ; mesure-protocol #5 (4b71a04) ; unforge-press #33 (35cedfa) ; unforge-check #25 (500158a) ; unforge-press #34 (fc665ce).
 Jalon 2 : unforge-check #26 MERGED (4e4e597).
+Jalon 3 : famille#186 mesh forbid next/instruction (e7dc1d2). FORBIDDEN_NEXT + schema.
 
 ## Licence (nouveautés)
 
