@@ -37,6 +37,11 @@ garde #15 offre, #16 landing a11y. Token deploy Run 13. famille#143/#149/#158/#1
 ancrage #7. mesure#4.
 acorn-juge #9 SDK isCalendarDay (famille#168).
 unforge-check #1 / #22 share sheet Web Share + copy fallback (f2456aa).
+HORIZONS Moyen 2026-09-06 : unforge-check #24 CI VERT/ROUGE badge (4003c8c).
+unforge-press #30 MESURE kit (96bf1cf) ; #31 ANCRAGE re-press (6d7730c) ; #32 carte de poche (a12ae1f).
+garde #19 listed attacks refuse (9f0414e).
+formal-layer #8 obligations only (3f58284).
+unforge-retract #19 Loi 25 retract documenté (2aa43a3).
 
 ## Licence (nouveautés)
 
