@@ -145,6 +145,16 @@ describe("REVUE.md — two phases, file is the bridge, arbiter never debates", (
     assert.ok(four > 0 && bis > four && five > bis);
   });
 
+  it("post-merge reads pin SHA not main (CDN stale)", () => {
+    assert.match(TEXT, /utiliser le SHA, pas `main`/);
+    assert.match(TEXT, /raw\.githubusercontent\.com\/\{owner\}\/\{repo\}\/\{sha\}\/\{fichier\}/);
+    assert.match(TEXT, /suspecter le cache/);
+    const six = TEXT.indexOf("## 6. État actuel");
+    const pin = TEXT.indexOf("### Lecture juste après un merge");
+    const seven = TEXT.indexOf("## 7. Objectif");
+    assert.ok(six > 0 && pin > six && seven > pin);
+  });
+
   it("mesh cannot seat arbitre as a guest", () => {
     resetGuests();
     const r = connectAgent({ id: "arbitre", name: "Grok Arbitre" });

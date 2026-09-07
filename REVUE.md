@@ -201,6 +201,14 @@ Cette section sera révisée **si/quand** une automatisation devient nécessaire
 
 HOLD + URL si un outil refuse Git. Carl colle le bloc REVUE dans ce fichier, pas FILE.md.
 
+### Lecture juste après un merge — utiliser le SHA, pas `main`
+
+`raw.githubusercontent.com/.../main/...` passe par un CDN avec un délai de propagation (quelques minutes). Un lecteur qui vérifie un état juste après un merge récent peut recevoir une version stale et conclure à tort qu'un changement n'est pas présent.
+
+Règle : quand Carl transmet une tâche de vérification **immédiatement après** avoir annoncé un merge, il fournit le SHA exact du commit (`raw.githubusercontent.com/{owner}/{repo}/{sha}/{fichier}`), pas l'URL `main`, pour éviter le faux négatif.
+
+Un lecteur qui obtient un résultat inattendu sur `main` (fichier qui semble incomplet alors qu'un merge vient d'être annoncé) doit d'abord suspecter le cache avant de conclure à une objection de fond — redemander le SHA exact plutôt que de traiter le contenu `main` comme définitif dans les minutes suivant un merge.
+
 ---
 
 ## 7. Objectif de réduction du portage manuel
@@ -245,6 +253,7 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 - 2026-09-07 : §3bis paliers de risque LOW|HIGH (défaut HIGH) — PR #201
 - 2026-09-07 : audit périodique (10 lots / 2 semaines) — PR #201
 - 2026-09-07 : §4bis verrous durs non-arbitrables ; verrou_dur — PR #202
+- 2026-09-07 : recommandation SHA épinglé post-merge — PR #203
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
