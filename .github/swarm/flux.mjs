@@ -76,6 +76,7 @@ const RESERVED = new Set([
   "admin",
   "root",
   "chef",
+  "arbitre",
   "*",
 ]);
 const ID_RE = /^[a-z][a-z0-9-]{1,24}$/;
