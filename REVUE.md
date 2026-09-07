@@ -194,7 +194,7 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 ```
 - 2026-09-07 : protocole initial (deux phases, fichier = pont) — PR #193
 - 2026-09-07 : §7 réduction du portage, garde-fous — PR #194
-- 2026-09-07 : ancrage obligatoire, profondeur SURFACE|VERIFIE, canal §7, changelog — PR #TBD
+- 2026-09-07 : ancrage obligatoire, profondeur SURFACE|VERIFIE, canal §7, changelog — PR #195
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
