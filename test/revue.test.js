@@ -84,6 +84,19 @@ describe("REVUE.md — two phases, file is the bridge, arbiter never debates", (
     assert.ok(six > 0 && seven > six && lot > seven);
   });
 
+  it("ancre + profondeur + changelog, no parallel canal", () => {
+    assert.match(TEXT, /ancre: <url du lot citée, ou "aucune">/);
+    assert.match(TEXT, /profondeur: SURFACE \| VERIFIE/);
+    assert.match(TEXT, /ANCRAGE_MANQUANT/);
+    assert.match(TEXT, /vérifie l'ancrage de chaque bloc/);
+    assert.match(TEXT, /Pas de canal parallèle/);
+    assert.match(TEXT, /## Changelog du protocole/);
+    const seven = TEXT.indexOf("## 7. Objectif de réduction");
+    const log = TEXT.indexOf("## Changelog du protocole");
+    const lot = TEXT.indexOf("## Lot en cours");
+    assert.ok(seven > 0 && log > seven && lot > log);
+  });
+
   it("mesh cannot seat arbitre as a guest", () => {
     resetGuests();
     const r = connectAgent({ id: "arbitre", name: "Grok Arbitre" });
