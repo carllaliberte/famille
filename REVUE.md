@@ -356,6 +356,7 @@ execution:
     flux_v0: intouche
     rail: unforge-check KEM.md + schema/kem.v0.json (unforge-check#23). Pas recopié ici.
     map: KEM.md (pointeur) + map/interop.v0.json noeud kem opt-in.
+    pr: https://github.com/carllaliberte/famille/pull/205
 ```
 
 Lots clos : l'historique Git. Ne pas vider `main` à la main pour « faire de la place ».
