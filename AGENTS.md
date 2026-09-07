@@ -53,7 +53,8 @@ Ne pas chercher `famille#N` pour un autre repo. Coller l'URL raw.
 403 écriture → HOLD + URL. Ne pas inventer une PR.
 
 Fermé : mesure-protocol#4 (`sha_sur`), ancrage-protocol#4 (flock ecrire), ancrage-protocol#6 (test LOCK_EX).
-File ouverte : `oubli.py` unlink sans jail/flock — unforge-check seulement.
+Fermé : unforge-check `oubli.py` appliquer = flock LOCK_EX sur l'objet, sha256 depuis ce fd, puis unlink. Sidecar `.lock` n'est pas la jail.
+File ouverte CODE : aucune ici. HOLD FILE.md (humain) : clés Actions famille, cron Cursor, wrangler / hôte grok.me.
 
 Vision : expérience client au centre de toutes les décisions.
 Personne ne dit « quantique » sans les quatre cartes.
