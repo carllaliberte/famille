@@ -149,6 +149,35 @@ HOLD + URL si un outil refuse Git. Carl colle le bloc REVUE dans ce fichier, pas
 
 ---
 
+## 7. Objectif de réduction du portage manuel
+
+Le copier-coller manuel (Carl entre les IA, entre les phases, vers l'arbitre) est le mécanisme **actuel**, pas la cible. Dès qu'un outil réduit ce portage **sans** violer les garde-fous ci-dessous, il doit être proposé et adopté.
+
+### Garde-fous (non négociables, même avec réduction du portage)
+
+- **Indépendance Phase 1** : aucun lecteur ne voit le verdict d'un autre avant de rendre le sien.
+- Carl reste **seul** à merger.
+- Grok Arbitre reste **structurellement** hors Phase 2.
+- Pas de circulation automatique qui retire à Carl la possibilité de vérifier `pesee` avant squash.
+
+### Réductions acceptables (exemples, non exhaustif)
+
+- Validation automatique du format des blocs déposés (GitHub Action sur push) — vérifie la structure, **ne fait pas circuler** le contenu.
+- Script de formatage : Carl colle le contenu brut, l'outil produit le bloc conforme.
+- Tout outil qui réduit le nombre d'étapes manuelles de Carl **sans** automatiser la décision elle-même.
+
+### Réductions non acceptables
+
+Tant qu'un connecteur direct IA-à-IA n'existe pas :
+
+- Circulation automatique des verdicts entre lecteurs (casse l'indépendance Phase 1).
+- Transmission automatique vers l'arbitre sans passage par Carl.
+- Tout mécanisme qui merge ou déclenche du code sans validation explicite de Carl.
+
+Cette section est révisée à chaque fois qu'un nouvel outil de réduction de portage est proposé — ajouté à la liste s'il passe les garde-fous, rejeté sinon avec motif noté.
+
+---
+
 ## Lot en cours
 
 Un lot à la fois. Append-only. Carl ouvre / clôt. Les IA ne réécrivent pas un bloc déjà daté.
