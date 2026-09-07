@@ -244,7 +244,7 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 - 2026-09-07 : preuve de lecture ; PREUVE_INSUFFISANTE ; pas de LU sans contenu — PR #197
 - 2026-09-07 : §3bis paliers de risque LOW|HIGH (défaut HIGH) — PR #201
 - 2026-09-07 : audit périodique (10 lots / 2 semaines) — PR #201
-- 2026-09-07 : §4bis verrous durs non-arbitrables ; verrou_dur — PR #TBD
+- 2026-09-07 : §4bis verrous durs non-arbitrables ; verrou_dur — PR #202
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
