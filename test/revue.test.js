@@ -106,6 +106,15 @@ describe("REVUE.md — two phases, file is the bridge, arbiter never debates", (
     assert.doesNotMatch(TEXT, /HORIZON Watch/);
   });
 
+  it("preuve de lecture is required beyond URL ancrage", () => {
+    assert.match(TEXT, /### Preuve de lecture/);
+    assert.match(TEXT, /preuve: <citation courte/);
+    assert.match(TEXT, /PREUVE_INSUFFISANTE/);
+    assert.match(TEXT, /jamais `LU` par défaut/);
+    assert.match(TEXT, /Traçabilité, pas effacement/);
+    assert.match(TEXT, /SURFACE` non confirmé/);
+  });
+
   it("mesh cannot seat arbitre as a guest", () => {
     resetGuests();
     const r = connectAgent({ id: "arbitre", name: "Grok Arbitre" });

@@ -73,6 +73,7 @@ urls:
 ancre: <url du lot citée, ou "aucune">
 profondeur: SURFACE | VERIFIE
 verdict: LU | HOLD | OBJECTION
+preuve: <citation courte ou fait précis tiré du fichier, ex. une valeur de variable, un nom de fonction, une ligne de config>
 motif: <une phrase>
 phase2_seen: false
 ```
@@ -82,6 +83,17 @@ Aucune référence croisée. Collage interdit. `phase2_seen: false` obligatoire.
 `profondeur: SURFACE` = lecture rapide, pas de vérification croisée. `VERIFIE` = contenu confirmé contre au moins un autre fichier/référence du lot ou du repo déjà cité dans ce fichier.
 
 **Ancrage obligatoire.** Tout verdict, objection ou proposition cite au moins un URL raw du lot en cours, ou déjà présent dans REVUE.md / Lot en cours. `ancre: aucune` + un fait technique précis du repo → `ANCRAGE_MANQUANT`. Un tel bloc est écarté avant transmission à l'arbitre. Une critique de méthode (« cette objection n'est pas ancrée ») est un acte `OBJECTION` valide.
+
+### Preuve de lecture (au-delà de l'ancrage d'URL)
+
+Citer une URL du lot ne suffit pas à prouver la lecture. Tout verdict `LU` ou `VERIFIE` doit inclure au moins un extrait ou un fait précis et vérifiable tiré du **contenu réel** du fichier cité — pas une paraphrase générique qui pourrait être devinée sans lecture.
+
+Règles (Phase 1 et Phase 2) :
+
+- `preuve` vide ou trop générique (ex. « le fichier parle de sécurité ») avec `verdict: LU` → rejeté, requalifié `HOLD`, motif `PREUVE_INSUFFISANTE`.
+- Si un lecteur ne peut pas fournir de `preuve`, il répond `HOLD` avec motif honnête (« accès impossible », « n'a pas chargé le contenu »), jamais `LU` par défaut.
+- Un lecteur qui admet après coup avoir répondu `LU` sans lecture réelle dépose une **correction** : nouveau bloc, `verdict: HOLD`, `statut: ANCRAGE_MANQUANT`, `motif` citant la rétractation. L'ancien bloc reste. Traçabilité, pas effacement.
+- Grok Arbitre vérifie que `preuve` est cohérente avec le contenu réel des URLs du lot **avant** de traiter un verdict `VERIFIE` comme fiable. `preuve` inventée ou non vérifiable → noté dans `pesee`, le bloc est traité comme `SURFACE` non confirmé, pas `VERIFIE`.
 
 ### PHASE 2 — Discussion ouverte
 
@@ -97,6 +109,7 @@ ts: <ISO-8601 UTC>
 repond_a: <id visé ou *>
 acte: ACCORD | OBJECTION | PROPOSITION
 ancre: <url du lot citée, ou "aucune">
+preuve: <citation courte ou fait précis tiré du fichier, ou "aucune">
 corps: <texte>
 ```
 
@@ -104,7 +117,7 @@ Interdit : `from: arbitre`. Interdit : anonyme. Interdit : Carl dans `from`.
 
 `build` peut débattre ici. `arbitre` non.
 
-Même règle d'ancrage qu'en Phase 1. `ancre: aucune` + fait technique précis du repo → `ANCRAGE_MANQUANT`, écarté avant l'arbitre. Une objection « cette objection n'est pas ancrée » est valide.
+Même règle d'ancrage **et de preuve** qu'en Phase 1. `ancre: aucune` + fait technique précis du repo → `ANCRAGE_MANQUANT`, écarté avant l'arbitre. Une objection « cette objection n'est pas ancrée » est valide. `preuve` vide sur un fait technique du fichier → `PREUVE_INSUFFISANTE`.
 
 Carl transmet ensuite le fichier (raw) à Grok Arbitre. Jamais à Grok Build pour décision. Les blocs `ANCRAGE_MANQUANT` non résolus en Phase 2 ne partent pas.
 
@@ -112,7 +125,7 @@ Carl transmet ensuite le fichier (raw) à Grok Arbitre. Jamais à Grok Build pou
 
 ## 4. Arbitrage
 
-Grok Arbitre lit le paquet complet (Phase 1 + Phase 2) **après coup**. Il vérifie l'ancrage de chaque bloc **avant** de trancher sur le fond. Un bloc `ANCRAGE_MANQUANT` non résolu en Phase 2 est noté dans `pesee` mais ne bloque pas les blocs ancrés restants. Tranche. Motive en 1–2 phrases. Dit ce qui a pesé. Peut mentionner dans `pesee` si un verdict `SURFACE` a été écarté au profit d'un verdict `VERIFIE` contradictoire. Déclare **explicitement** n'avoir pas participé à la Phase 2 concernée.
+Grok Arbitre lit le paquet complet (Phase 1 + Phase 2) **après coup**. Il vérifie l'ancrage de chaque bloc **avant** de trancher sur le fond. Il vérifie aussi que `preuve` est cohérente avec le contenu réel des URLs du lot ; sinon le bloc `VERIFIE` est traité comme `SURFACE` non confirmé et c'est noté dans `pesee`. Un bloc `ANCRAGE_MANQUANT` non résolu en Phase 2 est noté dans `pesee` mais ne bloque pas les blocs ancrés restants. Tranche. Motive en 1–2 phrases. Dit ce qui a pesé. Peut mentionner dans `pesee` si un verdict `SURFACE` a été écarté au profit d'un verdict `VERIFIE` contradictoire. Déclare **explicitement** n'avoir pas participé à la Phase 2 concernée.
 
 ```
 REVUE phase:arbitrage
@@ -196,6 +209,7 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 - 2026-09-07 : §7 réduction du portage, garde-fous — PR #194
 - 2026-09-07 : ancrage obligatoire, profondeur SURFACE|VERIFIE, canal §7, changelog — PR #195
 - 2026-09-07 : lot ml-kem-001 — P1+P2 ; ANCRAGE_MANQUANT ok ; HOLD arbitre — PR #196
+- 2026-09-07 : preuve de lecture ; PREUVE_INSUFFISANTE ; pas de LU sans contenu — PR #TBD
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
