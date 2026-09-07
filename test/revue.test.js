@@ -115,6 +115,22 @@ describe("REVUE.md — two phases, file is the bridge, arbiter never debates", (
     assert.match(TEXT, /SURFACE` non confirmé/);
   });
 
+  it("3bis risk palier defaults HIGH; periodic audit exists", () => {
+    assert.match(TEXT, /## 3bis\. Paliers de risque/);
+    assert.match(TEXT, /défaut = \*\*HIGH\*\*/);
+    assert.match(TEXT, /jamais LOW par défaut/);
+    assert.match(TEXT, /## Audit périodique/);
+    assert.match(TEXT, /Tous les 10 lots/);
+    const three = TEXT.indexOf("## 3. Flux");
+    const bis = TEXT.indexOf("## 3bis. Paliers");
+    const four = TEXT.indexOf("## 4. Arbitrage");
+    const log = TEXT.indexOf("## Changelog du protocole");
+    const audit = TEXT.indexOf("## Audit périodique");
+    const lot = TEXT.indexOf("## Lot en cours");
+    assert.ok(three > 0 && bis > three && four > bis);
+    assert.ok(log > 0 && audit > log && lot > audit);
+  });
+
   it("mesh cannot seat arbitre as a guest", () => {
     resetGuests();
     const r = connectAgent({ id: "arbitre", name: "Grok Arbitre" });

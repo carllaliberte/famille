@@ -121,6 +121,20 @@ Même règle d'ancrage **et de preuve** qu'en Phase 1. `ancre: aucune` + fait te
 
 Carl transmet ensuite le fichier (raw) à Grok Arbitre. Jamais à Grok Build pour décision. Les blocs `ANCRAGE_MANQUANT` non résolus en Phase 2 ne partent pas.
 
+
+---
+
+## 3bis. Paliers de risque
+
+Chaque lot ouvert par Carl reçoit un palier :
+
+- `RISQUE: LOW` — changements mineurs, documentation, corrections cosmétiques. Carl peut merger sur un survol de `pesee`.
+- `RISQUE: HIGH` — nouveau protocole/rail, crypto, schémas partagés, tout ce qui touche plusieurs repos. Carl **doit** lire `pesee` en entier avant de merger. Aucune exception.
+
+Le palier est déclaré par Carl à l'ouverture du lot (`risque: LOW` ou `risque: HIGH` dans le bloc d'ouverture). Si absent, défaut = **HIGH** (prudence — jamais LOW par défaut).
+
+Un lecteur en Phase 1/2 peut contester le palier déclaré (ex. « ce lot touche plusieurs repos, devrait être HIGH pas LOW ») — acte normal, ancré, avec `preuve`, comme le reste.
+
 ---
 
 ## 4. Arbitrage
@@ -210,9 +224,27 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 - 2026-09-07 : ancrage obligatoire, profondeur SURFACE|VERIFIE, canal §7, changelog — PR #195
 - 2026-09-07 : lot ml-kem-001 — P1+P2 ; ANCRAGE_MANQUANT ok ; HOLD arbitre — PR #196
 - 2026-09-07 : preuve de lecture ; PREUVE_INSUFFISANTE ; pas de LU sans contenu — PR #197
+- 2026-09-07 : §3bis paliers de risque LOW|HIGH (défaut HIGH) — PR #TBD
+- 2026-09-07 : audit périodique (10 lots / 2 semaines) — PR #TBD
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
+
+---
+
+## Audit périodique
+
+Tous les 10 lots traités (ou toutes les 2 semaines, selon ce qui arrive en premier), Carl relit 2–3 décisions d'arbitrage passées au hasard — pas pour les défaire, mais pour vérifier que `pesee` reste précis et non permissif avec le temps.
+
+Une ligne est ajoutée ici à chaque audit :
+
+```
+- <date ISO> : <nombre de lots relus> — <observation en une phrase>
+```
+
+```
+(aucun audit encore)
+```
 
 ---
 
