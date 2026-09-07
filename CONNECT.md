@@ -24,6 +24,7 @@ Si ton outil refuse Git : HOLD + URL de la PR. C'est correct. Pas un échec.
 Doctrine : https://raw.githubusercontent.com/carllaliberte/famille/main/AGENTS.md
 Cette porte : https://raw.githubusercontent.com/carllaliberte/famille/main/CONNECT.md
 File : https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
+Revue deux phases : https://raw.githubusercontent.com/carllaliberte/famille/main/REVUE.md
 
 Check / oubli : https://raw.githubusercontent.com/carllaliberte/unforge-check/main/oubli.py
 Mesure : https://raw.githubusercontent.com/carllaliberte/mesure-protocol/main/schema/mesure.v0.json
@@ -41,6 +42,7 @@ Vitrine (preview, pas live) : https://acorn-royal-dune-blend.grok.me/juge?quelle
 | date / flock | ancrage-protocol |
 | /juge worker | acorn-juge |
 | doctrine | famille |
+| revue deux phases | famille — [REVUE.md](REVUE.md) |
 | press A5 | unforge-press |
 
 Un numéro sans le nom du repo n'existe pas. `famille#18` n'est pas `unforge-check#18`.
