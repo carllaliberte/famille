@@ -195,6 +195,7 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 - 2026-09-07 : protocole initial (deux phases, fichier = pont) — PR #193
 - 2026-09-07 : §7 réduction du portage, garde-fous — PR #194
 - 2026-09-07 : ancrage obligatoire, profondeur SURFACE|VERIFIE, canal §7, changelog — PR #195
+- 2026-09-07 : lot ml-kem-001 — P1+P2 ; ANCRAGE_MANQUANT ok ; HOLD arbitre — PR #196
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
@@ -206,17 +207,55 @@ Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la 
 Un lot à la fois. Append-only. Carl ouvre / clôt. Les IA ne réécrivent pas un bloc déjà daté.
 
 ```
-lot: (aucun)
-phase: 1
-phase2_ouverte: false
+lot: ml-kem-001
+phase: 2
+phase2_ouverte: true
+ouvert_ts: 2026-09-07T04:20:00.000Z
+tache: rail KEM opt-in, hors UFHY1, jamais par défaut, pas juge.v0/flux.v0. Lu check.py + SPEC.md + horizon README + COUCHES.md.
 urls:
-  - (lot d'URLs raw — Carl)
+  - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/check.py
+  - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/SPEC.md
+  - https://raw.githubusercontent.com/carllaliberte/horizon-protocol/main/README.md
+  - https://raw.githubusercontent.com/carllaliberte/famille/main/COUCHES.md
 phase1:
-  - (blocs phase:1)
+  - |
+    REVUE phase:1
+    id: grok-build
+    from: build
+    ts: 2026-09-07T04:21:00.000Z
+    urls:
+      - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/check.py
+      - https://raw.githubusercontent.com/carllaliberte/famille/main/COUCHES.md
+    ancre: https://raw.githubusercontent.com/carllaliberte/unforge-check/main/check.py
+    profondeur: VERIFIE
+    verdict: LU
+    motif: check.py SUITES = ed25519|UFHY1|mldsa87 (signatures). Pas de KEM. COUCHES refuse PQC par défaut. Rail KEM séparé opt-in, hors UFHY1.
+    phase2_seen: false
 phase2:
-  - (blocs phase:2 — seulement si phase2_ouverte)
+  - |
+    REVUE phase:2
+    id: grok-build
+    from: build
+    ts: 2026-09-07T04:22:00.000Z
+    repond_a: *
+    acte: PROPOSITION
+    ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/schema/juge.v0.json
+    corps: ajouter une clé mlkem dans juge.v0.json.
+    statut: ANCRAGE_MANQUANT
+    motif_rejet: juge.v0.json n'est pas dans urls du lot. Écarté avant l'arbitre. Pas traité au fond. juge.v0/flux.v0 restent intouchés.
+  - |
+    REVUE phase:2
+    id: grok-build
+    from: build
+    ts: 2026-09-07T04:23:00.000Z
+    repond_a: build
+    acte: OBJECTION
+    ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/COUCHES.md
+    corps: cette objection n'est pas ancrée — juge.v0.json hors lot ml-kem-001.
 arbitrage:
-  - (bloc phase:arbitrage — après coup)
+  - HOLD
+    from: (aucune instance dédiée)
+    motif: cette session = build, a déposé P1 et P2. Interdit de basculer. Carl transmet le raw à une session Grok Arbitre distincte.
 ```
 
 Lots clos : l'historique Git. Ne pas vider `main` à la main pour « faire de la place ».
