@@ -17,7 +17,7 @@ describe("AGENTS.md — doctrine, not a node", () => {
   it("names FILE.md HOLD as human, not a CODE hole here", () => {
     assert.match(TEXT, /HOLD FILE\.md \(humain\)/);
     assert.match(TEXT, /clés Actions famille/);
-    assert.doesNotMatch(TEXT, /PRÉSENT/);
     assert.match(TEXT, /Jamais `PRÉSENT`/);
+    assert.match(TEXT, /File ouverte CODE : aucune ici/);
   });
 });
