@@ -112,6 +112,8 @@ Out of this map: `contract`, CreatorFlow, Estoc, filon-spec, QUANTUM.
 Threat model: harvest-now-decrypt-later. HORIZON expires the hypothesis.
 Do not write « formally verified ». See [FORMAL.md](FORMAL.md).
 
+Opt-in encapsulation is a **separate** rail (`kem.v0` in [unforge-check](https://github.com/carllaliberte/unforge-check/blob/main/KEM.md)). Suites `x25519` · `mlkem768` · `x25519mlkem768`. Never `UFHY1`. Never a fifth card. Never on by default. Map pointer: [KEM.md](KEM.md).
+
 ## What this is not
 
 A bot, a rail, a bank, a mint, a second grok.me, a photon in the index.

@@ -11,6 +11,7 @@ Séparer la vérité affichée de la preuve sous-jacente.
 | 4 Futur | Spectre typé MODE, fédération *comme e-mail* en langage | Nœud Filon publié, votes/IoT comme nouveaux rails, chaîne |
 
 MODE reste classique par défaut.
+KEM (`mlkem768` / hybride) = rail séparé opt-in, jamais une 5e carte, jamais par défaut.
 `mldsa87` est une suite HORIZON, pas le thème de l’app.
 TÉMOIN `di` = référence nommée, pas une expérience live.
 QUANTUM signe ailleurs.
