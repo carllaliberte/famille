@@ -24,15 +24,12 @@ Carl n'est plus le messager.
 
 FLAG (stood) : Soft FLAGS Carl-only — clés Actions absentes ; cron Cursor cut ; acorn-juge grok.me 404 HOLD (workers.dev) ; deploy wrangler Carl-only.
 
-Jalon 5 — Horizon Watch (horizon-protocol PR in flight).
-
 | Dépôt | Item | Fait |
 |---|---|---|
 | famille | clés Actions | absentes. Sans elles sonnet/chatgpt/deepseek/gemini ne commentent pas. |
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
 | acorn-juge | issue #3 grok.me | 404 HOLD. Pas la zone de Carl. Canal = workers.dev. |
 | acorn-juge | deploy wrangler | Carl-only. |
-| horizon-protocol | Horizon Watch jalon 5 | PR in flight. |
 
 ## Fermé
 
@@ -50,6 +47,7 @@ Jalon 1 MERGED / Carl squash : unforge-retract #20 (995dc1b) ; mesure-protocol #
 Jalon 2 : unforge-check #26 MERGED (4e4e597).
 Jalon 3 : famille#186 mesh forbid next/instruction (e7dc1d2). FORBIDDEN_NEXT + schema.
 Jalon 4 : acorn-juge#22 Worker validation matrix + tests MERGED (74733d2).
+Jalon 5 : horizon-protocol#7 Horizon Watch surveiller MERGED (37eaf56).
 
 ## Licence (nouveautés)
 
