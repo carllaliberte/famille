@@ -209,7 +209,7 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 - 2026-09-07 : §7 réduction du portage, garde-fous — PR #194
 - 2026-09-07 : ancrage obligatoire, profondeur SURFACE|VERIFIE, canal §7, changelog — PR #195
 - 2026-09-07 : lot ml-kem-001 — P1+P2 ; ANCRAGE_MANQUANT ok ; HOLD arbitre — PR #196
-- 2026-09-07 : preuve de lecture ; PREUVE_INSUFFISANTE ; pas de LU sans contenu — PR #TBD
+- 2026-09-07 : preuve de lecture ; PREUVE_INSUFFISANTE ; pas de LU sans contenu — PR #197
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
