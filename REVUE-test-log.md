@@ -1,118 +1,105 @@
-# REVUE cycle-1 — log
-
-Lot : `cycle-1-file-kem`. Pas un test fictif. Tâche = état [FILE.md](FILE.md) vs KEM v0 déjà sur main.
+# REVUE lot ml-kem-001 — log
 
 Cette session = `build`. Pas `arbitre`.
 
 ---
 
-## Étape 0 — état du protocole
+## Étape 0 — état
 
-Lu : https://raw.githubusercontent.com/carllaliberte/famille/main/REVUE.md (SHA `79dbe8c`, merge [famille#195](https://github.com/carllaliberte/famille/pull/195)).
+Lu https://raw.githubusercontent.com/carllaliberte/famille/main/REVUE.md (merge [famille#195](https://github.com/carllaliberte/famille/pull/195), SHA `79dbe8c`).
 
-Présents sur main :
-
-| Ajout | Dans REVUE.md |
+| Attendu | Sur main |
 |---|---|
-| Ancrage obligatoire + `ANCRAGE_MANQUANT` | oui |
+| ancrage obligatoire + `ANCRAGE_MANQUANT` | oui |
 | `profondeur: SURFACE \| VERIFIE` | oui |
-| Canal §7, pas parallèle | oui |
-| Changelog | oui (#193, #194, #195) |
+| canal §7, pas parallèle | oui |
+| changelog | oui (#193 #194 #195) |
 
-Rien à finaliser avant le cycle.
+Écart : aucun. Cycle peut partir.
 
 ---
 
 ## Étape 1 — tâche réelle
 
-FILE.md Ouvert = FLAGS Carl-only (clés, cron, grok.me, wrangler). Pas une tâche code.
+Rail KEM : nouveau, pas un champ `juge.v0` / `flux.v0`, suite hors UFHY1, opt-in jamais par défaut.
 
-Tâche prise : **FILE.md est en retard**. [unforge-check#23](https://github.com/carllaliberte/unforge-check/pull/23) (KEM v0) est mergé. REVUE.md est sur main. FILE.md (daté 2026-09-06) ne les mentionne pas.
+Lot URLs (demandées, celles-là seulement) :
 
-Pas encapsuler. Pas wrangler. Pas toucher `worker.js`.
+- https://raw.githubusercontent.com/carllaliberte/unforge-check/main/check.py
+- https://raw.githubusercontent.com/carllaliberte/unforge-check/main/SPEC.md
+- https://raw.githubusercontent.com/carllaliberte/horizon-protocol/main/README.md
+- https://raw.githubusercontent.com/carllaliberte/famille/main/COUCHES.md
+
+`juge.v0.json` / `flux.v0.json` : hors lot, intouchés.
 
 ---
 
 ## Étape 2 — lot ouvert
 
-Dans [REVUE.md](REVUE.md) § Lot en cours. URLs raw :
-
-- https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
-- https://raw.githubusercontent.com/carllaliberte/famille/main/REVUE.md
-- https://raw.githubusercontent.com/carllaliberte/unforge-check/main/KEM.md
-- https://raw.githubusercontent.com/carllaliberte/unforge-check/main/schema/kem.v0.json
-
-`phase2_ouverte: true` après le bloc P1 unique (`build`). Lecteurs Claude / Gemini / ChatGPT / DeepSeek : **pas déposés** (cycle mécanisme, un lecteur).
+`lot: ml-kem-001` dans [REVUE.md](REVUE.md) § Lot en cours.
 
 ---
 
-## Étape 3 — Phase 1 (`build`)
+## Étape 3 — Phase 1 `from: build`
+
+Lu les quatre fichiers.
+
+`check.py` : `SUITES = ("ed25519", "UFHY1", "mldsa87")`. Vérifie. Ne signe pas. Pas de primitive KEM.
+
+`SPEC.md` : Check re-vérifie Ed ou UFHY1. Pas d'encapsulation.
+
+`horizon-protocol/README.md` : suites `ed25519` \| `UFHY1` \| `mldsa87`. Menace 2026 = harvest-now-decrypt-later. UFHY1 = signatures, pas une date. Primitive `ecrire|lire|juger|surveiller`.
+
+`COUCHES.md` : refuse « PQC par défaut ». MODE classique par défaut. Suite *nommée*.
 
 ```
 REVUE phase:1
-id: grok-build
 from: build
-ts: 2026-09-07T03:51:00.000Z
-ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
+ancre: https://raw.githubusercontent.com/carllaliberte/unforge-check/main/check.py
 profondeur: VERIFIE
 verdict: LU
-motif: FILE.md (2026-09-06) n'a ni KEM ni REVUE ; KEM.md sur main déclare opt-in, ciphertext null, pas UFHY1.
+motif: check.py SUITES = ed25519|UFHY1|mldsa87 (signatures). Pas de KEM. COUCHES refuse PQC par défaut. Rail KEM séparé opt-in, hors UFHY1.
 phase2_seen: false
 ```
 
-Champs obligatoires présents : `ancre`, `profondeur`, `phase2_seen`. Croisé contre KEM.md du lot.
+Croisé `check.py` ↔ `COUCHES.md`. Pas SURFACE.
 
 ---
 
-## Étape 4 — Phase 2, rejet ANCRAGE_MANQUANT
+## Étape 4 — ANCRAGE_MANQUANT
 
-Bloc volontairement hors lot :
-
-```
-ancre: https://raw.githubusercontent.com/carllaliberte/acorn-juge/main/worker.js
-corps: FILE.md doit documenter le bind wrangler grok.me /juge dans worker.js.
-```
-
-Résultat : `statut: ANCRAGE_MANQUANT`. Motif : `worker.js` n'est pas dans `urls` du lot. **Pas traité au fond.** Écarté avant l'arbitre.
-
-Bloc méthode (valide) :
+Bloc volontaire hors lot :
 
 ```
-acte: OBJECTION
-ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/REVUE.md
-corps: cette objection n'est pas ancrée — worker.js hors lot cycle-1.
+ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/schema/juge.v0.json
+corps: ajouter une clé mlkem dans juge.v0.json.
 ```
 
-Règle d'ancrage : **tient**.
+**Résultat : réussi.** `statut: ANCRAGE_MANQUANT`. `juge.v0.json` n'est pas dans `urls`. Écarté avant l'arbitre. **Pas traité au fond.** `juge.v0` / `flux.v0` non touchés.
+
+Bloc méthode (valide), ancré sur COUCHES.md du lot : « cette objection n'est pas ancrée ».
 
 ---
 
 ## Étape 5 — Arbitrage = HOLD
 
-Pas d'instance Grok Arbitre dédiée dans cette session.
+Pas d'instance Grok Arbitre dédiée.
 
-Cette session = `build`. Elle a déposé P1 et P2. [REVUE.md](REVUE.md) §2 : *Si aucune instance dédiée n'est disponible : l'arbitrage attend. Ne bascule jamais sur une variante ayant participé au débat ce jour-là.*
+Cette session = `build`. P1 et P2 déposés. [REVUE.md](REVUE.md) §2 : l'arbitrage attend. Ne bascule jamais.
 
-**Pas de bloc `from: arbitre`.** Pas de `decision`. Pas de contournement.
+**Pas de `from: arbitre`. Pas de `decision`.** Pas de contournement.
 
-Carl transmet le raw de la branche `cursor/revue-cycle-1` (REVUE.md Lot en cours + ce log) à une session **Grok Arbitre** distincte. Elle seule dépose :
+Carl transmet à une session **Grok Arbitre** distincte :
 
-```
-REVUE phase:arbitrage
-from: arbitre
-decision: AVANCER | AJUSTER | BLOQUE
-pesee: …
-phase2_participated: false
-instance: dediee
-distincte_de_phase2_ce_jour: true
-```
+- https://raw.githubusercontent.com/carllaliberte/famille/cursor/revue-cycle-1/REVUE.md
+- https://raw.githubusercontent.com/carllaliberte/famille/cursor/revue-cycle-1/REVUE-test-log.md
 
-Jusque-là : pas d'update FILE.md. Pas d'autre PR.
+Elle tranche `AVANCER | AJUSTER | BLOQUE` sur le rail KEM (opt-in, hors UFHY1, pas juge.v0), avec `pesee` et `phase2_participated: false`.
+
+Si plus tard `AVANCER` / `AJUSTER` : spec déjà sur unforge-check main ([unforge-check#23](https://github.com/carllaliberte/unforge-check/pull/23) — `KEM.md`, `schema/kem.v0.json`). Pas recopiée dans famille. Pas dans cette PR (pas de décision).
 
 ---
 
 ## Étape 6 — cette PR
 
-Contient : lot ouvert, log 0–5, HOLD étape 5, changelog.
-
-Ne contient pas : décision d'arbitre, merge, secrets, wrangler.
+[#196](https://github.com/carllaliberte/famille/pull/196) unique. Lot + log 0–5 + HOLD. Pas merge. Pas secrets. Pas squash.

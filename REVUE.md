@@ -195,7 +195,7 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 - 2026-09-07 : protocole initial (deux phases, fichier = pont) — PR #193
 - 2026-09-07 : §7 réduction du portage, garde-fous — PR #194
 - 2026-09-07 : ancrage obligatoire, profondeur SURFACE|VERIFIE, canal §7, changelog — PR #195
-- 2026-09-07 : lot cycle-1 FILE.md/KEM — P1+P2 ; HOLD arbitre (build a débattu) — PR #196
+- 2026-09-07 : lot ml-kem-001 — P1+P2 ; ANCRAGE_MANQUANT ok ; HOLD arbitre — PR #196
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
@@ -207,55 +207,55 @@ Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la 
 Un lot à la fois. Append-only. Carl ouvre / clôt. Les IA ne réécrivent pas un bloc déjà daté.
 
 ```
-lot: cycle-1-file-kem
+lot: ml-kem-001
 phase: 2
 phase2_ouverte: true
-ouvert_ts: 2026-09-07T03:50:00.000Z
-tache: FILE.md (état) ne mentionne pas KEM v0 (unforge-check#23, main) ni REVUE.md. Mettre l'état à jour. Pas encapsuler. Pas wrangler.
+ouvert_ts: 2026-09-07T04:20:00.000Z
+tache: rail KEM opt-in, hors UFHY1, jamais par défaut, pas juge.v0/flux.v0. Lu check.py + SPEC.md + horizon README + COUCHES.md.
 urls:
-  - https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
-  - https://raw.githubusercontent.com/carllaliberte/famille/main/REVUE.md
-  - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/KEM.md
-  - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/schema/kem.v0.json
+  - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/check.py
+  - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/SPEC.md
+  - https://raw.githubusercontent.com/carllaliberte/horizon-protocol/main/README.md
+  - https://raw.githubusercontent.com/carllaliberte/famille/main/COUCHES.md
 phase1:
   - |
     REVUE phase:1
     id: grok-build
     from: build
-    ts: 2026-09-07T03:51:00.000Z
+    ts: 2026-09-07T04:21:00.000Z
     urls:
-      - https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
-      - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/KEM.md
-    ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
+      - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/check.py
+      - https://raw.githubusercontent.com/carllaliberte/famille/main/COUCHES.md
+    ancre: https://raw.githubusercontent.com/carllaliberte/unforge-check/main/check.py
     profondeur: VERIFIE
     verdict: LU
-    motif: FILE.md (2026-09-06) n'a ni KEM ni REVUE ; KEM.md sur main déclare opt-in, ciphertext null, pas UFHY1.
+    motif: check.py SUITES = ed25519|UFHY1|mldsa87 (signatures). Pas de KEM. COUCHES refuse PQC par défaut. Rail KEM séparé opt-in, hors UFHY1.
     phase2_seen: false
 phase2:
   - |
     REVUE phase:2
     id: grok-build
     from: build
-    ts: 2026-09-07T03:52:00.000Z
+    ts: 2026-09-07T04:22:00.000Z
     repond_a: *
     acte: PROPOSITION
-    ancre: https://raw.githubusercontent.com/carllaliberte/acorn-juge/main/worker.js
-    corps: FILE.md doit documenter le bind wrangler grok.me /juge dans worker.js.
+    ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/schema/juge.v0.json
+    corps: ajouter une clé mlkem dans juge.v0.json.
     statut: ANCRAGE_MANQUANT
-    motif_rejet: ancre hors lot (worker.js n'est pas dans urls). Écarté avant l'arbitre. Pas traité au fond.
+    motif_rejet: juge.v0.json n'est pas dans urls du lot. Écarté avant l'arbitre. Pas traité au fond. juge.v0/flux.v0 restent intouchés.
   - |
     REVUE phase:2
     id: grok-build
     from: build
-    ts: 2026-09-07T03:53:00.000Z
+    ts: 2026-09-07T04:23:00.000Z
     repond_a: build
     acte: OBJECTION
-    ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/REVUE.md
-    corps: cette objection n'est pas ancrée — worker.js hors lot cycle-1.
+    ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/COUCHES.md
+    corps: cette objection n'est pas ancrée — juge.v0.json hors lot ml-kem-001.
 arbitrage:
   - HOLD
     from: (aucune instance dédiée)
-    motif: cette session = build, a déposé P1 et P2. REVUE.md interdit de basculer. Carl transmet le raw de cette branche à une session Grok Arbitre distincte.
+    motif: cette session = build, a déposé P1 et P2. Interdit de basculer. Carl transmet le raw à une session Grok Arbitre distincte.
 ```
 
 Lots clos : l'historique Git. Ne pas vider `main` à la main pour « faire de la place ».

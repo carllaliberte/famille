@@ -98,10 +98,12 @@ describe("REVUE.md — two phases, file is the bridge, arbiter never debates", (
   });
 
   it("cycle-1 lot marks ANCRAGE_MANQUANT and does not fake arbitre", () => {
-    assert.match(TEXT, /lot: cycle-1-file-kem/);
+    assert.match(TEXT, /lot: ml-kem-001/);
     assert.match(TEXT, /statut: ANCRAGE_MANQUANT/);
     assert.match(TEXT, /arbitrage:\n  - HOLD/);
     assert.doesNotMatch(TEXT, /arbitrage:\n  - \|\n    REVUE phase:arbitrage/);
+    assert.doesNotMatch(TEXT, /quantum-safe/i);
+    assert.doesNotMatch(TEXT, /HORIZON Watch/);
   });
 
   it("mesh cannot seat arbitre as a guest", () => {
