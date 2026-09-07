@@ -97,6 +97,13 @@ describe("REVUE.md — two phases, file is the bridge, arbiter never debates", (
     assert.ok(seven > 0 && log > seven && lot > log);
   });
 
+  it("cycle-1 lot marks ANCRAGE_MANQUANT and does not fake arbitre", () => {
+    assert.match(TEXT, /lot: cycle-1-file-kem/);
+    assert.match(TEXT, /statut: ANCRAGE_MANQUANT/);
+    assert.match(TEXT, /arbitrage:\n  - HOLD/);
+    assert.doesNotMatch(TEXT, /arbitrage:\n  - \|\n    REVUE phase:arbitrage/);
+  });
+
   it("mesh cannot seat arbitre as a guest", () => {
     resetGuests();
     const r = connectAgent({ id: "arbitre", name: "Grok Arbitre" });

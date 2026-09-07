@@ -195,6 +195,7 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 - 2026-09-07 : protocole initial (deux phases, fichier = pont) — PR #193
 - 2026-09-07 : §7 réduction du portage, garde-fous — PR #194
 - 2026-09-07 : ancrage obligatoire, profondeur SURFACE|VERIFIE, canal §7, changelog — PR #195
+- 2026-09-07 : lot cycle-1 FILE.md/KEM — P1+P2 ; HOLD arbitre (build a débattu) — PR #TBD
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
@@ -206,17 +207,55 @@ Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la 
 Un lot à la fois. Append-only. Carl ouvre / clôt. Les IA ne réécrivent pas un bloc déjà daté.
 
 ```
-lot: (aucun)
-phase: 1
-phase2_ouverte: false
+lot: cycle-1-file-kem
+phase: 2
+phase2_ouverte: true
+ouvert_ts: 2026-09-07T03:50:00.000Z
+tache: FILE.md (état) ne mentionne pas KEM v0 (unforge-check#23, main) ni REVUE.md. Mettre l'état à jour. Pas encapsuler. Pas wrangler.
 urls:
-  - (lot d'URLs raw — Carl)
+  - https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
+  - https://raw.githubusercontent.com/carllaliberte/famille/main/REVUE.md
+  - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/KEM.md
+  - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/schema/kem.v0.json
 phase1:
-  - (blocs phase:1)
+  - |
+    REVUE phase:1
+    id: grok-build
+    from: build
+    ts: 2026-09-07T03:51:00.000Z
+    urls:
+      - https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
+      - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/KEM.md
+    ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/FILE.md
+    profondeur: VERIFIE
+    verdict: LU
+    motif: FILE.md (2026-09-06) n'a ni KEM ni REVUE ; KEM.md sur main déclare opt-in, ciphertext null, pas UFHY1.
+    phase2_seen: false
 phase2:
-  - (blocs phase:2 — seulement si phase2_ouverte)
+  - |
+    REVUE phase:2
+    id: grok-build
+    from: build
+    ts: 2026-09-07T03:52:00.000Z
+    repond_a: *
+    acte: PROPOSITION
+    ancre: https://raw.githubusercontent.com/carllaliberte/acorn-juge/main/worker.js
+    corps: FILE.md doit documenter le bind wrangler grok.me /juge dans worker.js.
+    statut: ANCRAGE_MANQUANT
+    motif_rejet: ancre hors lot (worker.js n'est pas dans urls). Écarté avant l'arbitre. Pas traité au fond.
+  - |
+    REVUE phase:2
+    id: grok-build
+    from: build
+    ts: 2026-09-07T03:53:00.000Z
+    repond_a: build
+    acte: OBJECTION
+    ancre: https://raw.githubusercontent.com/carllaliberte/famille/main/REVUE.md
+    corps: cette objection n'est pas ancrée — worker.js hors lot cycle-1.
 arbitrage:
-  - (bloc phase:arbitrage — après coup)
+  - HOLD
+    from: (aucune instance dédiée)
+    motif: cette session = build, a déposé P1 et P2. REVUE.md interdit de basculer. Carl transmet le raw de cette branche à une session Grok Arbitre distincte.
 ```
 
 Lots clos : l'historique Git. Ne pas vider `main` à la main pour « faire de la place ».
