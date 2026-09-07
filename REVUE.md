@@ -282,15 +282,21 @@ Un lot à la fois. Append-only. Carl ouvre / clôt. Les IA ne réécrivent pas u
 
 ```
 lot: ml-kem-001
-phase: 2
-phase2_ouverte: true
+phase: clos
+phase2_ouverte: false
+risque: HIGH
 ouvert_ts: 2026-09-07T04:20:00.000Z
+clos_ts: 2026-09-07T15:03:38.000Z
 tache: rail KEM opt-in, hors UFHY1, jamais par défaut, pas juge.v0/flux.v0. Lu check.py + SPEC.md + horizon README + COUCHES.md.
 urls:
   - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/check.py
   - https://raw.githubusercontent.com/carllaliberte/unforge-check/main/SPEC.md
   - https://raw.githubusercontent.com/carllaliberte/horizon-protocol/main/README.md
   - https://raw.githubusercontent.com/carllaliberte/famille/main/COUCHES.md
+rail:
+  spec: https://github.com/carllaliberte/unforge-check/blob/main/KEM.md
+  schema: https://github.com/carllaliberte/unforge-check/blob/main/schema/kem.v0.json
+  pose: https://github.com/carllaliberte/unforge-check/pull/23
 phase1:
   - |
     REVUE phase:1
@@ -330,6 +336,26 @@ arbitrage:
   - HOLD
     from: (aucune instance dédiée)
     motif: cette session = build, a déposé P1 et P2. Interdit de basculer. Carl transmet le raw à une session Grok Arbitre distincte.
+  - |
+    REVUE phase:arbitrage
+    from: arbitre
+    ts: 2026-09-07T14:57:15.000Z
+    decision: AVANCER
+    pesee: Faits P1 vérifiés contre les raw — SUITES=(ed25519, UFHY1, mldsa87) dans check.py, aucun KEM, COUCHES refuse PQC par défaut ; preuve absente comme champ, motif tenu pour citation. Proposition P2 clé mlkem dans juge.v0.json : ANCRAGE_MANQUANT confirmé, écartée sans fond ; le rail KEM opt-in hors UFHY1, hors juge.v0/flux.v0, n'accroche aucun verrou §4bis.
+    phase2_participated: false
+    instance: dediee
+    distincte_de_phase2_ce_jour: true
+    verrou_dur: aucun
+execution:
+  - |
+    REVUE phase:execution
+    from: build
+    ts: 2026-09-07T15:03:38.000Z
+    decision: AVANCER
+    juge_v0: intouche
+    flux_v0: intouche
+    rail: unforge-check KEM.md + schema/kem.v0.json (unforge-check#23). Pas recopié ici.
+    map: KEM.md (pointeur) + map/interop.v0.json noeud kem opt-in.
 ```
 
 Lots clos : l'historique Git. Ne pas vider `main` à la main pour « faire de la place ».

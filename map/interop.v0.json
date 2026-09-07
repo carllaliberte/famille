@@ -27,6 +27,7 @@
     {"id": "recu", "kind": "protocol-v0", "repo": "https://github.com/carllaliberte/recu-protocol", "asks": "did money move, on which named rail", "note": "Receipt, not a mint. No quantum coin."},
     {"id": "dossier", "kind": "protocol-v0", "repo": "https://github.com/carllaliberte/dossier-protocol", "asks": "how are cards enveloped"},
     {"id": "unforge-check", "kind": "verify", "repo": "https://github.com/carllaliberte/unforge-check", "asks": "does this file still match the card that sealed it", "talks": "reads optional quelle/horizon cards; never signs; mobile v0 is digest-only"},
+    {"id": "kem", "kind": "opt-in", "repo": "https://github.com/carllaliberte/unforge-check", "asks": "may this act encapsulate, if and only if asked", "talks": "kem.v0; never default; never UFHY1; not a juge.v0 key; ciphertext null in v0", "note": "HNDL threat model. Spec: unforge-check/KEM.md. Schema: unforge-check/schema/kem.v0.json. Not wired into check.py. Not a fifth card."},
     {"id": "unforge-press", "kind": "verify", "repo": "https://github.com/carllaliberte/unforge-press", "asks": "can the proof fit in a pocket", "talks": "prints a card; cites schema/juge.v0.json"},
     {"id": "unforge-trail", "kind": "verify", "repo": "https://github.com/carllaliberte/unforge-trail", "asks": "did every passage name the same SHA-256"},
     {"id": "unforge-retract", "kind": "verify", "repo": "https://github.com/carllaliberte/unforge-retract", "asks": "can a proof be withdrawn without erasing history"},

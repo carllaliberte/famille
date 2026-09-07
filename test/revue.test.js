@@ -97,10 +97,20 @@ describe("REVUE.md — two phases, file is the bridge, arbiter never debates", (
     assert.ok(seven > 0 && log > seven && lot > log);
   });
 
-  it("cycle-1 lot marks ANCRAGE_MANQUANT and does not fake arbitre", () => {
+  it("cycle-1 lot marks ANCRAGE_MANQUANT; HOLD kept first; AVANCER from dedicated instance", () => {
     assert.match(TEXT, /lot: ml-kem-001/);
+    assert.match(TEXT, /phase: clos/);
+    assert.match(TEXT, /risque: HIGH/);
     assert.match(TEXT, /statut: ANCRAGE_MANQUANT/);
     assert.match(TEXT, /arbitrage:\n  - HOLD/);
+    assert.match(TEXT, /from: \(aucune instance dédiée\)/);
+    assert.match(TEXT, /decision: AVANCER/);
+    assert.match(TEXT, /phase2_participated: false/);
+    assert.match(TEXT, /instance: dediee/);
+    assert.match(TEXT, /verrou_dur: aucun/);
+    assert.match(TEXT, /REVUE phase:execution/);
+    assert.match(TEXT, /juge_v0: intouche/);
+    assert.match(TEXT, /flux_v0: intouche/);
     assert.doesNotMatch(TEXT, /arbitrage:\n  - \|\n    REVUE phase:arbitrage/);
     assert.doesNotMatch(TEXT, /quantum-safe/i);
     assert.doesNotMatch(TEXT, /HORIZON Watch/);

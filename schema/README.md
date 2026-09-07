@@ -22,3 +22,6 @@ Deux schémas. Ne pas les fusionner :
 - [`flux.v0.json`](flux.v0.json) — pipeline carte / satellites (`famille.flux.v0`).
 - [`mesh.v0.json`](mesh.v0.json) — enveloppe commentaires PR, fil `acorn.v0` (même que acorn-juge). `from` + `ts` + `sha` + `pr`. Pas le pipeline. FILE.md n'est pas ce schéma.
 
+Hors de ce dossier — sibling, **jamais fusionné** ici :
+
+- [`unforge-check/schema/kem.v0.json`](https://github.com/carllaliberte/unforge-check/blob/main/schema/kem.v0.json) — encapsulation opt-in (`kem.v0`). Pas une 5e carte. Pas `juge.v0`. Pas `flux.v0`. Voir [KEM.md](../KEM.md).

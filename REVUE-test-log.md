@@ -103,3 +103,21 @@ Si plus tard `AVANCER` / `AJUSTER` : spec déjà sur unforge-check main ([unforg
 ## Étape 6 — cette PR
 
 [#196](https://github.com/carllaliberte/famille/pull/196) unique. Lot + log 0–5 + HOLD. Pas merge. Pas secrets. Pas squash.
+
+---
+
+## Étape 7 — exécution AVANCER (instance `build`, distincte de l'arbitre)
+
+Décision déposée : `decision: AVANCER` · `verrou_dur: aucun` · `phase2_participated: false`.
+Palier : **HIGH** (absent à l'ouverture → défaut §3bis). Carl lit `pesee` en entier avant squash.
+
+Rail déjà posé hors REVUE : [unforge-check#23](https://github.com/carllaliberte/unforge-check/pull/23) — `KEM.md`, `schema/kem.v0.json`, `kem.py`, tests. **Pas recopié** dans famille (siblings stay siblings).
+
+Cette PR (famille) :
+
+- clôt `ml-kem-001` (HOLD historique conservé, AVANCER append)
+- pointeur [KEM.md](KEM.md) + nœud `kem` dans `map/interop.v0.json`
+- verrou tests : `juge.v0.json` / `flux.v0.json` intouchés
+- `juge.v0.json` / `flux.v0.json` : 0 octet changé
+
+Pas de merge. Pas de secrets. Pas de squash.
