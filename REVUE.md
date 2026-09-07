@@ -1,35 +1,43 @@
 # Revue — deux phases
 
-Ne change pas [AUTOMATION.md](AUTOMATION.md). Canal quotidien (swarm, `/flux`, commentaires PR) reste là.
+Ce protocole **ne change pas** [AUTOMATION.md](AUTOMATION.md).
 
-Ceci est **un autre protocole**. Carl le porte à la main. Pas de webhook. Pas de bot inter-IA. Swarm ne circule pas les verdicts REVUE.
+Carl reste seul point de contrôle humain. Carl seul merge. Aucun participant n'obtient l'écriture par défaut. Pas de secrets. Pas de squash par une IA.
 
-Carl seul point de contrôle humain. Carl seul merge. Aucun participant n'obtient l'écriture par défaut. Pas de secrets. Pas de squash par une IA.
+Le pont, pour l'instant, **c'est ce fichier**. Chaque IA le lit via l'URL raw. Chaque contribution y est déposée **en clair**, signée, datée. Carl diffuse les URLs et transmet les étapes **à la main**. Pas de webhook. Pas de pont automatisé. Pas de bot inter-IA. Swarm ne circule pas les verdicts REVUE.
 
-Carl ne débat pas. Il lit les verdicts et la PR finale.
+Carl ne débat pas. Il n'a pas à lire chaque étape en détail. Il garde la décision finale de merge. Avant squash, il vérifie au minimum la justification de l'arbitrage.
+
+Raw : https://raw.githubusercontent.com/carllaliberte/famille/main/REVUE.md
 
 ---
 
-## Registre nominatif (fixe)
+## 1. Rappel
+
+Ne change pas AUTOMATION.md. Canal quotidien (commentaires PR + FILE.md, swarm si secrets) reste là. REVUE est **un autre protocole**, porté par Carl, rencontré dans **ce document**.
+
+---
+
+## 2. Registre des rôles
 
 Deux identités Grok, **distinctes et non-interchangeables**. Jamais la même session le même jour.
 
 | Id | Nom | Fait | Ne fait pas |
 |---|---|---|---|
 | `arbitre` | Grok Arbitre | lit le paquet complet **après** Phase 1+2, tranche, motive | Phase 1, Phase 2, code, PR, merge |
-| `build` | Grok Build | Phase 2 (débat), écrit le code, ouvre la PR | arbitrer, merge, secrets |
+| `build` | Grok Build | Phase 2 (débat), exécute le code, ouvre la PR | arbitrer, merge, secrets |
 
-Grok Arbitre n'apparaît **jamais** au registre Phase 2. N'est jamais invitée à débattre, quel que soit le sujet ou l'urgence.
+Grok Arbitre est une instance dédiée **fixe**. Elle n'apparaît **jamais** au registre Phase 2. N'est jamais invitée à débattre, même en théorie, quel que soit le sujet ou l'urgence.
 
 Si aucune instance dédiée n'est disponible : l'arbitrage **attend**. Ne bascule jamais sur une variante ayant participé au débat ce jour-là, même temporairement.
 
-### Lecteurs Phase 1 (verdict indépendant)
+### Lecteurs Phase 1
 
-Claude · Gemini · ChatGPT · DeepSeek. Futurs arrivants : même rôle par défaut.
+Claude · Gemini · ChatGPT · DeepSeek. Futurs arrivants : **même rôle par défaut** — lecture indépendante. Jamais d'écriture (code, `main`, merge).
 
-Gemini n'est pas lecteur-seul du chantier. Ici : Phase 1 **et** Phase 2, comme les autres.
+Gemini n'est pas lecteur-seul du *chantier* : Phase 1 **et** Phase 2, comme ChatGPT et DeepSeek. Pas d'écriture code.
 
-### Participants Phase 2 (discussion ouverte)
+### Participants Phase 2
 
 Les lecteurs Phase 1 **plus** l'environnement Grok xAI **sauf** l'arbitre :
 
@@ -37,15 +45,23 @@ Les lecteurs Phase 1 **plus** l'environnement Grok xAI **sauf** l'arbitre :
 
 Carl n'est pas participant.
 
+### Carl
+
+Ne débat pas. Ne lit pas chaque étape en détail obligatoirement. Décision finale de merge. Vérifie au minimum `pesee` (justification de l'arbitrage) avant squash.
+
 ### Écriture / exécution
 
 Seul `build` écrit du code et ouvre la PR. Seul Carl merge.
 
 ---
 
-## a) Verdict Phase 1
+## 3. Flux en deux phases
 
-Carl diffuse **le même lot d'URLs raw** à tous les lecteurs en même temps. Chaque lecteur rend **sans voir les autres**. Collage interdit. Aucune référence croisée.
+### PHASE 1 — Lecture indépendante
+
+Carl diffuse **le même lot d'URLs raw** à tous les lecteurs en même temps.
+
+Chaque lecteur dépose (Carl recopie dans [Lot en cours](#lot-en-cours), inchangé) :
 
 ```
 REVUE phase:1
@@ -59,29 +75,13 @@ motif: <une phrase>
 phase2_seen: false
 ```
 
-`phase2_seen: false` est obligatoire. Un verdict qui cite un pair est refusé (ce n'est plus Phase 1).
+Aucune référence croisée. Collage interdit. `phase2_seen: false` obligatoire. Un verdict qui cite un pair est refusé.
 
----
+### PHASE 2 — Discussion ouverte
 
-## b) Transmission Phase 1 → Phase 2
+Une fois **tous** les verdicts Phase 1 réunis **dans ce fichier**, Carl ouvre la phase de discussion (il l'écrit sous `phase:2-ouverte: true`).
 
-Carl collecte les verdicts bruts. Carl transmet **l'ensemble** aux participants Phase 2. Pas swarm. Pas Grok Build comme facteur automatique.
-
-```
-REVUE phase:1-paquet
-ts: <ISO-8601 UTC>
-porteur: carl
-lots:
-  - <coller chaque bloc phase:1, inchangé>
-```
-
-Carl ne commente pas le fond. Il ne fusionne pas les motifs.
-
----
-
-## c) Discussion Phase 2 (signée)
-
-Chaque participant réagit, contredit, propose. **Nom exact. Daté. Rien d'anonyme.**
+Chaque participant réagit, contredit, propose — **nom exact, daté, rien d'anonyme**.
 
 ```
 REVUE phase:2
@@ -97,28 +97,13 @@ Interdit : `from: arbitre`. Interdit : anonyme. Interdit : Carl dans `from`.
 
 `build` peut débattre ici. `arbitre` non.
 
----
-
-## d) Transmission vers Grok Arbitre
-
-Carl transmet Phase 1 **et** Phase 2 à **Grok Arbitre seulement**. Jamais à Grok Build pour décision.
-
-```
-REVUE phase:arbitre-paquet
-ts: <ISO-8601 UTC>
-porteur: carl
-destinataire: arbitre
-phase1: <paquet b, inchangé>
-phase2: <tous les blocs c, inchangés>
-```
-
-Build ne reçoit pas ce paquet pour trancher. Build reçoit **e)** après.
+Carl transmet ensuite le fichier (raw) à Grok Arbitre. Jamais à Grok Build pour décision.
 
 ---
 
-## e) Arbitrage
+## 4. Arbitrage
 
-Grok Arbitre lit le paquet, tranche, motive. 1–2 phrases. Dit ce qui a pesé.
+Grok Arbitre lit le paquet complet (Phase 1 + Phase 2) **après coup**. Tranche. Motive en 1–2 phrases. Dit ce qui a pesé. Déclare **explicitement** n'avoir pas participé à la Phase 2 concernée.
 
 ```
 REVUE phase:arbitrage
@@ -133,7 +118,11 @@ distincte_de_phase2_ce_jour: true
 
 `phase2_participated: false` est **structurel** : l'instance n'est pas dans le registre Phase 2 et n'a pas tourné en Phase 2 ce jour-là. Pas une phrase de politesse.
 
-Décisions :
+Carl dépose ce bloc dans [Lot en cours](#lot-en-cours), puis le donne à `build`.
+
+---
+
+## 5. Exécution et merge
 
 | `decision` | Grok Build |
 |---|---|
@@ -141,33 +130,41 @@ Décisions :
 | `AJUSTER` | ouvre la PR avec les ajustements nommés dans `pesee` |
 | `BLOQUE` | n'ouvre pas. HOLD + motif |
 
-Puis Carl transmet **e)** à `build`. `build` exécute. Carl merge ou refuse.
+Carl merge ou refuse. Il vérifie au minimum la justification de l'arbitrage (`pesee`) avant squash.
 
 ---
 
-## Traçabilité
+## 6. État actuel de l'interopérabilité
 
-| Étape | Qui écrit | Qui lit |
-|---|---|---|
-| a | chaque lecteur, seul | Carl |
-| b | Carl (copie) | participants Phase 2 |
-| c | chaque participant, signé | Carl |
-| d | Carl (copie) | `arbitre` seulement |
-| e | `arbitre` | Carl, puis `build` |
-| PR | `build` | Carl |
-| merge | Carl | — |
+Le fichier partagé (**ce document**) **EST** le pont, pour l'instant.
 
-GitHub peut **héberger** une copie (commentaire de PR) **après** que Carl l'ait portée. Ce n'est pas swarm qui déclenche la circulation.
+- Pas de webhook.
+- Pas d'automatisation de la circulation.
+- Pas de bot inter-IA.
+- Swarm / `/flux` = autre canal ([AUTOMATION.md](AUTOMATION.md)). Ils ne portent pas REVUE.
+
+Cette section sera révisée **si/quand** une automatisation devient nécessaire, **sur demande explicite de Carl uniquement**.
+
+HOLD + URL si un outil refuse Git. Carl colle le bloc REVUE dans ce fichier, pas FILE.md.
 
 ---
 
-## Interdit
+## Lot en cours
 
-- Changer [AUTOMATION.md](AUTOMATION.md) pour faire porter REVUE par swarm.
-- Webhook, bot inter-IA, cron qui diffuse les verdicts.
-- `arbitre` en Phase 1 ou Phase 2.
-- Même session Grok : Phase 2 le matin, arbitrage le soir.
-- Collage apps. Secrets dans git. Merge / squash par une IA.
-- Écriture par défaut pour un lecteur.
+Un lot à la fois. Append-only. Carl ouvre / clôt. Les IA ne réécrivent pas un bloc déjà daté.
 
-HOLD + URL si un outil refuse Git. Carl colle le bloc REVUE, pas FILE.md.
+```
+lot: (aucun)
+phase: 1
+phase2_ouverte: false
+urls:
+  - (lot d'URLs raw — Carl)
+phase1:
+  - (blocs phase:1)
+phase2:
+  - (blocs phase:2 — seulement si phase2_ouverte)
+arbitrage:
+  - (bloc phase:arbitrage — après coup)
+```
+
+Lots clos : l'historique Git. Ne pas vider `main` à la main pour « faire de la place ».
