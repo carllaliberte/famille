@@ -131,6 +131,20 @@ describe("REVUE.md — two phases, file is the bridge, arbiter never debates", (
     assert.ok(log > 0 && audit > log && lot > audit);
   });
 
+  it("4bis hard locks force BLOQUE and are not arbitrable", () => {
+    assert.match(TEXT, /## 4bis\. Verrous durs \(non-arbitrables\)/);
+    assert.match(TEXT, /juge\.v0\.json/);
+    assert.match(TEXT, /flux\.v0\.json/);
+    assert.match(TEXT, /AUTOMATION\.md/);
+    assert.match(TEXT, /verrou_dur: <catégorie touchée, ou "aucun">/);
+    assert.match(TEXT, /decision: BLOQUE` \*\*automatique\*\*/);
+    assert.match(TEXT, /hors du fichier/);
+    const four = TEXT.indexOf("## 4. Arbitrage");
+    const bis = TEXT.indexOf("## 4bis. Verrous durs");
+    const five = TEXT.indexOf("## 5. Exécution");
+    assert.ok(four > 0 && bis > four && five > bis);
+  });
+
   it("mesh cannot seat arbitre as a guest", () => {
     resetGuests();
     const r = connectAgent({ id: "arbitre", name: "Grok Arbitre" });

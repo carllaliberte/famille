@@ -150,11 +150,29 @@ pesee: <1-2 phrases>
 phase2_participated: false
 instance: dediee
 distincte_de_phase2_ce_jour: true
+verrou_dur: <catégorie touchée, ou "aucun">
 ```
 
 `phase2_participated: false` est **structurel** : l'instance n'est pas dans le registre Phase 2 et n'a pas tourné en Phase 2 ce jour-là. Pas une phrase de politesse.
 
 Carl dépose ce bloc dans [Lot en cours](#lot-en-cours), puis le donne à `build`.
+
+---
+
+## 4bis. Verrous durs (non-arbitrables)
+
+Catégories qui ne peuvent **jamais** ressortir en `decision: AVANCER`, peu importe le contenu de Phase 1/2 :
+
+- `REVUE.md` ou `AUTOMATION.md` eux-mêmes
+- `juge.v0.json`, `flux.v0.json`
+- tout fichier touchant secrets, clés, authentification, tokens
+- toute tâche ajoutant un rôle d'écriture (code / PR / merge) à un nouveau participant
+
+Si une catégorie est touchée : `decision: BLOQUE` **automatique**. `verrou_dur` nomme la catégorie. `AVANCER` et `AJUSTER` sont refusés.
+
+Seul Carl peut lever un blocage, explicitement, **hors du fichier**. Pas un bloc `from: arbitre`. Pas swarm. Pas `build`.
+
+`verrou_dur: aucun` seulement si aucune de ces catégories n'est dans le périmètre du lot.
 
 ---
 
@@ -226,6 +244,7 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 - 2026-09-07 : preuve de lecture ; PREUVE_INSUFFISANTE ; pas de LU sans contenu — PR #197
 - 2026-09-07 : §3bis paliers de risque LOW|HIGH (défaut HIGH) — PR #201
 - 2026-09-07 : audit périodique (10 lots / 2 semaines) — PR #201
+- 2026-09-07 : §4bis verrous durs non-arbitrables ; verrou_dur — PR #TBD
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
