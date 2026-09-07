@@ -70,12 +70,18 @@ from: <claude|gemini|chatgpt|deepseek|…>
 ts: <ISO-8601 UTC>
 urls:
   - <url raw>
+ancre: <url du lot citée, ou "aucune">
+profondeur: SURFACE | VERIFIE
 verdict: LU | HOLD | OBJECTION
 motif: <une phrase>
 phase2_seen: false
 ```
 
 Aucune référence croisée. Collage interdit. `phase2_seen: false` obligatoire. Un verdict qui cite un pair est refusé.
+
+`profondeur: SURFACE` = lecture rapide, pas de vérification croisée. `VERIFIE` = contenu confirmé contre au moins un autre fichier/référence du lot ou du repo déjà cité dans ce fichier.
+
+**Ancrage obligatoire.** Tout verdict, objection ou proposition cite au moins un URL raw du lot en cours, ou déjà présent dans REVUE.md / Lot en cours. `ancre: aucune` + un fait technique précis du repo → `ANCRAGE_MANQUANT`. Un tel bloc est écarté avant transmission à l'arbitre. Une critique de méthode (« cette objection n'est pas ancrée ») est un acte `OBJECTION` valide.
 
 ### PHASE 2 — Discussion ouverte
 
@@ -90,6 +96,7 @@ from: <claude|gemini|chatgpt|deepseek|heavy|build|expert|fast|auto|grok-bot|…>
 ts: <ISO-8601 UTC>
 repond_a: <id visé ou *>
 acte: ACCORD | OBJECTION | PROPOSITION
+ancre: <url du lot citée, ou "aucune">
 corps: <texte>
 ```
 
@@ -97,13 +104,15 @@ Interdit : `from: arbitre`. Interdit : anonyme. Interdit : Carl dans `from`.
 
 `build` peut débattre ici. `arbitre` non.
 
-Carl transmet ensuite le fichier (raw) à Grok Arbitre. Jamais à Grok Build pour décision.
+Même règle d'ancrage qu'en Phase 1. `ancre: aucune` + fait technique précis du repo → `ANCRAGE_MANQUANT`, écarté avant l'arbitre. Une objection « cette objection n'est pas ancrée » est valide.
+
+Carl transmet ensuite le fichier (raw) à Grok Arbitre. Jamais à Grok Build pour décision. Les blocs `ANCRAGE_MANQUANT` non résolus en Phase 2 ne partent pas.
 
 ---
 
 ## 4. Arbitrage
 
-Grok Arbitre lit le paquet complet (Phase 1 + Phase 2) **après coup**. Tranche. Motive en 1–2 phrases. Dit ce qui a pesé. Déclare **explicitement** n'avoir pas participé à la Phase 2 concernée.
+Grok Arbitre lit le paquet complet (Phase 1 + Phase 2) **après coup**. Il vérifie l'ancrage de chaque bloc **avant** de trancher sur le fond. Un bloc `ANCRAGE_MANQUANT` non résolu en Phase 2 est noté dans `pesee` mais ne bloque pas les blocs ancrés restants. Tranche. Motive en 1–2 phrases. Dit ce qui a pesé. Peut mentionner dans `pesee` si un verdict `SURFACE` a été écarté au profit d'un verdict `VERIFIE` contradictoire. Déclare **explicitement** n'avoir pas participé à la Phase 2 concernée.
 
 ```
 REVUE phase:arbitrage
@@ -175,6 +184,20 @@ Tant qu'un connecteur direct IA-à-IA n'existe pas :
 - Tout mécanisme qui merge ou déclenche du code sans validation explicite de Carl.
 
 Cette section est révisée à chaque fois qu'un nouvel outil de réduction de portage est proposé — ajouté à la liste s'il passe les garde-fous, rejeté sinon avec motif noté.
+
+Toute proposition d'outil de réduction de portage suit le flux normal : déposée comme un bloc `phase:1` avec `urls` pointant vers la spec/code proposé, jugée par les mêmes lecteurs, arbitrée par Grok Arbitre comme toute autre tâche. Pas de canal parallèle.
+
+---
+
+## Changelog du protocole
+
+```
+- 2026-09-07 : protocole initial (deux phases, fichier = pont) — PR #193
+- 2026-09-07 : §7 réduction du portage, garde-fous — PR #194
+- 2026-09-07 : ancrage obligatoire, profondeur SURFACE|VERIFIE, canal §7, changelog — PR #TBD
+```
+
+Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.
 
 ---
 
