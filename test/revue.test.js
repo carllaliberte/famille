@@ -70,6 +70,20 @@ describe("REVUE.md — two phases, file is the bridge, arbiter never debates", (
     assert.match(TEXT, /## Lot en cours/);
   });
 
+  it("section 7 reduces portage without dropping the locks", () => {
+    assert.match(TEXT, /## 7\. Objectif de réduction du portage manuel/);
+    assert.match(TEXT, /pas la cible/);
+    assert.match(TEXT, /Indépendance Phase 1/);
+    assert.match(TEXT, /structurellement.*hors Phase 2/);
+    assert.match(TEXT, /vérifier `pesee` avant squash/);
+    assert.match(TEXT, /ne fait pas circuler/);
+    assert.match(TEXT, /Transmission automatique vers l'arbitre/);
+    const six = TEXT.indexOf("## 6. État actuel");
+    const seven = TEXT.indexOf("## 7. Objectif de réduction");
+    const lot = TEXT.indexOf("## Lot en cours");
+    assert.ok(six > 0 && seven > six && lot > seven);
+  });
+
   it("mesh cannot seat arbitre as a guest", () => {
     resetGuests();
     const r = connectAgent({ id: "arbitre", name: "Grok Arbitre" });
