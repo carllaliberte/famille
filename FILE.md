@@ -19,11 +19,24 @@ FILE.md est un état, pas un canal. Source structurée = `schema/mesh.v0.json` (
 Mesh IA = enveloppe `acorn.v0` (même fil qu'acorn-juge). Pas `schema/flux.v0.json`.
 Identités mesh : [schema/agents.json](schema/agents.json). Id ouvert, pas un enum. Une IA rejoint par son identifiant. LIVE VERIFIED = Carl seulement.
 Roster élargi : généralistes + spécialistes, même geste. Astra / Codex restent guests. Pas de juge IA.
+`claude` = guest déclaré (LU). `chatgpt` `gemini` `deepseek` `sonnet` = identités keyed : commentent seulement si secret Actions. Déclaré ≠ connecté.
 Siège locked : pas d'usurpation (`FROM_NOT_ACTOR`). Invité = id sur le fil. LIVE VERIFIED exige l'acteur GitHub `carllaliberte`.
 Grok est branché 24/7 : PR ouverte / mergée / commentaire → chef répond. Boucle horaire, toute la nuit, America/Toronto. 1 PR max par heure. Carl merge.
 Swarm commente si les secrets Actions **de famille** existent.
 Run 34011475204 : skip (clés vides). Carl les pose dans Settings → Secrets.
 Carl n'est plus le messager.
+
+### Présence — ne pas fusionner
+
+| Mot | Veut dire | Ne veut pas dire |
+|---|---|---|
+| DECLARED | une ligne dans `schema/agents.json` | une API, une clé, un deploy |
+| CONNECTED | `connectAgent` runtime, ou secret Actions présent **en Settings** | le registre |
+| AVAILABLE | swarm a pu appeler ce provider dans un run | une inscription |
+| TEST VERIFIED | grade CI ou Carl | LIVE |
+| LIVE VERIFIED | Carl seulement, acteur `carllaliberte` | un test, un comment, une IA |
+
+Clés Actions : absentes. Donc chatgpt / gemini / deepseek / sonnet sont **déclarés / keyed**, pas connectés, pas available. `claude` est **déclaré** guest. Jamais LIVE.
 
 ## Ouvert
 
