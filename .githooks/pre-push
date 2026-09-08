@@ -8,7 +8,8 @@ case "$ref" in
   docs/*) exit 0 ;;
   schema/*) exit 0 ;;
   grok/auto-*) exit 0 ;;
+  grok/optimize-*) exit 0 ;;
 esac
 echo "Branche refusée: $ref"
-echo "Attendu: ville/<quartier>-<piece> | cursor/<piece> | docs/<piece> | schema/<piece> | grok/auto-*"
+echo "Attendu: ville/<quartier>-<piece> | cursor/<piece> | docs/<piece> | schema/<piece> | grok/auto-* | grok/optimize-*"
 exit 1
