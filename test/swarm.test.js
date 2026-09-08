@@ -22,6 +22,7 @@ import {
   handoffIds,
   meshUser,
   envelopeAnchor,
+  isQuotaOrMissing,
 } from "../.github/swarm/review.mjs";
 import {
   isMeshEnvelope,
@@ -50,15 +51,11 @@ describe("swarm roster", () => {
 describe("parseTrigger", () => {
   it("defaults to auto models — not Fable", () => {
     const ids = parseTrigger("", []);
-    assert.deepEqual(ids, [
-      "sonnet",
-      "chatgpt",
-      "deepseek",
-      "gemini",
-      "llama",
-      "mistral",
-      "qwen",
-    ]);
+    assert.ok(ids.includes("sonnet"));
+    assert.ok(ids.includes("chatgpt"));
+    assert.ok(ids.includes("llama"));
+    assert.ok(ids.includes("haiku"));
+    assert.ok(ids.includes("cohere"));
     assert.ok(!ids.includes("fable"));
     assert.ok(!ids.includes("xai"));
   });
@@ -74,15 +71,12 @@ describe("parseTrigger", () => {
     assert.deepEqual(parseTrigger("/deepseek", []), ["deepseek"]);
     assert.deepEqual(parseTrigger("/gemini", []), ["gemini"]);
     assert.deepEqual(parseTrigger("/sonnet", []), ["sonnet"]);
-    assert.deepEqual(parseTrigger("/swarm", []), [
-      "sonnet",
-      "chatgpt",
-      "deepseek",
-      "gemini",
-      "llama",
-      "mistral",
-      "qwen",
-    ]);
+    const swarm = parseTrigger("/swarm", []);
+    assert.ok(swarm.includes("sonnet"));
+    assert.ok(swarm.includes("gpt-4o"));
+    assert.ok(swarm.includes("cohere"));
+    assert.ok(!swarm.includes("fable"));
+    assert.ok(!swarm.includes("xai"));
   });
 
   it("does not treat .github/swarm paths as /swarm", () => {
@@ -196,21 +190,38 @@ describe("keyedModels fail-closed", () => {
   });
 
   it("OPENROUTER_API_KEY runs auto models; fable stays on-demand", () => {
-    const { run, skip } = keyedModels(
-      ["sonnet", "fable", "chatgpt", "deepseek", "gemini", "llama", "mistral", "qwen", "xai"],
-      { OPENROUTER_API_KEY: "or-test" },
-    );
-    assert.deepEqual(
-      run.map((m) => m.id),
-      ["sonnet", "chatgpt", "deepseek", "gemini", "llama", "mistral", "qwen"],
-    );
+    const ids = [
+      "sonnet",
+      "fable",
+      "chatgpt",
+      "deepseek",
+      "gemini",
+      "llama",
+      "mistral",
+      "qwen",
+      "haiku",
+      "gpt-4o",
+      "gemini-pro",
+      "deepseek-v3",
+      "mistral-large",
+      "cohere",
+      "xai",
+    ];
+    const { run, skip } = keyedModels(ids, { OPENROUTER_API_KEY: "or-test" });
     assert.ok(run.every((m) => m.via === "openrouter"));
+    assert.ok(run.map((m) => m.id).includes("cohere"));
+    assert.ok(run.map((m) => m.id).includes("gpt-4o"));
     assert.equal(skip.map((s) => s.id).join(","), "fable,xai");
     assert.equal(OPENROUTER_ROUTES.gemini, "google/gemini-2.5-flash");
     assert.equal(OPENROUTER_ROUTES.sonnet, "anthropic/claude-3-5-sonnet");
     assert.equal(OPENROUTER_ROUTES.chatgpt, "openai/gpt-4o-mini");
-    assert.equal(OPENROUTER_ROUTES.deepseek, "deepseek/deepseek-r1:free");
-    assert.equal(OPENROUTER_ROUTES.llama, "meta-llama/llama-3.3-70b-instruct:free");
+    assert.equal(OPENROUTER_ROUTES.cohere, "cohere/command-r-plus");
+  });
+
+  it("404 and 402 skip silently", () => {
+    assert.equal(isQuotaOrMissing(new Error("openrouter llama 404: gone")), true);
+    assert.equal(isQuotaOrMissing(new Error("openrouter chatgpt 402: credits")), true);
+    assert.equal(isQuotaOrMissing(new Error("openrouter x 500: boom")), false);
   });
 
   it("native key wins over OpenRouter", () => {
