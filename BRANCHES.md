@@ -20,7 +20,7 @@ Cursor Cloud agents use `cursor/<piece>`. Carl still squashes. One PR per repo.
 
 `grok/auto-*` : commits SSH signés via `.github/workflows/grok-signed-commit.yml`. Carl squash-merge seulement — jamais fast-forward. Jamais auto-merge. Jamais main par Grok.
 
-`grok/optimize-*` : scan perf+structure via `.github/workflows/grok-optimize.yml`. Commits SSH signés. Chemins sensibles exclus. Carl squash-merge seulement — jamais fast-forward. Jamais auto-merge. Jamais main par Grok.
+`grok/optimize-*` : scan perf+structure via `.github/workflows/grok-optimize.yml` (dispatch **et** cron nocturne America/Toronto). Commits SSH signés. Chemins sensibles exclus. Vide → pas de PR. Carl squash-merge seulement — jamais fast-forward. Jamais auto-merge. Jamais main par Grok.
 
 ## Validation
 

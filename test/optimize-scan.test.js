@@ -95,11 +95,13 @@ describe("grok-optimize.yml — jamais main", () => {
   const auto = read("AUTOMATION.md");
   const branches = read("BRANCHES.md");
 
-  it("is dispatch-only, signs, never pushes main, never auto-merge", () => {
+  it("is dispatch + nightly Toronto, signs, never pushes main, never auto-merge", () => {
     assert.match(yml, /^on:\n  workflow_dispatch:\n/m);
+    assert.match(yml, /schedule:/);
+    assert.match(yml, /cron: "0 6 \* \* \*"/);
+    assert.match(yml, /America\/Toronto/);
     assert.doesNotMatch(yml, /pull_request/);
-    assert.doesNotMatch(yml, /schedule:/);
-    assert.doesNotMatch(yml, /cron:/);
+    assert.doesNotMatch(yml, /legal-hourly|quantum-daily/);
     assert.doesNotMatch(yml, /git push origin main/);
     assert.doesNotMatch(yml, /gh pr merge/);
     assert.doesNotMatch(yml, /auto-merge:\s*true/);
@@ -115,6 +117,8 @@ describe("grok-optimize.yml — jamais main", () => {
     assert.match(yml, /SENSITIVE_PATHS/);
     assert.match(yml, /unforge-check\//);
     assert.match(yml, /Pas de tampon à vide|Pas de PR vide/);
+    assert.match(yml, /github\.event\.inputs\.scope \|\| 'perf\+structure'/);
+    assert.match(yml, /steps\.empty\.outputs\.empty == 'false'/);
   });
 
   it("CI nom accepts grok/optimize-YYYYMMDD-HHMMSS", () => {
