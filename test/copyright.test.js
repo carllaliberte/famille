@@ -66,20 +66,27 @@ describe("copyright mechanics — options only, no legal choice", () => {
     assert.match(notice, /schema\/juge\.v0\.json/);
     assert.match(notice, /schema\/flux\.v0\.json/);
     assert.match(notice, /schema\/kem\.v0\.json/);
+    assert.match(notice, /schema\/agents\.v0\.json/);
     assert.match(notice, /intouché/);
     assert.match(notice, /check\.py/);
     assert.match(notice, /oubli\.py/);
     const juge = JSON.parse(read("schema/juge.v0.json"));
     const flux = JSON.parse(read("schema/flux.v0.json"));
     const mesh = JSON.parse(read("schema/mesh.v0.json"));
+    const agentsSchema = JSON.parse(read("schema/agents.v0.json"));
+    const agents = JSON.parse(read("schema/agents.json"));
     assert.equal(juge.title, "famille.juge.v0");
     assert.deepEqual(juge.required, ["quelle", "temoin", "epsilon", "horizon"]);
     assert.equal(flux.title, "famille.flux.v0");
     assert.equal(mesh.title, "famille.mesh.v0");
+    assert.equal(agentsSchema.title, "famille.agents.v0");
+    assert.equal(agents.version, "agents.v0");
     for (const p of [
       "schema/juge.v0.json",
       "schema/flux.v0.json",
       "schema/mesh.v0.json",
+      "schema/agents.v0.json",
+      "schema/agents.json",
     ]) {
       const raw = read(p);
       assert.equal(raw.trimStart()[0], "{");

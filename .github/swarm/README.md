@@ -10,6 +10,7 @@ Jamais wrangler. Jamais merge.
 Fail-closed : sans secrets, skip silencieux.
 
 Deux flux : `schema/flux.v0.json` = carte. `schema/mesh.v0.json` = enveloppe IA.
+Roster : `schema/agents.json` (schéma `schema/agents.v0.json`). Ajouter une IA = une entrée, pas un fork de `mesh.v0`.
 
 Noms Actions (pas git) : `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` `GEMINI_API_KEY`
 Fable on-demand : `/fable`.

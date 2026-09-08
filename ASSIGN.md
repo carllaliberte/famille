@@ -13,6 +13,7 @@ Pas un 7e chantier. Détail : [INTEROP-IA.md](INTEROP-IA.md).
 - Expert — assignation + goût
 - Quantum — QC
 - Autres IA — mesh / `/flux` (commentaires PR). Aucune n'est juge.
+- Identités : [schema/agents.json](schema/agents.json). Une entrée, pas un fork de `mesh.v0`.
 - Carl — squash + LIVE VERIFIED
 - Canaux IA toujours ouverts (mesh `/flux` + teammates). Activer les dormantes. Ne pas laisser idle.
 - Mesh prêt sans clés Actions : pairs adressables ; commenter = Carl Settings, pas un invent bot.

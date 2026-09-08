@@ -27,6 +27,8 @@ export const CANON_PATHS = Object.freeze([
   "schema/juge.v0.json",
   "schema/flux.v0.json",
   "schema/mesh.v0.json",
+  "schema/agents.v0.json",
+  "schema/agents.json",
   "schema/README.md",
 ]);
 
