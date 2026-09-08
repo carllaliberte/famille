@@ -39,10 +39,25 @@ jobs:
         )
       )
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 6
     continue-on-error: true
     steps:
+      - name: PR head
+        id: ref
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "sha=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            sha=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}" --jq .head.sha)
+            echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

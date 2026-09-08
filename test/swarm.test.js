@@ -368,6 +368,8 @@ describe("workflow locks", () => {
     assert.match(yml, /XAI_API_KEY/);
     assert.match(yml, /node \.github\/swarm\/review\.mjs/);
     assert.doesNotMatch(yml, /run: node review\.mjs/);
+    assert.match(yml, /steps\.ref\.outputs\.sha/);
+    assert.match(yml, /timeout-minutes: 6/);
   });
 
   it("branch name cursor/swarm-famille is allowed", () => {
@@ -472,6 +474,12 @@ describe("mesh interoperability", () => {
       ],
     });
     assert.match(wrapped[0], /## Swarm review/);
+    const quota = commentBodies("review", {
+      run: [{ id: "gemini" }],
+      skip: [],
+      results: [{ id: "gemini", skipped: true, reason: "skip gemini 503" }],
+    });
+    assert.deepEqual(quota, []);
   });
 
   it("meshUser names the wire and forbids the carte flux schema", () => {

@@ -3,7 +3,7 @@
  * Swarm review for famille. Complementary, not a judge.
  * Reviews FILE.md + schema + docs. Fail-closed: missing keys skip.
  * Never merge. Never wrangler. Fable 5 is on-demand (cost).
- * Sonnet / ChatGPT / DeepSeek / Gemini auto if keyed.
+ * Sonnet / ChatGPT / DeepSeek on-demand. Gemini auto if keyed ($0 cadence).
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -598,14 +598,14 @@ export async function reviewOne(spec, system, user, env = process.env) {
   }
 }
 
-/** Mesh replies are bare acorn.v0 envelopes so guests can LU them. Auto PR review stays wrapped. */
+/** Mesh replies are bare acorn.v0 envelopes so guests can LU them. Auto PR review stays wrapped. Quota skip is silent — no skip wall on the thread. */
 export function commentBodies(kind, payload) {
-  if (kind === "mesh") {
-    return (payload.results || [])
-      .filter((r) => r && r.text && !r.skipped && !r.error)
-      .map((r) => r.text);
-  }
-  return [formatComment(payload)];
+  const useful = (payload.results || []).filter(
+    (r) => r && r.text && !r.skipped && !r.error,
+  );
+  if (kind === "mesh") return useful.map((r) => r.text);
+  if (!useful.length) return [];
+  return [formatComment({ ...payload, results: useful })];
 }
 
 export function formatComment({ run, skip, results }) {
