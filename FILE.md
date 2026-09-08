@@ -28,7 +28,7 @@ FLAG (stood) : Soft FLAGS Carl-only — clés Actions absentes ; cron Cursor cut
 |---|---|---|
 | famille | clés Actions | absentes. Sans elles sonnet/chatgpt/deepseek/gemini ne commentent pas. |
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
-| famille | license-options | Deux candidats `LICENSE.option-open` (MIT) / `LICENSE.option-closed` (ARR). Pas de rename en `LICENSE`. NOTICE.md = provenance, pas une position juridique. SCHEMAS_NOTICE.md porte le copyright des JSON. Carl tranche. |
+| famille | license-options | [PR #222](https://github.com/carllaliberte/famille/pull/222). Deux candidats `LICENSE.option-open` (MIT) / `LICENSE.option-closed` (ARR). Pas de rename en `LICENSE`. NOTICE.md = provenance, pas une position juridique. SCHEMAS_NOTICE.md porte le copyright des JSON. Carl tranche. |
 | famille | ots-anchor | [PR #218](https://github.com/carllaliberte/famille/pull/218). Workflows push `main` + cron upgrade. Spec `unforge-check/OTS.md`. Exception `ots-bot` dans AUTOMATION.md. Inactif tant que Carl n'a pas squashé. |
 | acorn-juge | issue #3 grok.me | 404 HOLD. Pas la zone de Carl. Canal = workers.dev. |
 | acorn-juge | deploy wrangler | Carl-only. |
