@@ -20,11 +20,13 @@ Copier un notaire externe dans `juge.v0.json` fusionnerait un calendrier avec le
 ## Primitive (chez ce dépôt, après squash)
 
 ```
-push sur main  +  SHA du commit  +  calendriers OTS publics
+push sur main  +  SHA du commit  +  calendriers OTS pinnés dans le YAML
   →  .ots-anchor/latest.sha.ots   (pending, puis complete)
 ```
 
 Sans merge de Carl : rien. Jamais sur une PR ouverte.
+
+Les notaires sont **fixés en dur** dans `ots-anchor.yml` (alice, bob, finney, catallaxy), versionnés. Un changement de calendrier passe par une PR auditable — pas une mise à jour silencieuse du client.
 
 ## Vérifier (tierce partie)
 
@@ -33,6 +35,8 @@ ots verify .ots-anchor/latest.sha.ots
 ```
 
 Le fichier `.sha` correspondant doit être à côté. Contre un nœud Bitcoin une fois *complete*, ou via les calendriers publics tant que *pending*.
+
+État lisible (pending / complete, SHA, date) : bloc `ots-status` en tête de [unforge-check/OTS.md](unforge-check/OTS.md), réécrit par le cron quotidien.
 
 Rien ici n'est un sceau. Un merge n'est pas une inclusion Bitcoin.
 

@@ -2,6 +2,7 @@
 # Tries to complete calendar receipts into a confirmed Bitcoin inclusion.
 # Identity: ots-bot (not Carl). Message: ots: upgrade
 # No third-party secret. Does not run on pull requests.
+# Also rewrites the delimited status block in unforge-check/OTS.md.
 name: ots-upgrade
 on:
   schedule:
@@ -40,12 +41,77 @@ jobs:
             ots --no-bitcoin upgrade "$f" || true
             ots info "$f" || true
           done
+      - name: write ots-status block
+        run: |
+          set -euo pipefail
+          python3 << 'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import glob, os, re, subprocess
+
+          now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+          rows = []
+          for f in sorted(glob.glob(".ots-anchor/*.sha.ots")):
+              base = os.path.basename(f)
+              if base == "latest.sha.ots":
+                  continue
+              sha = base[: -len(".sha.ots")]
+              try:
+                  info = subprocess.check_output(
+                      ["ots", "info", f], text=True, stderr=subprocess.STDOUT
+                  )
+              except subprocess.CalledProcessError as e:
+                  info = e.output or ""
+              if "BitcoinBlockHeaderAttestation" in info:
+                  state = "complete"
+              elif "PendingAttestation" in info:
+                  state = "pending"
+              else:
+                  state = "unknown"
+              rows.append(
+                  f"| `{sha}` | `.ots-anchor/{base}` | {state} | {now} |"
+              )
+          if not rows:
+              rows.append(f"| — | *(aucune preuve encore)* | — | {now} |")
+          block = "\n".join(
+              [
+                  "<!-- ots-status:start -->",
+                  "",
+                  "## État des preuves",
+                  "",
+                  f"Dernière vérification : `{now}` (cron `ots-upgrade`).",
+                  "",
+                  "| SHA | Fichier | État | Vérifié |",
+                  "|---|---|---|---|",
+                  *rows,
+                  "",
+                  "<!-- ots-status:end -->",
+              ]
+          )
+          p = Path("unforge-check/OTS.md")
+          text = p.read_text()
+          start, end = "<!-- ots-status:start -->", "<!-- ots-status:end -->"
+          i, j = text.find(start), text.find(end)
+          if i >= 0 and j >= i:
+              j += len(end)
+              text = text[:i] + block + text[j:]
+          else:
+              m = re.search(r"(?m)^# .+$", text)
+              if m:
+                  rest = text[m.end():].lstrip("\n")
+                  text = text[: m.end()] + "\n\n" + block + "\n\n" + rest
+              else:
+                  nl = text.find("\n")
+                  text = text[: nl + 1] + "\n" + block + "\n" + text[nl + 1 :]
+          p.write_text(text)
+          print(block)
+          PY
       - name: commit as ots-bot
         run: |
           set -euo pipefail
           git config user.name "ots-bot"
           git config user.email "ots-bot@users.noreply.github.com"
-          git add .ots-anchor/*.ots
+          git add .ots-anchor/*.ots unforge-check/OTS.md
           if git diff --cached --quiet; then
             echo "nothing to commit"
             exit 0
