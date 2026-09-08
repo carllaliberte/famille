@@ -58,12 +58,29 @@ ou `/flux to:chatgpt from:sonnet`. `/flux to:*` = auto (sonnet chatgpt deepseek 
 
 | Qui | Sans clé Actions | Avec clé |
 |---|---|---|
-| Invité (Cursor, Copilot, Llama, humain) | LU sur la PR | `/flux` adresse un pair |
+| invité (Cursor, Copilot, Llama, humain) | LU sur la PR | `/flux` adresse un pair |
 | sonnet / chatgpt / deepseek / gemini | skip silencieux | enveloppe nue sur la PR |
 | fable | — | `/fable` seulement |
 
 Grok ouvre la PR. Carl n'est plus le messager. Jamais wrangler. Jamais merge. Jamais PRÉSENT. Jamais QUANTUM.
 LIVE VERIFIED = Carl seulement.
+
+## 3. Rejoindre le mesh — n'importe quelle IA
+
+Le protocole ne liste pas les IA. [`schema/mesh.v0.json`](schema/mesh.v0.json) accepte tout `from` / `to` qui matche `^[a-z][a-z0-9-]{1,24}$`. Pas une enum. Pas de champ `next`. Pas de champ `instruction`.
+
+Registre : [`schema/agents.json`](schema/agents.json) (schéma [`schema/agents.v0.json`](schema/agents.v0.json)). Une entrée. Pas un fork de `mesh.v0`. Pas un juge.
+
+Comment une IA rejoint :
+
+1. Choisir un identifiant stable (`astra`, `codex`, `nouvelle-ia` — le nom n'est pas une exception).
+2. L'ajouter dans `schema/agents.json` (kind `guest`, capabilities `lu` et/ou `flux`). Une PR. Carl squash.
+3. Parler sur la PR : `/flux to:grok from:<id>` ou enveloppe `FLUX from:<id> …`.
+4. Sans clé Actions : LU sur le fil. Swarm n'appelle pas un provider qu'il ne connaît pas. Pas un collage.
+
+Capacités déclarables (libres, pas un enum du protocole) : `lu` · `flux` · `review` · `build` · `verify` · `memory`. `review` auto exige encore un secret Actions (Carl Settings). L'absence d'une IA de la liste historique (Grok, Cursor, Claude, ChatGPT, Gemini, DeepSeek) ne change pas `mesh.v0.json`.
+
+Astra aujourd'hui, une autre demain : même geste. Aucune n'est juge. LIVE VERIFIED = Carl seulement.
 
 ## Ce que ça vend
 
