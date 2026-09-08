@@ -33,11 +33,32 @@ export const CANON_PATHS = Object.freeze([
 ]);
 
 export const OPENROUTER_ROUTES = Object.freeze({
-  sonnet: "anthropic/claude-3.5-sonnet-20241022",
-  chatgpt: "openai/gpt-4o",
-  deepseek: "deepseek/deepseek-r1",
+  sonnet: "anthropic/claude-3-5-sonnet",
+  haiku: "anthropic/claude-3-haiku",
+  chatgpt: "openai/gpt-4o-mini",
+  "gpt-4o": "openai/gpt-4o",
+  deepseek: "deepseek/deepseek-r1:free",
+  "deepseek-v3": "deepseek/deepseek-chat",
   gemini: "google/gemini-2.5-flash",
+  "gemini-pro": "google/gemini-1.5-pro",
+  llama: "meta-llama/llama-3.3-70b-instruct:free",
+  mistral: "mistralai/mistral-small-24b-instruct-2501:free",
+  "mistral-large": "mistralai/mistral-large",
+  qwen: "qwen/qwen-2.5-72b-instruct:free",
+  cohere: "cohere/command-r-plus",
 });
+
+function orSeat(id, label, slug) {
+  return {
+    id,
+    label,
+    model: slug,
+    provider: "openrouter",
+    secret: `${id.toUpperCase().replace(/-/g, "_")}_API_KEY`,
+    auto: true,
+    maxTokens: 2048,
+  };
+}
 
 export const MODELS = Object.freeze({
   sonnet: {
@@ -83,16 +104,58 @@ export const MODELS = Object.freeze({
     secret: "GEMINI_API_KEY",
     auto: true,
   },
+  llama: orSeat("llama", "Llama", "meta-llama/llama-3.3-70b-instruct:free"),
+  mistral: orSeat("mistral", "Mistral", "mistralai/mistral-small-24b-instruct-2501:free"),
+  qwen: orSeat("qwen", "Qwen", "qwen/qwen-2.5-72b-instruct:free"),
+  haiku: orSeat("haiku", "Claude Haiku", "anthropic/claude-3-haiku"),
+  "gpt-4o": orSeat("gpt-4o", "GPT-4o", "openai/gpt-4o"),
+  "gemini-pro": orSeat("gemini-pro", "Gemini Pro", "google/gemini-1.5-pro"),
+  "deepseek-v3": orSeat("deepseek-v3", "DeepSeek V3", "deepseek/deepseek-chat"),
+  "mistral-large": orSeat("mistral-large", "Mistral Large", "mistralai/mistral-large"),
+  cohere: orSeat("cohere", "Cohere Command R+", "cohere/command-r-plus"),
+  xai: {
+    id: "xai",
+    label: "xAI",
+    model: "grok-beta",
+    provider: "xai",
+    secret: "XAI_API_KEY",
+    auto: false,
+    maxTokens: 2048,
+  },
 });
 
 const TRIGGERS = {
-  "/swarm": ["sonnet", "chatgpt", "deepseek", "gemini"],
+  "/swarm": [
+    "sonnet",
+    "chatgpt",
+    "deepseek",
+    "gemini",
+    "llama",
+    "mistral",
+    "qwen",
+    "haiku",
+    "gpt-4o",
+    "gemini-pro",
+    "deepseek-v3",
+    "mistral-large",
+    "cohere",
+  ],
   "/sonnet": ["sonnet"],
   "/fable": ["fable"],
   "/fabre": ["fable"],
   "/chatgpt": ["chatgpt"],
   "/deepseek": ["deepseek"],
   "/gemini": ["gemini"],
+  "/llama": ["llama"],
+  "/mistral": ["mistral"],
+  "/qwen": ["qwen"],
+  "/haiku": ["haiku"],
+  "/gpt-4o": ["gpt-4o"],
+  "/gemini-pro": ["gemini-pro"],
+  "/deepseek-v3": ["deepseek-v3"],
+  "/mistral-large": ["mistral-large"],
+  "/cohere": ["cohere"],
+  "/xai": ["xai"],
 };
 
 function autoIds() {
@@ -306,6 +369,34 @@ export function sanitizeReview(text) {
   );
 }
 
+/** 404 / 402 / 429: skip silently. Do not dump provider bodies on the PR. */
+export function isQuotaOrMissing(err) {
+  const m = String(err && err.message ? err.message : err || "");
+  return /\b(404|402|429)\b/.test(m);
+}
+
+function skipFault(spec, err, via) {
+  const reason = isQuotaOrMissing(err)
+    ? `skip ${String(err && err.message ? err.message : err).slice(0, 80)}`
+    : null;
+  if (reason) {
+    console.log(`[${spec.id}] ${reason}`);
+    return {
+      id: spec.id,
+      skipped: true,
+      reason,
+      via,
+    };
+  }
+  return {
+    id: spec.id,
+    label: spec.label,
+    model: spec.model,
+    via,
+    error: err instanceof Error ? err.message : String(err),
+  };
+}
+
 async function postJson(url, { headers, body, id }) {
   const res = await fetch(url, {
     method: "POST",
@@ -425,11 +516,31 @@ async function callOpenRouter(spec, system, user, key) {
   return json.choices?.[0]?.message?.content || "";
 }
 
+async function callXai(spec, system, user, key) {
+  const { ok, status, json } = await postJson(
+    "https://api.x.ai/v1/chat/completions",
+    {
+      id: spec.id,
+      headers: { authorization: `Bearer ${key}` },
+      body: {
+        model: spec.model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      },
+    },
+  );
+  if (!ok) throw new Error(`xai ${status}: ${JSON.stringify(json).slice(0, 400)}`);
+  return json.choices?.[0]?.message?.content || "";
+}
+
 const CALLERS = {
   anthropic: callAnthropic,
   openai: callOpenAI,
   deepseek: callDeepSeek,
   gemini: callGemini,
+  xai: callXai,
 };
 
 export async function reviewOne(spec, system, user, env = process.env) {
@@ -473,22 +584,10 @@ export async function reviewOne(spec, system, user, env = process.env) {
             text,
           };
         } catch (err2) {
-          return {
-            id: spec.id,
-            label: spec.label,
-            model: spec.model,
-            via: "openrouter",
-            error: err2 instanceof Error ? err2.message : String(err2),
-          };
+          return skipFault(spec, err2, "openrouter");
         }
       }
-      return {
-        id: spec.id,
-        label: spec.label,
-        model: spec.model,
-        via: spec.provider,
-        error: err instanceof Error ? err.message : String(err),
-      };
+      return skipFault(spec, err, spec.provider);
     }
   }
   try {
@@ -501,13 +600,7 @@ export async function reviewOne(spec, system, user, env = process.env) {
       text,
     };
   } catch (err) {
-    return {
-      id: spec.id,
-      label: spec.label,
-      model: spec.model,
-      via: "openrouter",
-      error: err instanceof Error ? err.message : String(err),
-    };
+    return skipFault(spec, err, "openrouter");
   }
 }
 
@@ -637,6 +730,13 @@ export async function main(env = process.env) {
     meta.label,
   );
   const ids = routed.ids;
+  if (
+    ids.length &&
+    String(env.XAI_API_KEY || "").trim() &&
+    !ids.includes("xai")
+  ) {
+    ids.push("xai");
+  }
   if (!ids.length) {
     if (routed.flux) {
       if (isMeshEnvelope(meta.comment)) {
