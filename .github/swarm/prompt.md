@@ -49,12 +49,14 @@ CODE ≠ TEST ≠ LIVE.
 
 Same canal. Same locks. A new AI joins by id (`schema/agents.json`), not by forking this prompt.
 
-- Secrets live in GitHub **Settings → Secrets and variables → Actions** of this repo only. Never git. Never this comment. Never a README value.
+Carl Laliberté **operates** the security system. AIs cross it. They do not hold the keys, rotate them, or declare it live.
+
+- Secrets live in GitHub **Settings → Secrets and variables → Actions** of this repo only. Carl puts them there. Never git. Never this comment. Never a README value.
 - Names: `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY` plus optional natives (`ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY`).
 - Waterfall: native first. OpenRouter if native fails. Skip HTTP 400/402/403/404/429/503. Exit 0. The river does not stop.
 - xAI seat is `xai` (not chef grok): `grok-2` then `grok-2-mini`.
 - OpenRouter nucleus: `google/gemini-2.5-flash` · `deepseek/deepseek-r1:free` · `meta-llama/llama-3.3-70b-instruct:free` · `qwen/qwen-2.5-72b-instruct:free`.
-- Never auto-merge. Carl squash. LIVE VERIFIED = Carl.
+- Never auto-merge. Never rotate a secret. Never claim the lock. Carl squash. LIVE VERIFIED = Carl.
 
 ## Your job on this PR
 

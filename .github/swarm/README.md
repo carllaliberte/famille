@@ -9,12 +9,12 @@ Réponse mesh = enveloppe nue `FLUX from:…` (LU). 1 hop dans le même run.
 Jamais wrangler. Jamais merge.
 Fail-closed : sans secrets, skip silencieux.
 
-Flux sécurisé (toutes les IA, y compris à venir) :
-1. Secrets = Settings de **ce** repo. Jamais git. Jamais le fil.
+Flux sécurisé (toutes les IA, y compris à venir) — **Carl opère le verrou**. Les IA le traversent. Elles ne le tiennent pas.
+1. Secrets = Settings de **ce** repo. Carl les pose. Jamais git. Jamais le fil.
 2. Noms : `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY` (+ natives optionnelles).
 3. Cascade : natif → OpenRouter → skip 400/402/403/404/429/503. Exit 0.
 4. xAI id `xai` (pas chef grok) : `grok-2` → `grok-2-mini`.
-5. Jamais merge. Carl squash. LIVE = Carl.
+5. Jamais merge. Jamais rotation de secret par une IA. Carl squash. LIVE = Carl.
 
 Noms Actions (pas git) : `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY`
 Fable on-demand : `/fable`.

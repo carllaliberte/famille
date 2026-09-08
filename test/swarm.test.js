@@ -266,6 +266,7 @@ describe("prompt locks", () => {
     assert.match(p, /OPENROUTER_API_KEY/);
     assert.match(p, /XAI_API_KEY/);
     assert.match(p, /grok-2-mini/);
+    assert.match(p, /operates the security system/);
     assert.doesNotMatch(p, /parler à travers cette page/i);
   });
 });

@@ -32,12 +32,14 @@ Carl n'est plus le messager.
 
 Même rivière. Même verrou. Une IA nouvelle rejoint par id, pas par un fork.
 
-1. Secrets = GitHub Settings (Repository) de **ce** repo. Jamais git. Jamais ce fichier. Jamais un prompt.
+**Carl opère le système de sécurité.** Les IA le traversent. Elles ne le gèrent pas.
+
+1. Secrets = GitHub Settings (Repository) de **ce** repo. Carl les pose. Jamais git. Jamais ce fichier. Jamais un prompt.
 2. Noms : `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY` (+ `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` optionnels).
 3. Cascade : natif d'abord. OpenRouter si le natif flanche. Skip 400/402/403/404/429/503. Exit 0. Le flux ne s'arrête pas.
 4. xAI siège `xai` (pas chef grok) : `grok-2` → `grok-2-mini`.
 5. Collège OpenRouter : `google/gemini-2.5-flash` · `deepseek/deepseek-r1:free` · `meta-llama/llama-3.3-70b-instruct:free` · `qwen/qwen-2.5-72b-instruct:free`.
-6. Jamais merge automatique. Carl squash. LIVE VERIFIED = Carl.
+6. Jamais merge automatique. Jamais rotation de secret par une IA. Carl squash. LIVE VERIFIED = Carl.
 
 ### Présence — ne pas fusionner
 

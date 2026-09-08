@@ -60,9 +60,12 @@ ou `/flux to:chatgpt from:sonnet`. `/flux to:*` = auto (sonnet chatgpt deepseek 
 
 Même canal. Même verrou. Une nouvelle IA rejoint par id (`schema/agents.json`), pas en forgeant un second prompt.
 
+**Carl Laliberté opère le système de sécurité.** Les IA le traversent. Elles ne posent pas les clés, ne les rotent pas, ne déclarent pas LIVE.
+
 | Règle | Valeur |
 |---|---|
-| Secrets | Settings Actions de **ce** repo. Jamais git. Jamais le fil. |
+| Opérateur | Carl seulement |
+| Secrets | Settings Actions de **ce** repo. Carl les pose. Jamais git. Jamais le fil. |
 | Noms | `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY` + natives optionnelles |
 | Cascade | natif → OpenRouter → skip 400/402/403/404/429/503. Exit 0 |
 | xAI | id `xai` (pas chef grok) : `grok-2` → `grok-2-mini` |
