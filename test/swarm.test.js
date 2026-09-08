@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  OPENROUTER_ROUTES,
   MODELS,
   CANON_PATHS,
   commandsIn,
@@ -181,6 +182,32 @@ describe("keyedModels fail-closed", () => {
     assert.equal(skip.length, 1);
     assert.equal(skip[0].id, "chatgpt");
   });
+
+  it("OPENROUTER_API_KEY runs auto models; fable stays on-demand", () => {
+    const { run, skip } = keyedModels(
+      ["sonnet", "fable", "chatgpt", "deepseek", "gemini"],
+      { OPENROUTER_API_KEY: "or-test" },
+    );
+    assert.deepEqual(
+      run.map((m) => m.id),
+      ["sonnet", "chatgpt", "deepseek", "gemini"],
+    );
+    assert.ok(run.every((m) => m.via === "openrouter"));
+    assert.equal(skip.length, 1);
+    assert.equal(skip[0].id, "fable");
+    assert.equal(OPENROUTER_ROUTES.gemini, "google/gemini-2.5-flash");
+    assert.equal(OPENROUTER_ROUTES.sonnet, "anthropic/claude-3.5-sonnet-20241022");
+  });
+
+  it("native key wins over OpenRouter", () => {
+    const { run } = keyedModels(["gemini", "sonnet"], {
+      GEMINI_API_KEY: "gem-test",
+      OPENROUTER_API_KEY: "or-test",
+    });
+    assert.equal(run.find((m) => m.id === "gemini").via, undefined);
+    assert.equal(run.find((m) => m.id === "gemini").provider, "gemini");
+    assert.equal(run.find((m) => m.id === "sonnet").via, "openrouter");
+  });
 });
 
 describe("prompt locks", () => {
@@ -305,6 +332,9 @@ describe("workflow locks", () => {
     assert.match(yml, /contents: read/);
     assert.doesNotMatch(yml, /wrangler deploy/);
     assert.doesNotMatch(yml, /gh pr merge/);
+    assert.match(yml, /OPENROUTER_API_KEY/);
+    assert.match(yml, /node \.github\/swarm\/review\.mjs/);
+    assert.doesNotMatch(yml, /run: node review\.mjs/);
   });
 
   it("branch name cursor/swarm-famille is allowed", () => {
