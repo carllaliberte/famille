@@ -83,7 +83,17 @@ Capacités déclarables (libres, pas un enum du protocole) : `lu` · `flux` · `
 Astra aujourd'hui, une autre demain : même geste. Aucune n'est juge. LIVE VERIFIED = Carl seulement.
 Siège locked (carl, grok, ci, …) : l'acteur GitHub doit être Carl, ou l'id lui-même. Un invité rejoint par son identifiant. Pas d'usurpation.
 
-Généralistes (kimi, cohere, …) et spécialistes (cline, goose, …) : une ligne dans [`schema/agents.json`](schema/agents.json). Pas un fork. Pas un `if (id === "astra")`. `lane` est documentaire, pas un enum du protocole.
+Généralistes (kimi, cohere, claude, astra, …) et spécialistes (cline, goose, …) : une ligne dans [`schema/agents.json`](schema/agents.json). Pas un fork. Pas un `if (id === "astra")`. `lane` est documentaire, pas un enum du protocole.
+
+### Présence
+
+- **DECLARED** — inscrit. Pas une connexion.
+- **CONNECTED** — runtime `connectAgent` ou secret Actions réellement présent. Pas le JSON.
+- **AVAILABLE** — un run swarm a pu appeler le provider. Pas une ligne du roster.
+- **TEST VERIFIED** — grade CI / Carl.
+- **LIVE VERIFIED** — Carl seulement.
+
+`claude` est DECLARED (guest, LU). `chatgpt` `gemini` `deepseek` `sonnet` sont des identités `status: auto` : swarm les appelle seulement si la clé existe. Sans clé = skip. Pas « connecté ». Pas LIVE. La capacité `review` n'est pas un juge.
 
 ## Ce que ça vend
 

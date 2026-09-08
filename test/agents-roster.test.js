@@ -267,6 +267,8 @@ describe("mesh roster — open ids, not an enum", () => {
       "llama",
       "mistral",
       "qwen",
+      "claude",
+      "astra",
       "cohere",
       "nova",
       "mixtral",
@@ -280,7 +282,6 @@ describe("mesh roster — open ids, not an enum", () => {
     const specialists = [
       "copilot",
       "opus",
-      "astra",
       "codex",
       "claude-code",
       "cline",
@@ -305,8 +306,13 @@ describe("mesh roster — open ids, not an enum", () => {
     const cline = roster.agents.find((a) => a.id === "cline");
     const astra = roster.agents.find((a) => a.id === "astra");
     const llama = roster.agents.find((a) => a.id === "llama");
+    const claude = roster.agents.find((a) => a.id === "claude");
     assert.equal(kimi.lane, "generalist");
     assert.equal(cline.lane, "specialist");
+    assert.equal(astra.lane, "generalist");
+    assert.equal(claude.kind, llama.kind);
+    assert.equal(claude.locked, false);
+    assert.equal(claude.lane, "generalist");
     assert.equal(astra.kind, llama.kind);
     assert.equal(astra.kind, kimi.kind);
     assert.equal(astra.kind, cline.kind);
@@ -320,8 +326,10 @@ describe("mesh roster — open ids, not an enum", () => {
     assert.doesNotMatch(fluxSrc, /id === ["']astra["']/);
     assert.doesNotMatch(fluxSrc, /id === ["']codex["']/);
     assert.doesNotMatch(fluxSrc, /id === ["']kimi["']/);
+    assert.doesNotMatch(fluxSrc, /id === ["']claude["']/);
     assert.doesNotMatch(read("schema/mesh.v0.json"), /"kimi"/);
     assert.doesNotMatch(read("schema/mesh.v0.json"), /"cline"/);
+    assert.doesNotMatch(read("schema/mesh.v0.json"), /"claude"/);
   });
 
   it("accepts envelopes from kimi and cline without touching mesh.v0", () => {
@@ -541,5 +549,72 @@ describe("mesh roster — open ids, not an enum", () => {
       actor: OWNER_ACTOR,
     });
     assert.equal(carlLive.ok, true);
+  });
+
+  it("declared is not connected; capabilities are not privileges; no secrets in git", () => {
+    const roster = loadRoster();
+    const raw = read("schema/agents.json");
+    assert.doesNotMatch(raw, /sk-[a-zA-Z0-9]/);
+    assert.doesNotMatch(raw, /"status"\s*:\s*"(connected|available|live)"/i);
+    assert.match(roster.note, /not a connection/);
+    assert.match(roster.note, /never write connected/);
+
+    for (const row of roster.agents) {
+      const status = String(row.status || "").toLowerCase();
+      assert.notEqual(status, "connected", row.id);
+      assert.notEqual(status, "available", row.id);
+      assert.notEqual(status, "live", row.id);
+      assert.notEqual(row.status, "LIVE VERIFIED", row.id);
+    }
+
+    for (const id of ["chatgpt", "gemini", "deepseek", "sonnet", "claude"]) {
+      assert.equal(isAgent(id), true, id);
+      assert.equal(gradesFor(id).includes("LIVE VERIFIED"), false, id);
+      const live = accept({
+        from: id,
+        to: "grok",
+        act: "RESULT",
+        mode: "ECHANGE",
+        grade: "LIVE VERIFIED",
+        body: "no",
+      });
+      assert.equal(live.ok, false, id);
+      assert.equal(live.code, "LIVE_NOT_CARL", id);
+      const handoff = accept({
+        from: id,
+        to: "grok",
+        act: "HANDOFF",
+        mode: "ECHANGE",
+        grade: "PROPOSED",
+        body: "Declared identity. Never QUANTUM.",
+      });
+      assert.equal(handoff.ok, true, id);
+    }
+
+    const claude = lookup("claude");
+    assert.equal(claude.kind, "guest");
+    assert.equal(claude.locked, false);
+    assert.equal(claude.status, "declared");
+    assert.equal(isModel("claude"), false);
+
+    for (const id of ["chatgpt", "gemini", "deepseek", "sonnet"]) {
+      const row = lookup(id);
+      assert.equal(row.kind, "model", id);
+      assert.equal(row.locked, true, id);
+      assert.equal(row.status, "auto", id);
+      assert.equal(isModel(id), true, id);
+    }
+
+    const chatgpt = lookup("chatgpt");
+    assert.ok(chatgpt.capabilities.includes("review"));
+    assert.equal(gradesFor("chatgpt").includes("LIVE VERIFIED"), false);
+    assert.equal(gradesFor("chatgpt").includes("CODE VERIFIED"), false);
+
+    const reviewSrc = read(".github/swarm/review.mjs");
+    assert.doesNotMatch(reviewSrc, /MODELS\.claude\b/);
+    assert.doesNotMatch(reviewSrc, /id === ["']claude["']/);
+
+    const meshBefore = read("schema/mesh.v0.json");
+    assert.equal(read("schema/mesh.v0.json"), meshBefore);
   });
 });
