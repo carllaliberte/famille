@@ -32,7 +32,7 @@ FLAG (stood) : Soft FLAGS Carl-only — clés Actions absentes ; cron Cursor cut
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
 | famille | license-options | [PR #222](https://github.com/carllaliberte/famille/pull/222). Deux candidats `LICENSE.option-open` (MIT) / `LICENSE.option-closed` (ARR). Pas de rename en `LICENSE`. NOTICE.md = provenance, pas une position juridique. SCHEMAS_NOTICE.md porte le copyright des JSON. Carl tranche. |
 | famille | ots-anchor | [PR #218](https://github.com/carllaliberte/famille/pull/218) mergée. Spec `unforge-check/OTS.md`. Exception `ots-bot` dans AUTOMATION.md. Preuve pending (`068570c`). |
-| famille | world packs | cite `de-DE` (déjà shippé) dans RENTE.md / PORTES.md + test. Branche `docs/world-de-de-cite`. Pas un nouveau pays. |
+| famille | world packs | cite `de-DE` (déjà shippé) dans RENTE.md / PORTES.md + test. [PR #230](https://github.com/carllaliberte/famille/pull/230). Pas un nouveau pays. |
 | acorn-juge | issue #3 grok.me | 404 HOLD. Pas la zone de Carl. Canal = workers.dev. |
 | acorn-juge | deploy wrangler | Carl-only. |
 
