@@ -6,13 +6,16 @@ import { afterEach, describe, it } from "node:test";
 import {
   AGENTS,
   FLUX_VERSION,
+  OWNER_ACTOR,
   accept,
   connectAgent,
   formatEnvelope,
   gradesFor,
   isAgent,
+  isModel,
   lookup,
   resetGuests,
+  speakerAllowed,
 } from "../.github/swarm/flux.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -445,5 +448,98 @@ describe("mesh roster — open ids, not an enum", () => {
     assert.equal(mesh.properties.from.enum, undefined);
     assert.equal(mesh.properties.next, false);
     assert.equal(mesh.properties.instruction, false);
+  });
+
+  it("rejects invalid ids, reserved juge, and juge capability", () => {
+    assert.equal(connectAgent({ id: "Astra" }).ok, false);
+    assert.equal(connectAgent({ id: "" }).code, "BAD_ID");
+    assert.equal(connectAgent({ id: "1kimi" }).code, "BAD_ID");
+    assert.equal(connectAgent({ id: "juge" }).code, "RESERVED_ID");
+    assert.equal(connectAgent({ id: "quantum" }).code, "RESERVED_ID");
+    assert.equal(connectAgent({ id: "arbitre" }).code, "RESERVED_ID");
+    const asJudge = connectAgent({
+      id: "shadow-ia",
+      name: "Shadow",
+      capabilities: ["lu", "flux", "juge"],
+    });
+    assert.equal(asJudge.ok, false);
+    assert.equal(asJudge.code, "NO_JUGE");
+    const unknown = accept({
+      from: "not-an-agent",
+      to: "grok",
+      act: "HANDOFF",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: "no",
+    });
+    assert.equal(unknown.ok, false);
+    assert.equal(unknown.code, "UNKNOWN_AGENT");
+  });
+
+  it("guests are not models; keyed auto stays roster status=auto", () => {
+    assert.equal(isModel("chatgpt"), true);
+    assert.equal(isModel("fable"), true);
+    assert.equal(isModel("kimi"), false);
+    assert.equal(isModel("cline"), false);
+    assert.equal(isModel("astra"), false);
+    assert.equal(isModel("carl"), false);
+    assert.equal(lookup("chatgpt").kind, "model");
+    assert.equal(lookup("kimi").kind, "guest");
+  });
+
+  it("locked seats cannot be impersonated; guests still join by id", () => {
+    assert.equal(speakerAllowed("carl", ""), true);
+    assert.equal(speakerAllowed("carl", OWNER_ACTOR), true);
+    assert.equal(speakerAllowed("grok", OWNER_ACTOR), true);
+    assert.equal(speakerAllowed("carl", "stranger"), false);
+    assert.equal(speakerAllowed("grok", "eve"), false);
+    assert.equal(speakerAllowed("kimi", "eve"), true);
+    assert.equal(speakerAllowed("cline", "anyone"), true);
+
+    const spoof = accept({
+      from: "carl",
+      to: "grok",
+      act: "RESULT",
+      mode: "ECHANGE",
+      grade: "LIVE VERIFIED",
+      body: "no",
+      actor: "stranger",
+    });
+    assert.equal(spoof.ok, false);
+    assert.ok(spoof.code === "FROM_NOT_ACTOR" || spoof.code === "LIVE_NOT_CARL");
+
+    const chefSpoof = accept({
+      from: "grok",
+      to: "chatgpt",
+      act: "HANDOFF",
+      mode: "PROPOSITION",
+      grade: "PROPOSED",
+      body: "Never QUANTUM.",
+      actor: "stranger",
+    });
+    assert.equal(chefSpoof.ok, false);
+    assert.equal(chefSpoof.code, "FROM_NOT_ACTOR");
+
+    const guestOk = accept({
+      from: "kimi",
+      to: "grok",
+      act: "HANDOFF",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: "Joined by identifier. Never QUANTUM.",
+      actor: "stranger",
+    });
+    assert.equal(guestOk.ok, true);
+
+    const carlLive = accept({
+      from: "carl",
+      to: "grok",
+      act: "RESULT",
+      mode: "ECHANGE",
+      grade: "LIVE VERIFIED",
+      body: "Carl on the thread.",
+      actor: OWNER_ACTOR,
+    });
+    assert.equal(carlLive.ok, true);
   });
 });

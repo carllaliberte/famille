@@ -19,6 +19,7 @@ FILE.md est un état, pas un canal. Source structurée = `schema/mesh.v0.json` (
 Mesh IA = enveloppe `acorn.v0` (même fil qu'acorn-juge). Pas `schema/flux.v0.json`.
 Identités mesh : [schema/agents.json](schema/agents.json). Id ouvert, pas un enum. Une IA rejoint par son identifiant. LIVE VERIFIED = Carl seulement.
 Roster élargi : généralistes + spécialistes, même geste. Astra / Codex restent guests. Pas de juge IA.
+Siège locked : pas d'usurpation (`FROM_NOT_ACTOR`). Invité = id sur le fil. LIVE VERIFIED exige l'acteur GitHub `carllaliberte`.
 Grok est branché 24/7 : PR ouverte / mergée / commentaire → chef répond. Boucle horaire, toute la nuit, America/Toronto. 1 PR max par heure. Carl merge.
 Swarm commente si les secrets Actions **de famille** existent.
 Run 34011475204 : skip (clés vides). Carl les pose dans Settings → Secrets.
@@ -52,6 +53,7 @@ Jalon 2 : unforge-check #26 MERGED (4e4e597).
 Jalon 3 : famille#186 mesh forbid next/instruction (e7dc1d2). FORBIDDEN_NEXT + schema.
 Jalon 4 : acorn-juge#22 Worker validation matrix + tests MERGED (74733d2).
 Jalon 5 : horizon-protocol#7 Horizon Watch surveiller MERGED (37eaf56).
+famille#239 expanded swarm MERGED. Roster générique, `ai/` prefix.
 famille#224 plagiat-watch canaris MERGED (259f1fc). dispatch Carl, PR pas main.
 famille#218 ots-anchor MERGED ; famille#221 ots-hardening MERGED (313215a). Spec `unforge-check/OTS.md`. Exception `ots-bot`. Preuve ACTIF pending upgrade.
 famille#222 license-options MERGED. Deux candidats `LICENSE.option-open` (MIT) / `LICENSE.option-closed` (ARR). Pas de rename en `LICENSE`. NOTICE.md = provenance, pas une position juridique.
