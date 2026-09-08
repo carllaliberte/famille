@@ -26,8 +26,31 @@ Elle ne s’accumule pas définitivement. Périmé = à re-mesurer, pas à renie
 Le SHA atteste l’antériorité. Il n’empêche pas la copie.
 Lire une idée n’est pas une licence de l’œuvre Acorn.
 
+## Données
+
+Pas de promesse « zéro journal ». Canal = aperçu. Secrets et merge = humain.
+Sécuriser, ici, c’est refuser l’étiquette quand les faits manquent — pas inventer un coffre.
+
+## Biais et pensée unique
+
+Le risque n’est pas seulement une erreur de calcul. C’est qu’un outil habitue l’humain à déléguer.
+Procédure : lecteurs isolés, pas de lecture croisée, pas d’IA présente, un merge humain.
+Si le non humain disparaît par fatigue, le dispositif a échoué même si le bouton reste à Carl.
+
+## Biometrie
+
+Un corps présent n’est pas une preuve qui tient.
+Possible plus tard comme **témoin** (une force parmi d’autres) — jamais comme juge, jamais à la place des quatre champs.
+Qui garde le modèle du corps garde une porte. Ça n’entre pas dans ce repo. Pas de collecte ici.
+
+## Pouvoir des maths
+
+Celui qui écrit l’algorithme pèse sur la décision.
+Séparation : carte publique / œuvre ARR / rails licenciés / merge unique.
+Pas un 7e chantier. Pas un nœud qui décide à la place.
+
 ## Une ligne
 
 Acorn privilégie la transparence d’un « non » daté à l’illusion d’un « oui » éternel.
 
-Voir [EXPERIENCE.md](EXPERIENCE.md) · [NOTICE](NOTICE) · [COPYRIGHT.md](COPYRIGHT.md).
+Voir [EXPERIENCE.md](EXPERIENCE.md) · [NOTICE](NOTICE) · [COPYRIGHT.md](COPYRIGHT.md) · [figure-protocol](https://github.com/carllaliberte/figure-protocol).
