@@ -12,7 +12,7 @@ Fail-closed : sans secrets, skip silencieux.
 Flux sécurisé (toutes les IA, y compris à venir) — **Carl opère le verrou**. Les IA le traversent. Elles ne le tiennent pas.
 1. Secrets = Settings de **ce** repo. Carl les pose. Jamais git. Jamais le fil.
 2. Noms : `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY` (+ natives optionnelles).
-3. Cascade : natif → OpenRouter → skip 400/402/403/404/429/503. Exit 0.
+3. Cadence $0 : `/swarm` = Gemini natif. Skip 400/402/403/404/429/503. Pas d'attente `:free` / xAI auto. Exit 0.
 4. xAI id `xai` (pas chef grok) : `grok-2` → `grok-2-mini`.
 5. Jamais merge. Jamais rotation de secret par une IA. Carl squash. LIVE = Carl.
 

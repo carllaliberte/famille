@@ -34,9 +34,6 @@ export const CANON_PATHS = Object.freeze([
 
 export const OPENROUTER_ROUTES = Object.freeze({
   gemini: "google/gemini-2.5-flash",
-  deepseek: "deepseek/deepseek-r1:free",
-  llama: "meta-llama/llama-3.3-70b-instruct:free",
-  qwen: "qwen/qwen-2.5-72b-instruct:free",
 });
 
 export const MODELS = Object.freeze({
@@ -73,7 +70,7 @@ export const MODELS = Object.freeze({
     model: "deepseek-v4-flash",
     provider: "deepseek",
     secret: "DEEPSEEK_API_KEY",
-    auto: true,
+    auto: false,
   },
   gemini: {
     id: "gemini",
@@ -98,7 +95,7 @@ export const MODELS = Object.freeze({
     model: "meta-llama/llama-3.3-70b-instruct:free",
     provider: "openrouter",
     secret: "LLAMA_API_KEY",
-    auto: true,
+    auto: false,
     maxTokens: 2048,
   },
   qwen: {
@@ -107,7 +104,7 @@ export const MODELS = Object.freeze({
     model: "qwen-2.5-72b-instruct",
     provider: "openrouter",
     secret: "QWEN_API_KEY",
-    auto: true,
+    auto: false,
     maxTokens: 2048,
   },
   xai: {
@@ -125,7 +122,7 @@ export const MODELS = Object.freeze({
 export const XAI_FALLBACK = Object.freeze(["grok-2", "grok-2-mini"]);
 
 const TRIGGERS = {
-  "/swarm": ["gemini", "deepseek", "llama", "qwen"],
+  "/swarm": ["gemini"],
   "/sonnet": ["sonnet"],
   "/fable": ["fable"],
   "/fabre": ["fable"],
@@ -562,7 +559,8 @@ export async function reviewOne(spec, system, user, env = process.env) {
         text,
       };
     } catch (err) {
-      if (orKey && OPENROUTER_ROUTES[spec.id]) {
+      // $0 cadence: do not wait on OpenRouter after native 402/403/404/429/503.
+      if (orKey && OPENROUTER_ROUTES[spec.id] && !isQuotaOrMissing(err)) {
         try {
           const text = sanitizeReview(
             await callOpenRouter(
@@ -726,13 +724,6 @@ export async function main(env = process.env) {
     meta.label,
   );
   const ids = routed.ids;
-  if (
-    ids.length &&
-    String(env.XAI_API_KEY || "").trim() &&
-    !ids.includes("xai")
-  ) {
-    ids.push("xai");
-  }
   if (!ids.length) {
     if (routed.flux) {
       if (isMeshEnvelope(meta.comment)) {
@@ -827,9 +818,10 @@ export async function main(env = process.env) {
       }
     }
   } else {
-    for (const spec of run) {
-      results.push(await reviewOne(spec, system, user, env));
-    }
+    const batch = await Promise.all(
+      run.map((spec) => reviewOne(spec, system, user, env)),
+    );
+    results.push(...batch);
   }
 
   const kind = routed.flux ? "mesh" : "review";

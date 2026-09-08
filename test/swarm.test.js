@@ -54,7 +54,7 @@ describe("swarm roster", () => {
 describe("parseTrigger", () => {
   it("defaults to auto models — not Fable", () => {
     const ids = parseTrigger("", []);
-    assert.deepEqual(ids, ["deepseek", "gemini", "llama", "qwen"]);
+    assert.deepEqual(ids, ["gemini"]);
     assert.ok(!ids.includes("fable"));
     assert.ok(!ids.includes("xai"));
     assert.ok(!ids.includes("sonnet"));
@@ -71,12 +71,7 @@ describe("parseTrigger", () => {
     assert.deepEqual(parseTrigger("/deepseek", []), ["deepseek"]);
     assert.deepEqual(parseTrigger("/gemini", []), ["gemini"]);
     assert.deepEqual(parseTrigger("/sonnet", []), ["sonnet"]);
-    assert.deepEqual(parseTrigger("/swarm", []), [
-      "gemini",
-      "deepseek",
-      "llama",
-      "qwen",
-    ]);
+    assert.deepEqual(parseTrigger("/swarm", []), ["gemini"]);
   });
 
   it("does not treat .github/swarm paths as /swarm", () => {
@@ -189,22 +184,23 @@ describe("keyedModels fail-closed", () => {
     assert.equal(skip[0].id, "chatgpt");
   });
 
-  it("OPENROUTER_API_KEY runs the nucleus; fable and sonnet stay keyed", () => {
+  it("OPENROUTER_API_KEY runs gemini only at $0 cadence", () => {
     const { run, skip } = keyedModels(
       ["sonnet", "fable", "chatgpt", "deepseek", "gemini", "haiku", "llama", "qwen", "xai"],
       { OPENROUTER_API_KEY: "or-test" },
     );
     assert.deepEqual(
       run.map((m) => m.id),
-      ["deepseek", "gemini", "llama", "qwen"],
+      ["gemini"],
     );
     assert.ok(run.every((m) => m.via === "openrouter"));
-    assert.equal(skip.map((s) => s.id).join(","), "sonnet,fable,chatgpt,haiku,xai");
+    assert.equal(
+      skip.map((s) => s.id).join(","),
+      "sonnet,fable,chatgpt,deepseek,haiku,llama,qwen,xai",
+    );
     assert.equal(OPENROUTER_ROUTES.gemini, "google/gemini-2.5-flash");
-    assert.equal(OPENROUTER_ROUTES.deepseek, "deepseek/deepseek-r1:free");
-    assert.equal(OPENROUTER_ROUTES.llama, "meta-llama/llama-3.3-70b-instruct:free");
-    assert.equal(OPENROUTER_ROUTES.qwen, "qwen/qwen-2.5-72b-instruct:free");
-    assert.equal(OPENROUTER_ROUTES.chatgpt, undefined);
+    assert.equal(MODELS.llama.auto, false);
+    assert.equal(MODELS.deepseek.auto, false);
   });
 
   it("404 and 402 skip silently", () => {
