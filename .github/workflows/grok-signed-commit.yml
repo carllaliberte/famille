@@ -1,0 +1,205 @@
+# Grok Signed Commit + Timestamp (branche auto)
+# Never writes main. Carl squash-merges grok/auto-* — never fast-forward.
+# Canonical OTS remains ots-bot AFTER squash on main.
+# Pre-merge stamp is pending only (Bitcoin delay). Not confirmation.
+# Secrets (Actions, not git): GROK_SIGNING_KEY GROK_SIGNING_KEY_PUB GROK_GIT_NAME GROK_GIT_EMAIL
+name: Grok Signed Commit + Timestamp (branche auto)
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_message:
+        description: "Message du commit"
+        required: true
+        default: "chore: automated update by Grok"
+      source_ref:
+        description: "Branche source déjà poussée (ville/* docs/* cursor/* schema/*). Requise."
+        required: true
+        default: ""
+
+jobs:
+  commit-and-sign:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Exiger les secrets de signature
+        env:
+          KEY: ${{ secrets.GROK_SIGNING_KEY }}
+          PUB: ${{ secrets.GROK_SIGNING_KEY_PUB }}
+          NAME: ${{ secrets.GROK_GIT_NAME }}
+          EMAIL: ${{ secrets.GROK_GIT_EMAIL }}
+        run: |
+          set -euo pipefail
+          missing=0
+          [ -n "$KEY" ] || { echo "HOLD : GROK_SIGNING_KEY absent"; missing=1; }
+          [ -n "$PUB" ] || { echo "HOLD : GROK_SIGNING_KEY_PUB absent"; missing=1; }
+          [ -n "$NAME" ] || { echo "HOLD : GROK_GIT_NAME absent"; missing=1; }
+          [ -n "$EMAIL" ] || { echo "HOLD : GROK_GIT_EMAIL absent"; missing=1; }
+          test "$missing" -eq 0
+
+      - name: Créer la branche grok/auto-*
+        id: branch
+        env:
+          SOURCE_REF: ${{ github.event.inputs.source_ref }}
+        run: |
+          set -euo pipefail
+          SOURCE_REF="${SOURCE_REF#"${SOURCE_REF%%[![:space:]]*}"}"
+          SOURCE_REF="${SOURCE_REF%"${SOURCE_REF##*[![:space:]]}"}"
+          if [ -z "$SOURCE_REF" ]; then
+            echo "HOLD : source_ref requis. Pas de tampon à vide."
+            exit 1
+          fi
+          git fetch origin "$SOURCE_REF"
+          BRANCH="grok/auto-$(date -u +%Y%m%d-%H%M%S)"
+          git checkout -B "$BRANCH" "origin/${SOURCE_REF}"
+          git reset --soft origin/main
+          echo "branch_name=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "source_ref=$SOURCE_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Configurer la clé de signature SSH
+        env:
+          KEY: ${{ secrets.GROK_SIGNING_KEY }}
+          PUB: ${{ secrets.GROK_SIGNING_KEY_PUB }}
+          EMAIL: ${{ secrets.GROK_GIT_EMAIL }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          umask 077
+          printf '%s\n' "$KEY" > ~/.ssh/grok_signing
+          chmod 600 ~/.ssh/grok_signing
+          printf '%s %s\n' "$EMAIL" "$PUB" > ~/.ssh/allowed_signers
+          chmod 644 ~/.ssh/allowed_signers
+
+      - name: Config git
+        run: |
+          set -euo pipefail
+          git config user.name "${{ secrets.GROK_GIT_NAME }}"
+          git config user.email "${{ secrets.GROK_GIT_EMAIL }}"
+          git config gpg.format ssh
+          git config user.signingkey ~/.ssh/grok_signing
+          git config commit.gpgsign true
+          git config gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
+
+      - name: Commit signé
+        env:
+          MSG: ${{ github.event.inputs.commit_message }}
+        run: |
+          set -euo pipefail
+          git add -A
+          if git diff --cached --quiet; then
+            echo "HOLD : aucun diff contre main. Pas de PR vide."
+            exit 1
+          fi
+          git commit -S -m "$MSG"
+          git log --show-signature -1
+
+      - name: Push vers branche auto
+        run: git push origin "HEAD:${{ steps.branch.outputs.branch_name }}"
+
+      - name: Ouvrir la Pull Request
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ steps.branch.outputs.branch_name }}
+          MSG: ${{ github.event.inputs.commit_message }}
+          SOURCE_REF: ${{ steps.branch.outputs.source_ref }}
+        run: |
+          set -euo pipefail
+          BODY=$(cat <<EOF
+          PR automatique générée par Grok Build.
+
+          - Branche : \`${BRANCH}\`
+          - Source : \`${SOURCE_REF}\`
+          - Commits signés (SSH)
+          - Ancrage OpenTimestamps pré-merge : **pending** (délai Bitcoin, pas une confirmation)
+          - Ancrage canonique : \`ots-bot\` **après** squash sur \`main\`
+
+          En attente de revue et **squash-merge** par Carl. Jamais fast-forward. Jamais auto-merge. Jamais main par Grok.
+          EOF
+          )
+          URL=$(gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "$MSG" \
+            --body "$BODY")
+          NUM=$(gh pr view "$URL" --json number --jq .number)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "number=$NUM" >> "$GITHUB_OUTPUT"
+
+      - name: Ancrage OpenTimestamps pending (artefact, pas git)
+        id: ots
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          pip install opentimestamps-client --quiet
+          COMMIT_SHA=$(git rev-parse HEAD)
+          mkdir -p .ots-pending
+          printf '%s\n' "$COMMIT_SHA" > ".ots-pending/${COMMIT_SHA}.sha"
+          ok=0
+          for i in 1 2 3; do
+            if ots stamp \
+              -c https://alice.btc.calendar.opentimestamps.org \
+              -c https://bob.btc.calendar.opentimestamps.org \
+              -c https://finney.calendar.eternitywall.com \
+              -c https://btc.calendar.catallaxy.com \
+              ".ots-pending/${COMMIT_SHA}.sha"; then
+              ok=1
+              break
+            fi
+            echo "stamp attempt ${i} failed; retry"
+            sleep 15
+          done
+          echo "sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+          echo "ok=$ok" >> "$GITHUB_OUTPUT"
+          if [ "$ok" -ne 1 ]; then
+            echo "OTS pending failed after 3 attempts"
+            exit 1
+          fi
+          ots info ".ots-pending/${COMMIT_SHA}.sha.ots" || true
+
+      - name: Publier l'artefact OTS
+        if: steps.ots.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ots-pending-${{ steps.ots.outputs.sha }}
+          path: .ots-pending/
+          if-no-files-found: ignore
+
+      - name: Commenter la PR (OTS)
+        if: always() && steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          SHA: ${{ steps.ots.outputs.sha }}
+          OK: ${{ steps.ots.outputs.ok }}
+        run: |
+          set -euo pipefail
+          SHA="${SHA:-$(git rev-parse HEAD)}"
+          if [ "${OK:-0}" = "1" ]; then
+            BODY=$(cat <<EOF
+          OTS pré-merge : **pending** pour \`${SHA}\`.
+
+          Confirmation pas instantanée (délai Bitcoin). Upgrade plus tard. L'ancrage canonique reste \`ots-bot\` après squash sur \`main\`.
+          Le \`.ots\` n'est **pas** dans l'arbre (ne pollue pas le squash).
+          EOF
+            )
+          else
+            BODY=$(cat <<EOF
+          HOLD : stamp OTS pré-merge échoué pour \`${SHA}\`.
+
+          Pas une confirmation. Pas un merge. Carl peut quand même reviewer. L'ancrage canonique reste \`ots-bot\` après squash.
+          EOF
+            )
+          fi
+          gh pr comment "$PR_NUMBER" --body "$BODY"
