@@ -33,7 +33,7 @@ export const CANON_PATHS = Object.freeze([
 ]);
 
 export const OPENROUTER_ROUTES = Object.freeze({
-  sonnet: "anthropic/claude-3.5-sonnet-20241022",
+  sonnet: "anthropic/claude-3-5-sonnet",
   chatgpt: "openai/gpt-4o",
   deepseek: "deepseek/deepseek-r1",
   gemini: "google/gemini-2.5-flash",
