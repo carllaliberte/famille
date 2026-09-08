@@ -522,6 +522,7 @@ describe("Test of resistance — majority is not truth", () => {
     assert.equal(learned.ok, true);
     assert.equal(learned.lesson.status, "disputed");
     assert.ok(learned.lesson.counterarguments.includes("y"));
+    assert.equal(learned.lesson.counterarguments.includes("x"), false);
     assert.equal(learned.lesson.grade, "PROPOSED");
   });
 });

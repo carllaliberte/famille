@@ -633,7 +633,7 @@ export function lesson(session, input) {
         : [],
     ),
     counterarguments: Object.freeze(
-      synthesis ? synthesis.disagreement.map((d) => d.position) : [],
+      synthesis ? synthesis.minority.map((d) => d.position) : [],
     ),
     uncertainties: Object.freeze(synthesis ? [...synthesis.uncertainty] : []),
     created_at: ts,
