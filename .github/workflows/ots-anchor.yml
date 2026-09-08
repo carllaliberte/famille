@@ -1,0 +1,67 @@
+# OpenTimestamps — stamp the merged SHA after Carl squash.
+# Never on PR. Never on a working branch. Never before merge.
+# No third-party secret. Public OTS calendars are anonymous.
+# Identity: ots-bot (not Carl). Message: ots: anchor <sha>
+name: ots-anchor
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - ".ots-anchor/**"
+permissions:
+  contents: write
+concurrency:
+  group: ots-anchor-main
+  cancel-in-progress: false
+jobs:
+  stamp:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      !startsWith(github.event.head_commit.message, 'ots:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install opentimestamps-client
+        run: pip install --quiet opentimestamps-client
+      - name: stamp merged SHA
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p .ots-anchor
+          printf '%s\n' "$SHA" > .ots-anchor/latest.sha
+          printf '%s\n' "$SHA" > ".ots-anchor/${SHA}.sha"
+          # Pending on purpose. Upgrade job finalizes later.
+          ok=0
+          for i in 1 2 3; do
+            if ots stamp ".ots-anchor/${SHA}.sha"; then
+              ok=1
+              break
+            fi
+            echo "stamp attempt ${i} failed; retry"
+            sleep 15
+          done
+          test "$ok" -eq 1
+          cp ".ots-anchor/${SHA}.sha.ots" .ots-anchor/latest.sha.ots
+          ots info ".ots-anchor/${SHA}.sha.ots" || true
+      - name: commit as ots-bot
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git config user.name "ots-bot"
+          git config user.email "ots-bot@users.noreply.github.com"
+          git add .ots-anchor/latest.sha .ots-anchor/latest.sha.ots \
+            ".ots-anchor/${SHA}.sha" ".ots-anchor/${SHA}.sha.ots"
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+            exit 0
+          fi
+          git commit -m "ots: anchor ${SHA}"
+          git push
