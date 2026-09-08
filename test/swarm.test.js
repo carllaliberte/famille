@@ -50,8 +50,17 @@ describe("swarm roster", () => {
 describe("parseTrigger", () => {
   it("defaults to auto models — not Fable", () => {
     const ids = parseTrigger("", []);
-    assert.deepEqual(ids, ["sonnet", "chatgpt", "deepseek", "gemini"]);
+    assert.deepEqual(ids, [
+      "sonnet",
+      "chatgpt",
+      "deepseek",
+      "gemini",
+      "llama",
+      "mistral",
+      "qwen",
+    ]);
     assert.ok(!ids.includes("fable"));
+    assert.ok(!ids.includes("xai"));
   });
 
   it("maps /fable and /fabre and label fable to Fable 5", () => {
@@ -70,6 +79,9 @@ describe("parseTrigger", () => {
       "chatgpt",
       "deepseek",
       "gemini",
+      "llama",
+      "mistral",
+      "qwen",
     ]);
   });
 
@@ -185,18 +197,20 @@ describe("keyedModels fail-closed", () => {
 
   it("OPENROUTER_API_KEY runs auto models; fable stays on-demand", () => {
     const { run, skip } = keyedModels(
-      ["sonnet", "fable", "chatgpt", "deepseek", "gemini"],
+      ["sonnet", "fable", "chatgpt", "deepseek", "gemini", "llama", "mistral", "qwen", "xai"],
       { OPENROUTER_API_KEY: "or-test" },
     );
     assert.deepEqual(
       run.map((m) => m.id),
-      ["sonnet", "chatgpt", "deepseek", "gemini"],
+      ["sonnet", "chatgpt", "deepseek", "gemini", "llama", "mistral", "qwen"],
     );
     assert.ok(run.every((m) => m.via === "openrouter"));
-    assert.equal(skip.length, 1);
-    assert.equal(skip[0].id, "fable");
+    assert.equal(skip.map((s) => s.id).join(","), "fable,xai");
     assert.equal(OPENROUTER_ROUTES.gemini, "google/gemini-2.5-flash");
-    assert.equal(OPENROUTER_ROUTES.sonnet, "anthropic/claude-3.5-sonnet-20241022");
+    assert.equal(OPENROUTER_ROUTES.sonnet, "anthropic/claude-3-5-sonnet");
+    assert.equal(OPENROUTER_ROUTES.chatgpt, "openai/gpt-4o-mini");
+    assert.equal(OPENROUTER_ROUTES.deepseek, "deepseek/deepseek-r1:free");
+    assert.equal(OPENROUTER_ROUTES.llama, "meta-llama/llama-3.3-70b-instruct:free");
   });
 
   it("native key wins over OpenRouter", () => {
@@ -207,6 +221,17 @@ describe("keyedModels fail-closed", () => {
     assert.equal(run.find((m) => m.id === "gemini").via, undefined);
     assert.equal(run.find((m) => m.id === "gemini").provider, "gemini");
     assert.equal(run.find((m) => m.id === "sonnet").via, "openrouter");
+  });
+
+  it("XAI_API_KEY is an optional native slot, not chef grok", () => {
+    assert.equal(MODELS.xai.id, "xai");
+    assert.equal(MODELS.xai.secret, "XAI_API_KEY");
+    assert.equal(MODELS.xai.auto, false);
+    const { run, skip } = keyedModels(["xai", "grok"], { XAI_API_KEY: "xai-test" });
+    assert.equal(run.length, 1);
+    assert.equal(run[0].id, "xai");
+    assert.equal(run[0].provider, "xai");
+    assert.equal(skip.length, 0);
   });
 });
 
@@ -333,6 +358,7 @@ describe("workflow locks", () => {
     assert.doesNotMatch(yml, /wrangler deploy/);
     assert.doesNotMatch(yml, /gh pr merge/);
     assert.match(yml, /OPENROUTER_API_KEY/);
+    assert.match(yml, /XAI_API_KEY/);
     assert.match(yml, /node \.github\/swarm\/review\.mjs/);
     assert.doesNotMatch(yml, /run: node review\.mjs/);
   });

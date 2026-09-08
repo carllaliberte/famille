@@ -33,10 +33,13 @@ export const CANON_PATHS = Object.freeze([
 ]);
 
 export const OPENROUTER_ROUTES = Object.freeze({
-  sonnet: "anthropic/claude-3.5-sonnet-20241022",
-  chatgpt: "openai/gpt-4o",
-  deepseek: "deepseek/deepseek-r1",
+  sonnet: "anthropic/claude-3-5-sonnet",
+  chatgpt: "openai/gpt-4o-mini",
+  deepseek: "deepseek/deepseek-r1:free",
   gemini: "google/gemini-2.5-flash",
+  llama: "meta-llama/llama-3.3-70b-instruct:free",
+  mistral: "mistralai/mistral-small-24b-instruct-2501:free",
+  qwen: "qwen/qwen-2.5-72b-instruct:free",
 });
 
 export const MODELS = Object.freeze({
@@ -83,16 +86,56 @@ export const MODELS = Object.freeze({
     secret: "GEMINI_API_KEY",
     auto: true,
   },
+  llama: {
+    id: "llama",
+    label: "Llama",
+    model: "meta-llama/llama-3.3-70b-instruct:free",
+    provider: "openrouter",
+    secret: "LLAMA_API_KEY",
+    auto: true,
+    maxTokens: 2048,
+  },
+  mistral: {
+    id: "mistral",
+    label: "Mistral",
+    model: "mistral-small-24b-instruct-2501",
+    provider: "openrouter",
+    secret: "MISTRAL_API_KEY",
+    auto: true,
+    maxTokens: 2048,
+  },
+  qwen: {
+    id: "qwen",
+    label: "Qwen",
+    model: "qwen-2.5-72b-instruct",
+    provider: "openrouter",
+    secret: "QWEN_API_KEY",
+    auto: true,
+    maxTokens: 2048,
+  },
+  xai: {
+    id: "xai",
+    label: "xAI",
+    model: "grok-beta",
+    provider: "xai",
+    secret: "XAI_API_KEY",
+    auto: false,
+    maxTokens: 2048,
+  },
 });
 
 const TRIGGERS = {
-  "/swarm": ["sonnet", "chatgpt", "deepseek", "gemini"],
+  "/swarm": ["sonnet", "chatgpt", "deepseek", "gemini", "llama", "mistral", "qwen"],
   "/sonnet": ["sonnet"],
   "/fable": ["fable"],
   "/fabre": ["fable"],
   "/chatgpt": ["chatgpt"],
   "/deepseek": ["deepseek"],
   "/gemini": ["gemini"],
+  "/llama": ["llama"],
+  "/mistral": ["mistral"],
+  "/qwen": ["qwen"],
+  "/xai": ["xai"],
 };
 
 function autoIds() {
@@ -425,11 +468,31 @@ async function callOpenRouter(spec, system, user, key) {
   return json.choices?.[0]?.message?.content || "";
 }
 
+async function callXai(spec, system, user, key) {
+  const { ok, status, json } = await postJson(
+    "https://api.x.ai/v1/chat/completions",
+    {
+      id: spec.id,
+      headers: { authorization: `Bearer ${key}` },
+      body: {
+        model: spec.model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      },
+    },
+  );
+  if (!ok) throw new Error(`xai ${status}: ${JSON.stringify(json).slice(0, 400)}`);
+  return json.choices?.[0]?.message?.content || "";
+}
+
 const CALLERS = {
   anthropic: callAnthropic,
   openai: callOpenAI,
   deepseek: callDeepSeek,
   gemini: callGemini,
+  xai: callXai,
 };
 
 export async function reviewOne(spec, system, user, env = process.env) {
@@ -637,6 +700,13 @@ export async function main(env = process.env) {
     meta.label,
   );
   const ids = routed.ids;
+  if (
+    ids.length &&
+    String(env.XAI_API_KEY || "").trim() &&
+    !ids.includes("xai")
+  ) {
+    ids.push("xai");
+  }
   if (!ids.length) {
     if (routed.flux) {
       if (isMeshEnvelope(meta.comment)) {
