@@ -97,6 +97,26 @@ Généralistes (kimi, cohere, claude, astra, …) et spécialistes (cline, goose
 
 `claude` est DECLARED (guest, LU). `chatgpt` `gemini` `deepseek` `sonnet` sont des identités `status: auto` : swarm les appelle seulement si la clé existe. Sans clé = skip. Pas « connecté ». Pas LIVE. La capacité `review` n'est pas un juge.
 
+## 4. Pool de cognition collective
+
+Le pool n'est pas un deuxième mesh, ni une deuxième mémoire, ni une deuxième gouvernance.
+
+Schéma mince : [`schema/pool.v0.json`](schema/pool.v0.json). Runtime : [`.github/swarm/pool.mjs`](.github/swarm/pool.mjs). Les enveloppes restent `acorn.v0`. Les identités restent [`schema/agents.json`](schema/agents.json).
+
+Cycle réutilisable :
+
+1. Question gelée (immuable).
+2. Pensée indépendante — isolée. Pas de `replyTo`. Anti-cascade.
+3. Débat : support, challenge, correct, question, qualify, request_evidence, identify_assumption. Mapping sur les actes existants (FINDING / RISK / EVIDENCE) + mode ECHANGE. Le mode CHALLENGE de `mesh.v0` exige toujours le chef — on ne le forke pas.
+4. Synthèse : CONSENSUS, DISAGREEMENT, EVIDENCE, ASSUMPTIONS, UNCERTAINTY, OPEN. Majorité ≠ vérité. `status: truth` est refusé.
+5. Lesson datée (`created_at`, `review_after`, `superseded_by`). Revalidation. Jamais une suppression silencieuse du désaccord.
+
+IDENTITY + CAPABILITIES + CHANNEL + PROVENANCE. Une nouvelle IA (`nouvelle-ia`) entre sans modifier le protocole. Sièges `ci` / `github` / `worker` / `carl` ne sont pas transformés en modèles.
+
+Sans credential : **DECLARED — CHANNEL NOT PRESENT**. ACTIVE = a déposé une LU dans la session. CONNECTED seulement si un secret est attesté par l'appelant. LIVE VERIFIED = Carl. Aucune IA n'est juge.
+
+GitHub est un canal, pas le cerveau. Cogiter n'exige pas d'écrire sur `main`.
+
 ## Ce que ça vend
 
 Le schéma juge est MIT. L'œuvre Acorn ne l'est pas.

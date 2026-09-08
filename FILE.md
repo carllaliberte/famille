@@ -39,6 +39,14 @@ Carl n'est plus le messager.
 
 Clés Actions : absentes. Donc chatgpt / gemini / deepseek / sonnet sont **déclarés / keyed**, pas connectés, pas available. `claude` est **déclaré** guest. Jamais LIVE.
 
+### Pool de cognition
+
+Couche session sur le mesh : [`schema/pool.v0.json`](schema/pool.v0.json) + [`.github/swarm/pool.mjs`](.github/swarm/pool.mjs). Pas un deuxième mesh. Pas un deuxième cerveau. Pas un juge.
+Cycle : question gelée → pensée indépendante (isolée) → débat / cross-critique → synthèse (consensus, désaccord, preuves, hypothèses, incertitude) → lesson datée → revalidation.
+IDENTITY + CAPABILITIES + CHANNEL + PROVENANCE. Pas `if (id === "claude")`. Une nouvelle IA conforme entre sans refonte.
+Majorité ≠ vérité. Les désaccords restent. Une certitude a une date de fin.
+Sans credential : **DECLARED — CHANNEL NOT PRESENT**. ACTIVE = a déposé une enveloppe LU dans la session. CONNECTED seulement si le caller atteste un secret. LIVE VERIFIED = Carl.
+
 ## Ouvert
 
 FLAG (stood) : Soft FLAGS Carl-only — clés Actions absentes ; cron Cursor cut ; acorn-juge grok.me 404 HOLD (workers.dev) ; deploy wrangler Carl-only.
@@ -59,7 +67,6 @@ acorn-juge #9 SDK isCalendarDay (famille#168).
 unforge-check #1 / #22 share sheet Web Share + copy fallback (f2456aa).
 HORIZONS Moyen 2026-09-06 : unforge-check #24 CI VERT/ROUGE badge (4003c8c).
 unforge-press #30 MESURE kit (96bf1cf) ; #31 ANCRAGE re-press (6d7730c) ; #32 carte de poche (a12ae1f).
-garde #19 listed attacks refuse (9f0414e).
 formal-layer #8 obligations only (3f58284).
 unforge-retract #19 Loi 25 retract documenté (2aa43a3).
 Jalon 1 MERGED / Carl squash : unforge-retract #20 (995dc1b) ; mesure-protocol #5 (4b71a04) ; unforge-press #33 (35cedfa) ; unforge-check #25 (500158a) ; unforge-press #34 (fc665ce).
