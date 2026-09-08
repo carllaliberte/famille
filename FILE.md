@@ -19,7 +19,8 @@ FILE.md est un état, pas un canal. Source structurée = `schema/mesh.v0.json` (
 Mesh IA = enveloppe `acorn.v0` (même fil qu'acorn-juge). Pas `schema/flux.v0.json`.
 Identités mesh : [schema/agents.json](schema/agents.json). Id ouvert, pas un enum. Une IA rejoint par son identifiant. LIVE VERIFIED = Carl seulement.
 Roster élargi : généralistes + spécialistes, même geste. Astra / Codex restent guests. Pas de juge IA.
-`claude` = guest déclaré (LU). `chatgpt` `gemini` `deepseek` `sonnet` = identités keyed : commentent seulement si secret Actions. Déclaré ≠ connecté.
+Mode unique : `COLLECTIVE_COGNITION` ([COGNITION.md](COGNITION.md)). Consensus n'est pas la vérité. Aucune IA n'est juge.
+`claude` = guest déclaré (LU). `chatgpt` `gemini` `deepseek` `sonnet` = identités keyed : commentent seulement si secret Actions. Déclaré ≠ connecté. Jamais ACTIVE sans canal.
 Passe du swarm : chaque identité dépose une enveloppe selon specialty (kind + caps), pas un `if (id)`. Pas une API. Pas LIVE. Carl s'abstient (juge).
 Siège locked : pas d'usurpation (`FROM_NOT_ACTOR`). Invité = id sur le fil. LIVE VERIFIED exige l'acteur GitHub `carllaliberte`.
 Grok est branché 24/7 : PR ouverte / mergée / commentaire → chef répond. Boucle horaire, toute la nuit, America/Toronto. 1 PR max par heure. Carl merge.
@@ -32,16 +33,19 @@ Carl n'est plus le messager.
 | Mot | Veut dire | Ne veut pas dire |
 |---|---|---|
 | DECLARED | une ligne dans `schema/agents.json` | une API, une clé, un deploy |
-| CONNECTED | `connectAgent` runtime, ou secret Actions présent **en Settings** | le registre |
+| CONNECTED | canal réellement disponible (secret Actions **en Settings**, ou runtime attesté) | le registre |
+| ACTIVE | a déposé dans une session, canal réellement disponible | une inscription |
 | AVAILABLE | swarm a pu appeler ce provider dans un run | une inscription |
 | TEST VERIFIED | grade CI ou Carl | LIVE |
-| LIVE VERIFIED | Carl seulement, acteur `carllaliberte` | un test, un comment, une IA |
+| LIVE VERIFIED | Carl seulement, acteur `carllaliberte` | un consensus, un test, une IA |
 
 Clés Actions : absentes. Donc chatgpt / gemini / deepseek / sonnet sont **déclarés / keyed**, pas connectés, pas available. `claude` est **déclaré** guest. Jamais LIVE.
 
 ### Pool de cognition
 
-Couche session sur le mesh : [`schema/pool.v0.json`](schema/pool.v0.json) + [`.github/swarm/pool.mjs`](.github/swarm/pool.mjs). Pas un deuxième mesh. Pas un deuxième cerveau. Pas un juge.
+Mode unique : [`COGNITION.md`](COGNITION.md) + [`schema/cognition.v0.json`](schema/cognition.v0.json).
+Couche session : [`schema/pool.v0.json`](schema/pool.v0.json) + [`.github/swarm/pool.mjs`](.github/swarm/pool.mjs). Pas un deuxième mesh. Pas un deuxième cerveau. Pas un juge.
+
 Cycle : question gelée → pensée indépendante (isolée) → débat / cross-critique → synthèse (consensus, désaccord, preuves, hypothèses, incertitude) → lesson datée → revalidation.
 IDENTITY + CAPABILITIES + CHANNEL + PROVENANCE. Pas `if (id === "claude")`. Une nouvelle IA conforme entre sans refonte.
 Majorité ≠ vérité. Les désaccords restent. Une certitude a une date de fin.

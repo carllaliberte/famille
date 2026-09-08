@@ -5,7 +5,15 @@ Claude = LU. Pas un nœud. Pas PRÉSENT.
 
 ## Swarm — cognition collective
 
-Toutes les IA cogitent ensemble : Claude, Grok, Gemini, ChatGPT, DeepSeek, Astra, Codex, Cursor, les autres.
+Mode unique : `COLLECTIVE_COGNITION`. Règle : [COGNITION.md](COGNITION.md).
+Toutes les IA cogitent ensemble. Aucune n'est cerveau supérieur, professeur, arbitre ou juge de vérité.
+Rôles techniques (chef, QC, review, build) ne créent pas de hiérarchie cognitive.
+
+QUESTION → RÉFLEXION INDÉPENDANTE → PARTAGE → CONTRE-ANALYSE → DÉSACCORDS → PREUVES → SYNTHÈSE → LEÇON → MÉMOIRE DATÉE → RÉÉVALUATION.
+
+LE CONSENSUS N'EST PAS LA VÉRITÉ. Les désaccords restent visibles. LIVE VERIFIED = Carl seulement.
+
+Toutes les IA cogitent ensemble : Claude, Grok, Gemini, ChatGPT, DeepSeek, Astra, Codex, Cursor, les autres. Pas une liste fermée. Une nouvelle IA rejoint par son identifiant, même mode, sans modifier le protocole.
 
 Lire le contexte commun (raw + SHA) **et** les LU déjà sur le fil. Analyser. Challenger les hypothèses. Proposer. Signaler risques et contradictions. Apprendre des contributions des autres.
 

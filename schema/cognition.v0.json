@@ -1,0 +1,64 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/cognition.v0.json",
+  "title": "famille.cognition.v0",
+  "description": "Unique cognitive mode COLLECTIVE_COGNITION. Not a mesh fork, not a judge, not a truth machine. Envelopes stay schema/mesh.v0.json. Identities stay schema/agents.json. LIVE VERIFIED is Carl only. Consensus is not truth. Do not add IA ids here.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["mode"],
+  "not": {
+    "anyOf": [
+      { "required": ["next"] },
+      { "required": ["instruction"] }
+    ]
+  },
+  "properties": {
+    "mode": { "const": "COLLECTIVE_COGNITION" },
+    "flux": { "const": "acorn.v0" },
+    "step": {
+      "enum": [
+        "question",
+        "independent",
+        "share",
+        "counter",
+        "disagreement",
+        "evidence",
+        "synthesis",
+        "lesson",
+        "memory",
+        "reevaluate"
+      ]
+    },
+    "presence": {
+      "enum": [
+        "DECLARED",
+        "CHANNEL_NOT_PRESENT",
+        "CONNECTED",
+        "ACTIVE",
+        "BLOCKED",
+        "UNAVAILABLE",
+        "ERROR",
+        "LIVE VERIFIED"
+      ],
+      "description": "Never inferred from a roster row. CONNECTED and ACTIVE require a real canal. LIVE VERIFIED is Carl only. Never write FULL SWARM OPERATIONAL from code existence."
+    },
+    "claim": {
+      "enum": [
+        "fact",
+        "hypothesis",
+        "opinion",
+        "proposal",
+        "decision",
+        "observation",
+        "evidence",
+        "interpretation",
+        "disagreement"
+      ]
+    },
+    "status": {
+      "enum": ["consensus", "disputed", "unresolved"],
+      "description": "Never 'truth'. Majority is a count, not a verdict."
+    },
+    "next": false,
+    "instruction": false
+  }
+}

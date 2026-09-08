@@ -90,12 +90,15 @@ Généralistes (kimi, cohere, claude, astra, …) et spécialistes (cline, goose
 ### Présence
 
 - **DECLARED** — inscrit. Pas une connexion.
-- **CONNECTED** — runtime `connectAgent` ou secret Actions réellement présent. Pas le JSON.
+- **CONNECTED** — canal réellement disponible. Pas le JSON.
+- **ACTIVE** — a déposé, canal réellement disponible. Pas une inscription.
 - **AVAILABLE** — un run swarm a pu appeler le provider. Pas une ligne du roster.
 - **TEST VERIFIED** — grade CI / Carl.
 - **LIVE VERIFIED** — Carl seulement.
 
-`claude` est DECLARED (guest, LU). `chatgpt` `gemini` `deepseek` `sonnet` sont des identités `status: auto` : swarm les appelle seulement si la clé existe. Sans clé = skip. Pas « connecté ». Pas LIVE. La capacité `review` n'est pas un juge.
+Mode unique : `COLLECTIVE_COGNITION` ([COGNITION.md](COGNITION.md) · [`schema/cognition.v0.json`](schema/cognition.v0.json)). Toutes les IA cogitent. Aucune n'est juge. Le consensus n'est pas la vérité. Les désaccords restent visibles. Une nouvelle IA rejoint le même mode sans modifier `mesh.v0`.
+
+`claude` est DECLARED (guest, LU). `chatgpt` `gemini` `deepseek` `sonnet` sont des identités `status: auto` : swarm les appelle seulement si la clé existe. Sans clé = skip. Pas « connecté ». Pas ACTIVE. Pas LIVE. La capacité `review` n'est pas un juge.
 
 ## 4. Pool de cognition collective
 
