@@ -33,7 +33,7 @@ export const CANON_PATHS = Object.freeze([
 ]);
 
 export const OPENROUTER_ROUTES = Object.freeze({
-  sonnet: "anthropic/claude-3.5-sonnet",
+  sonnet: "anthropic/claude-3.5-sonnet-20241022",
   chatgpt: "openai/gpt-4o",
   deepseek: "deepseek/deepseek-r1",
   gemini: "google/gemini-2.5-flash",
@@ -410,6 +410,7 @@ async function callOpenRouter(spec, system, user, key) {
       },
       body: {
         model,
+        max_tokens: spec.maxTokens || 2048,
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },
@@ -418,9 +419,8 @@ async function callOpenRouter(spec, system, user, key) {
     },
   );
   if (!ok) {
-    throw new Error(
-      `openrouter ${spec.id} ${status}: ${JSON.stringify(json).slice(0, 400)}`,
-    );
+    const msg = json?.error?.message || JSON.stringify(json).slice(0, 200);
+    throw new Error(`openrouter ${spec.id} ${status}: ${msg}`);
   }
   return json.choices?.[0]?.message?.content || "";
 }
@@ -442,15 +442,62 @@ export async function reviewOne(spec, system, user, env = process.env) {
   if (!native && !viaOpenRouter) {
     return { id: spec.id, skipped: true, reason: `missing ${spec.secret}` };
   }
+  if (!viaOpenRouter && native) {
+    try {
+      const text = sanitizeReview(
+        await CALLERS[spec.provider](spec, system, user, native),
+      );
+      return {
+        id: spec.id,
+        label: spec.label,
+        model: spec.model,
+        via: spec.provider,
+        text,
+      };
+    } catch (err) {
+      if (orKey && OPENROUTER_ROUTES[spec.id]) {
+        try {
+          const text = sanitizeReview(
+            await callOpenRouter(
+              { ...spec, model: OPENROUTER_ROUTES[spec.id] },
+              system,
+              user,
+              orKey,
+            ),
+          );
+          return {
+            id: spec.id,
+            label: spec.label,
+            model: OPENROUTER_ROUTES[spec.id],
+            via: "openrouter",
+            text,
+          };
+        } catch (err2) {
+          return {
+            id: spec.id,
+            label: spec.label,
+            model: spec.model,
+            via: "openrouter",
+            error: err2 instanceof Error ? err2.message : String(err2),
+          };
+        }
+      }
+      return {
+        id: spec.id,
+        label: spec.label,
+        model: spec.model,
+        via: spec.provider,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
   try {
-    const text = viaOpenRouter
-      ? sanitizeReview(await callOpenRouter(spec, system, user, orKey))
-      : sanitizeReview(await CALLERS[spec.provider](spec, system, user, native));
+    const text = sanitizeReview(await callOpenRouter(spec, system, user, orKey));
     return {
       id: spec.id,
       label: spec.label,
       model: spec.model,
-      via: viaOpenRouter ? "openrouter" : spec.provider,
+      via: "openrouter",
       text,
     };
   } catch (err) {
@@ -458,7 +505,7 @@ export async function reviewOne(spec, system, user, env = process.env) {
       id: spec.id,
       label: spec.label,
       model: spec.model,
-      via: viaOpenRouter ? "openrouter" : spec.provider,
+      via: "openrouter",
       error: err instanceof Error ? err.message : String(err),
     };
   }

@@ -196,6 +196,7 @@ describe("keyedModels fail-closed", () => {
     assert.equal(skip.length, 1);
     assert.equal(skip[0].id, "fable");
     assert.equal(OPENROUTER_ROUTES.gemini, "google/gemini-2.5-flash");
+    assert.equal(OPENROUTER_ROUTES.sonnet, "anthropic/claude-3.5-sonnet-20241022");
   });
 
   it("native key wins over OpenRouter", () => {
