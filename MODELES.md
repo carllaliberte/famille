@@ -8,6 +8,7 @@ Bus = commentaires de PR + FILE.md. Enveloppe nue = `acorn.v0` ([INTEROP-IA.md](
 Roster = [schema/agents.json](schema/agents.json). Une entrée, pas un fork du protocole. Astra / Codex / Claude / n'importe quelle IA : même geste.
 Généralistes et agents du tableau ont un id (guest). `lane` est documentaire. Swarm API reste un secret Actions, pas le registre.
 Déclaré ≠ connecté. `claude` = guest LU. chatgpt / gemini / deepseek / sonnet = keyed si secret, sinon skip.
+Passe : specialty documentaire. Même forme, même geste. Pas un if d'id. Pas LIVE.
 Swarm auto (si clés Actions famille) : sonnet · chatgpt · deepseek · gemini. Fable = `/fable`.
 
 ## Familles invitées à la réflexion
