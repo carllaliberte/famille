@@ -104,4 +104,46 @@ describe("OTS is a sibling notary — never a juge/flux key", () => {
     banned(upgrade);
     banned(JSON.stringify(interop.nodes.find((n) => n.id === "ots")));
   });
+
+  it("ots-anchor.yml pins public calendars and alerts on stamp failure", () => {
+    assert.match(anchor, /-c https:\/\/alice\.btc\.calendar\.opentimestamps\.org/);
+    assert.match(anchor, /-c https:\/\/bob\.btc\.calendar\.opentimestamps\.org/);
+    assert.match(anchor, /-c https:\/\/finney\.calendar\.eternitywall\.com/);
+    assert.match(anchor, /-c https:\/\/btc\.calendar\.catallaxy\.com/);
+    assert.match(anchor, /if: failure\(\)/);
+    assert.match(anchor, /ots-anchor-status/);
+    assert.match(anchor, /issues: write/);
+    assert.match(anchor, /github\.token/);
+    assert.doesNotMatch(anchor, /pull_request/);
+  });
+
+  it("ots-upgrade.yml writes a delimited status block into the spec", () => {
+    assert.match(upgrade, /ots-status:start/);
+    assert.match(upgrade, /unforge-check\/OTS.md/);
+    assert.match(upgrade, /ots: upgrade/);
+    assert.match(upgrade, /BitcoinBlockHeaderAttestation/);
+    assert.match(upgrade, /PendingAttestation/);
+  });
+
+  it("AUTOMATION.md enumerates github-actions[bot] workflows and the path limit", () => {
+    assert.match(auto, /Identité github-actions\[bot\]/);
+    assert.match(auto, /ots-anchor\.yml/);
+    assert.match(auto, /ots-upgrade\.yml/);
+    assert.match(auto, /swarm\.yml/);
+    assert.match(auto, /branche\.yml/);
+    assert.match(auto, /carte\.yml/);
+    assert.match(auto, /pas nativement \*\*par path\*\*/);
+    assert.match(auto, /issues: write/);
+    assert.match(auto, /pas de PAT créé/i);
+  });
+
+  it("spec pins calendars, status markers, and retention", () => {
+    assert.match(spec, /ots-status:start/);
+    assert.match(spec, /ots-status:end/);
+    assert.match(spec, /## Rétention/);
+    assert.match(spec, /sans purge automatique/);
+    assert.match(spec, /1 fichier/);
+    assert.match(spec, /alice\.btc\.calendar\.opentimestamps\.org/);
+    assert.match(pointer, /fixés en dur|fixée en dur/);
+  });
 });

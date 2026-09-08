@@ -2,6 +2,7 @@
 # Never on PR. Never on a working branch. Never before merge.
 # No third-party secret. Public OTS calendars are anonymous.
 # Identity: ots-bot (not Carl). Message: ots: anchor <sha>
+# Calendars pinned here — a notary change is a PR, not a silent client update.
 name: ots-anchor
 on:
   push:
@@ -10,6 +11,7 @@ on:
       - ".ots-anchor/**"
 permissions:
   contents: write
+  issues: write
 concurrency:
   group: ots-anchor-main
   cancel-in-progress: false
@@ -30,6 +32,7 @@ jobs:
       - name: install opentimestamps-client
         run: pip install --quiet opentimestamps-client
       - name: stamp merged SHA
+        id: stamp
         env:
           SHA: ${{ github.sha }}
         run: |
@@ -38,9 +41,15 @@ jobs:
           printf '%s\n' "$SHA" > .ots-anchor/latest.sha
           printf '%s\n' "$SHA" > ".ots-anchor/${SHA}.sha"
           # Pending on purpose. Upgrade job finalizes later.
+          # Calendars verified HTTP 200 on 2026-09-08 (uptime.opentimestamps.org + live GET).
           ok=0
           for i in 1 2 3; do
-            if ots stamp ".ots-anchor/${SHA}.sha"; then
+            if ots stamp \
+              -c https://alice.btc.calendar.opentimestamps.org \
+              -c https://bob.btc.calendar.opentimestamps.org \
+              -c https://finney.calendar.eternitywall.com \
+              -c https://btc.calendar.catallaxy.com \
+              ".ots-anchor/${SHA}.sha"; then
               ok=1
               break
             fi
@@ -65,3 +74,35 @@ jobs:
           fi
           git commit -m "ots: anchor ${SHA}"
           git push
+      - name: alert stamp failure
+        if: failure() && steps.stamp.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          BODY=$(cat <<EOF
+          Stamp échoué après 3 tentatives.
+
+          SHA manqué : \`${SHA}\`
+          Run : ${RUN_URL}
+
+          Ligne FILE.md (écart d'état, format pr-merged-file) :
+
+          | Dépôt | Item | Fait |
+          |---|---|---|
+          | famille | ots-anchor | stamp échoué · SHA \`${SHA}\` · [run](${RUN_URL}) |
+
+          ots-bot ne commit pas FILE.md (chemins : \`.ots-anchor/**\` + bloc \`ots-status\` dans \`unforge-check/OTS.md\`).
+          Grok \`pr-merged-file\` aligne FILE.md si le tableau Ouvert est faux.
+          EOF
+          )
+          NUM=$(gh issue list --state all --limit 100 --json number,title \
+            --jq '.[] | select(.title=="ots-anchor-status") | .number' | head -n1 || true)
+          if [ -z "${NUM}" ]; then
+            gh issue create --title "ots-anchor-status" --body "$BODY"
+          else
+            gh issue comment "$NUM" --body "$BODY"
+            gh issue reopen "$NUM" || true
+          fi
