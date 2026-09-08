@@ -1,9 +1,11 @@
-# Cursor — assigné 2026-09-02
+# Cursor — assigné 2026-09-02 · boucle 2026-09-08
 
 Cursor n'est pas MASTER. Grok est le Chef (kernel / system). Carl merge (humain). Cursor consomme le juge.
 Priorité : expérience client → techno ouverte → fichiers pour que Quantum et Cursor ne s'éteignent pas.
 
 Cursor travaille les **rails publics** et *appelle* le juge.
+Règles IDE : [.cursor/rules/famille.mdc](.cursor/rules/famille.mdc).
+Cloud : [CURSOR-CLOUD.md](CURSOR-CLOUD.md).
 
 ## Contrat
 
@@ -15,6 +17,11 @@ Cursor travaille les **rails publics** et *appelle* le juge.
 - 1 PR à la fois. Squash Carl.
 - Ne pas s'arrêter.
 
+## Continu
+
+1 acte / heure max. PR `bloc/*` seulement. Si une PR attend Carl : RAS, pas une 2e.
+Couper `legal-hourly` / `quantum-daily` (bruit). Garder cette boucle-ci.
+
 ## Interdit
 
-photon inventé · ε=0 · UFHY1 comme date · token · 2e slug · QUANTUM · contract / CreatorFlow / Estoc
+photon inventé · ε=0 · UFHY1 comme date · token · 2e slug · QUANTUM · contract / CreatorFlow / Estoc · push main
