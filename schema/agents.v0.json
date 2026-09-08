@@ -1,0 +1,54 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/agents.v0.json",
+  "title": "famille.agents.v0",
+  "description": "Mesh roster. Not a judge. Not schema/mesh.v0.json (the envelope). Adding an AI is one entry whose id matches mesh.v0 from/to. Do not fork the protocol. LIVE VERIFIED remains Carl only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "agents"],
+  "properties": {
+    "version": { "const": "agents.v0" },
+    "note": { "type": "string" },
+    "id_pattern": {
+      "type": "string",
+      "description": "Must equal schema/mesh.v0.json properties.from.pattern."
+    },
+    "agents": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/agent" }
+    }
+  },
+  "$defs": {
+    "agent": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "name", "kind"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,24}$",
+          "description": "Stable mesh identifier. Same pattern as mesh.v0 from. Not an enum."
+        },
+        "name": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "kind": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,24}$",
+          "description": "Known today: chef, consult, model, seat, guest. Not a closed protocol enum."
+        },
+        "role": { "type": "string", "maxLength": 40 },
+        "specialty": { "type": "string", "maxLength": 40 },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{1,24}$"
+          }
+        },
+        "status": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{1,24}$"
+        },
+        "locked": { "type": "boolean" }
+      }
+    }
+  }
+}
