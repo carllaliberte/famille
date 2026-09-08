@@ -32,6 +32,13 @@ export const CANON_PATHS = Object.freeze([
   "schema/README.md",
 ]);
 
+export const OPENROUTER_ROUTES = Object.freeze({
+  sonnet: "anthropic/claude-3.5-sonnet",
+  chatgpt: "openai/gpt-4o",
+  deepseek: "deepseek/deepseek-r1",
+  gemini: "google/gemini-2.5-flash",
+});
+
 export const MODELS = Object.freeze({
   sonnet: {
     id: "sonnet",
@@ -219,12 +226,24 @@ export function meshUser(baseUser, flux) {
 export function keyedModels(ids, env = process.env) {
   const run = [];
   const skip = [];
+  const orKey = String(env.OPENROUTER_API_KEY || "").trim();
   for (const id of ids) {
     const spec = MODELS[id];
     if (!spec) continue;
-    const key = String(env[spec.secret] || "").trim();
-    if (!key) skip.push({ id, reason: `missing ${spec.secret}` });
-    else run.push(spec);
+    const native = String(env[spec.secret] || "").trim();
+    if (native) {
+      run.push(spec);
+      continue;
+    }
+    if (orKey && OPENROUTER_ROUTES[id]) {
+      run.push({
+        ...spec,
+        via: "openrouter",
+        model: OPENROUTER_ROUTES[id],
+      });
+      continue;
+    }
+    skip.push({ id, reason: `missing ${spec.secret}` });
   }
   return { run, skip };
 }
@@ -287,12 +306,13 @@ export function sanitizeReview(text) {
   );
 }
 
-async function postJson(url, { headers, body }) {
+async function postJson(url, { headers, body, id }) {
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json", ...headers },
     body: JSON.stringify(body),
   });
+  if (id) console.log(`[${id}] HTTP ${res.status}`);
   const text = await res.text();
   let json = null;
   try {
@@ -307,6 +327,7 @@ async function callAnthropic(spec, system, user, key) {
   const { ok, status, json } = await postJson(
     "https://api.anthropic.com/v1/messages",
     {
+      id: spec.id,
       headers: {
         "x-api-key": key,
         "anthropic-version": "2023-06-01",
@@ -328,6 +349,7 @@ async function callOpenAI(spec, system, user, key) {
   const { ok, status, json } = await postJson(
     "https://api.openai.com/v1/chat/completions",
     {
+      id: spec.id,
       headers: { authorization: `Bearer ${key}` },
       body: {
         model: spec.model,
@@ -346,6 +368,7 @@ async function callDeepSeek(spec, system, user, key) {
   const { ok, status, json } = await postJson(
     "https://api.deepseek.com/chat/completions",
     {
+      id: spec.id,
       headers: { authorization: `Bearer ${key}` },
       body: {
         model: spec.model,
@@ -363,6 +386,7 @@ async function callDeepSeek(spec, system, user, key) {
 async function callGemini(spec, system, user, key) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${spec.model}:generateContent?key=${encodeURIComponent(key)}`;
   const { ok, status, json } = await postJson(url, {
+    id: spec.id,
     body: {
       system_instruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
@@ -373,6 +397,34 @@ async function callGemini(spec, system, user, key) {
   return parts.map((p) => p.text || "").join("\n");
 }
 
+async function callOpenRouter(spec, system, user, key) {
+  const model = OPENROUTER_ROUTES[spec.id] || spec.model;
+  const { ok, status, json } = await postJson(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      id: spec.id,
+      headers: {
+        authorization: `Bearer ${key}`,
+        "http-referer": "https://github.com/carllaliberte/famille",
+        "x-title": "famille-swarm",
+      },
+      body: {
+        model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      },
+    },
+  );
+  if (!ok) {
+    throw new Error(
+      `openrouter ${spec.id} ${status}: ${JSON.stringify(json).slice(0, 400)}`,
+    );
+  }
+  return json.choices?.[0]?.message?.content || "";
+}
+
 const CALLERS = {
   anthropic: callAnthropic,
   openai: callOpenAI,
@@ -381,17 +433,32 @@ const CALLERS = {
 };
 
 export async function reviewOne(spec, system, user, env = process.env) {
-  const key = String(env[spec.secret] || "").trim();
-  if (!key) return { id: spec.id, skipped: true, reason: `missing ${spec.secret}` };
-  const fn = CALLERS[spec.provider];
+  const native = String(env[spec.secret] || "").trim();
+  const orKey = String(env.OPENROUTER_API_KEY || "").trim();
+  const viaOpenRouter = spec.via === "openrouter";
+  if (viaOpenRouter && !orKey) {
+    return { id: spec.id, skipped: true, reason: "missing OPENROUTER_API_KEY" };
+  }
+  if (!native && !viaOpenRouter) {
+    return { id: spec.id, skipped: true, reason: `missing ${spec.secret}` };
+  }
   try {
-    const text = sanitizeReview(await fn(spec, system, user, key));
-    return { id: spec.id, label: spec.label, model: spec.model, text };
+    const text = viaOpenRouter
+      ? sanitizeReview(await callOpenRouter(spec, system, user, orKey))
+      : sanitizeReview(await CALLERS[spec.provider](spec, system, user, native));
+    return {
+      id: spec.id,
+      label: spec.label,
+      model: spec.model,
+      via: viaOpenRouter ? "openrouter" : spec.provider,
+      text,
+    };
   } catch (err) {
     return {
       id: spec.id,
       label: spec.label,
       model: spec.model,
+      via: viaOpenRouter ? "openrouter" : spec.provider,
       error: err instanceof Error ? err.message : String(err),
     };
   }
