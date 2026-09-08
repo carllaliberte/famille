@@ -1,0 +1,193 @@
+# Grok Optimisation Globale — branche grok/optimize-*
+# Never writes main. Carl squash-merges. Never fast-forward. Never auto-merge.
+# Sensitive paths (unforge-check/ schema/ mesure-protocol/ action.yml) → HOLD.
+# REVUE.md obligatoire pour y toucher — le scan ne les écrit pas.
+# Secrets (Actions, not git): GROK_SIGNING_KEY GROK_SIGNING_KEY_PUB GROK_GIT_NAME GROK_GIT_EMAIL
+# Absents → HOLD, no empty PR.
+name: Grok Optimisation Globale (branche auto)
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Portée du scan"
+        required: true
+        default: "perf+structure"
+        type: choice
+        options:
+          - perf+structure
+          - perf
+          - structure
+      commit_message:
+        description: "Message du commit"
+        required: true
+        default: "refactor: optimisation automatique par Grok"
+
+env:
+  SENSITIVE_PATHS: "unforge-check/ schema/ mesure-protocol/ action.yml"
+
+concurrency:
+  group: grok-optimize
+  cancel-in-progress: false
+
+jobs:
+  optimize-and-sign:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Exiger les secrets de signature
+        env:
+          KEY: ${{ secrets.GROK_SIGNING_KEY }}
+          PUB: ${{ secrets.GROK_SIGNING_KEY_PUB }}
+          NAME: ${{ secrets.GROK_GIT_NAME }}
+          EMAIL: ${{ secrets.GROK_GIT_EMAIL }}
+        run: |
+          set -euo pipefail
+          missing=0
+          [ -n "$KEY" ] || { echo "HOLD : GROK_SIGNING_KEY absent"; missing=1; }
+          [ -n "$PUB" ] || { echo "HOLD : GROK_SIGNING_KEY_PUB absent"; missing=1; }
+          [ -n "$NAME" ] || { echo "HOLD : GROK_GIT_NAME absent"; missing=1; }
+          [ -n "$EMAIL" ] || { echo "HOLD : GROK_GIT_EMAIL absent"; missing=1; }
+          test "$missing" -eq 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Configurer la clé de signature SSH
+        env:
+          KEY: ${{ secrets.GROK_SIGNING_KEY }}
+          PUB: ${{ secrets.GROK_SIGNING_KEY_PUB }}
+          EMAIL: ${{ secrets.GROK_GIT_EMAIL }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          umask 077
+          printf '%s\n' "$KEY" > ~/.ssh/grok_signing
+          chmod 600 ~/.ssh/grok_signing
+          printf '%s %s\n' "$EMAIL" "$PUB" > ~/.ssh/allowed_signers
+          chmod 644 ~/.ssh/allowed_signers
+
+      - name: Config git
+        run: |
+          set -euo pipefail
+          git config user.name "${{ secrets.GROK_GIT_NAME }}"
+          git config user.email "${{ secrets.GROK_GIT_EMAIL }}"
+          git config gpg.format ssh
+          git config user.signingkey ~/.ssh/grok_signing
+          git config commit.gpgsign true
+          git config gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
+
+      - name: Analyse et optimisation
+        env:
+          SCOPE: ${{ github.event.inputs.scope }}
+        run: |
+          set -euo pipefail
+          node scripts/optimize-scan.mjs --scope "$SCOPE" --apply --report optimization_report.md
+
+      - name: Détecter si des chemins sensibles ont été touchés
+        id: sensitive
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          mapfile -t CHANGED < <(git diff --name-only origin/main || true)
+          TOUCHED=""
+          for p in $SENSITIVE_PATHS; do
+            p="${p%/}"
+            for f in "${CHANGED[@]+"${CHANGED[@]}"}"; do
+              case "$f" in
+                "$p"|"$p"/*|*/"$p")
+                  TOUCHED="${TOUCHED}${f}"$'
+'
+                  ;;
+              esac
+              base="${f##*/}"
+              if [ "$base" = "action.yml" ] && [ "$p" = "action.yml" ]; then
+                TOUCHED="${TOUCHED}${f}"$'
+'
+              fi
+            done
+          done
+          if [ -n "$TOUCHED" ]; then
+            echo "HOLD : chemins sensibles touchés. REVUE.md obligatoire. Pas de PR."
+            printf '%s' "$TOUCHED"
+            exit 1
+          fi
+          echo "sensitive=false" >> "$GITHUB_OUTPUT"
+
+      - name: Refuser un tampon à vide
+        run: |
+          set -euo pipefail
+          git add -A
+          if git diff --cached --quiet; then
+            echo "HOLD : aucun diff contre main. Pas de PR vide."
+            exit 1
+          fi
+          if [ ! -f optimization_report.md ]; then
+            echo "HOLD : optimization_report.md manquant."
+            exit 1
+          fi
+
+      - name: Créer la branche grok/optimize-*
+        id: branch
+        run: |
+          set -euo pipefail
+          BRANCH="grok/optimize-$(date -u +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          echo "branch_name=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Commit signé
+        env:
+          MSG: ${{ github.event.inputs.commit_message }}
+        run: |
+          set -euo pipefail
+          git add -A
+          if git diff --cached --quiet; then
+            echo "HOLD : aucun diff contre main. Pas de PR vide."
+            exit 1
+          fi
+          git commit -S -m "$MSG"
+          git log --show-signature -1
+
+      - name: Push vers branche auto
+        run: git push origin "HEAD:${{ steps.branch.outputs.branch_name }}"
+
+      - name: Ouvrir la Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ steps.branch.outputs.branch_name }}
+          MSG: ${{ github.event.inputs.commit_message }}
+          SCOPE: ${{ github.event.inputs.scope }}
+        run: |
+          set -euo pipefail
+          REPORT=$(cat optimization_report.md)
+          BODY=$(cat <<EOF
+          Scan automatique Grok. **Pas un merge. Pas main.**
+
+          - Branche : \`${BRANCH}\`
+          - Portée : \`${SCOPE}\`
+          - Commits signés (SSH)
+          - Chemins sensibles exclus : \`unforge-check/\` \`schema/\` \`mesure-protocol/\` \`action.yml\`
+          - Vide → HOLD. Sensible touché → HOLD + REVUE.md.
+
+          En attente de revue et **squash-merge** par Carl. Jamais fast-forward. Jamais auto-merge.
+
+          ---
+
+          ${REPORT}
+          EOF
+          )
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "$MSG" \
+            --body "$BODY"
