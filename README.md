@@ -9,6 +9,8 @@ Not fourteen scripts. Not a blockchain. Not a coin.
 Before anyone may say *quantique*, four fields must hold on the card.
 A missing field keeps the label **classique**. That is the product.
 
+Philosophie (œuvre Acorn, carte ici) : [PHILOSOPHIE.md](PHILOSOPHIE.md).
+
 **Carte citée :** https://acorn-royal-dune-blend.grok.me
 Un seul hôte. Voir [HOTE.md](HOTE.md). Titre public : Famille.
 
@@ -119,7 +121,7 @@ Opt-in encapsulation is a **separate** rail (`kem.v0` in [unforge-check](https:/
 A bot, a rail, a bank, a mint, a second grok.me, a photon in the index.
 ε = 0 is a lie. UFHY1 is not a date. Preview ≠ quittance.
 
-See [INTERDIT.md](INTERDIT.md) · [JUGE.md](JUGE.md) · [CURSOR.md](CURSOR.md).
+See [INTERDIT.md](INTERDIT.md) · [JUGE.md](JUGE.md) · [CURSOR.md](CURSOR.md) · [PHILOSOPHIE.md](PHILOSOPHIE.md).
 
 © 2026 Carl Laliberté. MIT for listed protocols. Estoc stays off the file. QUANTUM stays off Git.
 Marks: see [NOTICE](NOTICE). Regimes: see [COPYRIGHT.md](COPYRIGHT.md).
