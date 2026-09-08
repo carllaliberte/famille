@@ -5,6 +5,7 @@ ville/<quartier>-<piece>
 cursor/<piece>
 docs/<piece>
 schema/<piece>
+ai/<piece>
 grok/auto-YYYYMMDD-HHMMSS
 grok/optimize-YYYYMMDD-HHMMSS
 ```
@@ -14,6 +15,8 @@ Quartiers : `juge` `preview` `conso` `sdk` `rente` `garde`
 Titre PR : `Ville <quartier> — <pièce>`
 
 Cursor Cloud agents use `cursor/<piece>`. Carl still squashes. One PR per repo.
+
+`ai/<piece>` : roster / swarm identity. Une entrée dans `schema/agents.json`, pas un fork de `mesh.v0`. Carl squash-merge seulement — jamais fast-forward. Jamais auto-merge. Jamais main par une IA.
 
 `grok/auto-*` : commits SSH signés via `.github/workflows/grok-signed-commit.yml`. Carl squash-merge seulement — jamais fast-forward. Jamais auto-merge. Jamais main par Grok.
 

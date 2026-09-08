@@ -82,6 +82,8 @@ Capacités déclarables (libres, pas un enum du protocole) : `lu` · `flux` · `
 
 Astra aujourd'hui, une autre demain : même geste. Aucune n'est juge. LIVE VERIFIED = Carl seulement.
 
+Généralistes (kimi, cohere, …) et spécialistes (cline, goose, …) : une ligne dans [`schema/agents.json`](schema/agents.json). Pas un fork. Pas un `if (id === "astra")`. `lane` est documentaire, pas un enum du protocole.
+
 ## Ce que ça vend
 
 Le schéma juge est MIT. L'œuvre Acorn ne l'est pas.

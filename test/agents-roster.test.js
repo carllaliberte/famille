@@ -255,4 +255,195 @@ describe("mesh roster — open ids, not an enum", () => {
     assert.equal(r.ok, true);
     assert.deepEqual(meshErrors(r.packet, loadMeshSchema()), []);
   });
+
+  it("expanded roster: unique ids, generalists and specialists are guests like astra", () => {
+    const roster = loadRoster();
+    const ids = roster.agents.map((a) => a.id);
+    assert.equal(new Set(ids).size, ids.length);
+    const generalists = [
+      "llama",
+      "mistral",
+      "qwen",
+      "cohere",
+      "nova",
+      "mixtral",
+      "phi",
+      "gemma",
+      "yi",
+      "glm",
+      "kimi",
+      "use-ai",
+    ];
+    const specialists = [
+      "copilot",
+      "opus",
+      "astra",
+      "codex",
+      "claude-code",
+      "cline",
+      "aider",
+      "continue",
+      "windsurf",
+      "zed",
+      "goose",
+      "composer",
+    ];
+    for (const id of [...generalists, ...specialists]) {
+      const row = roster.agents.find((a) => a.id === id);
+      assert.ok(row, id);
+      assert.equal(row.kind, "guest", id);
+      assert.equal(row.locked, false, id);
+      assert.ok(!(row.capabilities || []).includes("juge"), id);
+      assert.notEqual(row.role, "juge", id);
+      assert.equal(isAgent(id), true, id);
+      assert.equal(gradesFor(id).includes("LIVE VERIFIED"), false, id);
+    }
+    const kimi = roster.agents.find((a) => a.id === "kimi");
+    const cline = roster.agents.find((a) => a.id === "cline");
+    const astra = roster.agents.find((a) => a.id === "astra");
+    const llama = roster.agents.find((a) => a.id === "llama");
+    assert.equal(kimi.lane, "generalist");
+    assert.equal(cline.lane, "specialist");
+    assert.equal(astra.kind, llama.kind);
+    assert.equal(astra.kind, kimi.kind);
+    assert.equal(astra.kind, cline.kind);
+    assert.ok(kimi.capabilities.includes("lu"));
+    assert.ok(kimi.capabilities.includes("flux"));
+    assert.ok(cline.capabilities.includes("build"));
+    const ai = loadAiSchema();
+    assert.equal(ai.$defs.agent.properties.lane, undefined);
+    assert.equal(ai.$defs.agent.properties.id.enum, undefined);
+    const fluxSrc = read(".github/swarm/flux.mjs");
+    assert.doesNotMatch(fluxSrc, /id === ["']astra["']/);
+    assert.doesNotMatch(fluxSrc, /id === ["']codex["']/);
+    assert.doesNotMatch(fluxSrc, /id === ["']kimi["']/);
+    assert.doesNotMatch(read("schema/mesh.v0.json"), /"kimi"/);
+    assert.doesNotMatch(read("schema/mesh.v0.json"), /"cline"/);
+  });
+
+  it("accepts envelopes from kimi and cline without touching mesh.v0", () => {
+    const meshBefore = read("schema/mesh.v0.json");
+    const aiBefore = read("schema/agents.v0.json");
+    const fromKimi = accept({
+      from: "kimi",
+      to: "grok",
+      act: "HANDOFF",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: "Kimi on the mesh. Never QUANTUM.",
+    });
+    assert.equal(fromKimi.ok, true);
+    assert.equal(fromKimi.packet.from, "kimi");
+    assert.equal(Object.hasOwn(fromKimi.packet, "next"), false);
+    assert.deepEqual(meshErrors(fromKimi.packet, loadMeshSchema()), []);
+
+    const fromCline = accept({
+      from: "cline",
+      to: "github",
+      act: "FINDING",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: "Cline on the mesh. Never QUANTUM.",
+    });
+    assert.equal(fromCline.ok, true);
+    assert.equal(fromCline.packet.from, "cline");
+    assert.deepEqual(meshErrors(fromCline.packet, loadMeshSchema()), []);
+    assert.equal(read("schema/mesh.v0.json"), meshBefore);
+    assert.equal(read("schema/agents.v0.json"), aiBefore);
+
+    const already = connectAgent({ id: "kimi", name: "Kimi" });
+    assert.equal(already.ok, false);
+    assert.equal(already.code, "ALREADY");
+  });
+
+  it("LIVE VERIFIED stays Carl-only for new guests; next/instruction stay forbidden", () => {
+    const live = accept({
+      from: "kimi",
+      to: "grok",
+      act: "RESULT",
+      mode: "ECHANGE",
+      grade: "LIVE VERIFIED",
+      body: "no",
+    });
+    assert.equal(live.ok, false);
+    assert.equal(live.code, "LIVE_NOT_CARL");
+
+    const liveCline = accept({
+      from: "cline",
+      to: "grok",
+      act: "RESULT",
+      mode: "ECHANGE",
+      grade: "LIVE VERIFIED",
+      body: "no",
+    });
+    assert.equal(liveCline.ok, false);
+    assert.equal(liveCline.code, "LIVE_NOT_CARL");
+
+    const next = accept({
+      from: "goose",
+      to: "grok",
+      act: "HANDOFF",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: "no",
+      next: "do-this",
+    });
+    assert.equal(next.ok, false);
+    assert.equal(next.code, "FORBIDDEN_NEXT");
+
+    const instruction = accept({
+      from: "cohere",
+      to: "grok",
+      act: "HANDOFF",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: "no",
+      instruction: "do-this",
+    });
+    assert.equal(instruction.ok, false);
+    assert.equal(instruction.code, "FORBIDDEN_NEXT");
+  });
+
+  it("GUEST_CAP counts runtime extras only; declared guests do not fill the cap", () => {
+    assert.equal(isAgent("kimi"), true);
+    assert.equal(isAgent("goose"), true);
+    for (let i = 0; i < 8; i++) {
+      const r = connectAgent({ id: `extra-${i}`, name: `Extra ${i}` });
+      assert.equal(r.ok, true, r.error);
+    }
+    const full = connectAgent({ id: "overflow-ia", name: "Overflow" });
+    assert.equal(full.ok, false);
+    assert.equal(full.code, "ROSTER_FULL");
+    const fromDeclared = accept({
+      from: "kimi",
+      to: "grok",
+      act: "HANDOFF",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: "Declared guests stay addressable. Never QUANTUM.",
+    });
+    assert.equal(fromDeclared.ok, true);
+    const tomorrow = accept({
+      from: "extra-0",
+      to: "github",
+      act: "FINDING",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: "Runtime guest. Never QUANTUM.",
+    });
+    assert.equal(tomorrow.ok, true);
+  });
+
+  it("ai/ branch prefix is allowed; mesh.v0 stays an open pattern", () => {
+    const branche = read(".github/workflows/branche.yml");
+    const branches = read("BRANCHES.md");
+    const hook = read(".githooks/pre-push");
+    assert.match(branche, /ai\/\[a-z0-9-\]\+/);
+    assert.match(branches, /ai\/<piece>/);
+    assert.match(hook, /ai\/\*/);
+    const mesh = loadMeshSchema();
+    assert.equal(mesh.properties.from.enum, undefined);
+    assert.equal(mesh.properties.next, false);
+    assert.equal(mesh.properties.instruction, false);
+  });
 });

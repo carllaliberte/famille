@@ -10,7 +10,7 @@ Sets `core.hooksPath` to `.githooks`.
 
 | Hook | Role |
 |---|---|
-| pre-push | branch name `ville/<quartier>-*` |
+| pre-push | branch name `ville/<quartier>-*` / `cursor/*` / `docs/*` / `schema/*` / `ai/*` |
 | pre-commit | no `data/` / `quantum.db` |
 | commit-msg | title hint |
 
