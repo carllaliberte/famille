@@ -1,5 +1,7 @@
 # Prompt Build
 
+Contrat Grok Bot : [PROMPT_GROK_BUILD.md](PROMPT_GROK_BUILD.md) — branches `grok/auto-*` et `grok/optimize-*`. Jamais `main`. Carl squash.
+
 Coller tel quel. Une PR. Pas de merge. Pas de push main.
 
 ```
