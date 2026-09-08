@@ -43,7 +43,8 @@ describe("swarm roster", () => {
     assert.equal(MODELS.gemini.model, "gemini-3.8-flash");
     assert.equal(MODELS.fable.auto, false);
     assert.equal(MODELS.sonnet.auto, false);
-    assert.equal(MODELS.haiku.auto, true);
+    assert.equal(MODELS.haiku.auto, false);
+    assert.equal(MODELS.xai.model, "grok-2-latest");
     assert.equal(MODELS.fable.maxTokens, 8192);
     assert.ok(MODELS.fable.maxTokens > MODELS.sonnet.maxTokens);
   });
@@ -52,7 +53,7 @@ describe("swarm roster", () => {
 describe("parseTrigger", () => {
   it("defaults to auto models — not Fable", () => {
     const ids = parseTrigger("", []);
-    assert.deepEqual(ids, ["chatgpt", "deepseek", "gemini", "haiku"]);
+    assert.deepEqual(ids, ["deepseek", "gemini", "llama", "qwen"]);
     assert.ok(!ids.includes("fable"));
     assert.ok(!ids.includes("xai"));
     assert.ok(!ids.includes("sonnet"));
@@ -71,9 +72,9 @@ describe("parseTrigger", () => {
     assert.deepEqual(parseTrigger("/sonnet", []), ["sonnet"]);
     assert.deepEqual(parseTrigger("/swarm", []), [
       "gemini",
-      "chatgpt",
-      "haiku",
       "deepseek",
+      "llama",
+      "qwen",
     ]);
   });
 
@@ -189,25 +190,26 @@ describe("keyedModels fail-closed", () => {
 
   it("OPENROUTER_API_KEY runs the nucleus; fable and sonnet stay keyed", () => {
     const { run, skip } = keyedModels(
-      ["sonnet", "fable", "chatgpt", "deepseek", "gemini", "haiku", "xai"],
+      ["sonnet", "fable", "chatgpt", "deepseek", "gemini", "haiku", "llama", "qwen", "xai"],
       { OPENROUTER_API_KEY: "or-test" },
     );
     assert.deepEqual(
       run.map((m) => m.id),
-      ["chatgpt", "deepseek", "gemini", "haiku"],
+      ["deepseek", "gemini", "llama", "qwen"],
     );
     assert.ok(run.every((m) => m.via === "openrouter"));
-    assert.equal(skip.map((s) => s.id).join(","), "sonnet,fable,xai");
+    assert.equal(skip.map((s) => s.id).join(","), "sonnet,fable,chatgpt,haiku,xai");
     assert.equal(OPENROUTER_ROUTES.gemini, "google/gemini-2.5-flash");
-    assert.equal(OPENROUTER_ROUTES.chatgpt, "openai/gpt-4o-mini");
-    assert.equal(OPENROUTER_ROUTES.haiku, "anthropic/claude-3-haiku");
-    assert.equal(OPENROUTER_ROUTES.deepseek, "deepseek/deepseek-chat");
-    assert.equal(OPENROUTER_ROUTES.sonnet, undefined);
+    assert.equal(OPENROUTER_ROUTES.deepseek, "deepseek/deepseek-r1:free");
+    assert.equal(OPENROUTER_ROUTES.llama, "meta-llama/llama-3.3-70b-instruct:free");
+    assert.equal(OPENROUTER_ROUTES.qwen, "qwen/qwen-2.5-72b-instruct:free");
+    assert.equal(OPENROUTER_ROUTES.chatgpt, undefined);
   });
 
   it("404 and 402 skip silently", () => {
     assert.equal(isQuotaOrMissing(new Error("openrouter llama 404: gone")), true);
     assert.equal(isQuotaOrMissing(new Error("openrouter chatgpt 402: credits")), true);
+    assert.equal(isQuotaOrMissing(new Error("xai 400: Model not found")), true);
     assert.equal(isQuotaOrMissing(new Error("openrouter x 500: boom")), false);
   });
 
@@ -223,6 +225,7 @@ describe("keyedModels fail-closed", () => {
   });
 
   it("XAI_API_KEY is an optional native slot, not chef grok", () => {
+    assert.equal(MODELS.xai.model, "grok-2-latest");
     assert.equal(MODELS.xai.id, "xai");
     assert.equal(MODELS.xai.secret, "XAI_API_KEY");
     assert.equal(MODELS.xai.auto, false);

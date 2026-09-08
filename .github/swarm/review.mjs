@@ -34,9 +34,9 @@ export const CANON_PATHS = Object.freeze([
 
 export const OPENROUTER_ROUTES = Object.freeze({
   gemini: "google/gemini-2.5-flash",
-  chatgpt: "openai/gpt-4o-mini",
-  haiku: "anthropic/claude-3-haiku",
-  deepseek: "deepseek/deepseek-chat",
+  deepseek: "deepseek/deepseek-r1:free",
+  llama: "meta-llama/llama-3.3-70b-instruct:free",
+  qwen: "qwen/qwen-2.5-72b-instruct:free",
 });
 
 export const MODELS = Object.freeze({
@@ -65,7 +65,7 @@ export const MODELS = Object.freeze({
     model: "gpt-5.6-terra",
     provider: "openai",
     secret: "OPENAI_API_KEY",
-    auto: true,
+    auto: false,
   },
   deepseek: {
     id: "deepseek",
@@ -89,13 +89,31 @@ export const MODELS = Object.freeze({
     model: "claude-3-haiku",
     provider: "openrouter",
     secret: "HAIKU_API_KEY",
+    auto: false,
+    maxTokens: 2048,
+  },
+  llama: {
+    id: "llama",
+    label: "Llama",
+    model: "meta-llama/llama-3.3-70b-instruct:free",
+    provider: "openrouter",
+    secret: "LLAMA_API_KEY",
+    auto: true,
+    maxTokens: 2048,
+  },
+  qwen: {
+    id: "qwen",
+    label: "Qwen",
+    model: "qwen-2.5-72b-instruct",
+    provider: "openrouter",
+    secret: "QWEN_API_KEY",
     auto: true,
     maxTokens: 2048,
   },
   xai: {
     id: "xai",
     label: "xAI",
-    model: "grok-beta",
+    model: "grok-2-latest",
     provider: "xai",
     secret: "XAI_API_KEY",
     auto: false,
@@ -104,7 +122,7 @@ export const MODELS = Object.freeze({
 });
 
 const TRIGGERS = {
-  "/swarm": ["gemini", "chatgpt", "haiku", "deepseek"],
+  "/swarm": ["gemini", "deepseek", "llama", "qwen"],
   "/sonnet": ["sonnet"],
   "/fable": ["fable"],
   "/fabre": ["fable"],
@@ -112,6 +130,8 @@ const TRIGGERS = {
   "/deepseek": ["deepseek"],
   "/gemini": ["gemini"],
   "/haiku": ["haiku"],
+  "/llama": ["llama"],
+  "/qwen": ["qwen"],
   "/xai": ["xai"],
 };
 
@@ -329,7 +349,7 @@ export function sanitizeReview(text) {
 /** 404 / 402 / 429: skip silently. Do not dump provider bodies on the PR. */
 export function isQuotaOrMissing(err) {
   const m = String(err && err.message ? err.message : err || "");
-  return /\b(404|402|429)\b/.test(m);
+  return /\b(404|402|429|400)\b/.test(m);
 }
 
 function skipFault(spec, err, via) {
