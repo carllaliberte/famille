@@ -2,6 +2,8 @@
 
 **Les certitudes ont une date de fin.**
 Certainties expire.
+On n'enlève pas le juge. On enlève le tampon à vide. — [EXPERIENCE.md](EXPERIENCE.md)
+The human still merges. Labels do not live forever. — [RENTE.md](RENTE.md)
 
 A typed-evidence lattice for post-quantum cybersecurity and composable proof.
 Not fourteen scripts. Not a blockchain. Not a coin.
