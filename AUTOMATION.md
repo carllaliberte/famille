@@ -32,7 +32,7 @@ Contrat IA : [INTEROP-IA.md](INTEROP-IA.md) — carte juge ≠ mesh `acorn.v0`.
 | Carl | squash, merge, secrets Actions, coupe cron Cursor | messager |
 | ots-bot | commit `.ots-anchor/**` + bloc `ots-status` dans `unforge-check/OTS.md` après push `main` | merge, squash, juger, signer, PR, FILE.md |
 | grok-sign | `workflow_dispatch` → branche `grok/auto-*`, commit SSH signé, PR | merge, squash, push `main`, tampon à vide |
-| grok-optimize | `workflow_dispatch` → scan perf+structure, HOLD chemins sensibles, branche `grok/optimize-*`, commit SSH signé, PR | merge, squash, push `main`, tampon à vide, toucher `unforge-check/` `schema/` `mesure-protocol/` `action.yml` |
+| grok-optimize | `workflow_dispatch` + cron nocturne America/Toronto → scan perf+structure, HOLD chemins sensibles, branche `grok/optimize-*`, commit SSH signé, PR. Vide → pas de PR | merge, squash, push `main`, tampon à vide, toucher `unforge-check/` `schema/` `mesure-protocol/` `action.yml` |
 
 Secrets (Actions **de ce repo**, pas git) : `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` `GEMINI_API_KEY`.
 Absents → swarm skip, silencieux. Pas un collage.
@@ -49,7 +49,7 @@ Absents → `grok-signed-commit.yml` / `grok-optimize.yml` rouge. Pas de PR vide
 5. CI : job `nom` exige `ville/…` ou `cursor/…` ou `docs/…` ou `schema/…` ou `grok/auto-YYYYMMDD-HHMMSS` ou `grok/optimize-YYYYMMDD-HHMMSS`. Rouge = mauvais nom de branche, pas le diff.
 6. `/swarm` `/sonnet` `/chatgpt` `/deepseek` `/gemini` relancent. `/fable` on-demand (coût).
 7. `/flux to:chatgpt` ou `FLUX from:… to:…` adresse un pair. Swarm répond en enveloppe nue (LU). 1 hop. `github-actions[bot]` ignoré.
-8. Carl `workflow_dispatch` `grok-optimize.yml` : scan, rapport, HOLD si vide ou sensible, PR `grok/optimize-*`.
+8. `grok-optimize.yml` : cron 1×/nuit America/Toronto **et** `workflow_dispatch`. Scan, rapport, HOLD si vide ou sensible. Vide → pas de PR. PR `grok/optimize-*` seulement s'il y a du travail. Carl squash le matin.
 
 ## Branche `grok/auto-*` — commit SSH signé, jamais main
 
@@ -63,7 +63,7 @@ Activation : squash **explicite** de Carl de la PR qui introduit le YAML **et** 
 
 ## Branche `grok/optimize-*` — scan, commit SSH signé, jamais main
 
-Grok ne pousse pas sur `main`. Carl déclenche `.github/workflows/grok-optimize.yml` (`workflow_dispatch`, `scope` + `commit_message`).
+Grok ne pousse pas sur `main`. `.github/workflows/grok-optimize.yml` tourne 1×/nuit (cron 06:00 UTC, America/Toronto) **et** sur `workflow_dispatch` (`scope` + `commit_message`). Scope par défaut : `perf+structure`. Carl n'a plus à dispatcher manuellement chaque nuit.
 
 Le job exige les secrets de signature, lance `scripts/optimize-scan.mjs` (déterministe, pas un LLM), refuse tout diff sur `unforge-check/` `schema/` `mesure-protocol/` `action.yml` (HOLD, REVUE.md obligatoire), refuse un diff vide (pas de tampon à vide), crée `grok/optimize-YYYYMMDD-HHMMSS`, commit **signé SSH**, pousse, ouvre la PR. Carl squash-merge. **Jamais fast-forward.** Jamais auto-merge.
 

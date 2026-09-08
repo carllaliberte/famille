@@ -4,6 +4,7 @@
 # REVUE.md obligatoire pour y toucher — le scan ne les écrit pas.
 # Secrets (Actions, not git): GROK_SIGNING_KEY GROK_SIGNING_KEY_PUB GROK_GIT_NAME GROK_GIT_EMAIL
 # Absents → HOLD, no empty PR.
+# Nightly cron 06:00 UTC (America/Toronto). Empty scan → no PR. Carl squash in the morning.
 name: Grok Optimisation Globale (branche auto)
 
 on:
@@ -22,6 +23,9 @@ on:
         description: "Message du commit"
         required: true
         default: "refactor: optimisation automatique par Grok"
+  schedule:
+    # 06:00 UTC ≈ 01:00 EST / 02:00 EDT America/Toronto. 1×/nuit.
+    - cron: "0 6 * * *"
 
 env:
   SENSITIVE_PATHS: "unforge-check/ schema/ mesure-protocol/ action.yml"
@@ -89,7 +93,7 @@ jobs:
 
       - name: Analyse et optimisation
         env:
-          SCOPE: ${{ github.event.inputs.scope }}
+          SCOPE: ${{ github.event.inputs.scope || 'perf+structure' }}
         run: |
           set -euo pipefail
           node scripts/optimize-scan.mjs --scope "$SCOPE" --apply --report optimization_report.md
@@ -123,19 +127,23 @@ jobs:
           echo "sensitive=false" >> "$GITHUB_OUTPUT"
 
       - name: Refuser un tampon à vide
+        id: empty
         run: |
           set -euo pipefail
           git add -A
           if git diff --cached --quiet; then
             echo "HOLD : aucun diff contre main. Pas de PR vide."
-            exit 1
+            echo "empty=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           if [ ! -f optimization_report.md ]; then
             echo "HOLD : optimization_report.md manquant."
             exit 1
           fi
+          echo "empty=false" >> "$GITHUB_OUTPUT"
 
       - name: Créer la branche grok/optimize-*
+        if: steps.empty.outputs.empty == 'false'
         id: branch
         run: |
           set -euo pipefail
@@ -144,8 +152,9 @@ jobs:
           echo "branch_name=$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Commit signé
+        if: steps.empty.outputs.empty == 'false'
         env:
-          MSG: ${{ github.event.inputs.commit_message }}
+          MSG: ${{ github.event.inputs.commit_message || 'refactor: optimisation automatique par Grok' }}
         run: |
           set -euo pipefail
           git add -A
@@ -157,14 +166,16 @@ jobs:
           git log --show-signature -1
 
       - name: Push vers branche auto
+        if: steps.empty.outputs.empty == 'false'
         run: git push origin "HEAD:${{ steps.branch.outputs.branch_name }}"
 
       - name: Ouvrir la Pull Request
+        if: steps.empty.outputs.empty == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: ${{ steps.branch.outputs.branch_name }}
-          MSG: ${{ github.event.inputs.commit_message }}
-          SCOPE: ${{ github.event.inputs.scope }}
+          MSG: ${{ github.event.inputs.commit_message || 'refactor: optimisation automatique par Grok' }}
+          SCOPE: ${{ github.event.inputs.scope || 'perf+structure' }}
         run: |
           set -euo pipefail
           REPORT=$(cat optimization_report.md)
