@@ -24,12 +24,13 @@ Contrat IA : [INTEROP-IA.md](INTEROP-IA.md) — carte juge ≠ mesh `acorn.v0`.
 | Carl | squash, merge, secrets Actions, coupe cron Cursor | messager |
 | ots-bot | commit `.ots-anchor/**` + bloc `ots-status` dans `unforge-check/OTS.md` après push `main` | merge, squash, juger, signer, PR, FILE.md |
 | grok-sign | `workflow_dispatch` → branche `grok/auto-*`, commit SSH signé, PR | merge, squash, push `main`, tampon à vide |
+| grok-optimize | `workflow_dispatch` → scan perf+structure, HOLD chemins sensibles, branche `grok/optimize-*`, commit SSH signé, PR | merge, squash, push `main`, tampon à vide, toucher `unforge-check/` `schema/` `mesure-protocol/` `action.yml` |
 
 Secrets (Actions **de ce repo**, pas git) : `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` `GEMINI_API_KEY`.
 Absents → swarm skip, silencieux. Pas un collage.
 
 Secrets signature Grok (Actions, pas git) : `GROK_SIGNING_KEY` `GROK_SIGNING_KEY_PUB` `GROK_GIT_NAME` `GROK_GIT_EMAIL`.
-Absents → `grok-signed-commit.yml` rouge. Pas de PR vide. Clé publique aussi : GitHub → Settings → SSH and GPG keys → Signing Key.
+Absents → `grok-signed-commit.yml` / `grok-optimize.yml` rouge. Pas de PR vide. Clé publique aussi : GitHub → Settings → SSH and GPG keys → Signing Key.
 
 ## Boucles
 
@@ -37,9 +38,10 @@ Absents → `grok-signed-commit.yml` rouge. Pas de PR vide. Clé publique aussi 
 2. PR ouverte / synchronize : swarm commente si secrets. Automation `pr-opened-file` note le verdict.
 3. Commentaire PR/issue (pas bot, pas soi) : `famille-mesh-comment` — Grok répond sur le fil.
 4. PR mergée : `pr-merged-file` aligne FILE.md si le tableau Ouvert est faux.
-5. CI : job `nom` exige `ville/…` ou `cursor/…` ou `docs/…` ou `schema/…` ou `grok/auto-YYYYMMDD-HHMMSS`. Rouge = mauvais nom de branche, pas le diff.
+5. CI : job `nom` exige `ville/…` ou `cursor/…` ou `docs/…` ou `schema/…` ou `grok/auto-YYYYMMDD-HHMMSS` ou `grok/optimize-YYYYMMDD-HHMMSS`. Rouge = mauvais nom de branche, pas le diff.
 6. `/swarm` `/sonnet` `/chatgpt` `/deepseek` `/gemini` relancent. `/fable` on-demand (coût).
 7. `/flux to:chatgpt` ou `FLUX from:… to:…` adresse un pair. Swarm répond en enveloppe nue (LU). 1 hop. `github-actions[bot]` ignoré.
+8. Carl `workflow_dispatch` `grok-optimize.yml` : scan, rapport, HOLD si vide ou sensible, PR `grok/optimize-*`.
 
 ## Branche `grok/auto-*` — commit SSH signé, jamais main
 
@@ -48,6 +50,16 @@ Grok ne pousse plus sur `main`. Il prépare le geste sur une branche `ville/*` /
 Le job crée `grok/auto-YYYYMMDD-HHMMSS`, recommit le diff contre `main` **signé SSH**, pousse, ouvre la PR. Carl squash-merge. **Jamais fast-forward.** Jamais auto-merge. Jamais un tampon à vide (`source_ref` vide ou diff vide → HOLD, pas de PR).
 
 OTS pré-merge : **pending seulement**. Confirmation pas instantanée (délai Bitcoin). Le `.ots` n'entre **pas** dans l'arbre (ne pollue pas le squash). Artefact + commentaire de PR. L'ancrage **canonique** reste `ots-bot` **après** squash sur `main`.
+
+Activation : squash **explicite** de Carl de la PR qui introduit le YAML **et** secrets posés. Pas implicite.
+
+## Branche `grok/optimize-*` — scan, commit SSH signé, jamais main
+
+Grok ne pousse pas sur `main`. Carl déclenche `.github/workflows/grok-optimize.yml` (`workflow_dispatch`, `scope` + `commit_message`).
+
+Le job exige les secrets de signature, lance `scripts/optimize-scan.mjs` (déterministe, pas un LLM), refuse tout diff sur `unforge-check/` `schema/` `mesure-protocol/` `action.yml` (HOLD, REVUE.md obligatoire), refuse un diff vide (pas de tampon à vide), crée `grok/optimize-YYYYMMDD-HHMMSS`, commit **signé SSH**, pousse, ouvre la PR. Carl squash-merge. **Jamais fast-forward.** Jamais auto-merge.
+
+Application mécanique : seulement `scripts/` et `test/`. Doctrine, schémas, workflows : rapport seulement.
 
 Activation : squash **explicite** de Carl de la PR qui introduit le YAML **et** secrets posés. Pas implicite.
 
@@ -87,6 +99,7 @@ Inventaire des workflows sous `.github/workflows/` (HEAD `dced246`, 2026-09-08).
 | `branche.yml` | `pull_request` | défaut (lecture) | `github-actions[bot]` | **non** — valide le nom de branche |
 | `carte.yml` | `pull_request` + `push` `main` | défaut, `npm test` | `github-actions[bot]` | **non** — tests, pas de `git push` |
 | `grok-signed-commit.yml` | `workflow_dispatch` | `contents: write` + `pull-requests: write` | `github-actions[bot]` (commit git `GROK_GIT_NAME`) | **non** — pousse `grok/auto-*` seulement |
+| `grok-optimize.yml` | `workflow_dispatch` | `contents: write` + `pull-requests: write` | `github-actions[bot]` (commit git `GROK_GIT_NAME`) | **non** — pousse `grok/optimize-*` seulement |
 | *(autre YAML, hors `push` `main`)* | `workflow_dispatch` / PR | — | `github-actions[bot]` | **non** — pas de `git push` sur `main` |
 
 `pr-merged-file` n'est **pas** un workflow Actions. C'est une automation Grok. Pas cette identité.
@@ -119,3 +132,5 @@ Auto-merge. Push main. PRÉSENT. Consommation MESURE. Nouveau .grok.me. Token da
 Exception unique, documentée ci-dessus : `ots-bot` pousse sur `main` les fichiers `.ots-anchor/*` et le bloc `ots-status`, messages `ots: anchor` / `ots: upgrade`. Pas un merge. Pas un squash.
 
 `grok-signed-commit.yml` pousse **uniquement** `grok/auto-*`. Pas `main`. Carl squash-merge. Jamais fast-forward.
+
+`grok-optimize.yml` pousse **uniquement** `grok/optimize-*`. Pas `main`. Carl squash-merge. Jamais fast-forward.
