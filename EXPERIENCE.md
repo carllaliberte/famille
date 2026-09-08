@@ -20,10 +20,20 @@ Aussi : `packs/es-MX.json`, `packs/en-NG.json`, `packs/pt-BR.json`, `packs/de-DE
 - AMBRE — match; a date is due again
 - ROUGE — refuse
 
+Sous-ligne : On n'enlève pas le juge. On enlève le tampon à vide.
+The human still merges. Labels do not live forever.
+
 Phrases porte : `packs/*.json` (source).
 
 Jamais « sealed forever ». Jamais « quantum-safe ».
 Preview is not a receipt.
+
+## Efficacité
+
+Moins de relectures « c'est encore vrai ? ».
+La date est sur la carte. Périmé = re-mesurer, pas relire.
+L'humain merge. Preview ≠ quittance.
+On ne remplace pas le juge. On coupe le coût de croire qu'une preuve est éternelle.
 
 ## Gestes
 

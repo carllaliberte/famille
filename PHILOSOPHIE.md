@@ -49,6 +49,17 @@ Celui qui écrit l’algorithme pèse sur la décision.
 Séparation : carte publique / œuvre ARR / rails licenciés / merge unique.
 Pas un 7e chantier. Pas un nœud qui décide à la place.
 
+## Marque
+
+Sécurité = refus de mentir si un champ manque.
+VERT / AMBRE / ROUGE + un jour. Pas « moins de RH ».
+L'humain reste le juge.
+Les IA refusent le tampon à vide. Elles ne le remplacent pas.
+Interdit marketing : quantum-safe, sealed forever, zéro humain.
+Une étiquette sans date est un mensonge.
+Classique vaut mieux qu'un « oui » éternel.
+On n'enlève pas le juge. On enlève le tampon à vide.
+
 ## Une ligne
 
 Acorn privilégie la transparence d’un « non » daté à l’illusion d’un « oui » éternel.

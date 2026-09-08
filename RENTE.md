@@ -31,3 +31,12 @@ Preview ≠ quittance.
 - Licences Acorn écrites — aujourd'hui : 0. Ne pas fictifier.
 
 Pas le nombre d'hôtes. Pas le nombre de PR bots.
+
+## Offre — tampon à vide
+
+Pas de token. Pas « on remplace vos analystes ». Marque = sécurité honnête, pas « moins de RH ».
+
+| Qui | Arrête | Achète |
+|---|---|---|
+| Entreprise | les relais « encore bon ? » | carte + date + check |
+| État / org | l'étiquette éternelle | aperçu classique honnête |
