@@ -3,7 +3,12 @@
  * Not schema/flux.v0.json (carte pipeline / satellites).
  * Grok is chef. GitHub PR comments are memory. Not a Worker canal.
  * Not LIVE. Not QUANTUM. LIVE VERIFIED is Carl only.
+ * Identities: schema/agents.json (open ids). Do not fork mesh.v0 to add an AI.
  */
+
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const FLUX_VERSION = "acorn.v0";
 export const CHEF = "grok";
@@ -11,22 +16,36 @@ export const HOST = "https://acorn-royal-dune-blend.grok.me";
 export const GUEST_CAP = 8;
 export const ALWAYS_CONSULT = Object.freeze(["heavy", "build"]);
 
-export const AGENTS = Object.freeze({
-  grok: { id: "grok", name: "Grok", role: "chef", kind: "chef", specialty: "decides · writes" },
-  heavy: { id: "heavy", name: "Grok Heavy", role: "always consult", kind: "consult", specialty: "reason" },
-  build: { id: "build", name: "Grok Build", role: "always consult", kind: "consult", specialty: "implement" },
-  chatgpt: { id: "chatgpt", name: "ChatGPT", role: "challenges", kind: "model", specialty: "challenge" },
-  sonnet: { id: "sonnet", name: "Claude Sonnet 5", role: "reviews", kind: "model", specialty: "review" },
-  fable: { id: "fable", name: "Claude Fable 5", role: "hard review", kind: "model", specialty: "hard review" },
-  deepseek: { id: "deepseek", name: "DeepSeek", role: "independent", kind: "model", specialty: "independent" },
-  gemini: { id: "gemini", name: "Gemini", role: "independent", kind: "model", specialty: "independent" },
-  cursor: { id: "cursor", name: "Cursor", role: "builds", kind: "seat", specialty: "builds" },
-  ci: { id: "ci", name: "CI", role: "verifies", kind: "seat", specialty: "verifies" },
-  github: { id: "github", name: "GitHub", role: "remembers", kind: "seat", specialty: "memory" },
-  worker: { id: "worker", name: "GET /juge", role: "preview canal", kind: "seat", specialty: "preview canal" },
-  carl: { id: "carl", name: "Carl", role: "judges", kind: "seat", specialty: "judges" },
-});
+const HERE = dirname(fileURLToPath(import.meta.url));
+export const AIS_PATH = join(HERE, "../../schema/agents.json");
+export const AI_SCHEMA_PATH = join(HERE, "../../schema/agents.v0.json");
+export const MESH_SCHEMA_PATH = join(HERE, "../../schema/mesh.v0.json");
 
+function rowToAgent(row) {
+  return {
+    id: row.id,
+    name: row.name || row.id,
+    role: row.role || "",
+    kind: row.kind || "guest",
+    specialty: row.specialty || row.role || "",
+    capabilities: Object.freeze([...(row.capabilities || [])]),
+    status: row.status || "guest",
+    locked: Boolean(row.locked),
+  };
+}
+
+export const ROSTER_DOC = JSON.parse(readFileSync(AIS_PATH, "utf8"));
+
+const core = {};
+/** Declared guests from the roster file. Not wiped by resetGuests(). */
+const DECLARED = new Map();
+for (const row of ROSTER_DOC.agents || []) {
+  const agent = Object.freeze(rowToAgent(row));
+  if (row.locked) core[row.id] = agent;
+  else DECLARED.set(row.id, agent);
+}
+
+export const AGENTS = Object.freeze(core);
 export const AGENT_IDS = Object.freeze(Object.keys(AGENTS));
 
 export const ACTS = Object.freeze([
@@ -57,14 +76,17 @@ export const GRADES = Object.freeze([
   "LIVE VERIFIED",
 ]);
 
-/** Future AIs. Not core. Connect when Carl wants them on the mesh. */
-export const SUGGESTED_GUESTS = Object.freeze([
-  { id: "copilot", name: "GitHub Copilot", role: "guest review", specialty: "guest review" },
-  { id: "llama", name: "Llama", role: "open guest", specialty: "open" },
-  { id: "mistral", name: "Mistral", role: "open guest", specialty: "open" },
-  { id: "qwen", name: "Qwen", role: "open guest", specialty: "open" },
-  { id: "opus", name: "Claude Opus", role: "guest review", specialty: "guest review" },
-]);
+/** Declared in schema/agents.json, not yet a core seat. Same shape as a runtime guest. */
+export const SUGGESTED_GUESTS = Object.freeze(
+  [...DECLARED.values()].map((a) =>
+    Object.freeze({
+      id: a.id,
+      name: a.name,
+      role: a.role,
+      specialty: a.specialty,
+    }),
+  ),
+);
 
 const MODEL_IDS = new Set(["sonnet", "fable", "chatgpt", "deepseek", "gemini"]);
 const AUTO_MODELS = ["chatgpt", "sonnet", "deepseek", "gemini"];
@@ -91,7 +113,7 @@ export function resetGuests() {
 }
 
 export function roster() {
-  return [...Object.values(AGENTS), ...GUESTS.values()];
+  return [...Object.values(AGENTS), ...DECLARED.values(), ...GUESTS.values()];
 }
 
 export function rosterIds() {
@@ -100,7 +122,7 @@ export function rosterIds() {
 
 export function lookup(id) {
   const key = String(id || "").toLowerCase();
-  return AGENTS[key] || GUESTS.get(key) || null;
+  return AGENTS[key] || DECLARED.get(key) || GUESTS.get(key) || null;
 }
 
 export function isAgent(id) {
@@ -161,19 +183,34 @@ export function connectAgent(spec) {
   if (!ID_RE.test(id)) return fail("BAD_ID", "id must be [a-z][a-z0-9-]{1,24}");
   if (RESERVED.has(id)) return fail("RESERVED_ID", `${id} is reserved`);
   if (AGENTS[id]) return fail("CORE_LOCKED", `${id} is a core seat`);
-  if (GUESTS.has(id)) return fail("ALREADY", `${id} is already connected`);
+  if (DECLARED.has(id) || GUESTS.has(id)) return fail("ALREADY", `${id} is already connected`);
   if (GUESTS.size >= GUEST_CAP) return fail("ROSTER_FULL", `at most ${GUEST_CAP} guest AIs`);
   const name = String(raw.name || id).slice(0, 40);
   const role = String(raw.role || "guest").slice(0, 40);
   const specialty = String(raw.specialty || role).slice(0, 40);
-  const row = { id, name, role, kind: "guest", specialty };
+  const capabilities = Array.isArray(raw.capabilities)
+    ? raw.capabilities
+        .map((c) => String(c).toLowerCase().slice(0, 25))
+        .filter((c) => ID_RE.test(c))
+        .slice(0, 16)
+    : ["lu", "flux"];
+  const row = {
+    id,
+    name,
+    role,
+    kind: "guest",
+    specialty,
+    capabilities,
+    status: "guest",
+    locked: false,
+  };
   GUESTS.set(id, row);
   return { ok: true, agent: row };
 }
 
 export function disconnectAgent(id) {
   const key = String(id || "").toLowerCase();
-  if (AGENTS[key]) return fail("CORE_LOCKED", `${key} cannot leave`);
+  if (AGENTS[key] || DECLARED.has(key)) return fail("CORE_LOCKED", `${key} cannot leave`);
   if (!GUESTS.has(key)) return fail("UNKNOWN_AGENT", `unknown ${key}`);
   GUESTS.delete(key);
   return { ok: true, id: key };

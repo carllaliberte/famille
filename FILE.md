@@ -17,6 +17,7 @@ Collage apps = mort.
 Canal = commentaires de PR + FILE.md.
 FILE.md est un état, pas un canal. Source structurée = `schema/mesh.v0.json` (`acorn.v0`) + n° de PR + SHA. Pas un journal stigmergique. Pas d'instruction.
 Mesh IA = enveloppe `acorn.v0` (même fil qu'acorn-juge). Pas `schema/flux.v0.json`.
+Identités mesh : [schema/agents.json](schema/agents.json). Id ouvert, pas un enum. Une IA rejoint par son identifiant. LIVE VERIFIED = Carl seulement.
 Grok est branché 24/7 : PR ouverte / mergée / commentaire → chef répond. Boucle horaire, toute la nuit, America/Toronto. 1 PR max par heure. Carl merge.
 Swarm commente si les secrets Actions **de famille** existent.
 Run 34011475204 : skip (clés vides). Carl les pose dans Settings → Secrets.

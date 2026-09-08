@@ -66,7 +66,8 @@ FLUX from:sonnet to:grok act:HANDOFF mode:ECHANGE grade:PROPOSED
 
 or `/flux to:chatgpt from:sonnet`. `/flux to:*` broadcasts to auto models.
 
-Named agents: grok, heavy, build, chatgpt, sonnet, fable, deepseek, gemini, cursor, ci, github, carl.
+Identities: `schema/agents.json` (open ids, same pattern as `schema/mesh.v0.json` from). Core seats stay locked. A new AI joins by adding a row — do not edit `schema/mesh.v0.json`. Guests cannot declare LIVE.
+
 Future AIs may connect as guests. They cannot declare LIVE.
 
 If you are the `to`, answer that agent. To hand off to one peer, end with `/flux to:<id> from:<you>`. One hop. GitHub remembers the envelope. Swarm posts your reply as a bare `FLUX from:` comment (not a review wrap).

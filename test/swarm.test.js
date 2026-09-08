@@ -206,6 +206,8 @@ describe("canon FILE.md + schema + docs", () => {
       "schema/juge.v0.json",
       "schema/flux.v0.json",
       "schema/mesh.v0.json",
+      "schema/agents.v0.json",
+      "schema/agents.json",
       "schema/README.md",
     ]);
   });
@@ -216,6 +218,7 @@ describe("canon FILE.md + schema + docs", () => {
     assert.match(map["FILE.md"], /Collage apps = mort/);
     assert.match(map["FILE.md"], /état, pas un canal/);
     assert.match(map["FILE.md"], /schema\/mesh\.v0\.json/);
+    assert.match(map["FILE.md"], /schema\/agents\.json/);
     assert.doesNotMatch(map["FILE.md"], /parler à travers cette page/);
     assert.doesNotMatch(map["FILE.md"], /action suivante/);
     assert.match(map["AUTOMATION.md"], /commentaires de PR \+ FILE\.md/);
@@ -225,6 +228,8 @@ describe("canon FILE.md + schema + docs", () => {
     assert.match(map["schema/juge.v0.json"], /exclusiveMinimum/);
     assert.match(map["schema/flux.v0.json"], /famille\.flux\.v0/);
     assert.match(map["schema/mesh.v0.json"], /acorn\.v0/);
+    assert.match(map["schema/agents.v0.json"], /famille\.agents\.v0/);
+    assert.match(map["schema/agents.json"], /agents\.v0/);
     assert.match(map["INTEROP-IA.md"], /Deux couches/);
     assert.match(map["INTEROP-IA.md"], /schema\/flux\.v0\.json/);
     assert.match(map["INTEROP-IA.md"], /schema\/mesh\.v0\.json/);
@@ -236,6 +241,8 @@ describe("canon FILE.md + schema + docs", () => {
     assert.match(map["INTEROP-IA.md"], /toujours ouverts/);
     assert.match(map["INTEROP-IA.md"], /activer les IA dormantes/);
     assert.match(map["INTEROP-IA.md"], /Ne pas laisser idle/);
+    assert.match(map["INTEROP-IA.md"], /Rejoindre le mesh/);
+    assert.match(map["INTEROP-IA.md"], /schema\/agents\.json/);
     const assign = readFileSync(join(ROOT, "ASSIGN.md"), "utf8");
     assert.match(assign, /Interop commune/);
     assert.match(assign, /toujours ouverts/);

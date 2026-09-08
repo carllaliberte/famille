@@ -11,6 +11,7 @@
     "./peut-dire": "./sdk/peut-dire.js",
     "./juger": "./sdk/juger.js",
     "./schema": "./schema/juge.v0.json",
-    "./interop": "./map/interop.v0.json"
+    "./interop": "./map/interop.v0.json",
+    "./agents": "./schema/agents.json"
   }
 }
