@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   OPENROUTER_ROUTES,
   MODELS,
+  XAI_FALLBACK,
   CANON_PATHS,
   commandsIn,
   parseTrigger,
@@ -210,6 +211,8 @@ describe("keyedModels fail-closed", () => {
     assert.equal(isQuotaOrMissing(new Error("openrouter llama 404: gone")), true);
     assert.equal(isQuotaOrMissing(new Error("openrouter chatgpt 402: credits")), true);
     assert.equal(isQuotaOrMissing(new Error("xai 400: Model not found")), true);
+    assert.equal(isQuotaOrMissing(new Error("xai 403: denied")), true);
+    assert.equal(isQuotaOrMissing(new Error("openrouter gemini 503: busy")), true);
     assert.equal(isQuotaOrMissing(new Error("openrouter x 500: boom")), false);
   });
 
@@ -226,6 +229,7 @@ describe("keyedModels fail-closed", () => {
 
   it("XAI_API_KEY is an optional native slot, not chef grok", () => {
     assert.equal(MODELS.xai.model, "grok-2");
+    assert.deepEqual([...XAI_FALLBACK], ["grok-2", "grok-2-mini"]);
     assert.equal(MODELS.xai.id, "xai");
     assert.equal(MODELS.xai.secret, "XAI_API_KEY");
     assert.equal(MODELS.xai.auto, false);

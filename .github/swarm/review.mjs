@@ -121,6 +121,9 @@ export const MODELS = Object.freeze({
   },
 });
 
+/** Native xAI cascade. 400/403 on one slug tries the next. */
+export const XAI_FALLBACK = Object.freeze(["grok-2", "grok-2-mini"]);
+
 const TRIGGERS = {
   "/swarm": ["gemini", "deepseek", "llama", "qwen"],
   "/sonnet": ["sonnet"],
@@ -346,10 +349,10 @@ export function sanitizeReview(text) {
   );
 }
 
-/** 404 / 402 / 429: skip silently. Do not dump provider bodies on the PR. */
+/** 400 / 402 / 403 / 404 / 429 / 503: skip silently. Do not dump provider bodies on the PR. */
 export function isQuotaOrMissing(err) {
   const m = String(err && err.message ? err.message : err || "");
-  return /\b(404|402|429|400)\b/.test(m);
+  return /\b(404|402|429|400|403|503)\b/.test(m);
 }
 
 function skipFault(spec, err, via) {
@@ -494,22 +497,38 @@ async function callOpenRouter(spec, system, user, key) {
 }
 
 async function callXai(spec, system, user, key) {
-  const { ok, status, json } = await postJson(
-    "https://api.x.ai/v1/chat/completions",
-    {
-      id: spec.id,
-      headers: { authorization: `Bearer ${key}` },
-      body: {
-        model: spec.model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
+  const chain = [];
+  const seen = new Set();
+  for (const m of [spec.model, ...XAI_FALLBACK]) {
+    if (!m || seen.has(m)) continue;
+    seen.add(m);
+    chain.push(m);
+  }
+  let last = new Error("xai: no model tried");
+  for (const model of chain) {
+    const { ok, status, json } = await postJson(
+      "https://api.x.ai/v1/chat/completions",
+      {
+        id: spec.id,
+        headers: { authorization: `Bearer ${key}` },
+        body: {
+          model,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user },
+          ],
+        },
       },
-    },
-  );
-  if (!ok) throw new Error(`xai ${status}: ${JSON.stringify(json).slice(0, 400)}`);
-  return json.choices?.[0]?.message?.content || "";
+    );
+    if (ok) return json.choices?.[0]?.message?.content || "";
+    last = new Error(`xai ${status}: ${JSON.stringify(json).slice(0, 400)}`);
+    if (status === 400 || status === 403) {
+      console.log(`[${spec.id}] skip ${model} ${status}, next`);
+      continue;
+    }
+    throw last;
+  }
+  throw last;
 }
 
 const CALLERS = {
