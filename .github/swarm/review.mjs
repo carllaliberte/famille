@@ -33,32 +33,11 @@ export const CANON_PATHS = Object.freeze([
 ]);
 
 export const OPENROUTER_ROUTES = Object.freeze({
-  sonnet: "anthropic/claude-3-5-sonnet",
-  haiku: "anthropic/claude-3-haiku",
-  chatgpt: "openai/gpt-4o-mini",
-  "gpt-4o": "openai/gpt-4o",
-  deepseek: "deepseek/deepseek-r1:free",
-  "deepseek-v3": "deepseek/deepseek-chat",
   gemini: "google/gemini-2.5-flash",
-  "gemini-pro": "google/gemini-1.5-pro",
+  deepseek: "deepseek/deepseek-r1:free",
   llama: "meta-llama/llama-3.3-70b-instruct:free",
-  mistral: "mistralai/mistral-small-24b-instruct-2501:free",
-  "mistral-large": "mistralai/mistral-large",
   qwen: "qwen/qwen-2.5-72b-instruct:free",
-  cohere: "cohere/command-r-plus",
 });
-
-function orSeat(id, label, slug) {
-  return {
-    id,
-    label,
-    model: slug,
-    provider: "openrouter",
-    secret: `${id.toUpperCase().replace(/-/g, "_")}_API_KEY`,
-    auto: true,
-    maxTokens: 2048,
-  };
-}
 
 export const MODELS = Object.freeze({
   sonnet: {
@@ -67,7 +46,7 @@ export const MODELS = Object.freeze({
     model: "claude-sonnet-5",
     provider: "anthropic",
     secret: "ANTHROPIC_API_KEY",
-    auto: true,
+    auto: false,
     maxTokens: 2048,
   },
   fable: {
@@ -86,7 +65,7 @@ export const MODELS = Object.freeze({
     model: "gpt-5.6-terra",
     provider: "openai",
     secret: "OPENAI_API_KEY",
-    auto: true,
+    auto: false,
   },
   deepseek: {
     id: "deepseek",
@@ -104,19 +83,37 @@ export const MODELS = Object.freeze({
     secret: "GEMINI_API_KEY",
     auto: true,
   },
-  llama: orSeat("llama", "Llama", "meta-llama/llama-3.3-70b-instruct:free"),
-  mistral: orSeat("mistral", "Mistral", "mistralai/mistral-small-24b-instruct-2501:free"),
-  qwen: orSeat("qwen", "Qwen", "qwen/qwen-2.5-72b-instruct:free"),
-  haiku: orSeat("haiku", "Claude Haiku", "anthropic/claude-3-haiku"),
-  "gpt-4o": orSeat("gpt-4o", "GPT-4o", "openai/gpt-4o"),
-  "gemini-pro": orSeat("gemini-pro", "Gemini Pro", "google/gemini-1.5-pro"),
-  "deepseek-v3": orSeat("deepseek-v3", "DeepSeek V3", "deepseek/deepseek-chat"),
-  "mistral-large": orSeat("mistral-large", "Mistral Large", "mistralai/mistral-large"),
-  cohere: orSeat("cohere", "Cohere Command R+", "cohere/command-r-plus"),
+  haiku: {
+    id: "haiku",
+    label: "Claude Haiku",
+    model: "claude-3-haiku",
+    provider: "openrouter",
+    secret: "HAIKU_API_KEY",
+    auto: false,
+    maxTokens: 2048,
+  },
+  llama: {
+    id: "llama",
+    label: "Llama",
+    model: "meta-llama/llama-3.3-70b-instruct:free",
+    provider: "openrouter",
+    secret: "LLAMA_API_KEY",
+    auto: true,
+    maxTokens: 2048,
+  },
+  qwen: {
+    id: "qwen",
+    label: "Qwen",
+    model: "qwen-2.5-72b-instruct",
+    provider: "openrouter",
+    secret: "QWEN_API_KEY",
+    auto: true,
+    maxTokens: 2048,
+  },
   xai: {
     id: "xai",
     label: "xAI",
-    model: "grok-beta",
+    model: "grok-2-latest",
     provider: "xai",
     secret: "XAI_API_KEY",
     auto: false,
@@ -125,36 +122,16 @@ export const MODELS = Object.freeze({
 });
 
 const TRIGGERS = {
-  "/swarm": [
-    "sonnet",
-    "chatgpt",
-    "deepseek",
-    "gemini",
-    "llama",
-    "mistral",
-    "qwen",
-    "haiku",
-    "gpt-4o",
-    "gemini-pro",
-    "deepseek-v3",
-    "mistral-large",
-    "cohere",
-  ],
+  "/swarm": ["gemini", "deepseek", "llama", "qwen"],
   "/sonnet": ["sonnet"],
   "/fable": ["fable"],
   "/fabre": ["fable"],
   "/chatgpt": ["chatgpt"],
   "/deepseek": ["deepseek"],
   "/gemini": ["gemini"],
-  "/llama": ["llama"],
-  "/mistral": ["mistral"],
-  "/qwen": ["qwen"],
   "/haiku": ["haiku"],
-  "/gpt-4o": ["gpt-4o"],
-  "/gemini-pro": ["gemini-pro"],
-  "/deepseek-v3": ["deepseek-v3"],
-  "/mistral-large": ["mistral-large"],
-  "/cohere": ["cohere"],
+  "/llama": ["llama"],
+  "/qwen": ["qwen"],
   "/xai": ["xai"],
 };
 
@@ -372,7 +349,7 @@ export function sanitizeReview(text) {
 /** 404 / 402 / 429: skip silently. Do not dump provider bodies on the PR. */
 export function isQuotaOrMissing(err) {
   const m = String(err && err.message ? err.message : err || "");
-  return /\b(404|402|429)\b/.test(m);
+  return /\b(404|402|429|400)\b/.test(m);
 }
 
 function skipFault(spec, err, via) {
