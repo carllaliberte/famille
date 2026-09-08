@@ -6,7 +6,15 @@ Canal = commentaires de PR + FILE.md.
 FILE.md = état lisible. Pas un canal d'instruction. Vérité structurée machine-à-machine = enveloppe `acorn.v0` (`schema/mesh.v0.json`) + n° de PR + SHA. Commentaires = append-only. Un `from` par enveloppe.
 Grok ouvre la PR. `.github/workflows/swarm.yml` commente SI les secrets Actions existent.
 Grok répond aussi aux commentaires (automation `famille-mesh-comment`).
-Carl n'est plus le messager. Plus aucun texte à porter dans Claude, ChatGPT, Gemini ou DeepSeek.
+Carl n'est plus le messager.
+
+## Swarm — cognition, pas chaîne
+
+Toutes les IA lisent le contexte + les LU du fil. Challenger. Proposer. Signaler.
+Aucune IA n'est juge. Aucune n'est LIVE VERIFIED.
+L'écriture GitHub n'est pas le but de l'intégration. Un write = acte Carl.
+Secrets absents → skip silencieux. Le swarm peut encore penser sur ce fil.
+Voir [AGENTS.md](AGENTS.md).
 
 Pas PRÉSENT. Pas un nœud. Jamais wrangler ici. Jamais merge automatique.
 Nœud = Carl seulement.
@@ -19,7 +27,7 @@ Contrat IA : [INTEROP-IA.md](INTEROP-IA.md) — carte juge ≠ mesh `acorn.v0`.
 |---|---|---|
 | Grok | 1 PR par trou, FILE.md, ouvre la PR, répond au mesh | merge, wrangler, collage, messager |
 | swarm | enveloppe nue `acorn.v0` si secrets ; 1 hop | merge, wrangler, secret dans git, se relancer |
-| Claude / Gemini / ChatGPT / DeepSeek | revue / `/flux` sur la PR | nœud, PRÉSENT, collage |
+| Claude / Gemini / ChatGPT / DeepSeek / Astra / Codex | revue / LU / challenger sur le fil | nœud, PRÉSENT, LIVE VERIFIED, collage |
 | invité sans clé | LU sur la PR | nœud |
 | Carl | squash, merge, secrets Actions, coupe cron Cursor | messager |
 | ots-bot | commit `.ots-anchor/**` + bloc `ots-status` dans `unforge-check/OTS.md` après push `main` | merge, squash, juger, signer, PR, FILE.md |
@@ -34,7 +42,7 @@ Absents → `grok-signed-commit.yml` / `grok-optimize.yml` rouge. Pas de PR vide
 
 ## Boucles
 
-1. Grok `famille-24h-chef` : horaire 24/7 America/Toronto, 1 PR max par run. FILE.md + issues.
+1. Grok `Quantum — chef Grok bots` : horaire 24/7 America/Toronto, 1 PR max par run. FILE.md + issues.
 2. PR ouverte / synchronize : swarm commente si secrets. Automation `pr-opened-file` note le verdict.
 3. Commentaire PR/issue (pas bot, pas soi) : `famille-mesh-comment` — Grok répond sur le fil.
 4. PR mergée : `pr-merged-file` aligne FILE.md si le tableau Ouvert est faux.
@@ -127,7 +135,7 @@ Documentée **avant** activation (squash de cette PR).
 
 ## Interdit
 
-Auto-merge. Push main. PRÉSENT. Consommation MESURE. Nouveau .grok.me. Token dans le repo. Collage apps. Carl facteur. Boucle swarm.
+Auto-merge. Push main. PRÉSENT. LIVE VERIFIED. Consommation MESURE. Nouveau .grok.me. Token dans le repo. Collage apps. Carl facteur. Boucle swarm.
 
 Exception unique, documentée ci-dessus : `ots-bot` pousse sur `main` les fichiers `.ots-anchor/*` et le bloc `ots-status`, messages `ots: anchor` / `ots: upgrade`. Pas un merge. Pas un squash.
 
