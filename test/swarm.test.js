@@ -44,7 +44,7 @@ describe("swarm roster", () => {
     assert.equal(MODELS.fable.auto, false);
     assert.equal(MODELS.sonnet.auto, false);
     assert.equal(MODELS.haiku.auto, false);
-    assert.equal(MODELS.xai.model, "grok-2-latest");
+    assert.equal(MODELS.xai.model, "grok-3");
     assert.equal(MODELS.fable.maxTokens, 8192);
     assert.ok(MODELS.fable.maxTokens > MODELS.sonnet.maxTokens);
   });
@@ -225,7 +225,7 @@ describe("keyedModels fail-closed", () => {
   });
 
   it("XAI_API_KEY is an optional native slot, not chef grok", () => {
-    assert.equal(MODELS.xai.model, "grok-2-latest");
+    assert.equal(MODELS.xai.model, "grok-3");
     assert.equal(MODELS.xai.id, "xai");
     assert.equal(MODELS.xai.secret, "XAI_API_KEY");
     assert.equal(MODELS.xai.auto, false);

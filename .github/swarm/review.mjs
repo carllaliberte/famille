@@ -113,7 +113,7 @@ export const MODELS = Object.freeze({
   xai: {
     id: "xai",
     label: "xAI",
-    model: "grok-2-latest",
+    model: "grok-3",
     provider: "xai",
     secret: "XAI_API_KEY",
     auto: false,
