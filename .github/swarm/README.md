@@ -9,14 +9,21 @@ Réponse mesh = enveloppe nue `FLUX from:…` (LU). 1 hop dans le même run.
 Jamais wrangler. Jamais merge.
 Fail-closed : sans secrets, skip silencieux.
 
+Flux sécurisé (toutes les IA, y compris à venir) :
+1. Secrets = Settings de **ce** repo. Jamais git. Jamais le fil.
+2. Noms : `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY` (+ natives optionnelles).
+3. Cascade : natif → OpenRouter → skip 400/402/403/404/429/503. Exit 0.
+4. xAI id `xai` (pas chef grok) : `grok-2` → `grok-2-mini`.
+5. Jamais merge. Carl squash. LIVE = Carl.
+
+Noms Actions (pas git) : `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY`
+Fable on-demand : `/fable`.
+
 Deux flux : `schema/flux.v0.json` = carte. `schema/mesh.v0.json` = enveloppe IA.
 Roster : `schema/agents.json` (schéma `schema/agents.v0.json`). Ajouter une IA = une entrée, pas un fork de `mesh.v0`.
 
 Mode unique : `cognition.mjs` + `schema/cognition.v0.json` + `COGNITION.md`. COLLECTIVE_COGNITION.
 Pool de session : `pool.mjs` + `schema/pool.v0.json`. Couche session sur `acorn.v0`.
 Pas un deuxième mesh. DECLARED ≠ CONNECTED ≠ LIVE.
-
-Noms Actions (pas git) : `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` `GEMINI_API_KEY`
-Fable on-demand : `/fable`.
 
 Entrée : `node .github/swarm/review.mjs`

@@ -262,6 +262,10 @@ describe("prompt locks", () => {
     assert.match(p, /Two flux layers/);
     assert.match(p, /One hop/);
     assert.match(p, /bare `FLUX from:`/);
+    assert.match(p, /Security flux/);
+    assert.match(p, /OPENROUTER_API_KEY/);
+    assert.match(p, /XAI_API_KEY/);
+    assert.match(p, /grok-2-mini/);
     assert.doesNotMatch(p, /parler à travers cette page/i);
   });
 });

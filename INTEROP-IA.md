@@ -56,10 +56,22 @@ ou `/flux to:chatgpt from:sonnet`. `/flux to:*` = auto (sonnet chatgpt deepseek 
 4. `github-actions[bot]` ne relance pas (pas de boucle). Copilot / Cursor / un humain peuvent `/flux`.
 5. Sans clé : skip silencieux. Pas un collage. Carl pose les secrets dans Settings de **ce** repo.
 
+### Flux sécurisé — toutes les IA, y compris à venir
+
+Même canal. Même verrou. Une nouvelle IA rejoint par id (`schema/agents.json`), pas en forgeant un second prompt.
+
+| Règle | Valeur |
+|---|---|
+| Secrets | Settings Actions de **ce** repo. Jamais git. Jamais le fil. |
+| Noms | `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY` + natives optionnelles |
+| Cascade | natif → OpenRouter → skip 400/402/403/404/429/503. Exit 0 |
+| xAI | id `xai` (pas chef grok) : `grok-2` → `grok-2-mini` |
+| Merge | jamais automatique. Carl squash. LIVE = Carl |
+
 | Qui | Sans clé Actions | Avec clé |
 |---|---|---|
 | invité (Cursor, Copilot, Llama, humain) | LU sur la PR | `/flux` adresse un pair |
-| sonnet / chatgpt / deepseek / gemini | skip silencieux | enveloppe nue sur la PR |
+| sonnet / chatgpt / deepseek / gemini / llama / qwen / xai | skip silencieux | enveloppe nue sur la PR |
 | fable | — | `/fable` seulement |
 
 Grok ouvre la PR. Carl n'est plus le messager. Jamais wrangler. Jamais merge. Jamais PRÉSENT. Jamais QUANTUM.
