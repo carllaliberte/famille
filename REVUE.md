@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 Carl Laliberté. Tous droits réservés sauf mention contraire dans LICENSE. -->
+<!-- En-tête mécanique. Pas un choix de licence. -->
+
 # Revue — deux phases
 
 Ce protocole **ne change pas** [AUTOMATION.md](AUTOMATION.md).
@@ -254,6 +257,7 @@ Toute proposition d'outil de réduction de portage suit le flux normal : dépos�
 - 2026-09-07 : audit périodique (10 lots / 2 semaines) — PR #201
 - 2026-09-07 : §4bis verrous durs non-arbitrables ; verrou_dur — PR #202
 - 2026-09-07 : recommandation SHA épinglé post-merge — PR #203
+- 2026-09-08 : en-tête copyright mécanique (HTML comment). Pas un changement de protocole.
 ```
 
 Chaque modification de REVUE.md s'ajoute une ligne ici, dans la même PR que la modification.

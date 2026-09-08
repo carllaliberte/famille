@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 Carl Laliberté. Tous droits réservés sauf mention contraire dans LICENSE. -->
+<!-- En-tête mécanique. Pas un choix de licence. -->
+
 # OTS v0 — ancrage OpenTimestamps
 
 Rail **séparé**. Preuve d'antériorité, pas un sceau FAMILLE. Pas Check. Pas HORIZON. Pas une 4e carte juge. Pas KEM.
