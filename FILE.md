@@ -9,7 +9,7 @@ Juge : https://acorn-juge.laliberte22.workers.dev/juge
 Deploy Actions : vert (run 13).
 Garde landing : docs/index.html sur main (#16).
 
-OTS : [PR #218](https://github.com/carllaliberte/famille/pull/218) mergée. Durcissement [PR #221](https://github.com/carllaliberte/famille/pull/221) mergé. Dernière preuve `.ots-anchor/068570c08c7c2061b34667941943d371f8d5b599.sha.ots` — pending jusqu'à `ots-upgrade`. Échec de stamp → issue `ots-anchor-status` (rail #221, sur main).
+OTS : [PR #218](https://github.com/carllaliberte/famille/pull/218) mergée. Dernière preuve `.ots-anchor/49b27e145976a80837decf6860d300acb6335202.sha.ots` — OTS actif pending (upgrade), plus « inactif ». Échec de stamp → issue `ots-anchor-status`.
 
 ## Canal
 
@@ -30,9 +30,7 @@ FLAG (stood) : Soft FLAGS Carl-only — clés Actions absentes ; cron Cursor cut
 |---|---|---|
 | famille | clés Actions | absentes. Sans elles sonnet/chatgpt/deepseek/gemini ne commentent pas. |
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
-| famille | license-options | [PR #222](https://github.com/carllaliberte/famille/pull/222). Deux candidats `LICENSE.option-open` (MIT) / `LICENSE.option-closed` (ARR). Pas de rename en `LICENSE`. NOTICE.md = provenance, pas une position juridique. SCHEMAS_NOTICE.md porte le copyright des JSON. Carl tranche. |
-| famille | ots-anchor | [PR #218](https://github.com/carllaliberte/famille/pull/218) mergée. Spec `unforge-check/OTS.md`. Exception `ots-bot` dans AUTOMATION.md. Preuve pending (`068570c`). |
-| famille | world packs | cite `de-DE` (déjà shippé) dans RENTE.md / PORTES.md + test. [PR #230](https://github.com/carllaliberte/famille/pull/230). Pas un nouveau pays. |
+| famille | ots-anchor | [PR #218](https://github.com/carllaliberte/famille/pull/218) MERGED. Spec `unforge-check/OTS.md`. Exception `ots-bot` dans AUTOMATION.md. Preuve ACTIF pending (`49b27e1…`) jusqu'à ots-upgrade. OTS actif pending (upgrade), plus « inactif ». |
 | acorn-juge | issue #3 grok.me | 404 HOLD. Pas la zone de Carl. Canal = workers.dev. |
 | acorn-juge | deploy wrangler | Carl-only. |
 
@@ -53,9 +51,9 @@ Jalon 2 : unforge-check #26 MERGED (4e4e597).
 Jalon 3 : famille#186 mesh forbid next/instruction (e7dc1d2). FORBIDDEN_NEXT + schema.
 Jalon 4 : acorn-juge#22 Worker validation matrix + tests MERGED (74733d2).
 Jalon 5 : horizon-protocol#7 Horizon Watch surveiller MERGED (37eaf56).
-famille#221 ots-hardening MERGED (068570c). Inventaire, alerte stamp, calendriers pinnés, bloc ots-status, rétention.
 famille#224 plagiat-watch canaris MERGED (259f1fc). dispatch Carl, PR pas main.
 famille#227 offre non daté MERGED (49b27e1). On n'enlève pas le juge. On enlève le tampon à vide.
+famille#221 ots-hardening MERGED ; famille#222 license-options MERGED (Carl squash). Deux candidats `LICENSE.option-open` (MIT) / `LICENSE.option-closed` (ARR). Pas de rename en `LICENSE`. NOTICE.md = provenance, pas une position juridique.
 
 ## Licence (nouveautés)
 
