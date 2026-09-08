@@ -19,6 +19,7 @@ import {
   classify,
   clusterStatus,
   contradict,
+  correct,
   dropDisagreement,
   flagDrift,
   join as joinAgent,
@@ -30,12 +31,15 @@ import {
   remember,
   reply,
   resetCognition,
+  revise,
   rewriteMemory,
   runCycle,
   runIndependent,
+  runRevision,
   share,
   swarmLabel,
   thinkers,
+  verifySwarm,
   visibleTo,
 } from "../.github/swarm/cognition.mjs";
 import { isAgent, lookup, resetGuests } from "../.github/swarm/flux.mjs";
@@ -331,6 +335,8 @@ describe("COLLECTIVE_COGNITION — session", () => {
     assert.ok(cycle.session.relations.length >= 1);
     assert.ok(cycle.session.relations.some((r) => r.reply === "DISAGREE"));
     assert.ok(cycle.session.relations.some((r) => r.reply === "NEED_EVIDENCE"));
+    assert.ok((cycle.revised || []).length >= 1);
+    assert.ok(cycle.session.contributions.some((c) => c.tour === "revision"));
     assert.equal(cycle.synthesis.truth, false);
     assert.ok(cycle.synthesis.status === "disputed" || cycle.synthesis.status === "consensus");
     assert.ok(cycle.lesson);
@@ -388,5 +394,90 @@ describe("COLLECTIVE_COGNITION — session", () => {
     assert.match(prompt, /from: <id>/);
     assert.doesNotMatch(prompt, /from: <gemini\|claude\|chatgpt/);
     assert.match(prompt, /LIVE VERIFIED = Carl/);
+  });
+
+  it("accepts REQUEST_EVIDENCE as NEED_EVIDENCE; revision keeps the previous position", () => {
+    const opened = openSession({ topic: "Can a position change without erasing the past?" });
+    const first = runIndependent(opened.session, {
+      bodies: {
+        grok: "Position: keep-old. Isolated.",
+        claude: "Position: keep-old. Isolated.",
+      },
+      suggest: false,
+    });
+    share(opened.session);
+    const a = first.filed[0];
+    const b = first.filed[1];
+    const asked = reply(opened.session, {
+      from: b.from,
+      targetId: a.id,
+      reply: "REQUEST_EVIDENCE",
+      body: "Need a dated proof.",
+    });
+    assert.equal(asked.ok, true);
+    assert.equal(asked.relation.reply, "NEED_EVIDENCE");
+    const rev = revise(opened.session, {
+      from: a.from,
+      previousId: a.id,
+      body: "Revision. Position: keep-old. Previous kept.",
+    });
+    assert.equal(rev.ok, true);
+    assert.equal(rev.contribution.tour, "revision");
+    assert.equal(rev.contribution.previousId, a.id);
+    assert.equal(rev.contribution.previousPosition, a.position);
+    assert.equal(a.position, "keep-old");
+    const all = runRevision(opened.session, { actor: "carllaliberte" });
+    assert.equal(all.ok, true);
+    assert.ok(all.filed.length >= 1);
+  });
+
+  it("correction keeps the original filing and dates the new one", () => {
+    const opened = openSession({ topic: "What happens when an IA is wrong?" });
+    const first = runIndependent(opened.session, {
+      bodies: {
+        grok: "Position: wrong-claim. Isolated.",
+        claude: "Position: correction-ready. Isolated.",
+      },
+      suggest: false,
+    });
+    share(opened.session);
+    const original = first.filed[0];
+    const fix = correct(opened.session, {
+      from: first.filed[1].from,
+      targetId: original.id,
+      body: "Correction. The original claim does not hold. Original kept.",
+    });
+    assert.equal(fix.ok, true);
+    assert.equal(fix.original.id, original.id);
+    assert.equal(
+      opened.session.contributions.some((c) => c.id === original.id),
+      true,
+    );
+    assert.equal(rewriteMemory().code, "PAST_IMMUTABLE");
+    assert.ok(fix.lesson);
+    assert.match(fix.lesson.context, /corrects:/);
+    assert.ok(fix.lesson.validAt);
+    assert.ok(fix.lesson.reviewAfter);
+  });
+
+  it("verifySwarm runs the full LU cycle and never claims FULL SWARM OPERATIONAL", () => {
+    const report = verifySwarm({
+      topic: "Les certitudes ont-elles une date de fin ?",
+    });
+    assert.equal(report.ok, true);
+    assert.equal(report.mode, "COLLECTIVE_COGNITION");
+    assert.equal(report.label, "ARCHITECTURE READY");
+    assert.equal(report.census.connected, 0);
+    assert.equal(report.census.active, 0);
+    assert.equal(report.census.live, 0);
+    assert.ok(report.tour1 >= 30);
+    assert.ok(report.tour3 >= 30);
+    assert.ok(report.disagreements >= 1);
+    assert.equal(report.provenance, true);
+    assert.equal(report.truth, false);
+    assert.equal(report.judge, false);
+    assert.ok(report.agents.some((a) => a.id === "claude" && a.tour1 === true));
+    assert.ok(report.agents.every((a) => a.presence !== "CONNECTED"));
+    assert.ok(report.agents.every((a) => a.presence !== "LIVE VERIFIED"));
   });
 });

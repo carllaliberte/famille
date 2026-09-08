@@ -7,6 +7,7 @@
  * Do not fork schema/mesh.v0.json. Do not add IA ids here.
  */
 
+import { pathToFileURL } from "node:url";
 import {
   OWNER_ACTOR,
   accept,
@@ -72,6 +73,11 @@ export const REPLIES = Object.freeze([
   "NEED_RETEST",
 ]);
 
+const REPLY_ALIAS = Object.freeze({
+  REQUEST_EVIDENCE: "NEED_EVIDENCE",
+  REQUEST_RETEST: "NEED_RETEST",
+});
+
 export const DRIFTS = Object.freeze([
   "ANCHORING",
   "GROUPTHINK",
@@ -129,6 +135,18 @@ function isoTs(value) {
 
 function newId(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function plusDays(ts, n) {
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return ts;
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString();
+}
+
+function normalizeReply(tag) {
+  const raw = String(tag || "").toUpperCase();
+  return REPLY_ALIAS[raw] || raw;
 }
 
 function normalizePosition(text) {
@@ -344,6 +362,10 @@ export function remember(input) {
     sources: Object.freeze([...(raw.sources || [])].map((s) => String(s))),
     disagreement: Object.freeze([...(raw.disagreement || [])]),
     ts,
+    validAt: ts,
+    reviewAfter: plusDays(ts, 30),
+    supersededBy: raw.supersededBy || null,
+    current: raw.current !== false,
     context: clip(raw.context, 2000),
   });
   MEMORY.push(entry);
@@ -458,8 +480,12 @@ function thinkOne(session, agent, body, actor, ts) {
     tour: "independent",
     isolated: true,
     from: agent.id,
+    specialty: agent.specialty || agent.role || agent.kind,
+    capabilities: Object.freeze([...(agent.capabilities || [])]),
+    claim: "proposal",
     reply: null,
     replyTo: null,
+    previousId: null,
     position: normalizePosition(text),
     packet: Object.freeze({ ...accepted.packet }),
   });
@@ -518,7 +544,7 @@ export function reply(session, input) {
   const from = String(raw.from || "").toLowerCase();
   const agent = lookup(from);
   if (!canThink(agent)) return fail("NOT_THINKER", `${from} is not a thinking identity`);
-  const tag = String(raw.reply || "").toUpperCase();
+  const tag = normalizeReply(raw.reply);
   if (!REPLIES.includes(tag)) return fail("UNKNOWN_REPLY", `unknown reply: ${tag || "(empty)"}`);
   const target = session.contributions.find((c) => c.id === raw.targetId || c.from === raw.target);
   if (!target) return fail("UNKNOWN_TARGET", "reply needs an existing contribution");
@@ -543,8 +569,12 @@ export function reply(session, input) {
     tour: session.tour === "revision" ? "revision" : "confrontation",
     isolated: false,
     from,
+    specialty: agent.specialty || agent.role || agent.kind,
+    capabilities: Object.freeze([...(agent.capabilities || [])]),
+    claim: tag === "DISAGREE" ? "disagreement" : tag === "NEED_EVIDENCE" ? "evidence" : "interpretation",
     reply: tag,
     replyTo: target.id,
+    previousId: null,
     position: normalizePosition(body) || target.position,
     packet: Object.freeze({ ...accepted.packet }),
   });
@@ -558,6 +588,139 @@ export function reply(session, input) {
   session.contributions.push(contribution);
   session.relations.push(relation);
   return { ok: true, session, contribution, relation };
+}
+
+/** Tour 3. Previous position stays. New filing is the revision. */
+export function revise(session, input) {
+  if (!session || session.cognition !== COGNITION_VERSION) {
+    return fail("NO_SESSION", "openSession() a question first");
+  }
+  if (session.independentOpen) return fail("INDEPENDENT_OPEN", "share() before revision");
+  const raw = input && typeof input === "object" ? input : {};
+  if (Object.hasOwn(raw, "next") || Object.hasOwn(raw, "instruction")) {
+    return fail("FORBIDDEN_NEXT", "cognition forbids next and instruction");
+  }
+  const from = String(raw.from || "").toLowerCase();
+  const agent = lookup(from);
+  if (!canThink(agent)) return fail("NOT_THINKER", `${from} is not a thinking identity`);
+  const previous =
+    session.contributions.find((c) => c.id === raw.previousId) ||
+    session.contributions.filter((c) => c.from === from && c.tour === "independent").at(-1);
+  if (!previous) return fail("UNKNOWN_TARGET", "revision needs a previous independent filing");
+  const body = clip(raw.body, 8000);
+  if (!body) return fail("BODY_MISSING", "revision needs a body");
+  session.tour = "revision";
+  const accepted = accept({
+    from,
+    to: "*",
+    act: "FINDING",
+    mode: "ECHANGE",
+    grade: "PROPOSED",
+    body,
+    actor: raw.actor,
+    ts: raw.ts,
+    replyTo: previous.id,
+  });
+  if (!accepted.ok) return accepted;
+  const contribution = Object.freeze({
+    id: accepted.packet.id,
+    sessionId: session.id,
+    tour: "revision",
+    isolated: false,
+    from,
+    specialty: agent.specialty || agent.role || agent.kind,
+    capabilities: Object.freeze([...(agent.capabilities || [])]),
+    claim: "proposal",
+    reply: null,
+    replyTo: previous.id,
+    previousId: previous.id,
+    previousPosition: previous.position,
+    position: normalizePosition(body) || previous.position,
+    packet: Object.freeze({ ...accepted.packet }),
+  });
+  session.contributions.push(contribution);
+  return { ok: true, session, contribution, previous };
+}
+
+export function runRevision(session, opts = {}) {
+  if (!session || session.cognition !== COGNITION_VERSION) {
+    return fail("NO_SESSION", "openSession() a question first");
+  }
+  if (session.independentOpen) return fail("INDEPENDENT_OPEN", "share() before revision");
+  session.tour = "revision";
+  const filed = [];
+  const errors = [];
+  const bodyOf = typeof opts.bodyOf === "function" ? opts.bodyOf : null;
+  for (const agent of thinkers()) {
+    const previous = session.contributions
+      .filter((c) => c.from === agent.id && c.tour === "independent")
+      .at(-1);
+    if (!previous) continue;
+    const body =
+      (bodyOf && bodyOf(agent, previous)) ||
+      `Revision. Position: ${previous.position}. Previous kept. New evidence can reopen. Never LIVE.`;
+    const r = revise(session, {
+      from: agent.id,
+      previousId: previous.id,
+      body,
+      actor: opts.actor,
+      ts: opts.ts,
+    });
+    if (!r.ok) errors.push({ id: agent.id, code: r.code, error: r.error });
+    else filed.push(r.contribution);
+  }
+  return { ok: true, session, filed, errors };
+}
+
+/** Point 24. Keep the original. Flag. Date the correction. Do not rewrite the past. */
+export function correct(session, input) {
+  if (!session || session.cognition !== COGNITION_VERSION) {
+    return fail("NO_SESSION", "openSession() a question first");
+  }
+  const raw = input && typeof input === "object" ? input : {};
+  if (Object.hasOwn(raw, "next") || Object.hasOwn(raw, "instruction")) {
+    return fail("FORBIDDEN_NEXT", "cognition forbids next and instruction");
+  }
+  const from = String(raw.from || "").toLowerCase();
+  if (!canThink(lookup(from))) return fail("NOT_THINKER", `${from} is not a thinking identity`);
+  const target = session.contributions.find((c) => c.id === raw.targetId || c.from === raw.target);
+  if (!target) return fail("UNKNOWN_TARGET", "correction needs an existing contribution");
+  const body = clip(raw.body, 8000);
+  if (!body) return fail("BODY_MISSING", "correction needs a body");
+  if (session.independentOpen) share(session);
+  const tagged = reply(session, {
+    from,
+    targetId: target.id,
+    reply: "DISAGREE",
+    body,
+    actor: raw.actor,
+    ts: raw.ts,
+  });
+  if (!tagged.ok) return tagged;
+  flagDrift(session, {
+    from,
+    drift: raw.drift || "UNSUPPORTED_CLAIM",
+    body: clip(raw.driftBody || `Correction of ${target.id}. Original kept.`, 800),
+    ts: raw.ts,
+  });
+  const stored = remember({
+    from,
+    sessionId: session.id,
+    claim: "disagreement",
+    statement: body,
+    status: "disputed",
+    sources: [target.id],
+    disagreement: [target.from],
+    context: `corrects:${target.id}`,
+    ts: raw.ts,
+  });
+  return {
+    ok: true,
+    session,
+    original: target,
+    contribution: tagged.contribution,
+    lesson: stored.ok ? stored.entry : null,
+  };
 }
 
 export function flagDrift(session, input) {
@@ -679,16 +842,102 @@ export function runCycle(input) {
       body: "A majority of filings is not truth.",
     });
   }
+  const revised = runRevision(session, { actor: input.actor, ts: input.ts });
+  if (!revised.ok) return revised;
   const syn = synthesize(session, { from: ids[0] || "grok", actor: input.actor, ts: input.ts });
   if (!syn.ok) return syn;
   return {
     ok: true,
     session,
     filed: first.filed,
-    errors: first.errors,
+    errors: [...first.errors, ...revised.errors],
     skipped: first.skipped,
+    revised: revised.filed,
     synthesis: syn.synthesis,
     lesson: syn.lesson,
     census: census(),
   };
+}
+
+/** Point 18 — honest swarm verification. LU cycle, never fake CONNECTED. */
+export function verifySwarm(input = {}) {
+  const snap = census(input);
+  const cycle = runCycle({
+    topic: clip(input.topic, 400) || "Les certitudes ont-elles une date de fin ?",
+    actor: input.actor,
+    ts: input.ts,
+  });
+  if (!cycle.ok) return cycle;
+  const agents = thinkers().map((agent) => {
+    const p = presenceOf(agent, input);
+    const own = cycle.session.contributions.filter((c) => c.from === agent.id);
+    return {
+      id: agent.id,
+      kind: agent.kind,
+      specialty: agent.specialty || agent.role || agent.kind,
+      presence: p.presence,
+      reason: p.reason,
+      tour1: own.some((c) => c.tour === "independent"),
+      tour2: own.filter((c) => c.tour === "confrontation").length,
+      tour3: own.filter((c) => c.tour === "revision").length,
+      lastParticipation: own.at(-1)?.packet?.ts || null,
+    };
+  });
+  return {
+    ok: true,
+    mode: MODE,
+    label: snap.label,
+    census: snap,
+    sessionId: cycle.session.id,
+    tour1: cycle.filed.length,
+    tour2: cycle.session.relations.length,
+    tour3: (cycle.revised || []).length,
+    disagreements: cycle.session.relations.filter(
+      (r) => r.reply === "DISAGREE" || r.reply === "NEED_EVIDENCE" || r.reply === "NEED_RETEST",
+    ).length,
+    provenance: cycle.session.contributions.every(
+      (c) => c.from && c.sessionId === cycle.session.id && c.packet && c.packet.ts,
+    ),
+    synthesis: cycle.synthesis.status,
+    truth: false,
+    judge: false,
+    lesson: cycle.lesson ? cycle.lesson.id : null,
+    agents,
+    errors: cycle.errors,
+  };
+}
+
+function isMain() {
+  try {
+    return import.meta.url === pathToFileURL(process.argv[1]).href;
+  } catch {
+    return false;
+  }
+}
+
+if (isMain()) {
+  const topic = process.argv.slice(2).join(" ").trim() || "Les certitudes ont-elles une date de fin ?";
+  const report = verifySwarm({ topic });
+  const out = {
+    mode: report.mode,
+    label: report.label,
+    configured: report.census.configured,
+    thinkers: report.census.thinkers,
+    connected: report.census.connected,
+    active: report.census.active,
+    blocked: report.census.blocked,
+    channelNotPresent: report.census.channelNotPresent,
+    live: 0,
+    tour1: report.tour1,
+    tour2: report.tour2,
+    tour3: report.tour3,
+    disagreements: report.disagreements,
+    provenance: report.provenance,
+    synthesis: report.synthesis,
+    truth: false,
+    judge: false,
+    note: "ARCHITECTURE READY. 0 CONNECTED. LU cycle ran for every thinking identity.",
+    agents: (report.agents || []).map((a) => `${a.id}=${a.presence} t1=${a.tour1} t3=${a.tour3}`),
+  };
+  console.log(JSON.stringify(out, null, 2));
 }

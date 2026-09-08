@@ -9,6 +9,13 @@ Schéma du mode = [`schema/cognition.v0.json`](schema/cognition.v0.json).
 Runtime = [`.github/swarm/cognition.mjs`](.github/swarm/cognition.mjs).
 Prompt générique = [`prompts/cognition.md`](prompts/cognition.md).
 
+Commande immédiate :
+
+```bash
+node .github/swarm/cognition.mjs "Les certitudes ont-elles une date de fin ?"
+```
+
+Le cycle LU tourne pour tout le roster pensant (tour 1 + tour 3). Ce n'est pas une connexion provider.
 LIVE VERIFIED = Carl seulement.
 
 État réel aujourd'hui : **ARCHITECTURE READY**. Pas FULL SWARM OPERATIONAL.
