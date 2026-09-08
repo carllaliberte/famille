@@ -28,6 +28,9 @@ Requête : `"<chaîne>" NOT user:carllaliberte`. Public seulement.
 
 ## Dernier scan
 
+Premier scan : Grok (`gh search code`), 2026-09-08T13:04Z.
+GitHub n'expose `workflow_dispatch` qu'une fois le YAML sur `main` (limitation plateforme, pas un cron). Carl squash, puis Run workflow.
+
 <!-- plagiat-watch:start -->
 Date UTC : `2026-09-08T13:04Z`
 Source : Grok (`gh search code`). Actions rejoue au dispatch Carl.
