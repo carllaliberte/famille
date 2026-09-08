@@ -81,6 +81,7 @@ Comment une IA rejoint :
 Capacités déclarables (libres, pas un enum du protocole) : `lu` · `flux` · `review` · `build` · `verify` · `memory`. `review` auto exige encore un secret Actions (Carl Settings). L'absence d'une IA de la liste historique (Grok, Cursor, Claude, ChatGPT, Gemini, DeepSeek) ne change pas `mesh.v0.json`.
 
 Astra aujourd'hui, une autre demain : même geste. Aucune n'est juge. LIVE VERIFIED = Carl seulement.
+Siège locked (carl, grok, ci, …) : l'acteur GitHub doit être Carl, ou l'id lui-même. Un invité rejoint par son identifiant. Pas d'usurpation.
 
 Généralistes (kimi, cohere, …) et spécialistes (cline, goose, …) : une ligne dans [`schema/agents.json`](schema/agents.json). Pas un fork. Pas un `if (id === "astra")`. `lane` est documentaire, pas un enum du protocole.
 

@@ -117,6 +117,17 @@ describe("flux addressing on comments", () => {
     assert.deepEqual(r.ids, []);
   });
 
+  it("to:kimi (declared guest) stores envelope and calls no keyed model", () => {
+    const r = idsForComment(
+      "FLUX from:kimi to:grok act:HANDOFF grade:PROPOSED\nJoined by id.",
+      [],
+      "issue_comment",
+    );
+    assert.equal(r.flux.from, "kimi");
+    assert.equal(r.flux.to, "grok");
+    assert.deepEqual(r.ids, []);
+  });
+
   it("FLUX header wins over a /flux example in the body", () => {
     const r = idsForComment(
       "FLUX from:grok to:github act:HANDOFF\n\nexample: /flux to:chatgpt from:grok\n",

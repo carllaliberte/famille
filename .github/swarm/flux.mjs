@@ -88,8 +88,12 @@ export const SUGGESTED_GUESTS = Object.freeze(
   ),
 );
 
-const MODEL_IDS = new Set(["sonnet", "fable", "chatgpt", "deepseek", "gemini"]);
-const AUTO_MODELS = ["chatgpt", "sonnet", "deepseek", "gemini"];
+/** Transport fanout order for /flux to:*. Membership is kind=model + status=auto. Not an identity enum. */
+const AUTO_ORDER = ["sonnet", "chatgpt", "deepseek", "gemini"];
+const AUTO_MODELS = AUTO_ORDER.filter((id) => {
+  const row = (ROSTER_DOC.agents || []).find((a) => a.id === id);
+  return row && row.status === "auto";
+});
 const RESERVED = new Set([
   "attest",
   "quantum",
@@ -99,11 +103,54 @@ const RESERVED = new Set([
   "root",
   "chef",
   "arbitre",
+  "juge",
   "*",
 ]);
 const ID_RE = /^[a-z][a-z0-9-]{1,24}$/;
 const SHA_RE = /^[0-9a-f]{40}$/;
 const TS_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.\d+)?Z$/;
+
+/** GitHub login that may file as a locked seat. Guests still join by id. */
+export const OWNER_ACTOR = "carllaliberte";
+
+function rosterErrors(doc) {
+  const errs = [];
+  if (!doc || doc.version !== "agents.v0") errs.push("version");
+  const seen = new Set();
+  for (const row of doc.agents || []) {
+    const id = String(row?.id || "");
+    if (!ID_RE.test(id)) errs.push(`BAD_ID:${id || "(empty)"}`);
+    if (RESERVED.has(id)) errs.push(`RESERVED_ID:${id}`);
+    if (seen.has(id)) errs.push(`DUPLICATE:${id}`);
+    seen.add(id);
+    if (!row?.name || !row?.kind) errs.push(`INCOMPLETE:${id}`);
+    if (row?.kind === "juge" || (row?.capabilities || []).includes("juge")) {
+      errs.push(`NO_JUGE:${id}`);
+    }
+    if (Object.hasOwn(row || {}, "next") || Object.hasOwn(row || {}, "instruction")) {
+      errs.push(`FORBIDDEN_NEXT:${id}`);
+    }
+  }
+  return errs;
+}
+
+const ROSTER_ERRS = rosterErrors(ROSTER_DOC);
+if (ROSTER_ERRS.length) {
+  throw new Error(`schema/agents.json invalid: ${ROSTER_ERRS.join(",")}`);
+}
+
+export function speakerAllowed(from, actor) {
+  const login = String(actor || "").toLowerCase();
+  if (!login) return true;
+  const row = lookup(from);
+  if (!row) return false;
+  if (!row.locked) return true;
+  if (login === OWNER_ACTOR) return true;
+  if (login === from) return true;
+  const bare = login.replace(/\[bot\]$/, "");
+  if (bare === from) return true;
+  return false;
+}
 
 /** @type {Map<string, { id: string, name: string, role: string, kind: "guest", specialty: string }>} */
 const GUESTS = new Map();
@@ -132,8 +179,7 @@ export function isAgent(id) {
 export function isModel(id) {
   const row = lookup(id);
   if (!row) return false;
-  if (row.kind === "guest") return true;
-  return MODEL_IDS.has(row.id);
+  return row.kind === "model";
 }
 
 export function isChef(id) {
@@ -194,6 +240,9 @@ export function connectAgent(spec) {
         .filter((c) => ID_RE.test(c))
         .slice(0, 16)
     : ["lu", "flux"];
+  if (capabilities.includes("juge") || role === "juge") {
+    return fail("NO_JUGE", "no AI is a judge");
+  }
   const row = {
     id,
     name,
@@ -300,11 +349,17 @@ export function accept(input) {
   }
   if (!isAgent(from)) return fail("UNKNOWN_AGENT", `unknown from: ${from || "(empty)"}`);
   if (to !== "*" && !isAgent(to)) return fail("UNKNOWN_AGENT", `unknown to: ${to || "(empty)"}`);
+  if (!speakerAllowed(from, raw.actor)) {
+    return fail("FROM_NOT_ACTOR", `${raw.actor} cannot file as locked seat ${from}`);
+  }
   if (!ACTS.includes(act)) return fail("UNKNOWN_ACT", `unknown act: ${act || "(empty)"}`);
   if (!MODES.includes(mode)) return fail("UNKNOWN_MODE", `unknown mode: ${mode}`);
   if (!GRADES.includes(grade)) return fail("UNKNOWN_GRADE", `unknown grade: ${grade}`);
   if (!body.trim()) return fail("BODY_MISSING", "body is required");
   if (grade === "LIVE VERIFIED" && from !== "carl") {
+    return fail("LIVE_NOT_CARL", "LIVE VERIFIED is Carl only. No model declares LIVE.");
+  }
+  if (grade === "LIVE VERIFIED" && raw.actor && String(raw.actor).toLowerCase() !== OWNER_ACTOR) {
     return fail("LIVE_NOT_CARL", "LIVE VERIFIED is Carl only. No model declares LIVE.");
   }
   if (grade === "CODE VERIFIED" && from !== "github" && from !== "carl") {
@@ -587,10 +642,10 @@ export function formatEnvelope(packet) {
 
 export function modelsForDestination(to) {
   if (to === "*" || to == null || to === "") {
-    return ["sonnet", "chatgpt", "deepseek", "gemini"];
+    return AUTO_MODELS.slice();
   }
-  if (isModel(to) && lookup(to)?.kind !== "guest") return [to];
-  if (lookup(to)?.kind === "guest") return [];
+  const row = lookup(to);
+  if (row?.kind === "model") return [to];
   return [];
 }
 

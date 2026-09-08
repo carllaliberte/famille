@@ -529,7 +529,7 @@ export async function main(env = process.env) {
         console.log("flux already stored");
         return 0;
       }
-      const accepted = acceptFlux({ ...routed.flux, ...anchor });
+      const accepted = acceptFlux({ ...routed.flux, ...anchor, actor: meta.actor });
       const body = accepted.ok
         ? formatEnvelope(accepted.packet)
         : `FLUX refused: ${accepted.code} — ${accepted.error}`;
