@@ -85,6 +85,8 @@ Siège locked (carl, grok, ci, …) : l'acteur GitHub doit être Carl, ou l'id l
 
 Généralistes (kimi, cohere, claude, astra, …) et spécialistes (cline, goose, …) : une ligne dans [`schema/agents.json`](schema/agents.json). Pas un fork. Pas un `if (id === "astra")`. `lane` est documentaire, pas un enum du protocole.
 
+`runPass` : une enveloppe par identité, geste dérivé de kind + capacités + specialty. Même forme → même geste. Codex / Cline / Goose : agent. Llama / Claude / Astra : LU. ChatGPT / Gemini / DeepSeek / Sonnet : revue. Pas un if d'id. Pas une API. Pas LIVE. Carl s'abstient.
+
 ### Présence
 
 - **DECLARED** — inscrit. Pas une connexion.

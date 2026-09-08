@@ -194,6 +194,151 @@ export function specialtyOf(id) {
   return lookup(id)?.specialty || lookup(id)?.role || "";
 }
 
+export const FOCUSES = Object.freeze([
+  "decide",
+  "reason",
+  "review",
+  "implement",
+  "lu",
+  "verify",
+  "memory",
+  "preview",
+  "judge",
+]);
+
+/**
+ * Documentary focus from kind + capabilities + specialty. Not an id enum.
+ * Not a privilege. Carl is judge only because gradesFor already says so.
+ */
+export function focusOf(agent) {
+  if (!agent) return "lu";
+  const caps = agent.capabilities || [];
+  const blob = `${agent.specialty || ""} ${agent.role || ""}`.toLowerCase();
+  if (gradesFor(agent.id).includes("LIVE VERIFIED")) return "judge";
+  if (agent.kind === "chef") return "decide";
+  if (caps.includes("verify")) return "verify";
+  if (caps.includes("memory")) return "memory";
+  if (caps.includes("review") || /\breview\b|\bchallenge\b|\bindependent\b/.test(blob)) {
+    return "review";
+  }
+  if (caps.includes("build") || /\bagent\b|\bimplement\b|\bbuilds\b/.test(blob)) {
+    return "implement";
+  }
+  if (agent.kind === "consult" || /\breason\b/.test(blob)) return "reason";
+  if (agent.kind === "seat") return "preview";
+  return "lu";
+}
+
+/** One envelope per identity, shaped by focus. Not an API call. Not LIVE. */
+export function suggestContribution(agent, topic) {
+  const focus = focusOf(agent);
+  if (focus === "judge") return null;
+  const t = String(topic || "").trim().slice(0, 400) || "the mesh";
+  const spec = agent.specialty || agent.role || focus;
+  const never = " Never QUANTUM. Declared is not connected. Never LIVE.";
+  if (focus === "decide") {
+    return {
+      from: agent.id,
+      to: "*",
+      act: "HANDOFF",
+      mode: "PROPOSITION",
+      grade: "PROPOSED",
+      body: `Chef (${spec}). Topic: ${t}. Heavy and Build always consult.${never}`,
+    };
+  }
+  if (focus === "reason") {
+    return {
+      from: agent.id,
+      to: CHEF,
+      act: "HANDOFF",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: `Reason (${spec}). Topic: ${t}. Consult, do not judge.${never}`,
+    };
+  }
+  if (focus === "implement") {
+    return {
+      from: agent.id,
+      to: "github",
+      act: "ACTION",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: `Implement (${spec}). Topic: ${t}. Build does not merge.${never}`,
+    };
+  }
+  if (focus === "review") {
+    return {
+      from: agent.id,
+      to: CHEF,
+      act: "FINDING",
+      mode: "CHALLENGE",
+      grade: "PROPOSED",
+      body: `Review (${spec}). Topic: ${t}. Finding is not LIVE.${never}`,
+    };
+  }
+  if (focus === "verify") {
+    return {
+      from: agent.id,
+      to: "github",
+      act: "TEST",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: `Verify (${spec}). Topic: ${t}. Test is not LIVE.${never}`,
+    };
+  }
+  if (focus === "memory") {
+    return {
+      from: agent.id,
+      to: CHEF,
+      act: "EVIDENCE",
+      mode: "ECHANGE",
+      grade: "NOT LIVE VERIFIED",
+      body: `Memory (${spec}). Topic: ${t}. Pointers only.${never}`,
+    };
+  }
+  if (focus === "preview") {
+    return {
+      from: agent.id,
+      to: CHEF,
+      act: "HANDOFF",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      body: `Preview canal (${spec}). Topic: ${t}. Not a receipt.${never}`,
+    };
+  }
+  return {
+    from: agent.id,
+    to: CHEF,
+    act: "HANDOFF",
+    mode: "ECHANGE",
+    grade: "PROPOSED",
+    body: `LU (${spec}). Topic: ${t}. Same gesture as every guest.${never}`,
+  };
+}
+
+/**
+ * Every declared identity files one envelope from its specialty.
+ * Carl (judge) is skipped. Fail-closed via accept(). Not LIVE. Not an API.
+ */
+export function runPass(input) {
+  const raw = input && typeof input === "object" ? input : { topic: input };
+  const topic = String(raw.topic || raw.body || "").trim().slice(0, 400);
+  if (!topic) return fail("BODY_MISSING", "pass needs a topic");
+  const packets = [];
+  const skipped = [];
+  for (const agent of roster()) {
+    const draft = suggestContribution(agent, topic);
+    if (!draft) {
+      skipped.push(agent.id);
+      continue;
+    }
+    const r = accept({ ...draft, actor: raw.actor });
+    if (!r.ok) return r;
+    packets.push(r.packet);
+  }
+  return { ok: true, packets, skipped };
+}
+
 export function directions(from) {
   if (!isAgent(from)) return [];
   return rosterIds().filter((id) => id !== from);

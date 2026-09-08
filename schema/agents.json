@@ -1,6 +1,6 @@
 {
   "version": "agents.v0",
-  "note": "Roster of identities, not a judge, not a connection, not LIVE. Add one object to join. Do not edit schema/mesh.v0.json. LIVE VERIFIED is Carl only. Swarm API keys stay in Actions secrets, not here. lane is documentary (generalist|specialist), not a protocol enum. presence: declared = listed; keyed = may comment IF a secret exists (not claimed here); never write connected, available, or live on a row.",
+  "note": "Roster of identities, not a judge, not a connection, not LIVE. Add one object to join. Do not edit schema/mesh.v0.json. LIVE VERIFIED is Carl only. Swarm API keys stay in Actions secrets, not here. lane is documentary (generalist|specialist), not a protocol enum. specialty is documentary (focusOf derives a gesture from kind + capabilities + specialty, not from id). presence: declared = listed; keyed = may comment IF a secret exists (not claimed here); never write connected, available, or live on a row.",
   "id_pattern": "^[a-z][a-z0-9-]{1,24}$",
   "agents": [
     {"id": "grok", "name": "Grok", "kind": "chef", "role": "chef", "specialty": "decides · writes", "capabilities": ["flux", "build"], "status": "core", "locked": true},
@@ -23,7 +23,7 @@
     {"id": "claude", "name": "Claude", "kind": "guest", "role": "open guest", "specialty": "open", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "generalist"},
     {"id": "opus", "name": "Claude Opus", "kind": "guest", "role": "guest review", "specialty": "guest review", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "specialist"},
     {"id": "astra", "name": "Astra", "kind": "guest", "role": "guest", "specialty": "open", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "generalist"},
-    {"id": "codex", "name": "Codex", "kind": "guest", "role": "guest", "specialty": "open", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "specialist"},
+    {"id": "codex", "name": "Codex", "kind": "guest", "role": "agent", "specialty": "agent", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "specialist"},
     {"id": "cohere", "name": "Cohere Command", "kind": "guest", "role": "open guest", "specialty": "open", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "generalist"},
     {"id": "nova", "name": "Amazon Nova", "kind": "guest", "role": "open guest", "specialty": "open", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "generalist"},
     {"id": "mixtral", "name": "Mixtral", "kind": "guest", "role": "open guest", "specialty": "open", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "generalist"},

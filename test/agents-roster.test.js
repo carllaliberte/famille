@@ -9,13 +9,17 @@ import {
   OWNER_ACTOR,
   accept,
   connectAgent,
+  focusOf,
   formatEnvelope,
   gradesFor,
   isAgent,
   isModel,
   lookup,
   resetGuests,
+  roster,
+  runPass,
   speakerAllowed,
+  suggestContribution,
 } from "../.github/swarm/flux.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -613,6 +617,64 @@ describe("mesh roster — open ids, not an enum", () => {
     const reviewSrc = read(".github/swarm/review.mjs");
     assert.doesNotMatch(reviewSrc, /MODELS\.claude\b/);
     assert.doesNotMatch(reviewSrc, /id === ["']claude["']/);
+
+    const meshBefore = read("schema/mesh.v0.json");
+    assert.equal(read("schema/mesh.v0.json"), meshBefore);
+  });
+
+  it("runPass: every identity helps from specialty; same shape, same gesture; never LIVE", () => {
+    const fluxSrc = read(".github/swarm/flux.mjs");
+    assert.match(fluxSrc, /function focusOf/);
+    assert.match(fluxSrc, /function runPass/);
+    assert.doesNotMatch(fluxSrc, /id === ["']claude["']/);
+    assert.doesNotMatch(fluxSrc, /id === ["']astra["']/);
+
+    assert.equal(focusOf(lookup("llama")), "lu");
+    assert.equal(focusOf(lookup("claude")), focusOf(lookup("llama")));
+    assert.equal(focusOf(lookup("astra")), focusOf(lookup("llama")));
+    assert.equal(focusOf(lookup("kimi")), focusOf(lookup("llama")));
+    assert.equal(focusOf(lookup("cline")), "implement");
+    assert.equal(focusOf(lookup("goose")), focusOf(lookup("cline")));
+    assert.equal(focusOf(lookup("codex")), focusOf(lookup("cline")));
+    assert.equal(focusOf(lookup("copilot")), "review");
+    assert.equal(focusOf(lookup("opus")), focusOf(lookup("copilot")));
+    assert.equal(focusOf(lookup("chatgpt")), "review");
+    assert.equal(focusOf(lookup("gemini")), focusOf(lookup("chatgpt")));
+    assert.equal(focusOf(lookup("deepseek")), focusOf(lookup("chatgpt")));
+    assert.equal(focusOf(lookup("sonnet")), focusOf(lookup("chatgpt")));
+    assert.equal(focusOf(lookup("grok")), "decide");
+    assert.equal(focusOf(lookup("carl")), "judge");
+    assert.equal(focusOf(lookup("ci")), "verify");
+    assert.equal(lookup("codex").specialty, "agent");
+
+    const empty = runPass({ topic: "  " });
+    assert.equal(empty.ok, false);
+    assert.equal(empty.code, "BODY_MISSING");
+
+    const pass = runPass({ topic: "optimize the mesh", actor: OWNER_ACTOR });
+    assert.equal(pass.ok, true, pass.error);
+    const all = roster();
+    assert.deepEqual(pass.skipped, ["carl"]);
+    assert.equal(pass.packets.length, all.length - 1);
+    const froms = pass.packets.map((p) => p.from);
+    assert.equal(new Set(froms).size, froms.length);
+    for (const id of ["claude", "chatgpt", "gemini", "deepseek", "astra", "cline", "codex"]) {
+      assert.ok(froms.includes(id), id);
+    }
+    assert.equal(froms.includes("carl"), false);
+    for (const p of pass.packets) {
+      assert.notEqual(p.grade, "LIVE VERIFIED", p.from);
+      assert.equal(p.preview, true);
+      assert.equal(p.receipt, false);
+      assert.equal(Object.hasOwn(p, "next"), false);
+      assert.match(p.body, /Never QUANTUM/);
+    }
+
+    const claudeDraft = suggestContribution(lookup("claude"), "optimize the mesh");
+    const llamaDraft = suggestContribution(lookup("llama"), "optimize the mesh");
+    assert.equal(claudeDraft.act, llamaDraft.act);
+    assert.equal(claudeDraft.mode, llamaDraft.mode);
+    assert.equal(claudeDraft.grade, llamaDraft.grade);
 
     const meshBefore = read("schema/mesh.v0.json");
     assert.equal(read("schema/mesh.v0.json"), meshBefore);
