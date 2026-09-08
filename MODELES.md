@@ -6,6 +6,7 @@ GPT-5.4 nano : écho ; hors colonne LU si pas de citation.
 
 Bus = commentaires de PR + FILE.md. Enveloppe nue = `acorn.v0` ([INTEROP-IA.md](INTEROP-IA.md) · [schema/mesh.v0.json](schema/mesh.v0.json)).
 Roster = [schema/agents.json](schema/agents.json). Une entrée, pas un fork du protocole. Astra / Codex / n'importe quelle IA : même geste.
+Généralistes et agents du tableau ont un id (guest). `lane` est documentaire. Swarm API reste un secret Actions, pas le registre.
 Swarm auto (si clés Actions famille) : sonnet · chatgpt · deepseek · gemini. Fable = `/fable`.
 
 ## Familles invitées à la réflexion
