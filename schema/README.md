@@ -22,6 +22,7 @@ Deux schémas. Ne pas les fusionner :
 - [`flux.v0.json`](flux.v0.json) — pipeline carte / satellites (`famille.flux.v0`).
 - [`mesh.v0.json`](mesh.v0.json) — enveloppe commentaires PR, fil `acorn.v0` (même que acorn-juge). `from` + `ts` + `sha` + `pr`. Pas le pipeline. FILE.md n'est pas ce schéma.
 - [`agents.v0.json`](agents.v0.json) + [`agents.json`](agents.json) — roster mesh. Identifiant = motif `from` de `mesh.v0`. Ajouter une IA = une entrée, pas un fork du protocole. Aucune n'est juge.
+- [`cognition.v0.json`](cognition.v0.json) — mode unique `COLLECTIVE_COGNITION`. Pas un fork de mesh. Pas un juge. Pas une vérité. Consensus n'est pas une preuve.
 - [`pool.v0.json`](pool.v0.json) — session de cognition collective. Couche mince sur `acorn.v0`. Pas un fork de mesh. Pas un juge. Pas une vérité. Majorité n'est pas une preuve.
 
 Hors de ce dossier — sibling, **jamais fusionné** ici :

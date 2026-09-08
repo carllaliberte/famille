@@ -7,7 +7,7 @@ Carl squash. Un bot = un rail. Aucun bot n'est juge.
 [EXPERIENCE.md](EXPERIENCE.md) — client → techno → bots.
 
 ## 2. Orchestration
-[BOTS.md](BOTS.md) · [AGENTS.md](AGENTS.md) · [INTEROP-IA.md](INTEROP-IA.md) · [CONSEIL.md](CONSEIL.md)
+[BOTS.md](BOTS.md) · [AGENTS.md](AGENTS.md) · [INTEROP-IA.md](INTEROP-IA.md) · [COGNITION.md](COGNITION.md) · [CONSEIL.md](CONSEIL.md)
 Réassignation dans le rail. Pas de dispatcher global.
 
 ## 3. Imagine
