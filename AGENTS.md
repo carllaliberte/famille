@@ -1,13 +1,29 @@
 # Agents
 
-Grok est le Chef (kernel / system). Cursor consomme le juge. Carl merge (humain). Interdiction d'arrêter.
+Grok est le Chef (kernel / system). Quantum = chef d'équipe des Grok bots. Cursor consomme le juge. Carl merge (humain). Interdiction d'arrêter.
 Claude = LU. Pas un nœud. Pas PRÉSENT.
+
+## Swarm — cognition collective
+
+Toutes les IA cogitent ensemble : Claude, Grok, Gemini, ChatGPT, DeepSeek, Astra, Codex, Cursor, les autres.
+
+Lire le contexte commun (raw + SHA) **et** les LU déjà sur le fil. Analyser. Challenger les hypothèses. Proposer. Signaler risques et contradictions. Apprendre des contributions des autres.
+
+Aucune IA n'est le juge. Aucune IA n'est LIVE VERIFIED. Carl décide et valide.
+
+L'écriture GitHub n'est pas le but de l'intégration. Le but est la cognition collective.
+Un write Git = acte Carl (ou prompt Carl → un Build, une PR). Pas « le swarm a parlé donc on pousse ».
+
+Si une proposition s'éloigne de cette architecture : la signaler, ne pas poursuivre mécaniquement.
+Un swarm de cerveaux, pas une chaîne de permissions.
 
 | Agent | Rôle |
 |---|---|
-| Quantum | QC last word + coordinateur Quantum-UNFORGE (physique, post, Imagine fire) |
+| Quantum | chef Grok bots + QC last word (physique, post, Imagine fire) |
+| Grok Build / Studio / Debug / Arbitre | un rôle, un acte, sous Quantum |
 | Grok Expert | assignation + goût. Clash physique → Quantum |
-| Claude | LU seulement : citer, trous, refuser l'invention. Pas de conso MESURE |
+| Cursor | rails publics + consomme le juge. Pas Chef |
+| Claude / Gemini / ChatGPT / DeepSeek / Astra / Codex | LU : citer, trous, challenger. Pas de conso MESURE |
 | X | vérifier seulement |
 | Files | attach / mux après vert |
 | Email | hors UNFORGE |
@@ -15,21 +31,21 @@ Claude = LU. Pas un nœud. Pas PRÉSENT.
 
 Carl : merge final (humain), Mac, Stop, wrangler. Seul nœud.
 Cursor : rails publics + consomme le juge.
-Claude : lecture / revue. Jamais `PRÉSENT`.
+Lecteurs : lecture / revue. Jamais `PRÉSENT`. Jamais `LIVE VERIFIED`.
 Legal / Security : flags / défense via Quantum.
 Filon / Ollama : local, hors Git.
 
 ## Absence de Carl
 
-Les IA poursuivent le chantier ouvert. Carl révise, approuve, merge.
+Les IA poursuivent le *raisonnement* sur le chantier ouvert. Carl révise, approuve, merge.
 
 Quand Carl est absent :
-- Continuer le chantier ouvert (porte 60s, tests, docs, P0 restant).
-- Une PR par geste. Titre clair. Corps court.
+- Continuer à lire, challenger, proposer sur le fil.
+- Une PR par geste seulement si un prompt Carl / Quantum Build l'autorise. Titre clair. Corps court.
 - Pas de push sur main. Pas de squash à sa place.
 - Pas de QUANTUM. Pas de PRÉSENT. Pas de conso MESURE.
-- Grok : code + Git.
-- Claude : revue LU sur la PR, pas un nœud.
+- Grok : code + Git quand c'est l'acte.
+- Lecteurs : revue LU sur la PR, pas un nœud.
 - Blocage réel → PR draft + « HOLD : … ». Pas inventer.
 
 Quand Carl revient :
