@@ -1,0 +1,164 @@
+# Plagiat-watch — detection only. Not a notary. Not DRM.
+# Carl dispatches. One PR on docs/plagiat-watch. Never main. Never ots-bot.
+# famille CI nom refuses bloc/ (unforge name). Branch is docs/plagiat-watch.
+name: plagiat-watch
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: plagiat-watch
+  cancel-in-progress: false
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: scan canaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 << 'PY'
+          import json, subprocess, sys
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          CANARIES = [
+              "famille.juge.v0",
+              "Error margin zero is a lie",
+              'const id = "preview00001"',
+              "Les certitudes ont une date de fin.",
+              "Ancrage, pas coffre magique",
+          ]
+          START = "<!-- plagiat-watch:start -->"
+          END = "<!-- plagiat-watch:end -->"
+          SPEC = Path("unforge-check/PLAGIAT-WATCH.md")
+
+          def search(query: str):
+              r = subprocess.run(
+                  [
+                      "gh",
+                      "search",
+                      "code",
+                      query,
+                      "--limit",
+                      "20",
+                      "--json",
+                      "url,path,repository",
+                  ],
+                  capture_output=True,
+                  text=True,
+              )
+              err = (r.stderr or "") + (r.stdout or "")
+              low = err.lower()
+              if r.returncode != 0:
+                  print(err, file=sys.stderr)
+                  if any(
+                      s in low
+                      for s in ("403", "forbidden", "rate limit", "requires authentication")
+                  ):
+                      print("search failed — not RAS", file=sys.stderr)
+                      sys.exit(1)
+                  print("search failed — not RAS", file=sys.stderr)
+                  sys.exit(1)
+              try:
+                  return json.loads(r.stdout or "[]")
+              except json.JSONDecodeError:
+                  print("unreadable search payload — not RAS", file=sys.stderr)
+                  sys.exit(1)
+
+          probe = search('"MIT License" NOT user:carllaliberte')
+          if not probe:
+              print(
+                  "GITHUB_TOKEN cannot see public code. Failing. Do not log RAS.",
+                  file=sys.stderr,
+              )
+              sys.exit(1)
+
+          now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ")
+          lines = [
+              START,
+              f"Date UTC : `{now}`",
+              "Source : Actions (`gh search code`).",
+              "",
+              "| Date UTC | Canari | Requête | Hors `user:carllaliberte` | URL |",
+              "|---|---|---|---|---|",
+          ]
+          hits = 0
+          for canary in CANARIES:
+              query = f'"{canary}" NOT user:carllaliberte'
+              items = search(query)
+              shown = canary.replace("|", "\\|")
+              qshow = query.replace("|", "\\|")
+              if not items:
+                  lines.append(f"| {now} | `{shown}` | `{qshow}` | RAS | — |")
+                  continue
+              for it in items[:8]:
+                  hits += 1
+                  repo = (it.get("repository") or {}).get("nameWithOwner") or "?"
+                  url = it.get("url") or "—"
+                  lines.append(
+                      f"| {now} | `{shown}` | `{qshow}` | `{repo}` | {url} |"
+                  )
+          if hits == 0:
+              lines.append("")
+              lines.append("**RAS — aucun hit hors user:carllaliberte**")
+              print(f"RAS {now}")
+          else:
+              lines.append("")
+              lines.append(
+                  f"**HIT — {hits} résultat(s) hors user:carllaliberte**"
+              )
+              print(f"HIT {hits} {now}")
+          lines.append(END)
+
+          text = SPEC.read_text(encoding="utf-8")
+          i = text.find(START)
+          j = text.find(END)
+          if i < 0 or j < 0 or j < i:
+              print("markers missing in PLAGIAT-WATCH.md", file=sys.stderr)
+              sys.exit(1)
+          j += len(END)
+          SPEC.write_text(text[:i] + "\n".join(lines) + "\n" + text[j:], encoding="utf-8")
+          PY
+      - name: PR docs/plagiat-watch not main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ "$(git config user.name)" = "ots-bot" ]; then
+            echo "ots-bot forbidden on this rail"
+            exit 1
+          fi
+          git add unforge-check/PLAGIAT-WATCH.md
+          if git diff --cached --quiet; then
+            echo "table unchanged"
+          else
+            git commit -m "plagiat-watch: scan $(date -u +%Y-%m-%dT%H:%MZ)"
+          fi
+          git push origin "HEAD:refs/heads/docs/plagiat-watch"
+          existing="$(gh pr list --head docs/plagiat-watch --base main --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            echo "PR #${existing} already open"
+          else
+            gh pr create --base main --head docs/plagiat-watch \
+              --title "[famille] plagiat-watch canaris" \
+              --body "$(cat <<'BODY'
+          Radar canaris. Détection, pas prévention.
+
+          Fichiers : unforge-check/PLAGIAT-WATCH.md, .github/workflows/plagiat-watch.yml, test/plagiat-watch.test.js, pointeur OTS.md.
+
+          dispatch Carl, PR pas main.
+          OTS date. Watch détecte. Pas de DRM. Pas de scan privé.
+          Branche docs/plagiat-watch (CI nom refuse bloc/ — nom unforge).
+          Pas une 2e exception AUTOMATION.md. Pas ots-bot. verrou_dur: aucun.
+          BODY
+          )"
+          fi

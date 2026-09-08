@@ -35,3 +35,9 @@ ots verify .ots-anchor/latest.sha.ots
 Le fichier `.sha` correspondant doit être à côté. Contre un nœud Bitcoin une fois *complete*, ou via les calendriers publics tant que *pending*.
 
 Rien ici n'est un sceau. Un merge n'est pas une inclusion Bitcoin.
+
+## Watch ≠ notaire
+
+OTS date un SHA. Il ne détecte pas une copie.
+Le radar : [unforge-check/PLAGIAT-WATCH.md](unforge-check/PLAGIAT-WATCH.md) —
+canaris publics, `workflow_dispatch` seulement, une PR `docs/plagiat-watch`, pas `main`.
