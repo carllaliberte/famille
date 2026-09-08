@@ -106,14 +106,12 @@ jobs:
             for f in "${CHANGED[@]+"${CHANGED[@]}"}"; do
               case "$f" in
                 "$p"|"$p"/*|*/"$p")
-                  TOUCHED="${TOUCHED}${f}"$'
-'
+                  TOUCHED="${TOUCHED}${f}"$'\n'
                   ;;
               esac
               base="${f##*/}"
               if [ "$base" = "action.yml" ] && [ "$p" = "action.yml" ]; then
-                TOUCHED="${TOUCHED}${f}"$'
-'
+                TOUCHED="${TOUCHED}${f}"$'\n'
               fi
             done
           done
