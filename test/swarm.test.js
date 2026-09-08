@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   OPENROUTER_ROUTES,
   MODELS,
+  XAI_FALLBACK,
   CANON_PATHS,
   commandsIn,
   parseTrigger,
@@ -44,7 +45,7 @@ describe("swarm roster", () => {
     assert.equal(MODELS.fable.auto, false);
     assert.equal(MODELS.sonnet.auto, false);
     assert.equal(MODELS.haiku.auto, false);
-    assert.equal(MODELS.xai.model, "grok-2-latest");
+    assert.equal(MODELS.xai.model, "grok-2");
     assert.equal(MODELS.fable.maxTokens, 8192);
     assert.ok(MODELS.fable.maxTokens > MODELS.sonnet.maxTokens);
   });
@@ -53,7 +54,7 @@ describe("swarm roster", () => {
 describe("parseTrigger", () => {
   it("defaults to auto models — not Fable", () => {
     const ids = parseTrigger("", []);
-    assert.deepEqual(ids, ["deepseek", "gemini", "llama", "qwen"]);
+    assert.deepEqual(ids, ["gemini"]);
     assert.ok(!ids.includes("fable"));
     assert.ok(!ids.includes("xai"));
     assert.ok(!ids.includes("sonnet"));
@@ -70,12 +71,7 @@ describe("parseTrigger", () => {
     assert.deepEqual(parseTrigger("/deepseek", []), ["deepseek"]);
     assert.deepEqual(parseTrigger("/gemini", []), ["gemini"]);
     assert.deepEqual(parseTrigger("/sonnet", []), ["sonnet"]);
-    assert.deepEqual(parseTrigger("/swarm", []), [
-      "gemini",
-      "deepseek",
-      "llama",
-      "qwen",
-    ]);
+    assert.deepEqual(parseTrigger("/swarm", []), ["gemini"]);
   });
 
   it("does not treat .github/swarm paths as /swarm", () => {
@@ -188,28 +184,31 @@ describe("keyedModels fail-closed", () => {
     assert.equal(skip[0].id, "chatgpt");
   });
 
-  it("OPENROUTER_API_KEY runs the nucleus; fable and sonnet stay keyed", () => {
+  it("OPENROUTER_API_KEY runs gemini only at $0 cadence", () => {
     const { run, skip } = keyedModels(
       ["sonnet", "fable", "chatgpt", "deepseek", "gemini", "haiku", "llama", "qwen", "xai"],
       { OPENROUTER_API_KEY: "or-test" },
     );
     assert.deepEqual(
       run.map((m) => m.id),
-      ["deepseek", "gemini", "llama", "qwen"],
+      ["gemini"],
     );
     assert.ok(run.every((m) => m.via === "openrouter"));
-    assert.equal(skip.map((s) => s.id).join(","), "sonnet,fable,chatgpt,haiku,xai");
+    assert.equal(
+      skip.map((s) => s.id).join(","),
+      "sonnet,fable,chatgpt,deepseek,haiku,llama,qwen,xai",
+    );
     assert.equal(OPENROUTER_ROUTES.gemini, "google/gemini-2.5-flash");
-    assert.equal(OPENROUTER_ROUTES.deepseek, "deepseek/deepseek-r1:free");
-    assert.equal(OPENROUTER_ROUTES.llama, "meta-llama/llama-3.3-70b-instruct:free");
-    assert.equal(OPENROUTER_ROUTES.qwen, "qwen/qwen-2.5-72b-instruct:free");
-    assert.equal(OPENROUTER_ROUTES.chatgpt, undefined);
+    assert.equal(MODELS.llama.auto, false);
+    assert.equal(MODELS.deepseek.auto, false);
   });
 
   it("404 and 402 skip silently", () => {
     assert.equal(isQuotaOrMissing(new Error("openrouter llama 404: gone")), true);
     assert.equal(isQuotaOrMissing(new Error("openrouter chatgpt 402: credits")), true);
     assert.equal(isQuotaOrMissing(new Error("xai 400: Model not found")), true);
+    assert.equal(isQuotaOrMissing(new Error("xai 403: denied")), true);
+    assert.equal(isQuotaOrMissing(new Error("openrouter gemini 503: busy")), true);
     assert.equal(isQuotaOrMissing(new Error("openrouter x 500: boom")), false);
   });
 
@@ -225,7 +224,8 @@ describe("keyedModels fail-closed", () => {
   });
 
   it("XAI_API_KEY is an optional native slot, not chef grok", () => {
-    assert.equal(MODELS.xai.model, "grok-2-latest");
+    assert.equal(MODELS.xai.model, "grok-2");
+    assert.deepEqual([...XAI_FALLBACK], ["grok-2", "grok-2-mini"]);
     assert.equal(MODELS.xai.id, "xai");
     assert.equal(MODELS.xai.secret, "XAI_API_KEY");
     assert.equal(MODELS.xai.auto, false);
@@ -258,6 +258,11 @@ describe("prompt locks", () => {
     assert.match(p, /Two flux layers/);
     assert.match(p, /One hop/);
     assert.match(p, /bare `FLUX from:`/);
+    assert.match(p, /Security flux/);
+    assert.match(p, /OPENROUTER_API_KEY/);
+    assert.match(p, /XAI_API_KEY/);
+    assert.match(p, /grok-2-mini/);
+    assert.match(p, /operates\*\* the security system/);
     assert.doesNotMatch(p, /parler à travers cette page/i);
   });
 });

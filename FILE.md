@@ -25,8 +25,21 @@ Passe du swarm : chaque identité dépose une enveloppe selon specialty (kind + 
 Siège locked : pas d'usurpation (`FROM_NOT_ACTOR`). Invité = id sur le fil. LIVE VERIFIED exige l'acteur GitHub `carllaliberte`.
 Grok est branché 24/7 : PR ouverte / mergée / commentaire → chef répond. Boucle horaire, toute la nuit, America/Toronto. 1 PR max par heure. Carl merge.
 Swarm commente si les secrets Actions **de famille** existent.
-Run 34011475204 : skip (clés vides). Carl les pose dans Settings → Secrets.
+Run 34287383767 : waterfall xAI `grok-2`→`grok-2-mini` (400 skip). Gemini natif 503 / OpenRouter 402. `:free` 404. Exit 0. Carl les pose dans Settings → Secrets.
 Carl n'est plus le messager.
+
+### Flux sécurisé — toutes les IA, y compris à venir
+
+Même rivière. Même verrou. Une IA nouvelle rejoint par id, pas par un fork.
+
+**Carl opère le système de sécurité.** Les IA le traversent. Elles ne le gèrent pas.
+
+1. Secrets = GitHub Settings (Repository) de **ce** repo. Carl les pose. Jamais git. Jamais ce fichier. Jamais un prompt.
+2. Noms : `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY` (+ `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` optionnels).
+3. Cascade : natif d'abord. OpenRouter si le natif flanche. Skip 400/402/403/404/429/503. Exit 0. Le flux ne s'arrête pas.
+4. xAI siège `xai` (pas chef grok) : `grok-2` → `grok-2-mini`.
+5. Collège OpenRouter : `google/gemini-2.5-flash` · `deepseek/deepseek-r1:free` · `meta-llama/llama-3.3-70b-instruct:free` · `qwen/qwen-2.5-72b-instruct:free`.
+**Cadence $0 (Carl opère le verrou).** `/swarm` = Gemini natif seulement. Pas d'attente sur OpenRouter `:free` (404) ni crédits 402 ni xAI 400. Autres canaux = on-demand si Carl pose une clé qui répond 200. Tests + LU + PR : ça roule sans payer.
 
 ### Présence — ne pas fusionner
 
@@ -39,7 +52,7 @@ Carl n'est plus le messager.
 | TEST VERIFIED | grade CI ou Carl | LIVE |
 | LIVE VERIFIED | Carl seulement, acteur `carllaliberte` | un consensus, un test, une IA |
 
-Clés Actions : absentes. Donc chatgpt / gemini / deepseek / sonnet sont **déclarés / keyed**, pas connectés, pas available. `claude` est **déclaré** guest. Jamais LIVE.
+Clés Actions : `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY` posées (Settings). Natives Anthropic / OpenAI / DeepSeek encore vides. Gemini a commenté (HTTP 200 antérieur). xAI slugs `grok-2` / `grok-2-mini` = 400. `:free` OpenRouter = 404. Jamais LIVE.
 
 ### Pool de cognition
 
@@ -53,11 +66,11 @@ Sans credential : **DECLARED — CHANNEL NOT PRESENT**. ACTIVE = a déposé une 
 
 ## Ouvert
 
-FLAG (stood) : Soft FLAGS Carl-only — clés Actions absentes ; cron Cursor cut ; acorn-juge grok.me 404 HOLD (workers.dev) ; deploy wrangler Carl-only.
+FLAG (stood) : Soft FLAGS Carl-only — natives Anthropic/OpenAI/DeepSeek absentes ; crédits OpenRouter 402 ; xAI slugs 400 ; cron Cursor cut ; acorn-juge grok.me 404 HOLD (workers.dev) ; deploy wrangler Carl-only.
 
 | Dépôt | Item | Fait |
 |---|---|---|
-| famille | clés Actions | absentes. Sans elles sonnet/chatgpt/deepseek/gemini ne commentent pas. |
+| famille | clés Actions | GEMINI + OPENROUTER + XAI posées. Natives 3 encore vides. Skip ≠ crash. |
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
 | acorn-juge | issue #3 grok.me | 404 HOLD. Pas la zone de Carl. Canal = workers.dev. |
 | acorn-juge | deploy wrangler | Carl-only. |

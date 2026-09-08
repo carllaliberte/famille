@@ -45,6 +45,19 @@ CODE ≠ TEST ≠ LIVE.
 - Branch names: `ville/…` or `cursor/…` only
 - Never auto-merge. Never push main. Never paste secrets. Never wrangler.
 
+## Security flux — all AIs, now and later
+
+Same canal. Same locks. A new AI joins by id (`schema/agents.json`), not by forking this prompt.
+
+Carl Laliberté **operates** the security system. AIs cross it. They do not hold the keys, rotate them, or declare it live.
+
+- Secrets live in GitHub **Settings → Secrets and variables → Actions** of this repo only. Carl puts them there. Never git. Never this comment. Never a README value.
+- Names: `GEMINI_API_KEY` `OPENROUTER_API_KEY` `XAI_API_KEY` plus optional natives (`ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY`).
+- Waterfall: native first. Skip HTTP 400/402/403/404/429/503. Do not wait on dead OpenRouter :free or empty credits. Exit 0. The river does not stop.
+- $0 cadence: `/swarm` = Gemini native only (`GEMINI_API_KEY`). Other canals on-demand when Carl adds a working key.
+- xAI seat is `xai` (not chef grok): `/xai` only. `grok-2` then `grok-2-mini`. Never auto-appended.
+- Never auto-merge. Never rotate a secret. Never claim the lock. Carl squash. LIVE VERIFIED = Carl.
+
 ## Your job on this PR
 
 1. Read FILE.md + schema + the diff.

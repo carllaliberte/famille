@@ -34,9 +34,6 @@ export const CANON_PATHS = Object.freeze([
 
 export const OPENROUTER_ROUTES = Object.freeze({
   gemini: "google/gemini-2.5-flash",
-  deepseek: "deepseek/deepseek-r1:free",
-  llama: "meta-llama/llama-3.3-70b-instruct:free",
-  qwen: "qwen/qwen-2.5-72b-instruct:free",
 });
 
 export const MODELS = Object.freeze({
@@ -73,7 +70,7 @@ export const MODELS = Object.freeze({
     model: "deepseek-v4-flash",
     provider: "deepseek",
     secret: "DEEPSEEK_API_KEY",
-    auto: true,
+    auto: false,
   },
   gemini: {
     id: "gemini",
@@ -98,7 +95,7 @@ export const MODELS = Object.freeze({
     model: "meta-llama/llama-3.3-70b-instruct:free",
     provider: "openrouter",
     secret: "LLAMA_API_KEY",
-    auto: true,
+    auto: false,
     maxTokens: 2048,
   },
   qwen: {
@@ -107,13 +104,13 @@ export const MODELS = Object.freeze({
     model: "qwen-2.5-72b-instruct",
     provider: "openrouter",
     secret: "QWEN_API_KEY",
-    auto: true,
+    auto: false,
     maxTokens: 2048,
   },
   xai: {
     id: "xai",
     label: "xAI",
-    model: "grok-2-latest",
+    model: "grok-2",
     provider: "xai",
     secret: "XAI_API_KEY",
     auto: false,
@@ -121,8 +118,11 @@ export const MODELS = Object.freeze({
   },
 });
 
+/** Native xAI cascade. 400/403 on one slug tries the next. */
+export const XAI_FALLBACK = Object.freeze(["grok-2", "grok-2-mini"]);
+
 const TRIGGERS = {
-  "/swarm": ["gemini", "deepseek", "llama", "qwen"],
+  "/swarm": ["gemini"],
   "/sonnet": ["sonnet"],
   "/fable": ["fable"],
   "/fabre": ["fable"],
@@ -346,10 +346,10 @@ export function sanitizeReview(text) {
   );
 }
 
-/** 404 / 402 / 429: skip silently. Do not dump provider bodies on the PR. */
+/** 400 / 402 / 403 / 404 / 429 / 503: skip silently. Do not dump provider bodies on the PR. */
 export function isQuotaOrMissing(err) {
   const m = String(err && err.message ? err.message : err || "");
-  return /\b(404|402|429|400)\b/.test(m);
+  return /\b(404|402|429|400|403|503)\b/.test(m);
 }
 
 function skipFault(spec, err, via) {
@@ -494,22 +494,38 @@ async function callOpenRouter(spec, system, user, key) {
 }
 
 async function callXai(spec, system, user, key) {
-  const { ok, status, json } = await postJson(
-    "https://api.x.ai/v1/chat/completions",
-    {
-      id: spec.id,
-      headers: { authorization: `Bearer ${key}` },
-      body: {
-        model: spec.model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
+  const chain = [];
+  const seen = new Set();
+  for (const m of [spec.model, ...XAI_FALLBACK]) {
+    if (!m || seen.has(m)) continue;
+    seen.add(m);
+    chain.push(m);
+  }
+  let last = new Error("xai: no model tried");
+  for (const model of chain) {
+    const { ok, status, json } = await postJson(
+      "https://api.x.ai/v1/chat/completions",
+      {
+        id: spec.id,
+        headers: { authorization: `Bearer ${key}` },
+        body: {
+          model,
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user },
+          ],
+        },
       },
-    },
-  );
-  if (!ok) throw new Error(`xai ${status}: ${JSON.stringify(json).slice(0, 400)}`);
-  return json.choices?.[0]?.message?.content || "";
+    );
+    if (ok) return json.choices?.[0]?.message?.content || "";
+    last = new Error(`xai ${status}: ${JSON.stringify(json).slice(0, 400)}`);
+    if (status === 400 || status === 403) {
+      console.log(`[${spec.id}] skip ${model} ${status}, next`);
+      continue;
+    }
+    throw last;
+  }
+  throw last;
 }
 
 const CALLERS = {
@@ -543,7 +559,8 @@ export async function reviewOne(spec, system, user, env = process.env) {
         text,
       };
     } catch (err) {
-      if (orKey && OPENROUTER_ROUTES[spec.id]) {
+      // $0 cadence: do not wait on OpenRouter after native 402/403/404/429/503.
+      if (orKey && OPENROUTER_ROUTES[spec.id] && !isQuotaOrMissing(err)) {
         try {
           const text = sanitizeReview(
             await callOpenRouter(
@@ -707,13 +724,6 @@ export async function main(env = process.env) {
     meta.label,
   );
   const ids = routed.ids;
-  if (
-    ids.length &&
-    String(env.XAI_API_KEY || "").trim() &&
-    !ids.includes("xai")
-  ) {
-    ids.push("xai");
-  }
   if (!ids.length) {
     if (routed.flux) {
       if (isMeshEnvelope(meta.comment)) {
@@ -808,9 +818,10 @@ export async function main(env = process.env) {
       }
     }
   } else {
-    for (const spec of run) {
-      results.push(await reviewOne(spec, system, user, env));
-    }
+    const batch = await Promise.all(
+      run.map((spec) => reviewOne(spec, system, user, env)),
+    );
+    results.push(...batch);
   }
 
   const kind = routed.flux ? "mesh" : "review";
