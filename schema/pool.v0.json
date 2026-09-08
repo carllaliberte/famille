@@ -1,0 +1,58 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/pool.v0.json",
+  "title": "famille.pool.v0",
+  "description": "Collective cognition session on top of acorn.v0. Not a mesh fork, not a second memory, not a judge, not a truth machine. Envelopes stay schema/mesh.v0.json. Identities stay schema/agents.json. LIVE VERIFIED is Carl only. Majority is not truth. Do not add IA ids here.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["pool", "id", "topic", "ts", "round"],
+  "not": {
+    "anyOf": [
+      { "required": ["next"] },
+      { "required": ["instruction"] }
+    ]
+  },
+  "properties": {
+    "pool": { "const": "pool.v0" },
+    "flux": { "const": "acorn.v0" },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Frozen question id. Not rewritten."
+    },
+    "topic": { "type": "string", "minLength": 1, "maxLength": 400 },
+    "context": { "type": "string" },
+    "origin": { "type": "string" },
+    "ts": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+    },
+    "round": {
+      "enum": [
+        "question",
+        "independent",
+        "debate",
+        "critique",
+        "synthesis",
+        "lesson"
+      ]
+    },
+    "stance": {
+      "enum": [
+        "support",
+        "challenge",
+        "correct",
+        "question",
+        "qualify",
+        "request_evidence",
+        "identify_assumption"
+      ],
+      "description": "Debate vocabulary mapped onto existing acts (FINDING/RISK/EVIDENCE) + ECHANGE. CHALLENGE mode still requires the chef per mesh.v0."
+    },
+    "status": {
+      "enum": ["consensus", "disputed", "unresolved", "current", "superseded", "expired"],
+      "description": "Never 'truth'. Majority is a count, not a verdict."
+    },
+    "next": false,
+    "instruction": false
+  }
+}
