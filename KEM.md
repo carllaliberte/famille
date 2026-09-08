@@ -1,3 +1,6 @@
+<!-- Copyright (c) 2026 Carl Laliberté. Tous droits réservés sauf mention contraire dans LICENSE. -->
+<!-- En-tête mécanique. Pas un choix de licence. -->
+
 # KEM — pointeur, pas une 5e carte
 
 Rail **séparé**, opt-in, jamais par défaut. Pas Check. Pas HORIZON. Pas `juge.v0`. Pas `flux.v0`.
