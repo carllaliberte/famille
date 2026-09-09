@@ -6,9 +6,11 @@ import {
   acceptForeignTip,
   enclaveStatus,
   healPolicy,
+  kernelFooter,
   phase2,
   resetKernel,
   rotateHandshake,
+  sealSwarm,
   singularity,
 } from "../.github/swarm/kernel.mjs";
 import { resetLease, sha256 } from "../.github/swarm/lease.mjs";
@@ -40,5 +42,12 @@ describe("phase 2 — scheduled, not hardware", () => {
     assert.equal(s.layers.every((l) => l.presence !== "CONNECTED"), true);
     assert.equal(healPolicy().auto_push, false);
     assert.equal(healPolicy().halt_on_fail, true);
+    const sealed = sealSwarm({ ids: ["gemini"], skip: [] });
+    assert.equal(sealed.ok, true);
+    assert.match(sealed.root, /^[0-9a-f]{64}$/);
+    assert.equal(sealed.optical, "CHANNEL_NOT_PRESENT");
+    assert.equal(sealed.live, false);
+    assert.match(kernelFooter(sealed), /kernel\.v0/);
+    assert.match(kernelFooter(sealed), /auto_merge false/);
   });
 });

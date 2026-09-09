@@ -364,6 +364,9 @@ describe("sanitize and format", () => {
     assert.match(text, /FILE\.md \+ schema \+ docs/);
     assert.match(text, /ANTHROPIC_API_KEY/);
     assert.match(text, /Never merge/);
+    assert.match(text, /kernel\.v0/);
+    assert.match(text, /CHANNEL NOT PRESENT/);
+    assert.match(text, /auto_merge false/);
     assert.doesNotMatch(text, /wrangler deploy/);
   });
 });
