@@ -72,6 +72,29 @@
       "pattern": "^[a-z][a-z0-9-]{1,24}$",
       "description": "Project context. Memory does not leak across projects unless shareAcrossProjects is explicit."
     },
+    "canal": {
+      "type": "string",
+      "enum": ["CLASSICAL", "OPTICAL_QUANTUM"],
+      "description": "CLASSICAL = mesh control plane. OPTICAL_QUANTUM = optical data plane (dark fiber / photonic space), off this Git. Default presence CHANNEL NOT PRESENT. Never CONNECTED from schema existence."
+    },
+    "plane": {
+      "type": "string",
+      "enum": ["control", "data"]
+    },
+    "optical_lease": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Classical certificate about a fiber lease. Not a photon. Not LIVE.",
+      "properties": {
+        "loss_db_max": { "type": "number", "minimum": 0 },
+        "fidelity_min": { "type": "number", "minimum": 0, "maximum": 1 },
+        "certificate": { "type": "string", "minLength": 1 },
+        "ts": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+        }
+      }
+    },
     "next": false,
     "instruction": false
   }

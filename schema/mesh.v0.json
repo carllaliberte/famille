@@ -52,6 +52,16 @@
     },
     "preview": { "const": true },
     "receipt": { "const": false },
+    "canal": {
+      "type": "string",
+      "enum": ["CLASSICAL", "OPTICAL_QUANTUM"],
+      "description": "CLASSICAL = this envelope (control plane). OPTICAL_QUANTUM = photonic data plane, off this Git. Never a photon in body. Never CONNECTED from this schema."
+    },
+    "plane": {
+      "type": "string",
+      "enum": ["control", "data"],
+      "description": "control = mesh coordination. data = optical fiber. Data-plane payloads are forbidden on this envelope."
+    },
     "next": false,
     "instruction": false
   }
