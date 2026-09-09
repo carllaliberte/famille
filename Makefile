@@ -10,6 +10,8 @@ build:
 	node --check .github/swarm/lease.mjs
 	node --check .github/swarm/cognition.mjs
 	node --check .github/swarm/claim.mjs
+	node --check .github/swarm/cadence.mjs
+	node --check .github/swarm/workforce.mjs
 
 test:
 	npm test
