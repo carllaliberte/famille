@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-import { evaluate, makeFinding } from "../.github/swarm/detect.mjs";
+import { classifyTalk, copyProof, evaluate, makeFinding, unknownIsNotFalse, independentAgents } from "../.github/swarm/detect.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECTION = readFileSync(join(ROOT, "REVUE-PROJECTION.md"), "utf8");
@@ -35,5 +35,15 @@ describe("detect.v0 — CFD/Navier–Stokes first case", () => {
     assert.equal(covered.recommend, "REJECT");
     assert.match(PROJECTION, /Pas de code solveur/);
     assert.match(PROJECTION, /Stokes couplé/);
+    const talk = classifyTalk("PROPOSED is a quantum superposition of HOLD and CONFIRMED");
+    assert.equal(talk.kind, "metaphor");
+    assert.equal(talk.use, "classical");
+    assert.equal(unknownIsNotFalse(null).false, false);
+    assert.equal(unknownIsNotFalse(null).unknown, true);
+    const copy = copyProof({ id: "abc", hash: "def" });
+    assert.equal(copy.new_proof, false);
+    assert.equal(copy.independent, false);
+    const echo = independentAgents({ source: "X" }, { source: "X" });
+    assert.equal(echo.independent, false);
   });
 });
