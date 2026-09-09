@@ -4,7 +4,8 @@
  * Carl Laliberté is the only merge authority. No auto-resume.
  */
 import { readFileSync, readdirSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { OWNER_ACTOR, lookup } from "./flux.mjs";
 import {
   closeEpoch,
@@ -591,4 +592,56 @@ export function closeQuantum() {
     live: false,
     auto_merge: false,
   };
+}
+
+const CHAIRS = Object.freeze({
+  grok: "build",
+  sonnet: "architecture",
+  chatgpt: "synthèse",
+  deepseek: "merkle",
+  gemini: "pilotage",
+});
+
+/** Five chairs, empty optical seat, Carl's gavel. Not CONNECTED. Not LIVE. */
+export function consilium(opts = {}) {
+  if (opts.reset !== false) resetKernel();
+  const keys = opts.keys || newKeyPair();
+  const sealed = sealSwarm({ ids: POSTS.map((p) => p.id) }, keys);
+  const rows = neurons()
+    .map((n) => {
+      const chair = String(CHAIRS[n.id] || n.post).padEnd(14);
+      const id = n.id.padEnd(10);
+      return `  ${id}${chair}${n.presence}`;
+    })
+    .join("\n");
+  const epoch = String(sealed.root || "").slice(0, 12);
+  const lines = [
+    "FAMILLE  kernel.v0",
+    "----------------------------------------",
+    "  siège     poste         présence",
+    rows,
+    "  optique                 CHANNEL NOT PRESENT",
+    "  théorie                 CLOSED",
+    "  vérité                  non  (Merkle = chaîne)",
+    "  merge                   Carl seulement",
+    "----------------------------------------",
+    `  epoch ${epoch || "none"}`,
+    "  auto_merge false",
+  ];
+  return {
+    ok: true,
+    text: lines.join("\n"),
+    optical: "CHANNEL_NOT_PRESENT",
+    live: false,
+    theory: "CLOSED",
+    epoch,
+  };
+}
+
+const isMain =
+  Boolean(process.argv[1]) &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  const board = consilium();
+  console.log(board.text);
 }

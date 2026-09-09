@@ -5,6 +5,7 @@ import {
   ROTATE_EVERY,
   acceptForeignTip,
   closeQuantum,
+  consilium,
   enclaveStatus,
   healPolicy,
   kernelFooter,
@@ -55,5 +56,12 @@ describe("phase 2 — scheduled, not hardware", () => {
     assert.equal(q.qpu, false);
     assert.equal(q.entanglement, false);
     assert.equal(q.photon_on_git, false);
+    const hall = consilium();
+    assert.match(hall.text, /FAMILLE  kernel\.v0/);
+    assert.match(hall.text, /CHANNEL NOT PRESENT/);
+    assert.match(hall.text, /CLOSED/);
+    assert.match(hall.text, /Carl seulement/);
+    assert.doesNotMatch(hall.text, /CONNECTED_PERMANENT/);
+    assert.equal(hall.live, false);
   });
 });
