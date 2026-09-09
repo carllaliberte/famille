@@ -232,28 +232,34 @@ export function canBundle(a = {}, b = {}) {
   return { act: "BUNDLE", reason: "compatible", auto_merge: false };
 }
 
-/** Compatible synapses → one human decision. TIER 3 never shares a bundle. */
+/** Compatible synapses → one human decision. Only canBundle decides. */
 export function bundle(synapses = []) {
   const items = Array.isArray(synapses) ? synapses : [];
   const critical = items.filter(neverBundle);
   const rest = items.filter((s) => !neverBundle(s));
-  const groups = new Map();
+  const groups = [];
   for (const s of rest) {
-    const key = [
-      s.repo || "famille",
-      s.subsystem || "swarm",
-      String(riskTier(s)),
-      s.test || "npm",
-    ].join("|");
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(s);
+    let placed = false;
+    for (const g of groups) {
+      if (g.every((x) => canBundle(x, s).act === "BUNDLE")) {
+        g.push(s);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) groups.push([s]);
   }
-  const bundles = [...groups.entries()].map(([key, syn], i) => ({
+  const bundles = groups.map((syn, i) => ({
     id: `b${i}`,
-    key,
+    key: [
+      syn[0]?.repo || "famille",
+      syn[0]?.subsystem || "swarm",
+      String(riskTier(syn[0] || {})),
+    ].join("|"),
     synapses: syn,
     n: syn.length,
     tier: Math.max(...syn.map(riskTier)),
+    hold: syn.some((x) => x.provenance === false),
     auto_merge: false,
     merge: false,
   }));

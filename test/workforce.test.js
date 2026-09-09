@@ -42,6 +42,14 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.equal(packed.human_decisions, 2);
     assert.equal(packed.auto_merge, false);
     assert.ok(packed.bundles.some((b) => b.split && b.tier === 3));
+    for (const b of packed.bundles) {
+      if (b.n < 2) continue;
+      for (let i = 0; i < b.synapses.length; i++) {
+        for (let j = i + 1; j < b.synapses.length; j++) {
+          assert.equal(canBundle(b.synapses[i], b.synapses[j]).act, "BUNDLE");
+        }
+      }
+    }
     const note = formatBundle(packed.bundles.find((b) => b.split));
     assert.match(note, /HOLD_HUMAN/);
     assert.match(note, /Carl only/);
