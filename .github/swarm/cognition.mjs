@@ -16,6 +16,7 @@ import {
   lookup,
   roster,
 } from "./flux.mjs";
+import { isIsolated, opticalCanal } from "./lease.mjs";
 
 export const MODE = "COLLECTIVE_COGNITION";
 export const COGNITION_VERSION = "cognition.v0";
@@ -389,6 +390,18 @@ export function opticalLease(input = {}) {
 }
 
 export function opticalPresence(lease, opts = {}) {
+  if (isIsolated()) {
+    return {
+      ok: true,
+      canal: "OPTICAL_QUANTUM",
+      plane: "data",
+      presence: "CHANNEL_NOT_PRESENT",
+      connected: false,
+      live: false,
+      reason: "kill-switch",
+    };
+  }
+  if (lease && lease.signature) return opticalCanal(lease, opts);
   if (!lease || !lease.certificate) {
     return {
       ok: true,
