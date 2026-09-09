@@ -8,6 +8,7 @@ import {
   consilium,
   enclaveStatus,
   finalDeploy,
+  telemetryFeed,
   healPolicy,
   kernelFooter,
   phase2,
@@ -73,5 +74,13 @@ describe("phase 2 — scheduled, not hardware", () => {
     assert.equal(lock.copyright_bypass, false);
     assert.equal(lock.locked, true);
     assert.equal(lock.auto_merge, false);
+    const feed = telemetryFeed();
+    assert.equal(feed.ok, true);
+    assert.match(feed.ts, /Z$/);
+    assert.equal(feed.coherence, false);
+    assert.equal(feed.vectors.find((v) => v.id === "optical").entangled, false);
+    assert.equal(feed.vectors.find((v) => v.id === "ledger").truth, false);
+    assert.equal(feed.vectors.find((v) => v.id === "chrono").retro_causal, false);
+    assert.equal(feed.live, false);
   });
 });
