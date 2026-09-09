@@ -75,6 +75,7 @@ const MESH = {
   weights: Object.fromEntries(POSTS.map((p) => [p.id, 1])),
   logs: [],
   integrity: "STABLE",
+  locked: false,
 };
 
 export function resetKernel() {
@@ -84,6 +85,7 @@ export function resetKernel() {
   MESH.weights = Object.fromEntries(POSTS.map((p) => [p.id, 1]));
   MESH.logs = [];
   MESH.integrity = "STABLE";
+  MESH.locked = false;
   resetLease();
 }
 
@@ -644,4 +646,28 @@ const isMain =
 if (isMain) {
   const board = consilium();
   console.log(board.text);
+}
+
+/** Carl locks the doctrine. Not a cloud deploy. Not CONVERGED. Not a copyright bypass. */
+export function finalDeploy(requester) {
+  if (!isCarl(requester)) return fail("HUMAN_ONLY", "final lock is Carl only");
+  MESH.locked = true;
+  logTelemetry("LOCK", "doctrine locked by Carl");
+  return {
+    ok: true,
+    deployed: false,
+    wrangler: false,
+    locked: true,
+    converged: false,
+    copyright_bypass: false,
+    optical: "CHANNEL_NOT_PRESENT",
+    theory: "CLOSED",
+    auto_merge: false,
+    live: false,
+    human: HUMAN,
+  };
+}
+
+export function isLocked() {
+  return MESH.locked === true;
 }

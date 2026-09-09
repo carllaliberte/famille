@@ -7,6 +7,7 @@ import {
   closeQuantum,
   consilium,
   enclaveStatus,
+  finalDeploy,
   healPolicy,
   kernelFooter,
   phase2,
@@ -63,5 +64,14 @@ describe("phase 2 — scheduled, not hardware", () => {
     assert.match(hall.text, /Carl seulement/);
     assert.doesNotMatch(hall.text, /CONNECTED_PERMANENT/);
     assert.equal(hall.live, false);
+    assert.equal(finalDeploy("gemini").code, "HUMAN_ONLY");
+    const lock = finalDeploy("Carl Laliberté");
+    assert.equal(lock.ok, true);
+    assert.equal(lock.deployed, false);
+    assert.equal(lock.wrangler, false);
+    assert.equal(lock.converged, false);
+    assert.equal(lock.copyright_bypass, false);
+    assert.equal(lock.locked, true);
+    assert.equal(lock.auto_merge, false);
   });
 });
