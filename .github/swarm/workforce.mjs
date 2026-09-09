@@ -250,3 +250,20 @@ export function bundle(synapses = []) {
     live: false,
   };
 }
+
+/** Comment for Carl. Never CERTIFIED. Never merge. */
+export function formatBundle(b = {}) {
+  const syn = (b.synapses || []).map((s) => s.task || s.id || "?").join(", ");
+  const hold = b.tier === 3 || b.split;
+  return [
+    `bundle: ${b.id || "?"}`,
+    `decision: ${hold ? "HOLD_HUMAN — NEVER-BUNDLE" : "one coherent decision"}`,
+    `contains: ${syn || "(none)"}`,
+    `scope: ${b.key || "famille"}`,
+    `risk: TIER ${b.tier ?? "?"}`,
+    `never_bundle: ${hold ? (b.why || "TIER 3") : "aucun"}`,
+    `review: required`,
+    `merge: Carl only`,
+    `auto_merge: false`,
+  ].join("\n");
+}

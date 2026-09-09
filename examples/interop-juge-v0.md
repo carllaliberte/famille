@@ -31,6 +31,7 @@ Exemple honnête (téléphone, classique) : [`attest-os.json`](attest-os.json).
 - Hôte seul : https://acorn-royal-dune-blend.grok.me
 - Cursor *appelle* le juge. Cursor n'est pas le juge.
 - `cursorGate` (cadence.v0) est un autre rail : READY ou RAS. Pas cette carte.
+- `route()` (workforce.v0) est un autre rail : worker ≠ producer ≠ reviewer. Jamais carl. Jamais merge. Pas cette carte. Pas `cursorGate`.
 - Pas de QPU sur Git. Pas de hub OpenAI / Anthropic / Google dans le navigateur.
 
 ## Optionnel
