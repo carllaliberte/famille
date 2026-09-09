@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { HOTE, quoteActe } from "../sdk/acte.js";
 import { peutDire } from "../sdk/peut-dire.js";
 
 const actes = readFileSync(new URL("../ACTES.md", import.meta.url), "utf8");
@@ -23,9 +24,13 @@ describe("rente — acte classique si champ juge manque", () => {
     assert.match(actes, /acorn-royal-dune-blend\.grok\.me/);
     assert.match(actes, /detect\.v0/);
     assert.match(actes, /Ce n'est pas une facture/);
+    assert.match(actes, /quoteActe/);
+    assert.match(actes, /Un 200 n'est pas une facture/);
     assert.match(rente, /Champ manquant → aperçu classique/);
     assert.match(rente, /Pas une vente à quatre cartes/);
     assert.match(rente, /Les lignes ACTES ne sont pas un tarif/);
+    assert.match(rente, /quoteActe/);
+    assert.match(rente, /Un 200 n'est pas une facture/);
     assert.match(tarif, /Champ manquant → MODE classique\. Pas ce tarif/);
     assert.doesNotMatch(actes, /quantum-safe/i);
     assert.doesNotMatch(actes, /sealed forever/i);
@@ -50,5 +55,86 @@ describe("rente — acte classique si champ juge manque", () => {
     for (const slug of slugs) {
       assert.equal(slug, "https://acorn-royal-dune-blend.grok.me");
     }
+  });
+});
+
+describe("rente — quoteActe never invents a price", () => {
+  it("keeps attest-os classique and does not fill the hole", () => {
+    const q = quoteActe(osExample, { today: "2026-09-09" });
+    assert.equal(q.sale, false);
+    assert.equal(q.invoice, false);
+    assert.equal(q.price, null);
+    assert.equal(q.seal, false);
+    assert.equal(q.mode, "classique");
+    assert.equal(q.reason, "champ_manquant");
+    assert.deepEqual(q.manques, ["epsilon", "horizon"]);
+    assert.equal(q.four_cards, false);
+    assert.equal(q.need_carl, false);
+    assert.equal(q.hote, HOTE);
+    assert.equal(osExample.epsilon, null);
+    assert.equal(osExample.horizon, "");
+    const local = peutDire(osExample, { today: "2026-09-09" });
+    assert.deepEqual(local.manques, q.manques);
+  });
+
+  it("treats HTTP 200 as preview, not an invoice", () => {
+    const q = quoteActe(osExample, {
+      today: "2026-09-09",
+      http: { status: 200, path: "/juge" },
+    });
+    assert.equal(q.invoice, false);
+    assert.equal(q.sale, false);
+    assert.equal(q.price, null);
+    assert.equal(q.seal, false);
+    assert.equal(q.http, 200);
+    assert.match(q.note, /200 n'est pas un sceau/);
+    assert.deepEqual(q.manques, ["epsilon", "horizon"]);
+  });
+
+  it("names GET /juge 404 as HOLD Carl, still not a product", () => {
+    const q = quoteActe(osExample, {
+      today: "2026-09-09",
+      http: { status: 404, path: "/juge" },
+    });
+    assert.equal(q.hold, true);
+    assert.equal(q.reason, "hold_carl");
+    assert.equal(q.sale, false);
+    assert.equal(q.price, null);
+    assert.deepEqual(q.manques, ["epsilon", "horizon"]);
+  });
+
+  it("refuses epsilon 0 without inventing a price", () => {
+    const q = quoteActe(
+      {
+        quelle: "os",
+        temoin: "aucun",
+        epsilon: 0,
+        horizon: "2028-08-31",
+      },
+      { today: "2026-09-09" },
+    );
+    assert.equal(q.sale, false);
+    assert.equal(q.price, null);
+    assert.equal(q.reason, "lie");
+    assert.equal(q.need_carl, false);
+  });
+
+  it("four fields present still leave the price to Carl", () => {
+    const q = quoteActe(
+      {
+        quelle: "os",
+        temoin: "aucun",
+        epsilon: 0.01,
+        horizon: "2028-08-31",
+      },
+      { today: "2026-09-09" },
+    );
+    assert.equal(q.four_cards, true);
+    assert.equal(q.need_carl, true);
+    assert.equal(q.price, null);
+    assert.equal(q.sale, false);
+    assert.equal(q.invoice, false);
+    assert.equal(q.reason, "carl_ecrit_le_prix");
+    assert.equal(q.mode, "classique");
   });
 });

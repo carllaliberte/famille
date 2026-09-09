@@ -14,6 +14,7 @@ import {
   noveltyRate,
 } from "../.github/swarm/detect.mjs";
 import { sha256 } from "../.github/swarm/lease.mjs";
+import { activate } from "../.github/swarm/workforce.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -41,6 +42,7 @@ export function cycle(opts = {}) {
         };
   const front = novelFront(obs);
   const broke = tryToBreak(front);
+  const woke = activate({ need: "review", skipped: skip });
   const body = {
     v: "discover-cycle.v0",
     cycle_id: sha256(`${sha}:${trigger}:${front.kind}`).slice(0, 16),
@@ -56,6 +58,14 @@ export function cycle(opts = {}) {
     front: { kind: front.kind, dim: front.dim || null, state: front.state || null },
     broke: { kind: broke.kind, survived: Boolean(broke.survived) },
     rate: noveltyRate([broke]),
+    brains: {
+      relevant: woke.relevant,
+      unavailable: woke.unavailable,
+      blocked: false,
+      authority: "carl",
+    },
+    next: "discover",
+    idle: disc.findings.length === 0 && ptr.missing.length === 0,
     live: false,
     auto_merge: false,
     truth: false,

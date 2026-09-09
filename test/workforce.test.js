@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { assign, bundle, canBundle, formatBundle, neverBundle, pool, recommend, riskTier, route } from "../.github/swarm/workforce.mjs";
+import { activate, assign, bundle, canBundle, formatBundle, neverBundle, pool, recommend, riskTier, route } from "../.github/swarm/workforce.mjs";
 
 describe("workforce.v0 — dormant bots stay in the pool", () => {
   it("counts declared guests as IDLE and wakes them before recruiting", () => {
@@ -58,5 +58,13 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.equal(canBundle(docs, { task: "fn", repo: "famille", subsystem: "eval" }).act, "SPLIT");
     assert.equal(canBundle(docs, { ...docs, provenance: false }).act, "HOLD_HUMAN");
     assert.equal(canBundle(docs, comment).auto_merge, false);
+    const live = activate({ need: "review", skipped: ["gemini"] });
+    assert.equal(live.blocked, false);
+    assert.ok(live.relevant.length >= 1);
+    assert.ok(live.unavailable.includes("gemini"));
+    assert.ok(live.spectator.length >= 1);
+    assert.notEqual(live.authority, "mesh");
+    assert.equal(live.auto_merge, false);
+    assert.equal(live.live, false);
   });
 });
