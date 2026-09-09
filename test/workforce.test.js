@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { assign, bundle, neverBundle, pool, recommend, riskTier, route } from "../.github/swarm/workforce.mjs";
+import { assign, bundle, formatBundle, neverBundle, pool, recommend, riskTier, route } from "../.github/swarm/workforce.mjs";
 
 describe("workforce.v0 — dormant bots stay in the pool", () => {
   it("counts declared guests as IDLE and wakes them before recruiting", () => {
@@ -41,5 +41,9 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.equal(packed.human_decisions, 2);
     assert.equal(packed.auto_merge, false);
     assert.ok(packed.bundles.some((b) => b.split && b.tier === 3));
+    const note = formatBundle(packed.bundles.find((b) => b.split));
+    assert.match(note, /HOLD_HUMAN/);
+    assert.match(note, /Carl only/);
+    assert.doesNotMatch(note, /CERTIFIED/);
   });
 });
