@@ -21,7 +21,7 @@ Cloud : [CURSOR-CLOUD.md](CURSOR-CLOUD.md).
 ## Continu
 
 1 acte / heure max. PR `cursor/*` ou `docs/*` (CI `nom`). Si une PR attend Carl : RAS, pas une 2e.
-Après merge Carl : READY. Workforce.v0 : réveiller IDLE avant de recruter. Attente merge ≠ manque d'IA.
+Après merge Carl : READY. Workforce.v0 : réveiller IDLE avant de recruter. IDLE ≠ extinction. Attente merge ≠ manque d'IA.
 Couper `legal-hourly` / `quantum-daily` (bruit). Garder cette boucle-ci.
 
 ## Interdit

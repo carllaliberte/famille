@@ -54,6 +54,7 @@ export function pool(roster = ROSTER_DOC) {
     idle,
     available,
     dormant: idle.length,
+    extinction: false,
     auto_merge: false,
     live: false,
   };
@@ -345,6 +346,7 @@ export function activate({ need, skipped = [], roster } = {}) {
     blocked: false,
     parallel: relevant.length > 1,
     reviewer: reviewer ? reviewer.id : null,
+    extinction: false,
     auto_merge: false,
     live: false,
     authority: "carl",

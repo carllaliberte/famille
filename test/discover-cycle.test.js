@@ -30,6 +30,7 @@ describe("discover-cycle — DEFINED is not enough; EXECUTED after merge", () =>
     assert.equal(a.truth, false);
     assert.equal(a.cycle_id, b.cycle_id);
     assert.equal(a.next, "discover");
+    assert.equal(a.extinction, false);
     assert.equal(a.brains.blocked, false);
     assert.equal(a.brains.authority, "carl");
     assert.ok(Array.isArray(a.brains.unavailable));

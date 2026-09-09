@@ -11,6 +11,7 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.ok(p.available.includes("gemini"));
     assert.ok(p.available.includes("build"));
     assert.equal(p.auto_merge, false);
+    assert.equal(p.extinction, false);
     assert.equal(recommend({ bottleneck: "merge" }).recruit, false);
     assert.equal(recommend({ bottleneck: "same_repo" }).recruit, false);
     const rec = recommend({ bottleneck: "review", need: "review" });
@@ -66,5 +67,6 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.notEqual(live.authority, "mesh");
     assert.equal(live.auto_merge, false);
     assert.equal(live.live, false);
+    assert.equal(live.extinction, false);
   });
 });
