@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { assign, bundle, formatBundle, neverBundle, pool, recommend, riskTier, route } from "../.github/swarm/workforce.mjs";
+import { assign, bundle, canBundle, formatBundle, neverBundle, pool, recommend, riskTier, route } from "../.github/swarm/workforce.mjs";
 
 describe("workforce.v0 — dormant bots stay in the pool", () => {
   it("counts declared guests as IDLE and wakes them before recruiting", () => {
@@ -45,5 +45,18 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.match(note, /HOLD_HUMAN/);
     assert.match(note, /Carl only/);
     assert.doesNotMatch(note, /CERTIFIED/);
+    const docs = { task: "docs", repo: "famille", subsystem: "eval" };
+    const comment = { task: "comment", repo: "famille", subsystem: "eval" };
+    const key = { task: "rotate signing.key" };
+    const juge = { files: ["schema/juge.v0.json"] };
+    assert.equal(canBundle(docs, comment).act, "BUNDLE");
+    assert.equal(canBundle(docs, key).act, "NEVER-BUNDLE");
+    assert.equal(canBundle(docs, juge).act, "NEVER-BUNDLE");
+    assert.equal(canBundle(docs, { task: "secret token" }).act, "NEVER-BUNDLE");
+    assert.equal(canBundle(docs, { task: "authority change" }).act, "NEVER-BUNDLE");
+    assert.equal(canBundle(docs, { task: "docs", repo: "unforge-check" }).act, "SPLIT");
+    assert.equal(canBundle(docs, { task: "fn", repo: "famille", subsystem: "eval" }).act, "SPLIT");
+    assert.equal(canBundle(docs, { ...docs, provenance: false }).act, "HOLD_HUMAN");
+    assert.equal(canBundle(docs, comment).auto_merge, false);
   });
 });

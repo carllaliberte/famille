@@ -190,7 +190,7 @@ export function route({ task, producer, need, roster } = {}) {
 }
 
 const NEVER_RE =
-  /secret|credential|wrangler|juge\.v0|auto_merge|permission|deploy|signing.key/i;
+  /secret|credential|wrangler|juge\.v0|auto_merge|permission|deploy|signing\.key|authority|token/i;
 
 export function riskTier(s = {}) {
   if (s.tier === 3 || s.tier === "3") return 3;
@@ -203,6 +203,32 @@ export function riskTier(s = {}) {
 
 export function neverBundle(s = {}) {
   return riskTier(s) === 3;
+}
+
+export function canBundle(a = {}, b = {}) {
+  if (neverBundle(a) || neverBundle(b)) {
+    return {
+      act: "NEVER-BUNDLE",
+      reason: "TIER 3 / signing.key / juge.v0 / secret",
+      auto_merge: false,
+    };
+  }
+  if ((a.repo || "famille") !== (b.repo || "famille")) {
+    return { act: "SPLIT", reason: "repo", auto_merge: false };
+  }
+  if (riskTier(a) !== riskTier(b)) {
+    return { act: "SPLIT", reason: "risk", auto_merge: false };
+  }
+  if ((a.subsystem || "swarm") !== (b.subsystem || "swarm")) {
+    return { act: "SPLIT", reason: "subsystem", auto_merge: false };
+  }
+  if ((a.test || "npm") !== (b.test || "npm")) {
+    return { act: "SPLIT", reason: "test-profile", auto_merge: false };
+  }
+  if (a.provenance === false || b.provenance === false) {
+    return { act: "HOLD_HUMAN", reason: "provenance missing", auto_merge: false };
+  }
+  return { act: "BUNDLE", reason: "compatible", auto_merge: false };
 }
 
 /** Compatible synapses → one human decision. TIER 3 never shares a bundle. */
@@ -256,14 +282,17 @@ export function formatBundle(b = {}) {
   const syn = (b.synapses || []).map((s) => s.task || s.id || "?").join(", ");
   const hold = b.tier === 3 || b.split;
   return [
-    `bundle: ${b.id || "?"}`,
-    `decision: ${hold ? "HOLD_HUMAN — NEVER-BUNDLE" : "one coherent decision"}`,
-    `contains: ${syn || "(none)"}`,
-    `scope: ${b.key || "famille"}`,
-    `risk: TIER ${b.tier ?? "?"}`,
-    `never_bundle: ${hold ? (b.why || "TIER 3") : "aucun"}`,
-    `review: required`,
-    `merge: Carl only`,
+    `BUNDLE ${b.id || "?"}`,
+    `Decision: ${hold ? "HOLD_HUMAN — NEVER-BUNDLE" : "one coherent decision"}`,
+    `Synapses: ${syn || "(none)"}`,
+    `Repo: famille`,
+    `Scope: ${b.key || "famille"}`,
+    `Risk: TIER ${b.tier ?? "?"}`,
+    `Never-Bundle checks: ${hold ? (b.why || "TIER 3") : "pass"}`,
+    `Review: required`,
+    `Authority: HOLD_HUMAN`,
+    `Merge: Carl only`,
     `auto_merge: false`,
+    `Synapse interne ≠ PR`,
   ].join("\n");
 }
