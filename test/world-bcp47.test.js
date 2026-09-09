@@ -3,6 +3,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import { HOTE, PACK_FILES, packLieu } from "../sdk/pack-lieu.js";
+import { peutDire } from "../sdk/peut-dire.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PACKS = join(ROOT, "packs");
@@ -79,7 +81,49 @@ describe("world BCP 47 — same judge, local phrases only", () => {
     assert.match(portes, /en \/ en-CA/);
     assert.match(rente, /en \/ en-CA/);
     assert.match(world, /Tag BCP 47 sans fichier : spoken EN/);
+    assert.match(world, /pack-lieu/);
+    assert.match(world, /ne comble pas/);
     assert.match(intl, /Tag absent du tableau : spoken/);
     assert.match(intl, /étiquette classique/);
+    assert.match(intl, /pack-lieu/);
+    assert.match(intl, /ne comble pas epsilon ni horizon/);
+  });
+
+  it("resolves born tags, aliases en-CA, and keeps unknown spoken en", () => {
+    assert.deepEqual([...PACK_FILES].sort(), TAGS.slice().sort());
+    const fr = packLieu("fr-CA");
+    assert.equal(fr.connu, true);
+    assert.equal(fr.tag, "fr-CA");
+    assert.equal(fr.pack.ligne, "Les certitudes ont une date de fin.");
+    assert.equal(fr.hote, HOST);
+    assert.equal(fr.hote, HOTE);
+    const alias = packLieu("en-CA");
+    assert.equal(alias.connu, true);
+    assert.equal(alias.tag, "en");
+    assert.equal(alias.demande, "en-CA");
+    assert.equal(alias.pack.tag, "en");
+    const door = packLieu("");
+    assert.equal(door.defaut, true);
+    assert.equal(door.tag, "fr-CA");
+    const unknown = packLieu("it-IT");
+    assert.equal(unknown.connu, false);
+    assert.equal(unknown.tag, "en");
+    assert.equal(unknown.raison, "inconnu");
+    assert.equal(unknown.pack.ligne, "Certainties expire.");
+    assert.equal(unknown.pack.classique, "It does not hold. Classical.");
+    assert.equal(unknown.hote, HOST);
+  });
+
+  it("does not fill the named card hole when choosing a pack", () => {
+    const osExample = JSON.parse(read("examples/attest-os.json"));
+    const lieu = packLieu("pt-BR");
+    const r = peutDire(osExample, { today: "2026-09-09" });
+    assert.equal(r.mode, "classique");
+    assert.deepEqual(r.manques, ["epsilon", "horizon"]);
+    assert.equal(osExample.epsilon, null);
+    assert.equal(osExample.horizon, "");
+    assert.equal(Object.hasOwn(lieu.pack, "epsilon"), false);
+    assert.equal(Object.hasOwn(lieu.pack, "horizon"), false);
+    assert.equal(lieu.pack.classique, "Não se sustenta. Clássico.");
   });
 });
