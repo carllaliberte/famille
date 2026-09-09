@@ -5,9 +5,11 @@ import {
   ROTATE_EVERY,
   acceptForeignTip,
   enclaveStatus,
+  healPolicy,
   phase2,
   resetKernel,
   rotateHandshake,
+  singularity,
 } from "../.github/swarm/kernel.mjs";
 import { resetLease, sha256 } from "../.github/swarm/lease.mjs";
 
@@ -31,5 +33,12 @@ describe("phase 2 — scheduled, not hardware", () => {
     assert.equal(rotateHandshake(299).rotate, false);
     assert.equal(rotateHandshake(300).rotate, true);
     assert.equal(rotateHandshake(300).optical, "CHANNEL_NOT_PRESENT");
+    const s = singularity();
+    assert.equal(s.auto_merge, false);
+    assert.equal(s.truth, false);
+    assert.equal(s.copyright_bypass, false);
+    assert.equal(s.layers.every((l) => l.presence !== "CONNECTED"), true);
+    assert.equal(healPolicy().auto_push, false);
+    assert.equal(healPolicy().halt_on_fail, true);
   });
 });

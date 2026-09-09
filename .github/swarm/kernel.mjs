@@ -423,3 +423,34 @@ export function rotateHandshake(n) {
     note: due ? "invite again — Carl only" : "invite still valid",
   };
 }
+
+export const SINGULARITY = Object.freeze([
+  { id: "cognition", presence: "CHANNEL_NOT_PRESENT" },
+  { id: "optical", presence: "CHANNEL_NOT_PRESENT" },
+  { id: "merkle", presence: "DECLARED" },
+  { id: "enclave", presence: "CHANNEL_NOT_PRESENT" },
+]);
+
+/** Layers are not 'converged'. Merkle is a chain, not truth. No copyright bypass. */
+export function singularity() {
+  return {
+    ok: true,
+    layers: SINGULARITY,
+    auto_merge: false,
+    live: false,
+    truth: false,
+    copyright_bypass: false,
+    heal: { auto_push: false, halt_on_fail: true, human: HUMAN },
+  };
+}
+
+export function healPolicy() {
+  return {
+    ok: true,
+    auto_push: false,
+    auto_merge: false,
+    halt_on_fail: true,
+    human: HUMAN,
+    live: false,
+  };
+}
