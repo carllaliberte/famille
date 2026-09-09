@@ -46,6 +46,9 @@ Lecture = réflexion. Citation mot à mot + trous nommés.
 `PRÉSENT` comme consommation est retiré pour les IA.
 La consommation (`consulter`) reste un acte CLI / humain, pas une phrase.
 
+`claim.v0` atteste le **processus** (vu + `evidence_hash` du contenu lu). Pas la vérité du contenu. `truth: false`. Sans hash → pas de LU. Pas une 5e carte. Pas `consulter`.
+Exemple honnête : [`examples/attest-os.json`](examples/attest-os.json) — `epsilon` et `horizon` manquent → MODE classique. Le trou se nomme. On ne le comble pas.
+
 Toute IA est invitée à réfléchir sur ces rails. Pas de clé. Pas de plugin. Pas de fork.
 Catalogue : [`MODELES.md`](MODELES.md). Conduite : [`REFLEXION.md`](REFLEXION.md).
 
