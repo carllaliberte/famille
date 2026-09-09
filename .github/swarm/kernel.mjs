@@ -19,6 +19,7 @@ import {
   resetLease,
   sha256,
   verifyChain,
+  verifyLease,
   watchdog,
   wrapEnvelope,
 } from "./lease.mjs";
@@ -26,6 +27,23 @@ import {
 export const KERNEL_VERSION = "kernel.v0";
 export const HUMAN = OWNER_ACTOR;
 export const RING = 1000;
+
+/** Documentary manifest. status is presence, never 'active' for the optical bridge. */
+export const MANIFEST = Object.freeze({
+  identity: {
+    name: "Sovereign Meta-Kernel",
+    version: KERNEL_VERSION,
+    maintainer: HUMAN,
+  },
+  modules: Object.freeze([
+    { name: "quantum_bridge", presence: "CHANNEL_NOT_PRESENT", plane: "data" },
+    { name: "cryptographic_lease", presence: "DECLARED", plane: "control" },
+    { name: "logical_immune_system", presence: "DECLARED", plane: "control" },
+    { name: "immutable_epoch_ledger", presence: "DECLARED", plane: "control" },
+  ]),
+  auto_merge: false,
+  live: false,
+});
 
 /** Posts on the existing roster. Not a mesh fork. Not CONNECTED_PERMANENT. */
 export const POSTS = Object.freeze([
@@ -233,6 +251,66 @@ export function dashboard(requester) {
     logs: MESH.logs.slice(-10),
     live: false,
     optical: "CHANNEL_NOT_PRESENT",
+    bridge: MANIFEST.modules[0],
+    auto_merge: false,
+  };
+}
+
+/**
+ * Carl issues a classical invitation. Not mTLS hardware. Not a photon.
+ * Optical bridge stays CHANNEL NOT PRESENT.
+ */
+export function invite(to, keys, requester) {
+  if (!isCarl(requester)) return fail("HUMAN_ONLY", "only Carl invites");
+  if (!keys || !keys.privateKey) return fail("LEASE_KEY", "invite needs Ed25519");
+  const target = String(to || "").toLowerCase();
+  if (!/^[a-z][a-z0-9-]{1,24}$/.test(target)) return fail("BAD_TO", "invite to must match mesh from/to");
+  const wrapped = wrapEnvelope(
+    {
+      type: "invite",
+      to: target,
+      bridge: "CHANNEL_NOT_PRESENT",
+      auto_merge: false,
+    },
+    keys,
+  );
+  if (!wrapped.ok) return wrapped;
+  logTelemetry("BRIDGE", `invite ${target}`);
+  return { ok: true, invite: wrapped.envelope, to: target, live: false };
+}
+
+/**
+ * External handshake: open invite + anti-replay envelope + optional signed lease.
+ * Never mints CONNECTED on the optical bridge.
+ */
+export function handshake(opts = {}) {
+  const opened = openEnvelope(opts.invite, { now: opts.now });
+  if (!opened.ok) return opened;
+  const body = opened.payload || {};
+  if (body.type !== "invite") return fail("INVITE", "not an invitation");
+  if (opts.to && String(opts.to).toLowerCase() !== body.to) {
+    return fail("INVITE_TO", "invitation is for a different node");
+  }
+  let lease = null;
+  if (opts.lease) {
+    const v = verifyLease(opts.lease);
+    if (!v.ok) return v;
+    lease = opts.lease;
+  }
+  const optical = opticalCanal(lease, opts);
+  if (opts.payload) {
+    const queued = inbound(opts.payload);
+    if (!queued.ok) return queued;
+  }
+  logTelemetry("BRIDGE", `handshake ${body.to} optical=${optical.presence}`);
+  return {
+    ok: true,
+    to: body.to,
+    optical: optical.presence,
+    connected: false,
+    live: false,
+    lease: Boolean(lease),
+    auto_merge: false,
   };
 }
 

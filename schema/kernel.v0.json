@@ -1,0 +1,27 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/kernel.v0.json",
+  "title": "famille.kernel.v0",
+  "description": "Sovereign meta-kernel control-plane config. Not a second mesh. Not a photon. OPTICAL_QUANTUM default CHANNEL NOT PRESENT. LIVE VERIFIED is Carl only. auto_merge is always false.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["mode"],
+  "not": {
+    "anyOf": [
+      { "required": ["next"] },
+      { "required": ["instruction"] }
+    ]
+  },
+  "properties": {
+    "mode": { "const": "SOVEREIGN_KERNEL" },
+    "flux": { "const": "acorn.v0" },
+    "auto_merge": { "const": false },
+    "human": { "const": "carllaliberte" },
+    "bridge": {
+      "type": "string",
+      "enum": ["CHANNEL_NOT_PRESENT", "UNAVAILABLE", "BLOCKED", "CONNECTED"],
+      "description": "Quantum bridge presence. Schema existence is not CONNECTED. CONNECTED requires a real fiber + signed lease."
+    },
+    "next": false,
+    "instruction": false
+  }
+}
