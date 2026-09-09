@@ -20,6 +20,9 @@ Aussi : `packs/es-MX.json`, `packs/en-NG.json`, `packs/pt-BR.json`, `packs/de-DE
 - AMBRE — match; a date is due again
 - ROUGE — refuse
 
+Champ manquant → classique (clé `classique` des packs). Pas VERT inventé.
+Exemple honnête : [`examples/attest-os.json`](examples/attest-os.json) — epsilon et horizon manquent. Le client voit classique, pas une couleur. Le trou se nomme. On ne le comble pas.
+
 Sous-ligne porte = juge humain (Carl merge ; labels die ; Preview ≠ receipt).
 On n'enlève pas le juge. On enlève le tampon à vide.
 The human still merges. Labels do not live forever.
