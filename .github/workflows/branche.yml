@@ -21,7 +21,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           N: ${{ github.event.pull_request.number }}
         run: |
-          extras=$(gh pr list --state open --json number --jq "[.[] | select(.number != ${N})] | length")
+          extras=$(gh pr list -R "${GITHUB_REPOSITORY}" --state open --json number --jq "[.[] | select(.number != ${N})] | length")
           if [ "$extras" != "0" ]; then
             echo "HOLD: une PR ouverte max. Carl squash l'autre tête d'abord."
             exit 1
