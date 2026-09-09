@@ -304,13 +304,19 @@ export function formatBundle(b = {}) {
   ].join("\n");
 }
 
+/** Skip / quota. Not a project halt. Never PROJECT BLOCKED. */
+export const CAPABILITY_UNAVAILABLE = "CAPABILITY UNAVAILABLE";
+
 /**
- * Relevant brains only. Skip ≠ blocked. Presence ≠ capacity ≠ authority.
+ * Relevant brains only, in parallel. Skip ≠ blocked.
+ * Presence ≠ capacity ≠ authority.
  */
-export function activate({ need, skipped = [], roster } = {}) {
+export function activate({ need, skipped = [], quota = [], roster } = {}) {
   const p = pool(roster);
   const skill = String(need || "").toLowerCase();
-  const skip = new Set((skipped || []).map((id) => String(id).toLowerCase()));
+  const skip = new Set(
+    [...(skipped || []), ...(quota || [])].map((id) => String(id).toLowerCase()),
+  );
   const relevant = [];
   const unavailable = [];
   const spectator = [];
@@ -318,7 +324,7 @@ export function activate({ need, skipped = [], roster } = {}) {
     if (r.id === "carl") continue;
     if (r.seat === "RETIRED") continue;
     if (skip.has(r.id)) {
-      unavailable.push({ id: r.id, state: "CAPABILITY UNAVAILABLE" });
+      unavailable.push({ id: r.id, state: CAPABILITY_UNAVAILABLE });
       continue;
     }
     const spec = String(r.specialty || "").toLowerCase();
@@ -333,10 +339,6 @@ export function activate({ need, skipped = [], roster } = {}) {
       spectator.push(r.id);
       continue;
     }
-    if (skip.has(r.id)) {
-      unavailable.push({ id: r.id, state: "CAPABILITY UNAVAILABLE" });
-      continue;
-    }
     relevant.push({
       id: r.id,
       seat: r.seat,
@@ -348,6 +350,7 @@ export function activate({ need, skipped = [], roster } = {}) {
     ok: true,
     relevant: relevant.map((n) => n.id),
     unavailable: unavailable.map((u) => u.id),
+    unavailable_state: CAPABILITY_UNAVAILABLE,
     spectator,
     blocked: false,
     parallel: relevant.length > 1,
