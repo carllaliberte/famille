@@ -121,6 +121,7 @@ describe("grok-optimize.yml — jamais main", () => {
     assert.match(yml, /steps\.empty\.outputs\.empty == 'false'/);
     assert.match(yml, /HOLD : secrets absents\. Pas de PR\. exit 0/);
     assert.match(yml, /steps\.secrets\.outputs\.skip != 'true'/);
+    assert.match(yml, /MSG: "\$\{\{ github\.event\.inputs\.commit_message/);
   });
 
   it("CI nom accepts grok/optimize-YYYYMMDD-HHMMSS", () => {

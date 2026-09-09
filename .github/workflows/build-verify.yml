@@ -1,0 +1,31 @@
+# Verify Makefile gate. Never writes main. Never auto-merge.
+# Native node only — no rustc, no python kernel, no wrangler, no photon.
+name: build-verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: build-verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: make build
+        run: make build
+
+      - name: make test
+        run: make test
