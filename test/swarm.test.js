@@ -368,6 +368,8 @@ describe("workflow locks", () => {
     assert.match(yml, /XAI_API_KEY/);
     assert.match(yml, /node \.github\/swarm\/review\.mjs/);
     assert.doesNotMatch(yml, /run: node review\.mjs/);
+    assert.match(yml, /types: \[opened, synchronize, reopened/);
+    assert.match(yml, /steps\.ref\.outputs\.sha/);
   });
 
   it("branch name cursor/swarm-famille is allowed", () => {

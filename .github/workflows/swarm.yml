@@ -1,12 +1,14 @@
 # Complementary AI review. Not a judge. Does not replace npm test (carte.yml).
-# Missing secrets skip (fail-closed). Never merge. Never wrangler.
+# Continuous: pull_request opened/synchronize/reopened + issue_comment /swarm.
+# Missing secrets skip (fail-closed, exit 0). Never merge. Never wrangler.
 # Reviews FILE.md + schema + docs. Mesh = PR comments (acorn.v0).
 # Ignore github-actions[bot] — no self-loop. /flux addresses a peer.
 # Fable 5 is on-demand: comment /fable or label fable (cost).
+# Checkout = PR head (not main) so /swarm sees the branch.
 name: swarm
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review, labeled]
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   issue_comment:
     types: [created]
 permissions:
@@ -42,7 +44,22 @@ jobs:
     timeout-minutes: 15
     continue-on-error: true
     steps:
+      - name: PR head
+        id: ref
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "sha=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            sha=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}" --jq .head.sha)
+            echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
