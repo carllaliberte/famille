@@ -76,6 +76,8 @@ const MESH = {
   logs: [],
   integrity: "STABLE",
   locked: false,
+  horizon: [],
+  worm: [],
 };
 
 export function resetKernel() {
@@ -86,6 +88,8 @@ export function resetKernel() {
   MESH.logs = [];
   MESH.integrity = "STABLE";
   MESH.locked = false;
+  MESH.horizon = [];
+  MESH.worm = [];
   resetLease();
 }
 
@@ -96,6 +100,37 @@ function isoNow() {
 function logTelemetry(module, message) {
   MESH.logs.push({ ts: isoNow(), module, message: String(message || "").slice(0, 240) });
   if (MESH.logs.length > 200) MESH.logs.shift();
+  wormAppend({ module, message: String(message || "").slice(0, 240) });
+}
+
+export function wormAppend(payload) {
+  const prev = MESH.worm.length ? MESH.worm[MESH.worm.length - 1] : null;
+  const prevHash = prev ? prev.hash : sha256("genesis");
+  const n = MESH.worm.length;
+  const ts = isoNow();
+  const body = { n, ts, prevHash, payload };
+  const hash = sha256(JSON.stringify(body));
+  const entry = { ...body, hash };
+  MESH.worm.push(entry);
+  return { ok: true, n, hash, prevHash };
+}
+
+export function verifyWorm(chain = MESH.worm) {
+  let prevHash = sha256("genesis");
+  let i = 0;
+  for (const e of chain) {
+    if (!e) return fail("WORM_BREAK", "missing entry");
+    const { hash, ...body } = e;
+    if (body.prevHash !== prevHash) return fail("WORM_BREAK", `prevHash at ${i}`);
+    if (hash !== sha256(JSON.stringify(body))) return fail("WORM_BREAK", `hash at ${i}`);
+    prevHash = hash;
+    i += 1;
+  }
+  return { ok: true, n: chain.length, live: false };
+}
+
+export function wormChain() {
+  return MESH.worm.map((e) => ({ ...e, payload: e.payload }));
 }
 
 const FORBIDDEN_PKGS = Object.freeze([
@@ -699,5 +734,43 @@ export function telemetryFeed() {
     live: false,
     theory: "CLOSED",
     locked: isLocked(),
+  };
+}
+
+export const HORIZON_CAP = 8;
+
+/** Finite queue. Carl enqueues. Nothing runs itself. Infinity is refused. */
+export function enqueueHorizon(name, requester) {
+  if (!isCarl(requester)) return fail("HUMAN_ONLY", "horizon queue is Carl only");
+  const id = String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "")
+    .slice(0, 24);
+  if (!id) return fail("HORIZON", "name required");
+  if (id.includes("infinit") || id === "n-plus-inf") return fail("INFINITE", "no infinite vector");
+  if (MESH.horizon.length >= HORIZON_CAP) return fail("HORIZON_CAP", `cap ${HORIZON_CAP}`);
+  MESH.horizon.push({ id, ts: isoNow(), status: "PROPOSED" });
+  logTelemetry("HORIZON", id);
+  return { ok: true, queue: MESH.horizon.slice(), auto_merge: false, live: false };
+}
+
+export function expandOnce(requester) {
+  if (!isCarl(requester)) return fail("HUMAN_ONLY", "expansion is Carl only");
+  const next = MESH.horizon.find((v) => v.status === "PROPOSED");
+  if (!next) return { ok: true, did: null, queue: MESH.horizon.slice(), live: false };
+  next.status = "SEEN";
+  return { ok: true, did: next.id, infinite: false, auto_merge: false, live: false };
+}
+
+export function horizon() {
+  return {
+    ok: true,
+    cap: HORIZON_CAP,
+    queue: MESH.horizon.slice(),
+    infinite: false,
+    auto_run: false,
+    auto_merge: false,
+    live: false,
   };
 }

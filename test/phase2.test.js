@@ -7,7 +7,13 @@ import {
   closeQuantum,
   consilium,
   enclaveStatus,
+  enqueueHorizon,
+  expandOnce,
   finalDeploy,
+  horizon,
+  verifyWorm,
+  wormAppend,
+  wormChain,
   telemetryFeed,
   healPolicy,
   kernelFooter,
@@ -82,5 +88,19 @@ describe("phase 2 — scheduled, not hardware", () => {
     assert.equal(feed.vectors.find((v) => v.id === "ledger").truth, false);
     assert.equal(feed.vectors.find((v) => v.id === "chrono").retro_causal, false);
     assert.equal(feed.live, false);
+    assert.equal(enqueueHorizon("omniversal", "gemini").code, "HUMAN_ONLY");
+    assert.equal(enqueueHorizon("infinite-loop", "Carl Laliberté").code, "INFINITE");
+    assert.equal(enqueueHorizon("consensus-bridge", "Carl Laliberté").ok, true);
+    assert.equal(expandOnce("Carl Laliberté").did, "consensus-bridge");
+    assert.equal(horizon().infinite, false);
+    assert.equal(horizon().auto_run, false);
+    assert.equal(horizon().cap, 8);
+    const w = wormAppend({ note: "custody" });
+    assert.equal(w.ok, true);
+    assert.match(w.hash, /^[0-9a-f]{64}$/);
+    assert.equal(verifyWorm().ok, true);
+    const broken = wormChain();
+    broken[0].payload = { hacked: true };
+    assert.equal(verifyWorm(broken).code, "WORM_BREAK");
   });
 });
