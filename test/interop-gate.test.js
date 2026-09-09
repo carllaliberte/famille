@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { cursorGate } from "../.github/swarm/cadence.mjs";
-import { route } from "../.github/swarm/workforce.mjs";
+import { activate, CAPABILITY_UNAVAILABLE, route } from "../.github/swarm/workforce.mjs";
 import { peutDire } from "../sdk/peut-dire.js";
 
 const interop = readFileSync(new URL("../INTEROP-IA.md", import.meta.url), "utf8");
@@ -22,11 +22,16 @@ describe("interop — cursorGate n'est pas une carte", () => {
     assert.match(interop, /workforce\.v0/);
     assert.match(interop, /cursorGate/);
     assert.match(interop, /route\(\)/);
+    assert.match(interop, /activate\(\)/);
+    assert.match(interop, /CAPABILITY UNAVAILABLE/);
+    assert.match(interop, /pas PROJECT BLOCKED/);
     assert.match(interop, /pas une 5e carte/i);
     assert.match(interop, /Ce n'est pas le même trou/);
     assert.match(interop, /Jamais carl/);
     assert.match(walk, /cursorGate/);
     assert.match(walk, /route\(\)/);
+    assert.match(walk, /activate\(\)/);
+    assert.match(walk, /CAPABILITY UNAVAILABLE/);
     assert.match(walk, /Pas cette carte/);
     assert.match(walk, /Les certitudes ont une date de fin/);
   });
@@ -72,6 +77,23 @@ describe("interop — cursorGate n'est pas une carte", () => {
     assert.equal(syn.live, false);
     assert.equal(Object.hasOwn(syn, "epsilon"), false);
     assert.equal(Object.hasOwn(syn, "horizon"), false);
+    const r = peutDire(osExample, { today: "2026-09-09" });
+    assert.equal(r.mode, "classique");
+    assert.deepEqual(r.manques, ["epsilon", "horizon"]);
+  });
+
+  it("activate() is not a card — skip/quota is not PROJECT BLOCKED", () => {
+    const live = activate({ need: "review", quota: ["gemini"] });
+    assert.equal(live.ok, true);
+    assert.equal(live.blocked, false);
+    assert.equal(live.unavailable_state, CAPABILITY_UNAVAILABLE);
+    assert.ok(live.unavailable.includes("gemini"));
+    assert.ok(live.parallel);
+    assert.equal(live.auto_merge, false);
+    assert.equal(live.live, false);
+    assert.equal(Object.hasOwn(live, "epsilon"), false);
+    assert.equal(Object.hasOwn(live, "horizon"), false);
+    assert.doesNotMatch(JSON.stringify(live), /PROJECT BLOCKED/);
     const r = peutDire(osExample, { today: "2026-09-09" });
     assert.equal(r.mode, "classique");
     assert.deepEqual(r.manques, ["epsilon", "horizon"]);

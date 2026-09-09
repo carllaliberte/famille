@@ -61,6 +61,7 @@ export function cycle(opts = {}) {
     brains: {
       relevant: woke.relevant,
       unavailable: woke.unavailable,
+      unavailable_state: woke.unavailable_state,
       blocked: false,
       authority: "carl",
     },

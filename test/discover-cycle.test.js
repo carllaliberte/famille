@@ -34,6 +34,8 @@ describe("discover-cycle — DEFINED is not enough; EXECUTED after merge", () =>
     assert.equal(a.brains.blocked, false);
     assert.equal(a.brains.authority, "carl");
     assert.ok(Array.isArray(a.brains.unavailable));
+    assert.equal(a.brains.unavailable_state, "CAPABILITY UNAVAILABLE");
+    assert.doesNotMatch(JSON.stringify(a.brains), /PROJECT BLOCKED/);
     assert.ok(["KNOWN_CASE", "NOVEL_FRONT_CANDIDATE", "OVERLAP"].includes(a.front.kind));
     const proc = spawnSync(process.execPath, ["scripts/discover-cycle.mjs"], {
       cwd: ROOT,

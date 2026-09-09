@@ -32,6 +32,7 @@ Exemple honnête (téléphone, classique) : [`attest-os.json`](attest-os.json).
 - Cursor *appelle* le juge. Cursor n'est pas le juge.
 - `cursorGate` (cadence.v0) est un autre rail : READY ou RAS. Pas cette carte.
 - `route()` (workforce.v0) est un autre rail : worker ≠ producer ≠ reviewer. Jamais carl. Jamais merge. Pas cette carte. Pas `cursorGate`.
+- `activate()` (workforce.v0) est un autre rail : compétences pertinentes en parallèle. Skip / quota = CAPABILITY UNAVAILABLE, pas PROJECT BLOCKED. Jamais merge. Pas cette carte. Pas `cursorGate`. Pas `route()`.
 - Pas de QPU sur Git. Pas de hub OpenAI / Anthropic / Google dans le navigateur.
 
 ## Optionnel

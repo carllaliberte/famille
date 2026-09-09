@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { activate, assign, bundle, canBundle, formatBundle, neverBundle, pool, recommend, riskTier, route } from "../.github/swarm/workforce.mjs";
+import { activate, assign, bundle, canBundle, CAPABILITY_UNAVAILABLE, formatBundle, neverBundle, pool, recommend, riskTier, route } from "../.github/swarm/workforce.mjs";
 
 describe("workforce.v0 — dormant bots stay in the pool", () => {
   it("counts declared guests as IDLE and wakes them before recruiting", () => {
@@ -76,5 +76,25 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.equal(live.auto_merge, false);
     assert.equal(live.live, false);
     assert.equal(live.extinction, false);
+  });
+
+  it("activate() keeps skip/quota as CAPABILITY UNAVAILABLE, never PROJECT BLOCKED", () => {
+    const skip = activate({ need: "review", skipped: ["gemini"] });
+    const quota = activate({ need: "review", quota: ["gemini"] });
+    for (const live of [skip, quota]) {
+      assert.equal(live.ok, true);
+      assert.equal(live.blocked, false);
+      assert.equal(live.unavailable_state, CAPABILITY_UNAVAILABLE);
+      assert.ok(live.unavailable.includes("gemini"));
+      assert.ok(live.relevant.length >= 1);
+      assert.equal(live.parallel, live.relevant.length > 1);
+      assert.ok(live.parallel);
+      assert.notEqual(live.reviewer, "gemini");
+      assert.notEqual(live.reviewer, "carl");
+      assert.equal(live.auto_merge, false);
+      assert.equal(live.live, false);
+      assert.equal(live.authority, "carl");
+      assert.doesNotMatch(JSON.stringify(live), /PROJECT BLOCKED/);
+    }
   });
 });
