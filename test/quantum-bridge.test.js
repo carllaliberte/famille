@@ -91,6 +91,8 @@ describe("optical quantum bridge — control vs data", () => {
     assert.match(doc, /CHANNEL NOT PRESENT/);
     assert.match(doc, /QUANTUM-MASTER/);
     assert.match(doc, /Pas wrangler/);
+    assert.match(doc, /Invitation Carl/);
+    assert.match(doc, /Pas mTLS matériel/);
     assert.doesNotMatch(doc, /wrangler deploy/);
   });
 });

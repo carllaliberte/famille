@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, it } from "node:test";
-import { inspectForge, runKernel, KERNEL_VERSION, HUMAN, inbound, neurons, pulse, disconnect, resetKernel, dashboard, tune, runVault, ingestEvidence } from "../.github/swarm/kernel.mjs";
-import { newKeyPair, openEnvelope, resetLease, wrapEnvelope } from "../.github/swarm/lease.mjs";
+import { inspectForge, runKernel, KERNEL_VERSION, HUMAN, inbound, neurons, pulse, disconnect, resetKernel, dashboard, tune, runVault, ingestEvidence, invite, handshake, MANIFEST } from "../.github/swarm/kernel.mjs";
+import { newKeyPair, openEnvelope, proveLease, resetLease, wrapEnvelope } from "../.github/swarm/lease.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -121,5 +121,31 @@ describe("sovereign meta-kernel", () => {
     assert.equal(cycle.live, false);
     assert.equal(ingestEvidence({ case_id: "x" }).code, "EVIDENCE_TYPE");
     assert.equal(dashboard("Carl Laliberté").ok, true);
+  });
+
+  it("quantum bridge handshake needs Carl invite; optical stays CHANNEL NOT PRESENT", () => {
+    const keys = newKeyPair();
+    assert.equal(MANIFEST.auto_merge, false);
+    assert.equal(MANIFEST.modules[0].presence, "CHANNEL_NOT_PRESENT");
+    assert.equal(invite("gemini", keys, "gemini").code, "HUMAN_ONLY");
+    const card = invite("gemini", keys, "Carl Laliberté");
+    assert.equal(card.ok, true);
+    const lease = proveLease({ certificate: "classical-fiber" }, keys);
+    const hs = handshake({
+      invite: card.invite,
+      to: "gemini",
+      lease: lease.lease,
+      payload: { hello: "sync" },
+    });
+    assert.equal(hs.ok, true, hs.error);
+    assert.equal(hs.optical, "CHANNEL_NOT_PRESENT");
+    assert.equal(hs.connected, false);
+    assert.equal(hs.live, false);
+    assert.equal(hs.mtls, false);
+    assert.equal(handshake({ invite: card.invite, to: "gemini" }).code, "ENVELOPE_REPLAY");
+    assert.equal(handshake({ invite: { type: "invite" } }).code, "ENVELOPE_UNSIGNED");
+    const again = invite("grok", keys, "carllaliberte");
+    assert.equal(handshake({ invite: again.invite, fiber: true, secret: true }).code, "CLAIMED_CHANNEL");
+    assert.equal(handshake({ invite: again.invite, mtls: true }).code, "CLAIMED_CHANNEL");
   });
 });
