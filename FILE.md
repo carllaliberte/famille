@@ -39,7 +39,7 @@ Même rivière. Même verrou. Une IA nouvelle rejoint par id, pas par un fork.
 3. Cascade : natif d'abord. OpenRouter si le natif flanche. Skip 400/402/403/404/429/503. Exit 0. Le flux ne s'arrête pas.
 4. xAI siège `xai` (pas chef grok) : `grok-2` → `grok-2-mini`.
 5. Collège OpenRouter : `google/gemini-2.5-flash` · `deepseek/deepseek-r1:free` · `meta-llama/llama-3.3-70b-instruct:free` · `qwen/qwen-2.5-72b-instruct:free`.
-**Cadence $0 (Carl opère le verrou).** `/swarm` = Gemini natif seulement. Pas d'attente sur OpenRouter `:free` (404) ni crédits 402 ni xAI 400. Autres canaux = on-demand si Carl pose une clé qui répond 200. Tests + LU + PR : ça roule sans payer.
+**Cadence $0 (Carl opère le verrou).** `/swarm` = roster `status: auto` (Gemini). Canal HTTP optionnel. Future IA = une ligne `schema/agents.json`, `/{id}` tout de suite, pas de fork `mesh.v0`. Autres canaux = on-demand si Carl pose une clé qui répond 200. Tests + LU + PR : ça roule sans payer.
 
 ### Présence — ne pas fusionner
 
