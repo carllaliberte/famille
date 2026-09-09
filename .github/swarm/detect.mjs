@@ -2,7 +2,8 @@
  * Findings start PROPOSED. Never auto-normative. Carl decides.
  * First case: CFD / Navier–Stokes — do not accept the conclusion in advance.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { sha256 } from "./lease.mjs";
 
 export const DETECT_VERSION = "detect.v0";
@@ -235,5 +236,50 @@ export function discover(obs = {}) {
     undetected: "not absent",
     live: false,
     auto_merge: false,
+  };
+}
+
+const LINK_RE = /\[[^\]]*\]\(([^)]+)\)/g;
+
+/** Resolve markdown hrefs from the file that holds them. cwd is not the file. */
+export function scanPointers(root, rels = []) {
+  const missing = [];
+  const checked = [];
+  for (const rel of rels) {
+    let text = "";
+    try {
+      text = readFileSync(join(root, rel), "utf8");
+    } catch {
+      missing.push({ from: rel, href: rel, reason: "source missing" });
+      continue;
+    }
+    LINK_RE.lastIndex = 0;
+    let m;
+    while ((m = LINK_RE.exec(text))) {
+      const raw = String(m[1] || "").split("#")[0].split("?")[0].trim();
+      if (!raw || /^(https?:|mailto:)/i.test(raw)) continue;
+      checked.push({ from: rel, href: raw });
+      const target = join(root, dirname(rel), raw);
+      if (!existsSync(target)) missing.push({ from: rel, href: raw, target });
+    }
+  }
+  const findings = missing.map((row) => ({
+    category: "DISCOVERED_CATEGORY",
+    discovered_category: "PATH_SCOPE",
+    title: "relative pointer does not resolve from its file",
+    ...row,
+    state: "PROPOSED",
+    normative: false,
+    live: false,
+    truth: false,
+    why_wrong: "the file may have moved, or the href is documentary",
+  }));
+  return {
+    ok: true,
+    checked: checked.length,
+    missing,
+    findings,
+    naive_cwd_is_wrong: true,
+    live: false,
   };
 }

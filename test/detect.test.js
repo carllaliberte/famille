@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-import { classifyTalk, copyProof, discover, evaluate, makeFinding, unknownIsNotFalse, independentAgents } from "../.github/swarm/detect.mjs";
+import { classifyTalk, copyProof, discover, evaluate, makeFinding, scanPointers, unknownIsNotFalse, independentAgents } from "../.github/swarm/detect.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECTION = readFileSync(join(ROOT, "REVUE-PROJECTION.md"), "utf8");
@@ -51,5 +51,9 @@ describe("detect.v0 — CFD/Navier–Stokes first case", () => {
     assert.equal(found.findings[0].normative, false);
     assert.equal(found.true, false);
     assert.equal(found.undetected, "not absent");
+    const ptr = scanPointers(ROOT, ["EVAL.md", "schema/README.md"]);
+    assert.equal(ptr.missing.length, 0, JSON.stringify(ptr.missing));
+    assert.equal(ptr.naive_cwd_is_wrong, true);
+    assert.ok(ptr.checked > 0);
   });
 });
