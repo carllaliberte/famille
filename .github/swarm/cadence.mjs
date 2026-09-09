@@ -92,3 +92,51 @@ export function nextReady(input) {
   const first = b.ready[0] || null;
   return { ok: true, next: first, auto_merge: false };
 }
+
+/** After Carl merges, drop that PR and recompute. Automation resumes. He is not the planner. */
+export function afterMerge({ mergedRepo, mergedNumber, tasks, openPrs } = {}) {
+  const rest = (openPrs || []).filter(
+    (p) => !(p.repo === mergedRepo && Number(p.number) === Number(mergedNumber)),
+  );
+  const b = board({ tasks: tasks && tasks.length ? tasks : REPOS.map((repo) => ({ id: repo, repo })), openPrs: rest });
+  return {
+    ok: true,
+    merged: { repo: mergedRepo, number: mergedNumber },
+    ready: b.ready,
+    blocked: b.blocked,
+    next: b.ready[0] || null,
+    auto_merge: false,
+    live: false,
+  };
+}
+
+/** Carl only sees this. Tests must be real. No invented PASS. */
+export function carlGate({ pr, tests, review } = {}) {
+  const testsOk = tests === true || tests === "success";
+  const reviewOk = review === true || review === "LU";
+  if (!pr) return { ok: true, need_carl: false, action: "NONE", auto_merge: false };
+  if (!testsOk) {
+    return { ok: true, need_carl: false, action: "WAIT_TESTS", auto_merge: false };
+  }
+  return {
+    ok: true,
+    need_carl: true,
+    action: "MERGE",
+    pr,
+    tests: "success",
+    review: reviewOk ? "LU" : "none",
+    auto_merge: false,
+    live: false,
+  };
+}
+
+export function formatGate(gate, next) {
+  const lines = [
+    "cadence.v0 — Carl gate",
+    `action: ${gate.action}`,
+    `auto_merge: false`,
+    next ? `next READY: ${next}` : "next READY: (none)",
+    "Carl merges. Bots resume.",
+  ];
+  return lines.join("\n");
+}

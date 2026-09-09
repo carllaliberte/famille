@@ -1,0 +1,44 @@
+# Recalculate READY after Carl merges. Never merge. Never open a second head.
+name: cadence
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: cadence-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  board:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Next READY
+        env:
+          MERGED: ${{ github.event.pull_request.number }}
+        run: |
+          node --input-type=module <<'EOF'
+          import { afterMerge, formatGate } from "./.github/swarm/cadence.mjs";
+          const n = Number(process.env.MERGED || 0);
+          const rec = afterMerge({ mergedRepo: "famille", mergedNumber: n });
+          console.log(formatGate({ action: "RESUME", auto_merge: false }, rec.next));
+          EOF
+      - name: Comment (no merge)
+        if: github.event.pull_request.number
+        env:
+          GH_TOKEN: ${{ github.token }}
+          N: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$N" --body "cadence.v0 — merge reçu. auto_merge false. Bots reprennent les fronts READY. Carl n'est pas le planner."
+        continue-on-error: true
