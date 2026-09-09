@@ -17,6 +17,9 @@ Les commandes sont dans les READMEs des rails. Ci-dessous : l'ordre cadastre seu
 4. L'œil public : [unforge-check](https://github.com/carllaliberte/unforge-check) — le fichier correspond encore à la carte (`--human` : VERT / AMBRE / ROUGE).
 5. Un trou (champ manquant, ε=0, date absente) → MODE classique.
 
+LU sur une PR = le texte a été vu (`claim.v0`, processus). Ce n'est pas l'étape 2 (`consulter`).
+Carte trouée : [`attest-os.json`](attest-os.json) — epsilon + horizon manquent → classique. Pas d'invention.
+
 Flux quantique = MODE collapse + date. Pas un photon. Pas un QPU sur Git.
 
 Hôte : https://acorn-royal-dune-blend.grok.me
