@@ -29,6 +29,10 @@ describe("discover-cycle — DEFINED is not enough; EXECUTED after merge", () =>
     assert.equal(a.auto_merge, false);
     assert.equal(a.truth, false);
     assert.equal(a.cycle_id, b.cycle_id);
+    assert.equal(a.next, "discover");
+    assert.equal(a.brains.blocked, false);
+    assert.equal(a.brains.authority, "carl");
+    assert.ok(Array.isArray(a.brains.unavailable));
     assert.ok(["KNOWN_CASE", "NOVEL_FRONT_CANDIDATE", "OVERLAP"].includes(a.front.kind));
     const proc = spawnSync(process.execPath, ["scripts/discover-cycle.mjs"], {
       cwd: ROOT,
