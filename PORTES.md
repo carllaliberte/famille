@@ -27,7 +27,7 @@ Voir garde/MERGE.md. Juges ici = preview. QUANTUM hors hôte.
 
 ## Agents (17–20)
 17. Silence — licence FIGURE expirée, l’agent se tait
-18. Pack lieu BCP 47 (fr-CA, es-MX, en-NG)
+18. Pack lieu BCP 47 (fr-CA · en / en-CA · es-MX · en-NG · pt-BR · de-DE)
 19. Contrat machine unique : n’importe quel modèle *lit* FIGURE+SITUS+HORIZON
 20. Archive + oubli Loi 25
 
