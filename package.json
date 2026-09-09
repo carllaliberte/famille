@@ -5,6 +5,7 @@
   "description": "FAMILLE typed-evidence map — local card consumer, not a seal",
   "scripts": {
     "test": "node --test test/*.test.js",
+    "system:official-seal": "node scripts/official-seal.mjs",
     "peut-dire": "node sdk/cli.js"
   },
   "exports": {

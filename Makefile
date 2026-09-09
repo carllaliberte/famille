@@ -15,6 +15,7 @@ build:
 	node --check .github/swarm/detect.mjs
 	node --check scripts/swarm-ci-matrix.mjs
 	node --check scripts/discover-cycle.mjs
+	node --check scripts/official-seal.mjs
 
 test:
 	npm test
