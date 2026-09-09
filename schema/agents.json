@@ -6,6 +6,7 @@
     {"id": "grok", "name": "Grok", "kind": "chef", "role": "chef", "specialty": "decides · writes", "capabilities": ["flux", "build"], "status": "core", "locked": true},
     {"id": "heavy", "name": "Grok Heavy", "kind": "consult", "role": "always consult", "specialty": "reason", "capabilities": ["flux"], "status": "core", "locked": true},
     {"id": "build", "name": "Grok Build", "kind": "consult", "role": "always consult", "specialty": "implement", "capabilities": ["flux", "build"], "status": "core", "locked": true},
+    {"id": "xai", "name": "xAI", "kind": "model", "role": "independent", "specialty": "independent", "capabilities": ["lu", "flux", "review"], "status": "on-demand", "locked": true},
     {"id": "chatgpt", "name": "ChatGPT", "kind": "model", "role": "challenges", "specialty": "challenge", "capabilities": ["lu", "flux", "review"], "status": "on-demand", "locked": true},
     {"id": "sonnet", "name": "Claude Sonnet 5", "kind": "model", "role": "reviews", "specialty": "review", "capabilities": ["lu", "flux", "review"], "status": "manual", "locked": true},
     {"id": "fable", "name": "Claude Fable 5", "kind": "model", "role": "hard review", "specialty": "hard review", "capabilities": ["lu", "flux", "review"], "status": "on-demand", "locked": true},
