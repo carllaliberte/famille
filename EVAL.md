@@ -48,6 +48,14 @@ Toute soumission ou critique technique doit être accompagnée d’une preuve d�
 - `LU` sans hash du contenu lu = rejeté.
 - HOLD n’est pas un échec. HOLD > faux vert.
 
+## Défense réactive (ACTION.5)
+
+- **+** Refuse l’inbound hostile (`CONNECTED`, photon, planck) et l’écrit au WORM. `absorb()`. `heal()` = `resetKernel`.
+- **−** Aucune frappe sortante. Aucun sondage d’IA tierce. Pas de tar-trap théâtre.
+- **Ne cherche pas à interdire** : LU, `npm test`, squash Carl, guests `declared`.
+
+Pas d’invulnérabilité. Pas un schéma harness. Pas un schéma claim.
+
 ## Lecture / challenge
 
 1. Lire ce fichier, [KEM.md](KEM.md), [schema/README.md](schema/README.md).

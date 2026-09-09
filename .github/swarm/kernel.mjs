@@ -256,6 +256,37 @@ export function inbound(payload) {
   return { ok: true, size: MESH.buffer.length, gateway: true };
 }
 
+/**
+ * Reactive only. Never probes. Never strikes outbound.
+ * + absorb refused inbound into the WORM (fuzz fuel)
+ * − no outbound attack, no scan of foreign IA
+ * does not forbid: LU, npm test, Carl merge
+ */
+export function absorb(payload) {
+  const r = inbound(payload);
+  if (r.ok) return { ok: true, absorbed: false, outbound: false, attack: false };
+  wormAppend({ kind: "harness", code: r.code, inbound: true });
+  return {
+    ok: true,
+    absorbed: true,
+    outbound: false,
+    attack: false,
+    code: r.code,
+    live: false,
+  };
+}
+
+export function heal() {
+  resetKernel();
+  return {
+    ok: true,
+    restored: "resetKernel",
+    invulnerable: false,
+    live: false,
+    auto_merge: false,
+  };
+}
+
 export const stateBus = inbound;
 
 export function disconnect(id, requester) {

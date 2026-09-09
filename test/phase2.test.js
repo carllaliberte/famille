@@ -3,6 +3,7 @@ import { afterEach, describe, it } from "node:test";
 import {
   PHASE2,
   ROTATE_EVERY,
+  absorb,
   acceptForeignTip,
   closeQuantum,
   consilium,
@@ -11,6 +12,7 @@ import {
   expandOnce,
   finalDeploy,
   horizon,
+  heal,
   verifyWorm,
   wormAppend,
   wormChain,
@@ -102,5 +104,10 @@ describe("phase 2 — scheduled, not hardware", () => {
     const broken = wormChain();
     broken[0].payload = { hacked: true };
     assert.equal(verifyWorm(broken).code, "WORM_BREAK");
+    const trap = absorb({ photon: true });
+    assert.equal(trap.absorbed, true);
+    assert.equal(trap.outbound, false);
+    assert.equal(trap.attack, false);
+    assert.equal(heal().invulnerable, false);
   });
 });
