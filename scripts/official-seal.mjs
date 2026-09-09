@@ -14,7 +14,7 @@ export function seal(argv = process.argv.slice(2)) {
     asked: asked || null,
     zk: { status: "CHANNEL NOT PRESENT" },
     bft: { status: "CHANNEL NOT PRESENT" },
-    phi: { status: "TALK.METAPHOR", value: null },
+    phi: { status: "CHANNEL NOT PRESENT", value: null },
     nova: { status: "CHANNEL NOT PRESENT" },
     live: false,
     connected: false,

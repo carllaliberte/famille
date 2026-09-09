@@ -13,6 +13,7 @@ describe("official-seal — no fake ZK / BFT / Φ", () => {
     const s = seal(["--seal-level=Sovereignty", "--meta-epoch=0x0300-OMEGA"]);
     assert.equal(s.zk.status, "CHANNEL NOT PRESENT");
     assert.equal(s.bft.status, "CHANNEL NOT PRESENT");
+    assert.equal(s.phi.status, "CHANNEL NOT PRESENT");
     assert.equal(s.phi.value, null);
     assert.equal(s.live, false);
     assert.equal(s.auto_merge, false);
