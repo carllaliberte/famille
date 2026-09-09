@@ -43,13 +43,28 @@ const MESH = {
   gateway: true,
   buffer: [],
   disconnected: new Set(),
+  weights: Object.fromEntries(POSTS.map((p) => [p.id, 1])),
+  logs: [],
+  integrity: "STABLE",
 };
 
 export function resetKernel() {
   MESH.gateway = true;
   MESH.buffer = [];
   MESH.disconnected = new Set();
+  MESH.weights = Object.fromEntries(POSTS.map((p) => [p.id, 1]));
+  MESH.logs = [];
+  MESH.integrity = "STABLE";
   resetLease();
+}
+
+function isoNow() {
+  return new Date().toISOString();
+}
+
+function logTelemetry(module, message) {
+  MESH.logs.push({ ts: isoNow(), module, message: String(message || "").slice(0, 240) });
+  if (MESH.logs.length > 200) MESH.logs.shift();
 }
 
 const FORBIDDEN_PKGS = Object.freeze([
@@ -140,6 +155,7 @@ export function neurons() {
       connected: false,
       live: false,
       locked: true,
+      weight: MESH.weights[id] || 1,
     };
   });
 }
@@ -160,10 +176,13 @@ export function inbound(payload) {
   if (payload && (payload.photonic || payload.qubit || payload.qkd || payload.photon)) {
     return fail("PHOTONIC_ON_CONTROL", "no raw quantum data on the control plane");
   }
-  MESH.buffer.push({ payload, ts: new Date().toISOString() });
+  MESH.buffer.push({ payload, ts: isoNow() });
   if (MESH.buffer.length > RING) MESH.buffer.shift();
+  logTelemetry("STATE_BUS", "inbound queued");
   return { ok: true, size: MESH.buffer.length, gateway: true };
 }
+
+export const stateBus = inbound;
 
 export function disconnect(id, requester) {
   if (String(requester || "").toLowerCase() !== HUMAN) {
@@ -172,7 +191,38 @@ export function disconnect(id, requester) {
   const agent = lookup(id);
   if (!agent) return fail("UNKNOWN_AGENT", String(id || ""));
   MESH.disconnected.add(id);
+  logTelemetry("GOVERNANCE", `${id} disconnected by ${HUMAN}`);
   return { ok: true, id, presence: "BLOCKED", by: HUMAN, connected: false };
+}
+
+/** Routing weights only. Not presence. Not truth. Capped. Isolated posts do not tune. */
+export function tune() {
+  for (const { id } of POSTS) {
+    if (MESH.disconnected.has(id)) continue;
+    const next = Math.round((MESH.weights[id] || 1) * 1.01 * 10000) / 10000;
+    MESH.weights[id] = Math.min(next, 2);
+  }
+  logTelemetry("SELF_TUNING", "weights capped at 2, routing only");
+  return { ok: true, weights: { ...MESH.weights }, live: false };
+}
+
+/** Carl only. Presence stays DECLARED/BLOCKED, never CONNECTED_PERMANENT. */
+export function dashboard(requester) {
+  if (String(requester || "").toLowerCase() !== HUMAN) {
+    return fail("HUMAN_ONLY", "dashboard is Carl only");
+  }
+  return {
+    ok: true,
+    sovereign: HUMAN,
+    integrity: isIsolated() ? "LOCKDOWN" : MESH.integrity,
+    gateway: MESH.gateway && !isIsolated(),
+    neurons: neurons(),
+    weights: { ...MESH.weights },
+    buffer: MESH.buffer.length,
+    logs: MESH.logs.slice(-10),
+    live: false,
+    optical: "CHANNEL_NOT_PRESENT",
+  };
 }
 
 /**
@@ -185,7 +235,7 @@ export function pulse(signal = {}, keys) {
   const wd = watchdog({ keys });
   if (wd.isolated) MESH.gateway = false;
   const ref = sha256(JSON.stringify(signal || {})).slice(0, 16);
-  const ts = new Date().toISOString();
+  const ts = isoNow();
   const results = {};
   for (const n of neurons()) {
     results[n.id] = {
@@ -195,10 +245,12 @@ export function pulse(signal = {}, keys) {
       processed: n.presence === "DECLARED",
       connected: false,
       live: false,
+      weight: n.weight,
       ts,
       payload_ref: ref,
     };
   }
+  tune();
   const leaves = MESH.buffer.map((b) => sha256(JSON.stringify(b)));
   const sealed = keys ? closeEpoch(keys, leaves) : { ok: true, root: merkleRoot(leaves) };
   return {

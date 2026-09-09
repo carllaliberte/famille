@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, it } from "node:test";
-import { inspectForge, runKernel, KERNEL_VERSION, HUMAN, inbound, neurons, pulse, disconnect, resetKernel } from "../.github/swarm/kernel.mjs";
+import { inspectForge, runKernel, KERNEL_VERSION, HUMAN, inbound, neurons, pulse, disconnect, resetKernel, dashboard, tune } from "../.github/swarm/kernel.mjs";
 import { newKeyPair, openEnvelope, resetLease, wrapEnvelope } from "../.github/swarm/lease.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -73,5 +73,17 @@ describe("sovereign meta-kernel", () => {
     assert.equal(after.results.gemini.presence, "BLOCKED");
     assert.equal(after.results.gemini.processed, false);
     assert.equal(after.results.grok.processed, true);
+    assert.equal(dashboard("gemini").code, "HUMAN_ONLY");
+    const board = dashboard("carllaliberte");
+    assert.equal(board.ok, true);
+    assert.equal(board.live, false);
+    assert.equal(board.optical, "CHANNEL_NOT_PRESENT");
+    assert.equal(board.neurons.find((n) => n.id === "gemini").presence, "BLOCKED");
+    assert.ok(board.weights.grok >= 1);
+    assert.ok(board.logs.length >= 1);
+    assert.match(board.logs[0].ts, /Z$/);
+    const t = tune();
+    assert.ok(t.weights.grok <= 2);
+    assert.equal(t.weights.gemini, board.weights.gemini);
   });
 });
