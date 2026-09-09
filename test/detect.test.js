@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-import { classifyTalk, copyProof, discover, evaluate, makeFinding, scanPointers, unknownIsNotFalse, independentAgents } from "../.github/swarm/detect.mjs";
+import { classifyTalk, copyProof, discover, evaluate, makeFinding, novelFront, noveltyRate, scanPointers, tryToBreak, unknownIsNotFalse, independentAgents } from "../.github/swarm/detect.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECTION = readFileSync(join(ROOT, "REVUE-PROJECTION.md"), "utf8");
@@ -55,5 +55,26 @@ describe("detect.v0 — CFD/Navier–Stokes first case", () => {
     assert.equal(ptr.missing.length, 0, JSON.stringify(ptr.missing));
     assert.equal(ptr.naive_cwd_is_wrong, true);
     assert.ok(ptr.checked > 0);
+    const known = novelFront({ auto: ["haiku"], skip: ["haiku"] });
+    assert.equal(known.kind, "KNOWN_CASE");
+    assert.equal(known.dim, "ENV_SCOPE");
+    const obs = {
+      note: "discover() only sees what the caller injects",
+      hypothesis: "DETECTOR_INPUT_SCOPE",
+    };
+    const novel = novelFront(obs);
+    assert.equal(novel.kind, "NOVEL_FRONT_CANDIDATE");
+    assert.equal(novel.state, "PROPOSED");
+    assert.equal(novel.truth, false);
+    const broke = tryToBreak(novel, [
+      { id: "planted", fit: (o) => /caller injects/.test(String(o.note || "")) },
+    ]);
+    assert.equal(broke.kind, "CONTRADICTED");
+    const held = tryToBreak(novel);
+    assert.equal(held.kind, "SURVIVED");
+    assert.equal(held.truth, false);
+    const rate = noveltyRate([held, broke, known]);
+    assert.equal(rate.optimize, false);
+    assert.equal(rate.unexpected, 1);
   });
 });

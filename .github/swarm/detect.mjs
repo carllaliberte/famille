@@ -283,3 +283,107 @@ export function scanPointers(root, rels = []) {
     live: false,
   };
 }
+
+const FITTERS = [
+  {
+    id: "ENV_SCOPE",
+    fit: (o) =>
+      Array.isArray(o.auto) &&
+      Array.isArray(o.skip) &&
+      o.auto.some((id) => o.skip.includes(id)),
+  },
+  {
+    id: "PATH_SCOPE",
+    fit: (o) => Array.isArray(o.missing) && o.missing.length > 0,
+  },
+  {
+    id: "CFD",
+    fit: (o) => /navier|stokes|cfd/i.test(String(o.statement || o.note || "")),
+  },
+];
+
+export function novelFront(obs = {}, extra = []) {
+  const tried = [...FITTERS, ...extra].map((f) => {
+    let fit = false;
+    try {
+      fit = Boolean(f.fit(obs));
+    } catch {
+      fit = false;
+    }
+    return { id: f.id, fit, why: fit ? "matched" : "missed" };
+  });
+  const hits = tried.filter((t) => t.fit);
+  if (hits.length === 1) {
+    return {
+      ok: true,
+      kind: "KNOWN_CASE",
+      dim: hits[0].id,
+      tried,
+      novel: false,
+      normative: false,
+      live: false,
+    };
+  }
+  if (hits.length > 1) {
+    return {
+      ok: true,
+      kind: "OVERLAP",
+      dims: hits.map((h) => h.id),
+      tried,
+      novel: false,
+      normative: false,
+    };
+  }
+  return {
+    ok: true,
+    kind: "NOVEL_FRONT_CANDIDATE",
+    model_limit: true,
+    tried,
+    observation: obs.note || obs.statement || null,
+    hypothesis: obs.hypothesis || "unnamed-dimension",
+    refute: "pass a fitter that matches this observation",
+    state: "PROPOSED",
+    normative: false,
+    live: false,
+    truth: false,
+  };
+}
+
+export function tryToBreak(candidate, extra = []) {
+  if (!candidate || candidate.kind !== "NOVEL_FRONT_CANDIDATE") {
+    return { ok: true, kind: "NOT_CANDIDATE", survived: false };
+  }
+  const obs = candidate.obs || {
+    note: candidate.observation,
+    hypothesis: candidate.hypothesis,
+  };
+  const again = novelFront(obs, extra);
+  if (again.kind !== "NOVEL_FRONT_CANDIDATE") {
+    return {
+      ok: true,
+      kind: "CONTRADICTED",
+      survived: false,
+      now: again.kind,
+      why: "a fitter now matches",
+      truth: false,
+    };
+  }
+  return {
+    ok: true,
+    kind: "SURVIVED",
+    survived: true,
+    still: "PROPOSED",
+    truth: false,
+    model_limit: true,
+  };
+}
+
+export function noveltyRate(events = []) {
+  const unexpected = events.filter((e) => e.kind === "SURVIVED").length;
+  return {
+    unexpected,
+    total: events.length,
+    rate: events.length ? unexpected / events.length : 0,
+    optimize: false,
+  };
+}
