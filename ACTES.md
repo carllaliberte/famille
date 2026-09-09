@@ -1,7 +1,19 @@
 # Actes vendables
 
+Les certitudes ont une date de fin.
+
 Un acte = un dossier nommé + une date + une carte. Pas un abonnement token.
-Prix : Carl les écrit. Les bots ne les inventent pas.
+Prix : Carl les écrit. Les bots n'inventent pas.
+
+Champ juge manquant (`quelle` · `temoin` · `epsilon` · `horizon`) → MODE classique.
+Ce n'est pas un acte à quatre cartes. On nomme le trou. On ne le comble pas.
+On n'invente pas le prix. Preview ≠ quittance. Un 200 n'est pas un sceau.
+
+Exemple honnête : [`examples/attest-os.json`](examples/attest-os.json) — epsilon + horizon manquent → classique.
+
+Hôte : https://acorn-royal-dune-blend.grok.me — GET `/juge` 404 = HOLD Carl, pas un produit.
+
+Un finding `detect.v0` reste PROPOSED (`truth` false, `normative` false). Ce n'est pas un acte. Ce n'est pas une facture.
 
 | Acte | Rails | Livrable client |
 |---|---|---|
@@ -13,5 +25,5 @@ Prix : Carl les écrit. Les bots ne les inventent pas.
 | Retrait Loi 25 | unforge-retract | retrait signé, historique restant |
 | Audit CI | unforge-check | badge + phrase humaine |
 
-International : même acte, pack BCP 47.
+International : même acte, pack BCP 47 — fr-CA, en / en-CA, es-MX, en-NG, pt-BR, de-DE.
 Paiement : hors Git (Interac, facture). Jamais un coin Famille.
