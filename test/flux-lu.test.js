@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { peutDire } from "../sdk/peut-dire.js";
+import { isCalendarDay, peutDire } from "../sdk/peut-dire.js";
 import { makeClaim, markLu } from "../.github/swarm/claim.mjs";
 
 const flux = readFileSync(new URL("../FLUX.md", import.meta.url), "utf8");
@@ -17,6 +17,37 @@ describe("flux — LU n'est pas consulter", () => {
     assert.match(flux, /claim\.v0/);
     assert.match(flux, /Pas une 5e carte/);
     assert.match(walk, /Ce n'est pas l'étape 2 \(`consulter`\)/);
+  });
+
+  it("names two horizon cards and refuses UFHY1 as a date", () => {
+    assert.match(flux, /Deux horizons/);
+    assert.match(flux, /horizon\.v0/);
+    assert.match(flux, /re_presser_avant/);
+    assert.match(flux, /UFHY1 nomme une suite/);
+    assert.match(walk, /Les certitudes ont une date de fin/);
+    assert.match(walk, /Deux horizons/);
+    assert.match(walk, /horizon\.v0/);
+    assert.match(walk, /UFHY1 est un nom de suite, pas une date/);
+    assert.equal(isCalendarDay("UFHY1"), false);
+    const ufhy = peutDire(
+      { quelle: "os", temoin: "aucun", epsilon: 1e-6, horizon: "UFHY1" },
+      { today: "2026-09-09" },
+    );
+    assert.equal(ufhy.quantique, false);
+    assert.equal(ufhy.mode, "classique");
+    assert.equal(ufhy.refus.code, "horizon");
+    const fused = peutDire(
+      {
+        quelle: "os",
+        temoin: "aucun",
+        epsilon: 1e-6,
+        horizon: { suite: "UFHY1", re_presser_avant: "2028-08-31" },
+      },
+      { today: "2026-09-09" },
+    );
+    assert.equal(fused.quantique, false);
+    assert.equal(fused.mode, "classique");
+    assert.equal(fused.refus.code, "horizon");
   });
 
   it("does not fill epsilon or horizon on the published os example", () => {

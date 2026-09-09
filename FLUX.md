@@ -35,6 +35,7 @@ La porte client attend encore le binder Carl GET `/juge` ([HORIZONS.md](HORIZONS
 
 `horizon` sur la carte juge est une **date calendrier** (`2028-08-31`).
 `horizon` lu par check est une carte `horizon.v0` : suite + `re_presser_avant`.
+UFHY1 nomme une suite. Ce n'est pas `horizon` sur la carte juge.
 Deux cartes. Ne pas les fusionner.
 
 ## Lire n'est pas consommer
