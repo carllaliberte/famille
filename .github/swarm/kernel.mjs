@@ -539,3 +539,34 @@ export function healPolicy() {
     live: false,
   };
 }
+
+/**
+ * Seal a swarm run on the classical bus. Ephemeral key is enough for this process.
+ * Does not post. Does not merge. Optical stays CHANNEL NOT PRESENT.
+ */
+export function sealSwarm(report = {}, keys) {
+  const k = keys || newKeyPair();
+  const queued = inbound({
+    kind: "swarm",
+    live: false,
+    ids: report.ids || [],
+    skip: (report.skip || []).map((s) => s.id || s),
+  });
+  if (!queued.ok) return queued;
+  const wave = pulse({ swarm: true, ids: report.ids || [] }, k);
+  const root = wave.epoch && wave.epoch.epoch ? wave.epoch.epoch.root : "";
+  return {
+    ok: wave.ok === true,
+    root,
+    optical: "CHANNEL_NOT_PRESENT",
+    live: false,
+    auto_merge: false,
+    posts: POSTS.map((p) => p.id),
+  };
+}
+
+export function kernelFooter(seal = {}) {
+  const short = String(seal.root || "").slice(0, 12);
+  const epoch = short ? `epoch \`${short}\` · ` : "";
+  return `kernel.v0 · ${epoch}CHANNEL NOT PRESENT · auto_merge false`;
+}

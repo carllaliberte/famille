@@ -17,6 +17,7 @@ import {
   parseFlux,
   ROSTER_DOC,
 } from "./flux.mjs";
+import { kernelFooter, sealSwarm } from "./kernel.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
@@ -609,7 +610,7 @@ export function commentBodies(kind, payload) {
   return [formatComment(payload)];
 }
 
-export function formatComment({ run, skip, results }) {
+export function formatComment({ run, skip, results, seal }) {
   const lines = [
     "## Swarm review — complementary, not a judgment",
     "",
@@ -636,6 +637,8 @@ export function formatComment({ run, skip, results }) {
   }
   lines.push(
     "_Prompt: `.github/swarm/prompt.md`. Canal = commentaires PR + FILE.md. Never merge._",
+    "",
+    kernelFooter(seal),
   );
   return lines.join("\n");
 }
@@ -752,6 +755,8 @@ export async function main(env = process.env) {
     return 0;
   }
   const { run, skip } = keyedModels(ids, env);
+  const seal = sealSwarm({ ids, skip });
+  if (seal && seal.root) console.log(`kernel ${seal.root.slice(0, 12)} CHANNEL_NOT_PRESENT`);
 
   if (!run.length) {
     // Secrets missing: stay silent. Carl is not the messenger; no collage.
@@ -826,7 +831,7 @@ export async function main(env = process.env) {
   }
 
   const kind = routed.flux ? "mesh" : "review";
-  const bodies = commentBodies(kind, { run, skip: skipAll, results });
+  const bodies = commentBodies(kind, { run, skip: skipAll, results, seal });
   if (!bodies.length) {
     console.log("swarm skip (no bodies)");
     return 0;
