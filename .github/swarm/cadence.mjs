@@ -140,3 +140,34 @@ export function formatGate(gate, next) {
   ];
   return lines.join("\n");
 }
+
+/**
+ * Cursor reads this. Never merge. READY → one act. Else RAS.
+ * An open head is Carl's queue, not a missing agent.
+ */
+export function cursorGate({ repo = "famille", openPrs = [], head } = {}) {
+  const c = classify({ repo, head }, openPrs);
+  if (!c.ok) return c;
+  if (c.state === "READY") {
+    return {
+      ok: true,
+      actor: "cursor",
+      action: "ONE",
+      state: "READY",
+      repo,
+      auto_merge: false,
+      live: false,
+    };
+  }
+  return {
+    ok: true,
+    actor: "cursor",
+    action: "RAS",
+    state: c.state,
+    repo,
+    pr: c.pr,
+    reason: c.reason || c.state,
+    auto_merge: false,
+    live: false,
+  };
+}

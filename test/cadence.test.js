@@ -6,6 +6,7 @@ import {
   canParallel,
   carlGate,
   classify,
+  cursorGate,
   formatGate,
   nextReady,
 } from "../.github/swarm/cadence.mjs";
@@ -47,5 +48,20 @@ describe("cadence.v0 — parallel across repos, one PR per repo", () => {
     assert.equal(go.action, "MERGE");
     assert.equal(go.auto_merge, false);
     assert.match(formatGate(go, "unforge-check"), /next READY: unforge-check/);
+    const ras = cursorGate({ repo: "famille", openPrs: open });
+    assert.equal(ras.action, "RAS");
+    assert.equal(ras.state, "BLOCKED");
+    assert.equal(ras.auto_merge, false);
+    const same = cursorGate({
+      repo: "famille",
+      head: "cursor/claim-findings",
+      openPrs: open,
+    });
+    assert.equal(same.action, "RAS");
+    assert.equal(same.state, "IN_PROGRESS");
+    const one = cursorGate({ repo: "famille", openPrs: [] });
+    assert.equal(one.action, "ONE");
+    assert.equal(one.state, "READY");
+    assert.equal(one.auto_merge, false);
   });
 });

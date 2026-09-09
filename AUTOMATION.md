@@ -34,6 +34,29 @@ Contrat IA : [INTEROP-IA.md](INTEROP-IA.md) — carte juge ≠ mesh `acorn.v0`.
 | grok-sign | `workflow_dispatch` → branche `grok/auto-*`, commit SSH signé, PR | merge, squash, push `main`, tampon à vide |
 | grok-optimize | `workflow_dispatch` + cron nocturne America/Toronto → scan perf+structure, HOLD chemins sensibles, branche `grok/optimize-*`, commit SSH signé, PR. Vide → pas de PR | merge, squash, push `main`, tampon à vide, toucher `unforge-check/` `schema/` `mesure-protocol/` `action.yml` |
 
+## Cloisonnement infrastructure
+
+Allowlist **positive**. Un agent n'a que les accès nommés dans le tableau Rôles et l'inventaire workflows. Pas de réseau implicite. Pas de secret hors GitHub Actions. Pas d'extension silencieuse : tout accès nouveau = une ligne ici + une PR.
+
+Risque visé : configuration / scope (incident type juillet 2026 — accès réseau non prévu via un environnement tiers mal borné), pas un « modèle malveillant ». Sans allowlist, un agent peut obtenir un accès non audité.
+
+Rôles inchangés :
+
+- Claude = lecture seule (revue / LU / challenger sur le fil). **Aucune action Git.**
+- Grok = code / git, 1 PR.
+- Carl = seul squash / merge / secrets.
+
+## Cloisonnement corpus (REVUE Phase 1)
+
+Les verdicts Phase 1 sont indépendants **par construction**. Un modèle destiné à un rôle dans [REVUE.md](REVUE.md) n'est pas fine-tuné, ni entraîné, sur :
+
+- l'historique des verdicts REVUE de ce protocole ;
+- les verdicts d'un autre agent du même cycle.
+
+Une boucle IA → corpus → IA contaminerait l'indépendance et invaliderait la garantie centrale, silencieusement. Exclusion explicite. Pas un vote. Pas un score de confiance.
+
+Cadrage futur, **non construit ce cycle** : `dataset.v0.json` / `modele.v0.json` (provenance corpus et modèle). Pas dans `schema/` aujourd'hui. Pas un fork de `mesh.v0.json`. Pas une 5e carte.
+
 Secrets (Actions **de ce repo**, pas git) : `ANTHROPIC_API_KEY` `OPENAI_API_KEY` `DEEPSEEK_API_KEY` `GEMINI_API_KEY`.
 Absents → swarm skip, silencieux. Pas un collage.
 

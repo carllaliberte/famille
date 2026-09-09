@@ -14,6 +14,7 @@ Cursor consomme le juge. Carl merge (humain). Interdiction d'arrêter.
 
 1 `flux:` [FLUX.md](FLUX.md) · 2 `interop:` [INTEROP-IA.md](INTEROP-IA.md) · 3 `cx:` [EXPERIENCE.md](EXPERIENCE.md) · 4 `bot:` STEWARD / AGENTS / CURSOR · 5 `world:` [INTERNATIONAL.md](INTERNATIONAL.md) · 6 `rente:` [RENTE.md](RENTE.md)
 Voir CHANTIERS.md. Ne pas ouvrir un 7e chantier.
+Cadence.v0 : 1 PR / repo. Cursor `cursorGate` READY → un acte, sinon RAS. Workforce.v0 : IDLE d'abord. Carl merge.
 
 Goût Expert → Quantum vert → Carl squash (humain). `merged=true` sur GitHub = fini (jamais un langage leave-draft après merge). Horloge America/Montreal.
 
