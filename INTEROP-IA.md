@@ -5,13 +5,18 @@ Deux couches. Ne pas les fusionner. Aucun modèle n'est juge.
 | Qui | Rôle |
 |---|---|
 | Grok Chef | ouvre PR / mesh |
-| Cursor | rails + consomme juge.v0 |
+| Cursor | rails + consomme juge.v0 et `cursorGate` |
 | Expert | assignation + goût |
 | Quantum | QC |
 | Autres IA | mesh / `/flux`. Toujours ouverts. Aucune n'est juge. |
 | Carl | squash + LIVE VERIFIED |
 
-`juge.v0` (lit / appelle peut-dire) ≠ `mesh.v0` (canal GitHub).
+`juge.v0` (lit / appelle peut-dire) ≠ `mesh.v0` (canal GitHub) ≠ `cadence.v0` (`cursorGate`).
+
+Les certitudes ont une date de fin.
+
+`cursorGate` n'est pas une 5e carte. Pas `consulter`. Pas LIVE.
+Champ carte manquant → MODE classique. PR ouverte → RAS. Ce n'est pas le même trou.
 
 ## 1. Carte juge — n'importe qui *lit*
 
