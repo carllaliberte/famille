@@ -92,6 +92,7 @@ const STATE = {
   revocations: [],
   epochs: [],
   leases: [],
+  nonces: new Set(),
 };
 
 export function resetLease() {
@@ -99,6 +100,7 @@ export function resetLease() {
   STATE.revocations = [];
   STATE.epochs = [];
   STATE.leases = [];
+  STATE.nonces = new Set();
 }
 
 export function isIsolated() {
@@ -177,6 +179,7 @@ export function closeEpoch(keys, extraLeaves = []) {
   if (!keys || !keys.privateKey) return fail("LEASE_KEY", "epoch needs an Ed25519 pair");
   const prev = STATE.epochs.at(-1);
   const prevRoot = prev ? prev.root : sha256("genesis");
+  const prevSignature = prev ? prev.signature : "genesis";
   const leaves = [
     ...STATE.leases.map((l) => l.sha256),
     ...STATE.revocations.map((r) => r.sha256),
@@ -186,6 +189,7 @@ export function closeEpoch(keys, extraLeaves = []) {
   const body = {
     n: STATE.epochs.length,
     prevRoot,
+    prevSignature,
     root,
     leaves,
     ts: new Date().toISOString(),
@@ -203,11 +207,14 @@ export function closeEpoch(keys, extraLeaves = []) {
 
 export function verifyChain(chain = STATE.epochs) {
   let prevRoot = sha256("genesis");
+  let i = 0;
   for (const epoch of chain) {
     if (!epoch) return fail("EPOCH_MISSING", "broken epoch");
     const { signature, publicKey, sha256: hash, ...body } = epoch;
     if (hash && hash !== sha256(stable(body))) return fail("EPOCH_TAMPER", "epoch body does not match sha256");
     if (body.prevRoot !== prevRoot) return fail("EPOCH_REPLAY", "prevRoot does not chain");
+    const expectSig = i === 0 ? "genesis" : chain[i - 1].signature;
+    if (body.prevSignature !== expectSig) return fail("EPOCH_REPLAY", "prevSignature does not chain");
     if (merkleRoot(body.leaves.length ? body.leaves : [body.prevRoot]) !== body.root) {
       return fail("EPOCH_ROOT", "merkle root mismatch");
     }
@@ -215,6 +222,7 @@ export function verifyChain(chain = STATE.epochs) {
       return fail("EPOCH_FORGED", "epoch signature rejected");
     }
     prevRoot = body.root;
+    i += 1;
   }
   return { ok: true, length: chain.length, tip: chain.at(-1)?.root || prevRoot };
 }
@@ -354,4 +362,51 @@ export function opticalCanal(lease, opts = {}) {
     reason: "DECLARED — optical data plane off this Git",
     lease,
   };
+}
+
+export const SKEW_MS = 5 * 60 * 1000;
+
+function parseTs(ts) {
+  const t = Date.parse(String(ts || ""));
+  return Number.isFinite(t) ? t : NaN;
+}
+
+/** Authenticated control-plane envelope. Strict ISO ts + nonce. Replay is refused. */
+export function wrapEnvelope(payload, keys, opts = {}) {
+  if (!keys || !keys.privateKey) return fail("LEASE_KEY", "envelope needs an Ed25519 pair");
+  if (payload && (payload.photonic || payload.qubit || payload.qkd || payload.photon)) {
+    return fail("PHOTONIC_ON_CONTROL", "no raw quantum data on the control plane");
+  }
+  const ts = isoTs(opts.ts);
+  const nonce = clip(opts.nonce, 64) || sha256(`${ts}:${Math.random().toString(36)}`);
+  const body = {
+    v: "envelope.v0",
+    canal: "CLASSICAL",
+    plane: "control",
+    nonce,
+    ts,
+    payload,
+  };
+  const signature = signPayload(keys.privateKey, body);
+  const envelope = Object.freeze({
+    ...body,
+    signature,
+    publicKey: publicPem(keys),
+    sha256: sha256(stable(body)),
+  });
+  return { ok: true, envelope };
+}
+
+export function openEnvelope(envelope, opts = {}) {
+  if (!envelope || !envelope.signature) return fail("ENVELOPE_UNSIGNED", "unsigned envelope");
+  const { signature, publicKey, sha256: hash, ...body } = envelope;
+  if (hash && hash !== sha256(stable(body))) return fail("ENVELOPE_TAMPER", "envelope body does not match sha256");
+  if (!verifyPayload(publicKey, body, signature)) return fail("ENVELOPE_FORGED", "envelope signature rejected");
+  const t = parseTs(body.ts);
+  if (!Number.isFinite(t)) return fail("ENVELOPE_TS", "strict ISO-8601 timestamp required");
+  const now = parseTs(opts.now) || Date.now();
+  if (Math.abs(now - t) > SKEW_MS) return fail("ENVELOPE_SKEW", "timestamp outside replay window");
+  if (STATE.nonces.has(body.nonce)) return fail("ENVELOPE_REPLAY", "nonce already seen");
+  STATE.nonces.add(body.nonce);
+  return { ok: true, envelope, payload: body.payload };
 }
