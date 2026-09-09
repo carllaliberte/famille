@@ -34,11 +34,17 @@ jobs:
           const rec = afterMerge({ mergedRepo: "famille", mergedNumber: n });
           console.log(formatGate({ action: "RESUME", auto_merge: false }, rec.next));
           EOF
+      - name: Discover cycle (observe after merge)
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          DISCOVER_TRIGGER: ${{ github.event_name }}
+          MERGED: ${{ github.event.pull_request.number }}
+        run: node scripts/discover-cycle.mjs
       - name: Comment (no merge)
         if: github.event.pull_request.number
         env:
           GH_TOKEN: ${{ github.token }}
           N: ${{ github.event.pull_request.number }}
         run: |
-          gh pr comment "$N" --body "cadence.v0 — merge reçu. auto_merge false. Bots reprennent les fronts READY. Carl n'est pas le planner."
+          gh pr comment "$N" --body "cadence.v0 — merge reçu. discover-cycle exécuté. auto_merge false. Bots reprennent les fronts READY. Carl n'est pas le planner."
         continue-on-error: true

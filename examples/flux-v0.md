@@ -1,5 +1,7 @@
 # Flux v0 — un inconnu, sans inventer de schéma
 
+Les certitudes ont une date de fin.
+
 ## Porte (utilisateur)
 
 ```bash
@@ -13,9 +15,16 @@ Les commandes sont dans les READMEs des rails. Ci-dessous : l'ordre cadastre seu
 
 1. Ouvrir une [figure](https://github.com/carllaliberte/figure-protocol) — qui, téléphone + gratuit.
 2. [`consulter`](https://github.com/carllaliberte/mesure-protocol) — une lecture se dépense ; détruire ici / naître là ; pas de fork.
-3. Avant la date d'horizon, [re-mesurer](https://github.com/carllaliberte/ancrage-protocol). Périmé ≠ faux.
+3. Avant le jour calendrier de la carte juge (`horizon`), [re-mesurer](https://github.com/carllaliberte/ancrage-protocol). Périmé ≠ faux. Ce n'est pas la carte `horizon.v0`.
 4. L'œil public : [unforge-check](https://github.com/carllaliberte/unforge-check) — le fichier correspond encore à la carte (`--human` : VERT / AMBRE / ROUGE).
 5. Un trou (champ manquant, ε=0, date absente) → MODE classique.
+
+## Deux horizons — ne pas fusionner
+
+`horizon` sur la carte juge est un jour calendrier (`2028-08-31`).
+`horizon.v0` (check) est une autre carte : suite + `re_presser_avant`.
+UFHY1 est un nom de suite, pas une date.
+Deux cartes. Ne pas les fusionner.
 
 LU sur une PR = le texte a été vu (`claim.v0`, processus). Ce n'est pas l'étape 2 (`consulter`).
 Carte trouée : [`attest-os.json`](attest-os.json) — epsilon + horizon manquent → classique. Pas d'invention.

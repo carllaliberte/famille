@@ -14,6 +14,7 @@ build:
 	node --check .github/swarm/workforce.mjs
 	node --check .github/swarm/detect.mjs
 	node --check scripts/swarm-ci-matrix.mjs
+	node --check scripts/discover-cycle.mjs
 
 test:
 	npm test
