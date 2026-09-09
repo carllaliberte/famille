@@ -199,3 +199,41 @@ export function independentAgents(a, b) {
   }
   return { ok: true, independent: false, reason: "independence not proven" };
 }
+
+/**
+ * Discover what we were not looking for.
+ * Local skip ≠ GitHub absence. Undetected ≠ absent.
+ * New categories stay PROPOSED.
+ */
+export function discover(obs = {}) {
+  const auto = Array.isArray(obs.auto) ? obs.auto : [];
+  const skip = Array.isArray(obs.skip) ? obs.skip : [];
+  const skippedAuto = auto.filter((id) => skip.includes(id));
+  const findings = [];
+  if (skippedAuto.length) {
+    findings.push({
+      v: DETECT_VERSION,
+      category: "DISCOVERED_CATEGORY",
+      discovered_category: "ENV_SCOPE",
+      title: "auto skip here is not missing in Actions",
+      ids: skippedAuto,
+      scope: obs.scope || "local",
+      state: "PROPOSED",
+      recommend: "HOLD",
+      normative: false,
+      live: false,
+      truth: false,
+      why_wrong: "GitHub Actions may hold GEMINI_API_KEY / HAIKU_API_KEY",
+      undetected_is_not: "absent",
+    });
+  }
+  return {
+    ok: true,
+    findings,
+    detected: findings.length > 0,
+    true: false,
+    undetected: "not absent",
+    live: false,
+    auto_merge: false,
+  };
+}

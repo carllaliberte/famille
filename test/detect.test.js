@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-import { classifyTalk, copyProof, evaluate, makeFinding, unknownIsNotFalse, independentAgents } from "../.github/swarm/detect.mjs";
+import { classifyTalk, copyProof, discover, evaluate, makeFinding, unknownIsNotFalse, independentAgents } from "../.github/swarm/detect.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECTION = readFileSync(join(ROOT, "REVUE-PROJECTION.md"), "utf8");
@@ -45,5 +45,11 @@ describe("detect.v0 — CFD/Navier–Stokes first case", () => {
     assert.equal(copy.independent, false);
     const echo = independentAgents({ source: "X" }, { source: "X" });
     assert.equal(echo.independent, false);
+    const found = discover({ auto: ["gemini", "haiku"], skip: ["haiku"], scope: "local" });
+    assert.equal(found.findings[0].discovered_category, "ENV_SCOPE");
+    assert.equal(found.findings[0].state, "PROPOSED");
+    assert.equal(found.findings[0].normative, false);
+    assert.equal(found.true, false);
+    assert.equal(found.undetected, "not absent");
   });
 });
