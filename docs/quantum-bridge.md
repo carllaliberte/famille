@@ -8,6 +8,11 @@ Ce fichier ne publie pas un photon. Il trace la couture.
 
 Runtime : [`.github/swarm/lease.mjs`](../.github/swarm/lease.mjs) + [`.github/swarm/kernel.mjs`](../.github/swarm/kernel.mjs) — SHA-256 + Ed25519 (`node:crypto`). Enveloppe anti-rejeu (nonce + ts). Pas de chaîne externe. Pas wrangler.
 
+## Invitation Carl
+
+Seul Carl invite. Le handshake ouvre cette enveloppe (nonce + ISO, anti-rejeu). Pas mTLS matériel. Pas un photon.
+Sans fibre réelle attestée hors Git : `CHANNEL NOT PRESENT`. LIVE VERIFIED = Carl seulement.
+
 ## Deux plans
 
 | Plan | Porte | Transporte | Présence ici |

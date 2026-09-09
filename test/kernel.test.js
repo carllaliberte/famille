@@ -141,7 +141,11 @@ describe("sovereign meta-kernel", () => {
     assert.equal(hs.optical, "CHANNEL_NOT_PRESENT");
     assert.equal(hs.connected, false);
     assert.equal(hs.live, false);
+    assert.equal(hs.mtls, false);
     assert.equal(handshake({ invite: card.invite, to: "gemini" }).code, "ENVELOPE_REPLAY");
     assert.equal(handshake({ invite: { type: "invite" } }).code, "ENVELOPE_UNSIGNED");
+    const again = invite("grok", keys, "carllaliberte");
+    assert.equal(handshake({ invite: again.invite, fiber: true, secret: true }).code, "CLAIMED_CHANNEL");
+    assert.equal(handshake({ invite: again.invite, mtls: true }).code, "CLAIMED_CHANNEL");
   });
 });

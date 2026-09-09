@@ -281,9 +281,12 @@ export function invite(to, keys, requester) {
 
 /**
  * External handshake: open invite + anti-replay envelope + optional signed lease.
- * Never mints CONNECTED on the optical bridge.
+ * Classical Ed25519 only. Not hardware mTLS. Never mints CONNECTED.
  */
 export function handshake(opts = {}) {
+  if (opts.mtls === true || opts.tls === true || opts.fiber === true) {
+    return fail("CLAIMED_CHANNEL", "handshake is not hardware mTLS");
+  }
   const opened = openEnvelope(opts.invite, { now: opts.now });
   if (!opened.ok) return opened;
   const body = opened.payload || {};
@@ -297,7 +300,10 @@ export function handshake(opts = {}) {
     if (!v.ok) return v;
     lease = opts.lease;
   }
-  const optical = opticalCanal(lease, opts);
+  const optical = opticalCanal(lease);
+  if (optical.presence === "CONNECTED" || optical.connected === true) {
+    return fail("CLAIMED_CHANNEL", "handshake does not mint CONNECTED");
+  }
   if (opts.payload) {
     const queued = inbound(opts.payload);
     if (!queued.ok) return queued;
@@ -306,10 +312,11 @@ export function handshake(opts = {}) {
   return {
     ok: true,
     to: body.to,
-    optical: optical.presence,
+    optical: "CHANNEL_NOT_PRESENT",
     connected: false,
     live: false,
     lease: Boolean(lease),
+    mtls: false,
     auto_merge: false,
   };
 }
