@@ -11,6 +11,9 @@ import {
   expandOnce,
   finalDeploy,
   horizon,
+  verifyWorm,
+  wormAppend,
+  wormChain,
   telemetryFeed,
   healPolicy,
   kernelFooter,
@@ -92,5 +95,12 @@ describe("phase 2 — scheduled, not hardware", () => {
     assert.equal(horizon().infinite, false);
     assert.equal(horizon().auto_run, false);
     assert.equal(horizon().cap, 8);
+    const w = wormAppend({ note: "custody" });
+    assert.equal(w.ok, true);
+    assert.match(w.hash, /^[0-9a-f]{64}$/);
+    assert.equal(verifyWorm().ok, true);
+    const broken = wormChain();
+    broken[0].payload = { hacked: true };
+    assert.equal(verifyWorm(broken).code, "WORM_BREAK");
   });
 });

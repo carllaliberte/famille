@@ -77,6 +77,7 @@ const MESH = {
   integrity: "STABLE",
   locked: false,
   horizon: [],
+  worm: [],
 };
 
 export function resetKernel() {
@@ -88,6 +89,7 @@ export function resetKernel() {
   MESH.integrity = "STABLE";
   MESH.locked = false;
   MESH.horizon = [];
+  MESH.worm = [];
   resetLease();
 }
 
@@ -98,6 +100,37 @@ function isoNow() {
 function logTelemetry(module, message) {
   MESH.logs.push({ ts: isoNow(), module, message: String(message || "").slice(0, 240) });
   if (MESH.logs.length > 200) MESH.logs.shift();
+  wormAppend({ module, message: String(message || "").slice(0, 240) });
+}
+
+export function wormAppend(payload) {
+  const prev = MESH.worm.length ? MESH.worm[MESH.worm.length - 1] : null;
+  const prevHash = prev ? prev.hash : sha256("genesis");
+  const n = MESH.worm.length;
+  const ts = isoNow();
+  const body = { n, ts, prevHash, payload };
+  const hash = sha256(JSON.stringify(body));
+  const entry = { ...body, hash };
+  MESH.worm.push(entry);
+  return { ok: true, n, hash, prevHash };
+}
+
+export function verifyWorm(chain = MESH.worm) {
+  let prevHash = sha256("genesis");
+  let i = 0;
+  for (const e of chain) {
+    if (!e) return fail("WORM_BREAK", "missing entry");
+    const { hash, ...body } = e;
+    if (body.prevHash !== prevHash) return fail("WORM_BREAK", `prevHash at ${i}`);
+    if (hash !== sha256(JSON.stringify(body))) return fail("WORM_BREAK", `hash at ${i}`);
+    prevHash = hash;
+    i += 1;
+  }
+  return { ok: true, n: chain.length, live: false };
+}
+
+export function wormChain() {
+  return MESH.worm.map((e) => ({ ...e, payload: e.payload }));
 }
 
 const FORBIDDEN_PKGS = Object.freeze([
