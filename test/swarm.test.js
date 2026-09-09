@@ -106,7 +106,7 @@ describe("flux addressing on comments", () => {
 
   it("broadcast /flux to:* is auto models, not Fable", () => {
     const r = idsForComment("/flux to:*", [], "issue_comment");
-    assert.deepEqual(r.ids, ["sonnet", "chatgpt", "deepseek", "gemini"]);
+    assert.deepEqual(r.ids, ["gemini"]);
   });
 
   it("to:carl stores envelope and calls no model", () => {

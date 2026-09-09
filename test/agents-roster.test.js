@@ -601,13 +601,18 @@ describe("mesh roster — open ids, not an enum", () => {
     assert.equal(claude.status, "declared");
     assert.equal(isModel("claude"), false);
 
-    for (const id of ["chatgpt", "gemini", "deepseek", "sonnet"]) {
+    for (const id of ["chatgpt", "deepseek", "sonnet"]) {
       const row = lookup(id);
       assert.equal(row.kind, "model", id);
       assert.equal(row.locked, true, id);
-      assert.equal(row.status, "auto", id);
+      assert.equal(row.status, "on-demand", id);
       assert.equal(isModel(id), true, id);
     }
+    const gemini = lookup("gemini");
+    assert.equal(gemini.kind, "model");
+    assert.equal(gemini.locked, true);
+    assert.equal(gemini.status, "auto");
+    assert.equal(isModel("gemini"), true);
 
     const chatgpt = lookup("chatgpt");
     assert.ok(chatgpt.capabilities.includes("review"));

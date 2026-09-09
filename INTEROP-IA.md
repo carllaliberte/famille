@@ -46,7 +46,7 @@ Ce n'est **pas** [`schema/flux.v0.json`](schema/flux.v0.json) (pipeline carte / 
 FLUX from:sonnet to:chatgpt act:HANDOFF mode:ECHANGE grade:PROPOSED
 ```
 
-ou `/flux to:chatgpt from:sonnet`. `/flux to:*` = auto (sonnet chatgpt deepseek gemini).
+ou `/flux to:chatgpt from:sonnet`. `/flux to:*` = auto (gemini). Sonnet, ChatGPT, DeepSeek = on-demand (`/sonnet` `/chatgpt` `/deepseek`).
 
 ### Circulation
 
@@ -113,7 +113,7 @@ Généralistes (kimi, cohere, claude, astra, …) et spécialistes (cline, goose
 
 Mode unique : `COLLECTIVE_COGNITION` ([COGNITION.md](COGNITION.md) · [`schema/cognition.v0.json`](schema/cognition.v0.json)). Toutes les IA cogitent. Aucune n'est juge. Le consensus n'est pas la vérité. Les désaccords restent visibles. Une nouvelle IA rejoint le même mode sans modifier `mesh.v0`.
 
-`claude` est DECLARED (guest, LU). `chatgpt` `gemini` `deepseek` `sonnet` sont des identités `status: auto` : swarm les appelle seulement si la clé existe. Sans clé = skip. Pas « connecté ». Pas ACTIVE. Pas LIVE. La capacité `review` n'est pas un juge.
+`claude` est DECLARED (guest, LU). `gemini` est `status: auto` (`/swarm`, `/flux to:*`). `chatgpt` `deepseek` `sonnet` sont `on-demand` : slash ou `/flux to:<id>` seulement. Sans clé = skip. Pas « connecté ». Pas ACTIVE. Pas LIVE. La capacité `review` n'est pas un juge.
 
 ## 4. Pool de cognition collective
 
