@@ -188,3 +188,65 @@ export function route({ task, producer, need, roster } = {}) {
     merge: false,
   };
 }
+
+const NEVER_RE =
+  /secret|credential|wrangler|juge\.v0|auto_merge|permission|deploy|signing.key/i;
+
+export function riskTier(s = {}) {
+  if (s.tier === 3 || s.tier === "3") return 3;
+  const blob = [s.task, s.need, s.note, ...(s.files || [])].join(" ");
+  if (NEVER_RE.test(blob)) return 3;
+  if (/schema|protocol|mesh|claim|crypto/i.test(blob)) return 2;
+  if (/test|doc|readme|eval|comment/i.test(blob)) return 0;
+  return 1;
+}
+
+export function neverBundle(s = {}) {
+  return riskTier(s) === 3;
+}
+
+/** Compatible synapses → one human decision. TIER 3 never shares a bundle. */
+export function bundle(synapses = []) {
+  const items = Array.isArray(synapses) ? synapses : [];
+  const critical = items.filter(neverBundle);
+  const rest = items.filter((s) => !neverBundle(s));
+  const groups = new Map();
+  for (const s of rest) {
+    const key = [
+      s.repo || "famille",
+      s.subsystem || "swarm",
+      String(riskTier(s)),
+      s.test || "npm",
+    ].join("|");
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(s);
+  }
+  const bundles = [...groups.entries()].map(([key, syn], i) => ({
+    id: `b${i}`,
+    key,
+    synapses: syn,
+    n: syn.length,
+    tier: Math.max(...syn.map(riskTier)),
+    auto_merge: false,
+    merge: false,
+  }));
+  const dedicated = critical.map((s, i) => ({
+    id: `t3-${i}`,
+    synapses: [s],
+    n: 1,
+    tier: 3,
+    split: true,
+    why: "NEVER-BUNDLE",
+    auto_merge: false,
+    merge: false,
+  }));
+  const out = [...dedicated, ...bundles];
+  return {
+    ok: true,
+    bundles: out,
+    human_decisions: out.length,
+    synapses: items.length,
+    auto_merge: false,
+    live: false,
+  };
+}
