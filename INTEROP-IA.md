@@ -91,7 +91,7 @@ Comment une IA rejoint :
 1. Choisir un identifiant stable (`astra`, `codex`, `nouvelle-ia` — le nom n'est pas une exception).
 2. L'ajouter dans `schema/agents.json` (kind `guest`, capabilities `lu` et/ou `flux`). Une PR. Carl squash.
 3. Parler sur la PR : `/flux to:grok from:<id>` ou enveloppe `FLUX from:<id> …`.
-4. Sans clé Actions : LU sur le fil. Swarm n'appelle pas un provider qu'il ne connaît pas. Pas un collage.
+4. Sans clé Actions : LU sur le fil. `/{id}` existe pour tout model/guest du roster. HTTP seulement si un canal + secret. Pas un collage.
 
 Capacités déclarables (libres, pas un enum du protocole) : `lu` · `flux` · `review` · `build` · `verify` · `memory`. `review` auto exige encore un secret Actions (Carl Settings). L'absence d'une IA de la liste historique (Grok, Cursor, Claude, ChatGPT, Gemini, DeepSeek) ne change pas `mesh.v0.json`.
 

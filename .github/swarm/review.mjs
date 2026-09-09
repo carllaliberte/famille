@@ -3,7 +3,8 @@
  * Swarm review for famille. Complementary, not a judge.
  * Reviews FILE.md + schema + docs. Fail-closed: missing keys skip.
  * Never merge. Never wrangler. Fable 5 is on-demand (cost).
- * Sonnet / ChatGPT / DeepSeek / Gemini auto if keyed.
+ * Roster (schema/agents.json) is the join. Canal is optional HTTP.
+ * auto = roster status. Future AI: one agents.json row. No mesh.v0 fork.
  */
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -14,6 +15,7 @@ import {
   isMeshEnvelope,
   modelsForDestination,
   parseFlux,
+  ROSTER_DOC,
 } from "./flux.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -36,110 +38,109 @@ export const OPENROUTER_ROUTES = Object.freeze({
   gemini: "google/gemini-2.5-flash",
 });
 
-export const MODELS = Object.freeze({
+/** HTTP transport only. Not the join. Join = schema/agents.json. */
+export const CANALS = Object.freeze({
   sonnet: {
-    id: "sonnet",
-    label: "Claude Sonnet 5",
-    model: "claude-sonnet-5",
     provider: "anthropic",
     secret: "ANTHROPIC_API_KEY",
-    auto: false,
+    model: "claude-sonnet-5",
     maxTokens: 2048,
   },
   fable: {
-    id: "fable",
-    label: "Claude Fable 5",
-    model: "claude-fable-5",
     provider: "anthropic",
     secret: "ANTHROPIC_API_KEY",
-    auto: false,
-    // Adaptive thinking is always on; 2048 is often eaten before text.
+    model: "claude-fable-5",
     maxTokens: 8192,
   },
   chatgpt: {
-    id: "chatgpt",
-    label: "ChatGPT",
-    model: "gpt-5.6-terra",
     provider: "openai",
     secret: "OPENAI_API_KEY",
-    auto: false,
+    model: "gpt-5.6-terra",
   },
   deepseek: {
-    id: "deepseek",
-    label: "DeepSeek",
-    model: "deepseek-v4-flash",
     provider: "deepseek",
     secret: "DEEPSEEK_API_KEY",
-    auto: false,
+    model: "deepseek-v4-flash",
   },
   gemini: {
-    id: "gemini",
-    label: "Gemini",
-    model: "gemini-3.8-flash",
     provider: "gemini",
     secret: "GEMINI_API_KEY",
-    auto: true,
+    model: "gemini-3.8-flash",
   },
   haiku: {
-    id: "haiku",
-    label: "Claude Haiku",
-    model: "claude-3-haiku",
     provider: "openrouter",
     secret: "HAIKU_API_KEY",
-    auto: false,
+    model: "claude-3-haiku",
     maxTokens: 2048,
   },
   llama: {
-    id: "llama",
-    label: "Llama",
-    model: "meta-llama/llama-3.3-70b-instruct:free",
     provider: "openrouter",
     secret: "LLAMA_API_KEY",
-    auto: false,
+    model: "meta-llama/llama-3.3-70b-instruct:free",
     maxTokens: 2048,
   },
   qwen: {
-    id: "qwen",
-    label: "Qwen",
-    model: "qwen-2.5-72b-instruct",
     provider: "openrouter",
     secret: "QWEN_API_KEY",
-    auto: false,
+    model: "qwen-2.5-72b-instruct",
     maxTokens: 2048,
   },
   xai: {
-    id: "xai",
-    label: "xAI",
-    model: "grok-2",
     provider: "xai",
     secret: "XAI_API_KEY",
-    auto: false,
+    model: "grok-2",
     maxTokens: 2048,
   },
 });
 
+function rosterRow(id) {
+  return (ROSTER_DOC.agents || []).find((a) => a.id === id) || null;
+}
+
+function specFor(id, canal) {
+  const row = rosterRow(id);
+  const spec = {
+    id,
+    label: row?.name || id,
+    model: canal.model,
+    provider: canal.provider,
+    secret: canal.secret,
+    auto: row?.status === "auto",
+  };
+  if (canal.maxTokens) spec.maxTokens = canal.maxTokens;
+  return Object.freeze(spec);
+}
+
+export const MODELS = Object.freeze(
+  Object.fromEntries(
+    Object.entries(CANALS).map(([id, canal]) => [id, specFor(id, canal)]),
+  ),
+);
+
 /** Native xAI cascade. 400/403 on one slug tries the next. */
 export const XAI_FALLBACK = Object.freeze(["grok-2", "grok-2-mini"]);
-
-const TRIGGERS = {
-  "/swarm": ["gemini"],
-  "/sonnet": ["sonnet"],
-  "/fable": ["fable"],
-  "/fabre": ["fable"],
-  "/chatgpt": ["chatgpt"],
-  "/deepseek": ["deepseek"],
-  "/gemini": ["gemini"],
-  "/haiku": ["haiku"],
-  "/llama": ["llama"],
-  "/qwen": ["qwen"],
-  "/xai": ["xai"],
-};
 
 function autoIds() {
   return Object.values(MODELS)
     .filter((m) => m.auto)
     .map((m) => m.id);
 }
+
+function buildTriggers() {
+  const t = {
+    "/swarm": autoIds(),
+    "/fabre": ["fable"],
+  };
+  for (const id of Object.keys(CANALS)) t["/" + id] = [id];
+  for (const row of ROSTER_DOC.agents || []) {
+    if (row.kind === "model" || row.kind === "guest") {
+      t["/" + row.id] = [row.id];
+    }
+  }
+  return Object.freeze(t);
+}
+
+const TRIGGERS = buildTriggers();
 
 /** Slash commands as tokens, not path fragments (`.github/swarm/...` is not `/swarm`). */
 export function commandsIn(text = "") {

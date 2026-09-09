@@ -201,6 +201,19 @@ describe("keyedModels fail-closed", () => {
     assert.equal(OPENROUTER_ROUTES.gemini, "google/gemini-2.5-flash");
     assert.equal(MODELS.llama.auto, false);
     assert.equal(MODELS.deepseek.auto, false);
+    assert.equal(MODELS.gemini.auto, true);
+    assert.equal(MODELS.sonnet.auto, false);
+  });
+
+  it("slash exists for future guests without a canal; HTTP stays skip", () => {
+    assert.deepEqual(parseTrigger("/codex", []), ["codex"]);
+    assert.deepEqual(parseTrigger("/cline", []), ["cline"]);
+    assert.deepEqual(parseTrigger("/goose", []), ["goose"]);
+    const { run, skip } = keyedModels(["codex", "cline", "goose"], {
+      GEMINI_API_KEY: "gem-test",
+    });
+    assert.equal(run.length, 0);
+    assert.equal(skip.length, 0);
   });
 
   it("404 and 402 skip silently", () => {
