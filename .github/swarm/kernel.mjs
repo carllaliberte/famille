@@ -4,7 +4,8 @@
  * Carl Laliberté is the only merge authority. No auto-resume.
  */
 import { readFileSync, readdirSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { OWNER_ACTOR, lookup } from "./flux.mjs";
 import {
   closeEpoch,
@@ -74,6 +75,7 @@ const MESH = {
   weights: Object.fromEntries(POSTS.map((p) => [p.id, 1])),
   logs: [],
   integrity: "STABLE",
+  locked: false,
 };
 
 export function resetKernel() {
@@ -83,6 +85,7 @@ export function resetKernel() {
   MESH.weights = Object.fromEntries(POSTS.map((p) => [p.id, 1]));
   MESH.logs = [];
   MESH.integrity = "STABLE";
+  MESH.locked = false;
   resetLease();
 }
 
@@ -198,10 +201,18 @@ export function inbound(payload) {
   )
     .toUpperCase()
     .replace(/ /g, "_");
-  if (claim === "CONNECTED_PERMANENT" || claim === "CONNECTED") {
+  if (claim === "CONNECTED_PERMANENT" || claim === "CONNECTED" || claim === "CONVERGED") {
     return fail("CLAIMED_CHANNEL", "CONNECTED_PERMANENT is not a canal");
   }
-  if (payload && (payload.photonic || payload.qubit || payload.qkd || payload.photon)) {
+  if (
+    payload &&
+    (payload.photonic ||
+      payload.qubit ||
+      payload.qkd ||
+      payload.photon ||
+      payload.entanglement ||
+      payload.planck)
+  ) {
     return fail("PHOTONIC_ON_CONTROL", "no raw quantum data on the control plane");
   }
   MESH.buffer.push({ payload, ts: isoNow() });
@@ -568,5 +579,95 @@ export function sealSwarm(report = {}, keys) {
 export function kernelFooter(seal = {}) {
   const short = String(seal.root || "").slice(0, 12);
   const epoch = short ? `epoch \`${short}\` · ` : "";
-  return `kernel.v0 · ${epoch}CHANNEL NOT PRESENT · auto_merge false`;
+  return `kernel.v0 · ${epoch}CHANNEL NOT PRESENT · theory CLOSED · auto_merge false`;
+}
+
+/** Optical theory is finished here. No QPU. No 100% coherence. Fiber + Carl, or HOLD. */
+export function closeQuantum() {
+  return {
+    ok: true,
+    theory: "CLOSED",
+    optical: "CHANNEL_NOT_PRESENT",
+    qpu: false,
+    photon_on_git: false,
+    entanglement: false,
+    live: false,
+    auto_merge: false,
+  };
+}
+
+const CHAIRS = Object.freeze({
+  grok: "build",
+  sonnet: "architecture",
+  chatgpt: "synthèse",
+  deepseek: "merkle",
+  gemini: "pilotage",
+});
+
+/** Five chairs, empty optical seat, Carl's gavel. Not CONNECTED. Not LIVE. */
+export function consilium(opts = {}) {
+  if (opts.reset !== false) resetKernel();
+  const keys = opts.keys || newKeyPair();
+  const sealed = sealSwarm({ ids: POSTS.map((p) => p.id) }, keys);
+  const rows = neurons()
+    .map((n) => {
+      const chair = String(CHAIRS[n.id] || n.post).padEnd(14);
+      const id = n.id.padEnd(10);
+      return `  ${id}${chair}${n.presence}`;
+    })
+    .join("\n");
+  const epoch = String(sealed.root || "").slice(0, 12);
+  const lines = [
+    "FAMILLE  kernel.v0",
+    "----------------------------------------",
+    "  siège     poste         présence",
+    rows,
+    "  optique                 CHANNEL NOT PRESENT",
+    "  théorie                 CLOSED",
+    "  vérité                  non  (Merkle = chaîne)",
+    "  merge                   Carl seulement",
+    "----------------------------------------",
+    `  epoch ${epoch || "none"}`,
+    "  auto_merge false",
+  ];
+  return {
+    ok: true,
+    text: lines.join("\n"),
+    optical: "CHANNEL_NOT_PRESENT",
+    live: false,
+    theory: "CLOSED",
+    epoch,
+  };
+}
+
+const isMain =
+  Boolean(process.argv[1]) &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  const board = consilium();
+  console.log(board.text);
+}
+
+/** Carl locks the doctrine. Not a cloud deploy. Not CONVERGED. Not a copyright bypass. */
+export function finalDeploy(requester) {
+  if (!isCarl(requester)) return fail("HUMAN_ONLY", "final lock is Carl only");
+  MESH.locked = true;
+  logTelemetry("LOCK", "doctrine locked by Carl");
+  return {
+    ok: true,
+    deployed: false,
+    wrangler: false,
+    locked: true,
+    converged: false,
+    copyright_bypass: false,
+    optical: "CHANNEL_NOT_PRESENT",
+    theory: "CLOSED",
+    auto_merge: false,
+    live: false,
+    human: HUMAN,
+  };
+}
+
+export function isLocked() {
+  return MESH.locked === true;
 }

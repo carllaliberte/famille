@@ -4,7 +4,10 @@ import {
   PHASE2,
   ROTATE_EVERY,
   acceptForeignTip,
+  closeQuantum,
+  consilium,
   enclaveStatus,
+  finalDeploy,
   healPolicy,
   kernelFooter,
   phase2,
@@ -48,6 +51,27 @@ describe("phase 2 — scheduled, not hardware", () => {
     assert.equal(sealed.optical, "CHANNEL_NOT_PRESENT");
     assert.equal(sealed.live, false);
     assert.match(kernelFooter(sealed), /kernel\.v0/);
-    assert.match(kernelFooter(sealed), /auto_merge false/);
+    assert.match(kernelFooter(sealed), /theory CLOSED/);
+    const q = closeQuantum();
+    assert.equal(q.theory, "CLOSED");
+    assert.equal(q.qpu, false);
+    assert.equal(q.entanglement, false);
+    assert.equal(q.photon_on_git, false);
+    const hall = consilium();
+    assert.match(hall.text, /FAMILLE  kernel\.v0/);
+    assert.match(hall.text, /CHANNEL NOT PRESENT/);
+    assert.match(hall.text, /CLOSED/);
+    assert.match(hall.text, /Carl seulement/);
+    assert.doesNotMatch(hall.text, /CONNECTED_PERMANENT/);
+    assert.equal(hall.live, false);
+    assert.equal(finalDeploy("gemini").code, "HUMAN_ONLY");
+    const lock = finalDeploy("Carl Laliberté");
+    assert.equal(lock.ok, true);
+    assert.equal(lock.deployed, false);
+    assert.equal(lock.wrangler, false);
+    assert.equal(lock.converged, false);
+    assert.equal(lock.copyright_bypass, false);
+    assert.equal(lock.locked, true);
+    assert.equal(lock.auto_merge, false);
   });
 });

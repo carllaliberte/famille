@@ -38,6 +38,12 @@ Un bail d’intrication, sur ce dépôt, n’est qu’un **certificat classique 
 Sans bail signé + fibre réelle attestée : `CHANNEL NOT PRESENT`.
 LIVE VERIFIED = Carl seulement.
 
+## Théorie close
+
+Pas de QPU sur Git. Pas d’intrication. Pas 100 % de cohérence. Planck YAML = HOLD.
+Fibre réelle + invitation Carl, ou rien. `auto_merge: false`.
+
+
 ## Époques Merkle
 
 Chaque fenêtre agrège les baux et révocations dans un arbre SHA-256.

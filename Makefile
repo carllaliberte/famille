@@ -1,7 +1,7 @@
 # FAMILLE — native node. No rustc. No python kernel. No photon.
 # make test is the gate. Carl squash. Never auto-merge.
 
-.PHONY: all build test inspect
+.PHONY: all build test inspect pulse
 
 all: build test
 
@@ -15,3 +15,6 @@ test:
 
 inspect:
 	node --input-type=module -e "import { inspectForge } from './.github/swarm/kernel.mjs'; const r = inspectForge('.'); if (!r.ok) { console.error(r.hits); process.exit(1); } console.log('inspectForge ok');"
+
+pulse:
+	node .github/swarm/kernel.mjs
