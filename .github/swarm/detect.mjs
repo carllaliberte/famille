@@ -130,3 +130,110 @@ export function evaluate(finding, ctx = {}) {
 export function cannotNorm(finding) {
   return { ...finding, state: "PROPOSED", normative: false };
 }
+
+/** Classical model first. Metaphor is not physics. */
+export const TALK = Object.freeze({
+  PHYSICAL: "physical",
+  COMPUTATIONAL: "computational",
+  MATH: "math-inspired",
+  CLASSICAL: "classical-prob",
+  METAPHOR: "metaphor",
+  RHETORIC: "rhetoric",
+  UNDEMONSTRATED: "undemonstrated",
+});
+
+export function classifyTalk(text = "") {
+  const s = String(text || "").toLowerCase();
+  if (/proposed|unknown|hold|confirmed|rejected/.test(s) && /superposition/.test(s)) {
+    return {
+      kind: TALK.METAPHOR,
+      justified: false,
+      use: "classical",
+      note: "finding states are not quantum superposition",
+    };
+  }
+  if (/photon|qubit|qkd|intrication|teleport/.test(s) && /git|github|mesh|canal/.test(s)) {
+    return {
+      kind: TALK.UNDEMONSTRATED,
+      justified: false,
+      use: "classical",
+      note: "no QPU on git — CHANNEL NOT PRESENT",
+    };
+  }
+  if (/analogie|metaphor|comme si/.test(s)) {
+    return { kind: TALK.METAPHOR, justified: false, use: "classical", note: "declared analogy" };
+  }
+  return { kind: TALK.CLASSICAL, justified: true, use: "classical", note: "classical model suffices" };
+}
+
+/** UNKNOWN ≠ false. NOT OBSERVED ≠ not existing. */
+export function unknownIsNotFalse(observation) {
+  if (observation == null || observation === "") {
+    return { unknown: true, false: false, existing: null, observed: false };
+  }
+  return { unknown: false, false: false, observed: true, value: observation };
+}
+
+/** A copy has the same provenance. It is not a new proof. */
+export function copyProof(proof) {
+  if (!proof || typeof proof !== "object") return fail("PROOF", "missing");
+  return {
+    ok: true,
+    kind: "COPIE",
+    original: proof.id || proof.hash || null,
+    new_proof: false,
+    independent: false,
+    live: false,
+    truth: false,
+  };
+}
+
+export function independentAgents(a, b) {
+  const sa = String((a && a.source) || "");
+  const sb = String((b && b.source) || "");
+  if (sa && sb && sa === sb) {
+    return { ok: true, independent: false, reason: "same source" };
+  }
+  if (a && b && a.vendor && a.vendor === b.vendor) {
+    return { ok: true, independent: false, reason: "same vendor" };
+  }
+  return { ok: true, independent: false, reason: "independence not proven" };
+}
+
+/**
+ * Discover what we were not looking for.
+ * Local skip ≠ GitHub absence. Undetected ≠ absent.
+ * New categories stay PROPOSED.
+ */
+export function discover(obs = {}) {
+  const auto = Array.isArray(obs.auto) ? obs.auto : [];
+  const skip = Array.isArray(obs.skip) ? obs.skip : [];
+  const skippedAuto = auto.filter((id) => skip.includes(id));
+  const findings = [];
+  if (skippedAuto.length) {
+    findings.push({
+      v: DETECT_VERSION,
+      category: "DISCOVERED_CATEGORY",
+      discovered_category: "ENV_SCOPE",
+      title: "auto skip here is not missing in Actions",
+      ids: skippedAuto,
+      scope: obs.scope || "local",
+      state: "PROPOSED",
+      recommend: "HOLD",
+      normative: false,
+      live: false,
+      truth: false,
+      why_wrong: "GitHub Actions may hold GEMINI_API_KEY / HAIKU_API_KEY",
+      undetected_is_not: "absent",
+    });
+  }
+  return {
+    ok: true,
+    findings,
+    detected: findings.length > 0,
+    true: false,
+    undetected: "not absent",
+    live: false,
+    auto_merge: false,
+  };
+}
