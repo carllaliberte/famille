@@ -1,7 +1,7 @@
 # FAMILLE — native node. No rustc. No python kernel. No photon.
 # make test is the gate. Carl squash. Never auto-merge.
 
-.PHONY: all build test inspect pulse telemetry
+.PHONY: all build test inspect pulse telemetry matrix
 
 all: build test
 
@@ -12,6 +12,7 @@ build:
 	node --check .github/swarm/claim.mjs
 	node --check .github/swarm/cadence.mjs
 	node --check .github/swarm/workforce.mjs
+	node --check scripts/swarm-ci-matrix.mjs
 
 test:
 	npm test
@@ -24,3 +25,6 @@ pulse:
 
 telemetry:
 	node --input-type=module -e "import { telemetryFeed } from './.github/swarm/kernel.mjs'; console.log(JSON.stringify(telemetryFeed(), null, 2));"
+
+matrix:
+	node scripts/swarm-ci-matrix.mjs
