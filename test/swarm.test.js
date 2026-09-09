@@ -44,7 +44,7 @@ describe("swarm roster", () => {
     assert.equal(MODELS.gemini.model, "gemini-3.8-flash");
     assert.equal(MODELS.fable.auto, false);
     assert.equal(MODELS.sonnet.auto, false);
-    assert.equal(MODELS.haiku.auto, false);
+    assert.equal(MODELS.haiku.auto, true);
     assert.equal(MODELS.xai.model, "grok-2");
     assert.equal(MODELS.fable.maxTokens, 8192);
     assert.ok(MODELS.fable.maxTokens > MODELS.sonnet.maxTokens);
@@ -54,7 +54,7 @@ describe("swarm roster", () => {
 describe("parseTrigger", () => {
   it("defaults to auto models — not Fable", () => {
     const ids = parseTrigger("", []);
-    assert.deepEqual(ids, ["gemini"]);
+    assert.deepEqual(ids, ["gemini", "haiku"]);
     assert.ok(!ids.includes("fable"));
     assert.ok(!ids.includes("xai"));
     assert.ok(!ids.includes("sonnet"));
@@ -71,7 +71,7 @@ describe("parseTrigger", () => {
     assert.deepEqual(parseTrigger("/deepseek", []), ["deepseek"]);
     assert.deepEqual(parseTrigger("/gemini", []), ["gemini"]);
     assert.deepEqual(parseTrigger("/sonnet", []), ["sonnet"]);
-    assert.deepEqual(parseTrigger("/swarm", []), ["gemini"]);
+    assert.deepEqual(parseTrigger("/swarm", []), ["gemini", "haiku"]);
   });
 
   it("does not treat .github/swarm paths as /swarm", () => {
@@ -106,7 +106,7 @@ describe("flux addressing on comments", () => {
 
   it("broadcast /flux to:* is auto models, not Fable", () => {
     const r = idsForComment("/flux to:*", [], "issue_comment");
-    assert.deepEqual(r.ids, ["gemini"]);
+    assert.deepEqual(r.ids, ["gemini", "haiku"]);
   });
 
   it("to:carl stores envelope and calls no model", () => {

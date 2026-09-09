@@ -23,6 +23,23 @@ Carl Laliberté merge. Les IA proposent. Une signature n’est pas une vérité.
 
 `schema/` = contrats d’interface. Pas de clés API. Pas de CI interne comme spec.
 
+## Doctrine & posture
+
+- Ce dépôt présente des composants vérifiables (`CODE VERIFIED`). Ce n’est pas `TEST VERIFIED`. Ce n’est pas `LIVE VERIFIED`.
+- Pas d’étiquette marketing PQC. Pas ε = 0.
+- Découplage processus ≠ contenu (`claim.v0`). Le kernel vérifie l’intégrité (`evidence_hash`) et la structure, jamais la sémantique métier.
+
+## Points d’ancrage pour audit
+
+1. Encapsulation opt-in : [KEM.md](KEM.md) (rail `ml-kem-001` chez unforge-check). Pas `docs/KEM.md` — ce fichier n’existe pas ici.
+2. Signature hybride `UFHY1` (Ed25519 + ML-DSA-65) : **signatures seulement**, jamais par défaut, pas une encapsulation.
+3. Contrats : [schema/mesh.v0.json](schema/mesh.v0.json), [schema/cognition.v0.json](schema/cognition.v0.json), [schema/agents.json](schema/agents.json).
+4. Preuves : `.github/swarm/claim.mjs` — **pas** `schema/claim.v0.json` (non construit).
+
+## Protocole de challenge
+
+Toute soumission ou critique technique doit être accompagnée d’une preuve d’exécution ou d’un cas `npm test`. Les avis sans artefact sont rejetés par design.
+
 ## Règle du jeu
 
 - Interdit : étiquette marketing PQC, ε = 0, QPU sur Git, merge automatique.
