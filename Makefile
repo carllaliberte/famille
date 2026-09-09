@@ -9,6 +9,7 @@ build:
 	node --check .github/swarm/kernel.mjs
 	node --check .github/swarm/lease.mjs
 	node --check .github/swarm/cognition.mjs
+	node --check .github/swarm/claim.mjs
 
 test:
 	npm test
