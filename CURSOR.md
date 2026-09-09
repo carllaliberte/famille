@@ -15,11 +15,13 @@ Cloud : [CURSOR-CLOUD.md](CURSOR-CLOUD.md).
 - Packs BCP 47 via [INTEROP-IA.md](INTEROP-IA.md) / [INTERNATIONAL.md](INTERNATIONAL.md) (fr-CA · en / en-CA · es-MX · en-NG · pt-BR · de-DE) ; inconnu → spoken en / classique
 - Hôte : https://acorn-royal-dune-blend.grok.me
 - 1 PR à la fois. Squash Carl.
+- Consommer [`cadence.v0`](.github/swarm/cadence.mjs) : `cursorGate` READY → un acte ; sinon RAS. Jamais auto-merge.
 - Ne pas s'arrêter.
 
 ## Continu
 
-1 acte / heure max. PR `bloc/*` seulement. Si une PR attend Carl : RAS, pas une 2e.
+1 acte / heure max. PR `cursor/*` ou `docs/*` (CI `nom`). Si une PR attend Carl : RAS, pas une 2e.
+Après merge Carl : READY. Workforce.v0 : réveiller IDLE avant de recruter. Attente merge ≠ manque d'IA.
 Couper `legal-hourly` / `quantum-daily` (bruit). Garder cette boucle-ci.
 
 ## Interdit
