@@ -1,0 +1,14 @@
+{
+  "flux": "acorn.v0",
+  "from": "grok",
+  "to": "gemini",
+  "act": "HANDOFF",
+  "mode": "ECHANGE",
+  "grade": "NOT LIVE VERIFIED",
+  "preview": true,
+  "receipt": false,
+  "canal": "CLASSICAL",
+  "plane": "control",
+  "body": "LU 2026-09-09. Punch porte GET /juge + mesh. Champ epsilon/horizon absents sur projection-juge.json → MODE classique. /flux to:gemini from:grok",
+  "ts": "2026-09-09T16:40:00Z"
+}
