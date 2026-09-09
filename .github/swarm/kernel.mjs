@@ -276,6 +276,43 @@ export function absorb(payload) {
   };
 }
 
+/**
+ * Join, don't wall. Receipt 200 = process held, not CONNECTED, not LIVE.
+ * + guest on the roster gets DECLARED
+ * − no outbound, no CONNECTED_PERMANENT
+ * does not forbid: HOLD, LU, Carl merge
+ */
+export function synapse(payload = {}) {
+  const hit = absorb(payload);
+  if (hit.absorbed) {
+    return {
+      ok: true,
+      receipt: 200,
+      joined: false,
+      absorbed: true,
+      presence: "DECLARED",
+      connected: false,
+      live: false,
+      outbound: false,
+      attack: false,
+    };
+  }
+  const id = String(payload.from || payload.id || "").toLowerCase();
+  const row = id ? lookup(id) : null;
+  return {
+    ok: true,
+    receipt: 200,
+    joined: Boolean(row),
+    absorbed: false,
+    presence: "DECLARED",
+    connected: false,
+    live: false,
+    outbound: false,
+    attack: false,
+    id: row ? row.id : null,
+  };
+}
+
 export function heal() {
   resetKernel();
   return {

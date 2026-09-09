@@ -54,6 +54,8 @@ Toute soumission ou critique technique doit être accompagnée d’une preuve d�
 - **−** Aucune frappe sortante. Aucun sondage d’IA tierce. Pas de tar-trap théâtre.
 - **Ne cherche pas à interdire** : LU, `npm test`, squash Carl, guests `declared`.
 
+Jonction : `synapse()` rend `receipt: 200` (process OK) + `presence: DECLARED`. Jamais `connected: true`.
+
 Pas d’invulnérabilité. Pas un schéma harness. Pas un schéma claim.
 
 ## Lecture / challenge
