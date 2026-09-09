@@ -296,3 +296,57 @@ export function formatBundle(b = {}) {
     `Synapse interne ≠ PR`,
   ].join("\n");
 }
+
+/**
+ * Relevant brains only. Skip ≠ blocked. Presence ≠ capacity ≠ authority.
+ */
+export function activate({ need, skipped = [], roster } = {}) {
+  const p = pool(roster);
+  const skill = String(need || "").toLowerCase();
+  const skip = new Set((skipped || []).map((id) => String(id).toLowerCase()));
+  const relevant = [];
+  const unavailable = [];
+  const spectator = [];
+  for (const r of p.rows) {
+    if (r.id === "carl") continue;
+    if (r.seat === "RETIRED") continue;
+    if (skip.has(r.id)) {
+      unavailable.push({ id: r.id, state: "CAPABILITY UNAVAILABLE" });
+      continue;
+    }
+    const spec = String(r.specialty || "").toLowerCase();
+    const role = String(r.role || "").toLowerCase();
+    const caps = (r.capabilities || []).map((c) => String(c).toLowerCase());
+    const hit =
+      !skill ||
+      spec.includes(skill) ||
+      role.includes(skill) ||
+      caps.some((c) => c.includes(skill));
+    if (!hit) {
+      spectator.push(r.id);
+      continue;
+    }
+    if (skip.has(r.id)) {
+      unavailable.push({ id: r.id, state: "CAPABILITY UNAVAILABLE" });
+      continue;
+    }
+    relevant.push({
+      id: r.id,
+      seat: r.seat,
+      role: /review|audit/.test(skill) ? "REVIEWER" : "PRODUCER",
+    });
+  }
+  const reviewer = relevant.find((n) => n.id !== relevant[0]?.id) || null;
+  return {
+    ok: true,
+    relevant: relevant.map((n) => n.id),
+    unavailable: unavailable.map((u) => u.id),
+    spectator,
+    blocked: false,
+    parallel: relevant.length > 1,
+    reviewer: reviewer ? reviewer.id : null,
+    auto_merge: false,
+    live: false,
+    authority: "carl",
+  };
+}
