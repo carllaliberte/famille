@@ -454,6 +454,8 @@ describe("mesh roster — open ids, not an enum", () => {
     const branches = read("BRANCHES.md");
     const hook = read(".githooks/pre-push");
     assert.match(branche, /ai\/\[a-z0-9-\]\+/);
+    assert.match(branche, /une tête/);
+    assert.match(branche, /une PR ouverte max/);
     assert.match(branches, /ai\/<piece>/);
     assert.match(hook, /ai\/\*/);
     const mesh = loadMeshSchema();
