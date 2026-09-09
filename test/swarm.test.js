@@ -292,6 +292,9 @@ describe("canon FILE.md + schema + docs", () => {
       "schema/agents.v0.json",
       "schema/agents.json",
       "schema/README.md",
+      "schema/cognition.v0.json",
+      "schema/kernel.v0.json",
+      "docs/quantum-bridge.md",
     ]);
   });
 

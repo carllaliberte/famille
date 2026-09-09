@@ -4,6 +4,7 @@ import {
   PHASE2,
   ROTATE_EVERY,
   acceptForeignTip,
+  closeQuantum,
   enclaveStatus,
   healPolicy,
   kernelFooter,
@@ -48,6 +49,11 @@ describe("phase 2 — scheduled, not hardware", () => {
     assert.equal(sealed.optical, "CHANNEL_NOT_PRESENT");
     assert.equal(sealed.live, false);
     assert.match(kernelFooter(sealed), /kernel\.v0/);
-    assert.match(kernelFooter(sealed), /auto_merge false/);
+    assert.match(kernelFooter(sealed), /theory CLOSED/);
+    const q = closeQuantum();
+    assert.equal(q.theory, "CLOSED");
+    assert.equal(q.qpu, false);
+    assert.equal(q.entanglement, false);
+    assert.equal(q.photon_on_git, false);
   });
 });

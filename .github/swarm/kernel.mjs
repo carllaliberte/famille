@@ -198,10 +198,18 @@ export function inbound(payload) {
   )
     .toUpperCase()
     .replace(/ /g, "_");
-  if (claim === "CONNECTED_PERMANENT" || claim === "CONNECTED") {
+  if (claim === "CONNECTED_PERMANENT" || claim === "CONNECTED" || claim === "CONVERGED") {
     return fail("CLAIMED_CHANNEL", "CONNECTED_PERMANENT is not a canal");
   }
-  if (payload && (payload.photonic || payload.qubit || payload.qkd || payload.photon)) {
+  if (
+    payload &&
+    (payload.photonic ||
+      payload.qubit ||
+      payload.qkd ||
+      payload.photon ||
+      payload.entanglement ||
+      payload.planck)
+  ) {
     return fail("PHOTONIC_ON_CONTROL", "no raw quantum data on the control plane");
   }
   MESH.buffer.push({ payload, ts: isoNow() });
@@ -568,5 +576,19 @@ export function sealSwarm(report = {}, keys) {
 export function kernelFooter(seal = {}) {
   const short = String(seal.root || "").slice(0, 12);
   const epoch = short ? `epoch \`${short}\` · ` : "";
-  return `kernel.v0 · ${epoch}CHANNEL NOT PRESENT · auto_merge false`;
+  return `kernel.v0 · ${epoch}CHANNEL NOT PRESENT · theory CLOSED · auto_merge false`;
+}
+
+/** Optical theory is finished here. No QPU. No 100% coherence. Fiber + Carl, or HOLD. */
+export function closeQuantum() {
+  return {
+    ok: true,
+    theory: "CLOSED",
+    optical: "CHANNEL_NOT_PRESENT",
+    qpu: false,
+    photon_on_git: false,
+    entanglement: false,
+    live: false,
+    auto_merge: false,
+  };
 }

@@ -33,6 +33,9 @@ export const CANON_PATHS = Object.freeze([
   "schema/agents.v0.json",
   "schema/agents.json",
   "schema/README.md",
+  "schema/cognition.v0.json",
+  "schema/kernel.v0.json",
+  "docs/quantum-bridge.md",
 ]);
 
 export const OPENROUTER_ROUTES = Object.freeze({
