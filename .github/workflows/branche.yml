@@ -1,6 +1,9 @@
 name: branche
 on:
   pull_request:
+permissions:
+  contents: read
+  pull-requests: read
 concurrency:
   group: branche-${{ github.head_ref }}
   cancel-in-progress: true
@@ -13,3 +16,14 @@ jobs:
           REF: ${{ github.head_ref }}
         run: |
           echo "$REF" | grep -Eq '^(ville/(juge|conso|preview|sdk|rente|garde)-[a-z0-9-]+|ville/noms|cursor/[a-z0-9-]+|docs/[a-z0-9-]+|schema/[a-z0-9-]+|ai/[a-z0-9-]+|grok/auto-[0-9]{8}-[0-9]{6}|grok/optimize-[0-9]{8}-[0-9]{6})$'
+      - name: une tête
+        env:
+          GH_TOKEN: ${{ github.token }}
+          N: ${{ github.event.pull_request.number }}
+        run: |
+          extras=$(gh pr list --state open --json number --jq "[.[] | select(.number != ${N})] | length")
+          if [ "$extras" != "0" ]; then
+            echo "HOLD: une PR ouverte max. Carl squash l'autre tête d'abord."
+            exit 1
+          fi
+          echo "une tête ok"
