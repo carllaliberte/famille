@@ -12,6 +12,7 @@ build:
 	node --check .github/swarm/claim.mjs
 	node --check .github/swarm/cadence.mjs
 	node --check .github/swarm/workforce.mjs
+	node --check .github/swarm/detect.mjs
 	node --check scripts/swarm-ci-matrix.mjs
 
 test:

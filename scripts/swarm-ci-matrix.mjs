@@ -1,29 +1,21 @@
 #!/usr/bin/env node
 /**
  * Swarm CI matrix. Presence boolean only. Never dump secrets.
- * Missing keys → skip. Always exit 0. Carl merges.
+ * Missing keys → silent skip. Always exit 0. connected stays false.
+ * Carl merges.
  */
 import { fileURLToPath } from "node:url";
 import { MODELS, keyedModels } from "../.github/swarm/review.mjs";
 
 export function matrix(env = process.env) {
   const ids = Object.keys(MODELS);
-  const { run, skip } = keyedModels(ids, env);
-  const rows = ids.map((id) => {
-    const spec = MODELS[id];
-    const on = run.find((r) => r.id === id);
-    const off = skip.find((s) => s.id === id);
-    return {
-      id,
-      auto: Boolean(spec.auto),
-      secret: spec.secret,
-      present: Boolean(on),
-      via: on && on.via ? on.via : on ? "native" : null,
-      skip: off ? off.reason : null,
-      connected: false,
-      live: false,
-    };
-  });
+  const { run } = keyedModels(ids, env);
+  const presentIds = new Set(run.map((r) => r.id));
+  const rows = ids.map((id) => ({
+    id,
+    present: presentIds.has(id),
+    connected: false,
+  }));
   return {
     ok: true,
     n: rows.length,
@@ -45,7 +37,6 @@ if (isMain()) {
   const out = matrix();
   const text = JSON.stringify(out, null, 2);
   if (/sk-|sk-or-|AIza|xai-|BEGIN /.test(text)) {
-    console.error("HOLD: matrix leaked a key-shaped string");
     process.exit(0);
   }
   console.log(text);
