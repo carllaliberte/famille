@@ -129,3 +129,62 @@ export function assign(id, task, roster) {
     auto_merge: false,
   };
 }
+
+/**
+ * One synapse: who works, who reviews. Producer ≠ reviewer.
+ * Never carl as worker. Never merge. Dormant first.
+ */
+export function route({ task, producer, need, roster } = {}) {
+  const p = pool(roster);
+  const prod = String(producer || "").toLowerCase();
+  const skill = String(need || "").toLowerCase();
+  const scored = p.rows
+    .filter((r) => r.id !== "carl" && r.id !== prod && r.seat !== "RETIRED")
+    .map((r) => {
+      const spec = String(r.specialty || "").toLowerCase();
+      const caps = (r.capabilities || []).map((c) => String(c).toLowerCase());
+      let score = 0;
+      const why = [];
+      if (skill && spec.includes(skill)) {
+        score += 3;
+        why.push("specialty");
+      }
+      if (skill && caps.some((c) => c.includes(skill))) {
+        score += 1;
+        why.push("capability");
+      }
+      if (r.seat === "IDLE") {
+        score += 2;
+        why.push("dormant");
+      } else if (r.seat === "AVAILABLE") {
+        score += 1;
+        why.push("available");
+      }
+      return { id: r.id, score, why, seat: r.seat };
+    })
+    .sort((a, b) => b.score - a.score);
+  const worker = scored[0];
+  if (!worker) return fail("NO_NODE", "no specialist");
+  const reviewer = scored.find((s) => s.id !== worker.id) || null;
+  return {
+    ok: true,
+    v: WORKFORCE_VERSION,
+    task: String(task || ""),
+    producer: prod || null,
+    worker: worker.id,
+    reviewer: reviewer ? reviewer.id : null,
+    independent: Boolean(
+      reviewer && reviewer.id !== worker.id && reviewer.id !== prod,
+    ),
+    why: worker.why,
+    synapse: {
+      from: prod || "mesh",
+      to: worker.id,
+      act: "ROUTE",
+      grade: "PROPOSED",
+    },
+    auto_merge: false,
+    live: false,
+    merge: false,
+  };
+}
