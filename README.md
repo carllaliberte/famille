@@ -8,6 +8,9 @@ The human still merges. Labels do not live forever. — [RENTE.md](RENTE.md)
 A typed-evidence lattice for post-quantum cybersecurity and composable proof.
 Not fourteen scripts. Not a blockchain. Not a coin.
 
+Audit externe (lecture / challenge) : [EVAL.md](EVAL.md).
+
+
 Before anyone may say *quantique*, four fields must hold on the card.
 A missing field keeps the label **classique**. That is the product.
 
