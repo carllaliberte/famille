@@ -6,7 +6,7 @@ La fibre (`OPTICAL_QUANTUM`) est le **plan de données**. Ils ne se mélangent p
 QUANTUM-MASTER reste le kernel privé. Hors Git public. Hors grok.me.
 Ce fichier ne publie pas un photon. Il trace la couture.
 
-Runtime : [`.github/swarm/lease.mjs`](../.github/swarm/lease.mjs) — SHA-256 + Ed25519 (`node:crypto`). Pas de chaîne externe. Pas wrangler.
+Runtime : [`.github/swarm/lease.mjs`](../.github/swarm/lease.mjs) + [`.github/swarm/kernel.mjs`](../.github/swarm/kernel.mjs) — SHA-256 + Ed25519 (`node:crypto`). Enveloppe anti-rejeu (nonce + ts). Pas de chaîne externe. Pas wrangler.
 
 ## Deux plans
 
