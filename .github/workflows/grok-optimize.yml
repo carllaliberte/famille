@@ -48,6 +48,7 @@ jobs:
           fetch-depth: 0
 
       - name: Exiger les secrets de signature
+        id: secrets
         env:
           KEY: ${{ secrets.GROK_SIGNING_KEY }}
           PUB: ${{ secrets.GROK_SIGNING_KEY_PUB }}
@@ -60,14 +61,21 @@ jobs:
           [ -n "$PUB" ] || { echo "HOLD : GROK_SIGNING_KEY_PUB absent"; missing=1; }
           [ -n "$NAME" ] || { echo "HOLD : GROK_GIT_NAME absent"; missing=1; }
           [ -n "$EMAIL" ] || { echo "HOLD : GROK_GIT_EMAIL absent"; missing=1; }
-          test "$missing" -eq 0
+          if [ "$missing" -ne 0 ]; then
+            echo "HOLD : secrets absents. Pas de PR. exit 0."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node
+        if: steps.secrets.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Configurer la clé de signature SSH
+        if: steps.secrets.outputs.skip != 'true'
         env:
           KEY: ${{ secrets.GROK_SIGNING_KEY }}
           PUB: ${{ secrets.GROK_SIGNING_KEY_PUB }}
@@ -82,6 +90,7 @@ jobs:
           chmod 644 ~/.ssh/allowed_signers
 
       - name: Config git
+        if: steps.secrets.outputs.skip != 'true'
         run: |
           set -euo pipefail
           git config user.name "${{ secrets.GROK_GIT_NAME }}"
@@ -92,6 +101,7 @@ jobs:
           git config gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
 
       - name: Analyse et optimisation
+        if: steps.secrets.outputs.skip != 'true'
         env:
           SCOPE: ${{ github.event.inputs.scope || 'perf+structure' }}
         run: |
@@ -99,6 +109,7 @@ jobs:
           node scripts/optimize-scan.mjs --scope "$SCOPE" --apply --report optimization_report.md
 
       - name: Détecter si des chemins sensibles ont été touchés
+        if: steps.secrets.outputs.skip != 'true'
         id: sensitive
         run: |
           set -euo pipefail
@@ -120,13 +131,16 @@ jobs:
             done
           done
           if [ -n "$TOUCHED" ]; then
-            echo "HOLD : chemins sensibles touchés. REVUE.md obligatoire. Pas de PR."
+            echo "HOLD : chemins sensibles touchés. REVUE.md obligatoire. Pas de PR. exit 0."
             printf '%s' "$TOUCHED"
-            exit 1
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           echo "sensitive=false" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - name: Refuser un tampon à vide
+        if: steps.secrets.outputs.skip != 'true' && steps.sensitive.outputs.skip != 'true'
         id: empty
         run: |
           set -euo pipefail
@@ -143,7 +157,7 @@ jobs:
           echo "empty=false" >> "$GITHUB_OUTPUT"
 
       - name: Créer la branche grok/optimize-*
-        if: steps.empty.outputs.empty == 'false'
+        if: steps.secrets.outputs.skip != 'true' && steps.empty.outputs.empty == 'false'
         id: branch
         run: |
           set -euo pipefail
@@ -152,7 +166,7 @@ jobs:
           echo "branch_name=$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Commit signé
-        if: steps.empty.outputs.empty == 'false'
+        if: steps.secrets.outputs.skip != 'true' && steps.empty.outputs.empty == 'false'
         env:
           MSG: ${{ github.event.inputs.commit_message || 'refactor: optimisation automatique par Grok' }}
         run: |
@@ -166,11 +180,11 @@ jobs:
           git log --show-signature -1
 
       - name: Push vers branche auto
-        if: steps.empty.outputs.empty == 'false'
+        if: steps.secrets.outputs.skip != 'true' && steps.empty.outputs.empty == 'false'
         run: git push origin "HEAD:${{ steps.branch.outputs.branch_name }}"
 
       - name: Ouvrir la Pull Request
-        if: steps.empty.outputs.empty == 'false'
+        if: steps.secrets.outputs.skip != 'true' && steps.empty.outputs.empty == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: ${{ steps.branch.outputs.branch_name }}
