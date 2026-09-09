@@ -671,3 +671,33 @@ export function finalDeploy(requester) {
 export function isLocked() {
   return MESH.locked === true;
 }
+
+/** Honest stream. ISO ts. Real merkle if an epoch exists. No 100% coherence. */
+export function telemetryFeed() {
+  const q = closeQuantum();
+  const chain = epochs();
+  const last = chain.length ? chain[chain.length - 1] : null;
+  return {
+    ok: true,
+    ts: isoNow(),
+    coherence: false,
+    vectors: [
+      { id: "synapse", presence: "DECLARED", infinite: false },
+      { id: "optical", presence: q.optical, entangled: false },
+      {
+        id: "ledger",
+        presence: "DECLARED",
+        epoch: last ? last.n : 0,
+        root: last ? last.root : null,
+        truth: false,
+      },
+      { id: "enclave", presence: "CHANNEL_NOT_PRESENT" },
+      { id: "chrono", presence: "CHANNEL_NOT_PRESENT", retro_causal: false },
+      { id: "github_ci", presence: "DECLARED", auto_heal: false, halt_on_fail: true },
+    ],
+    auto_merge: false,
+    live: false,
+    theory: "CLOSED",
+    locked: isLocked(),
+  };
+}
