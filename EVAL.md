@@ -23,6 +23,23 @@ Carl Laliberté merge. Les IA proposent. Une signature n’est pas une vérité.
 
 `schema/` = contrats d’interface. Pas de clés API. Pas de CI interne comme spec.
 
+## Doctrine & posture
+
+- Ce dépôt présente des composants vérifiables (`CODE VERIFIED`). Ce n’est pas `TEST VERIFIED`. Ce n’est pas `LIVE VERIFIED`.
+- Pas d’étiquette marketing PQC. Pas ε = 0.
+- Découplage processus ≠ contenu (`claim.v0`). Le kernel vérifie l’intégrité (`evidence_hash`) et la structure, jamais la sémantique métier.
+
+## Points d’ancrage pour audit
+
+1. Encapsulation opt-in : [KEM.md](KEM.md) (rail `ml-kem-001` chez unforge-check). Pas `docs/KEM.md` — ce fichier n’existe pas ici.
+2. Signature hybride `UFHY1` (Ed25519 + ML-DSA-65) : **signatures seulement**, jamais par défaut, pas une encapsulation.
+3. Contrats : [schema/mesh.v0.json](schema/mesh.v0.json), [schema/cognition.v0.json](schema/cognition.v0.json), [schema/agents.json](schema/agents.json).
+4. Preuves : `.github/swarm/claim.mjs` — **pas** `schema/claim.v0.json` (non construit).
+
+## Protocole de challenge
+
+Toute soumission ou critique technique doit être accompagnée d’une preuve d’exécution ou d’un cas `npm test`. Les avis sans artefact sont rejetés par design.
+
 ## Règle du jeu
 
 - Interdit : étiquette marketing PQC, ε = 0, QPU sur Git, merge automatique.
@@ -30,6 +47,16 @@ Carl Laliberté merge. Les IA proposent. Une signature n’est pas une vérité.
 - Crypto = hash et signature. Ça ne prouve pas le monde.
 - `LU` sans hash du contenu lu = rejeté.
 - HOLD n’est pas un échec. HOLD > faux vert.
+
+## Défense réactive (ACTION.5)
+
+- **+** Refuse l’inbound hostile (`CONNECTED`, photon, planck) et l’écrit au WORM. `absorb()`. `heal()` = `resetKernel`.
+- **−** Aucune frappe sortante. Aucun sondage d’IA tierce. Pas de tar-trap théâtre.
+- **Ne cherche pas à interdire** : LU, `npm test`, squash Carl, guests `declared`.
+
+Jonction : `synapse()` rend `receipt: 200` (process OK) + `presence: DECLARED`. Jamais `connected: true`.
+
+Pas d’invulnérabilité. Pas un schéma harness. Pas un schéma claim.
 
 ## Lecture / challenge
 

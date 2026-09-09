@@ -88,12 +88,10 @@ export const SUGGESTED_GUESTS = Object.freeze(
   ),
 );
 
-/** Transport fanout order for /flux to:*. Membership is kind=model + status=auto. Not an identity enum. */
-const AUTO_ORDER = ["sonnet", "chatgpt", "deepseek", "gemini"];
-const AUTO_MODELS = AUTO_ORDER.filter((id) => {
-  const row = (ROSTER_DOC.agents || []).find((a) => a.id === id);
-  return row && row.status === "auto";
-});
+/** Transport fanout for /flux to:*. kind=model + status=auto. Not an identity enum. */
+const AUTO_MODELS = (ROSTER_DOC.agents || [])
+  .filter((a) => a.kind === "model" && a.status === "auto")
+  .map((a) => a.id);
 const RESERVED = new Set([
   "attest",
   "quantum",

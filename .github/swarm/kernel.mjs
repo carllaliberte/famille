@@ -256,6 +256,74 @@ export function inbound(payload) {
   return { ok: true, size: MESH.buffer.length, gateway: true };
 }
 
+/**
+ * Reactive only. Never probes. Never strikes outbound.
+ * + absorb refused inbound into the WORM (fuzz fuel)
+ * − no outbound attack, no scan of foreign IA
+ * does not forbid: LU, npm test, Carl merge
+ */
+export function absorb(payload) {
+  const r = inbound(payload);
+  if (r.ok) return { ok: true, absorbed: false, outbound: false, attack: false };
+  wormAppend({ kind: "harness", code: r.code, inbound: true });
+  return {
+    ok: true,
+    absorbed: true,
+    outbound: false,
+    attack: false,
+    code: r.code,
+    live: false,
+  };
+}
+
+/**
+ * Join, don't wall. Receipt 200 = process held, not CONNECTED, not LIVE.
+ * + guest on the roster gets DECLARED
+ * − no outbound, no CONNECTED_PERMANENT
+ * does not forbid: HOLD, LU, Carl merge
+ */
+export function synapse(payload = {}) {
+  const hit = absorb(payload);
+  if (hit.absorbed) {
+    return {
+      ok: true,
+      receipt: 200,
+      joined: false,
+      absorbed: true,
+      presence: "DECLARED",
+      connected: false,
+      live: false,
+      outbound: false,
+      attack: false,
+    };
+  }
+  const id = String(payload.from || payload.id || "").toLowerCase();
+  const row = id ? lookup(id) : null;
+  return {
+    ok: true,
+    receipt: 200,
+    joined: Boolean(row),
+    absorbed: false,
+    presence: "DECLARED",
+    connected: false,
+    live: false,
+    outbound: false,
+    attack: false,
+    id: row ? row.id : null,
+  };
+}
+
+export function heal() {
+  resetKernel();
+  return {
+    ok: true,
+    restored: "resetKernel",
+    invulnerable: false,
+    live: false,
+    auto_merge: false,
+  };
+}
+
 export const stateBus = inbound;
 
 export function disconnect(id, requester) {

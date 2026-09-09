@@ -18,6 +18,8 @@ describe("EVAL.md — external specialist entry", () => {
     assert.match(TEXT, /npm test/);
     assert.match(TEXT, /evidence_hash/);
     assert.match(TEXT, /une PR/);
+    assert.match(TEXT, /Défense réactive/);
+    assert.match(TEXT, /Aucune frappe sortante/);
     assert.doesNotMatch(TEXT, /quantum-safe/i);
     assert.doesNotMatch(TEXT, /CONNECTED_PERMANENT/);
   });

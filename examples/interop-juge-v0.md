@@ -30,6 +30,7 @@ Exemple honnête (téléphone, classique) : [`attest-os.json`](attest-os.json).
 - Preview ≠ quittance. Unforge ne signe pas.
 - Hôte seul : https://acorn-royal-dune-blend.grok.me
 - Cursor *appelle* le juge. Cursor n'est pas le juge.
+- `cursorGate` (cadence.v0) est un autre rail : READY ou RAS. Pas cette carte.
 - Pas de QPU sur Git. Pas de hub OpenAI / Anthropic / Google dans le navigateur.
 
 ## Optionnel

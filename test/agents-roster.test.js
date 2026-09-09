@@ -462,6 +462,9 @@ describe("mesh roster — open ids, not an enum", () => {
     assert.equal(mesh.properties.from.enum, undefined);
     assert.equal(mesh.properties.next, false);
     assert.equal(mesh.properties.instruction, false);
+    const fromPat = mesh.properties.from.pattern;
+    assert.equal(fromPat, "^[a-z][a-z0-9-]{1,24}$");
+    assert.doesNotMatch(fromPat, /\(.*\+\)\+/);
   });
 
   it("rejects invalid ids, reserved juge, and juge capability", () => {
@@ -603,13 +606,21 @@ describe("mesh roster — open ids, not an enum", () => {
     assert.equal(claude.status, "declared");
     assert.equal(isModel("claude"), false);
 
-    for (const id of ["chatgpt", "deepseek", "sonnet"]) {
+    for (const id of ["chatgpt", "deepseek"]) {
       const row = lookup(id);
       assert.equal(row.kind, "model", id);
       assert.equal(row.locked, true, id);
       assert.equal(row.status, "on-demand", id);
       assert.equal(isModel(id), true, id);
     }
+    const sonnet = lookup("sonnet");
+    assert.equal(sonnet.kind, "model");
+    assert.equal(sonnet.locked, true);
+    assert.equal(sonnet.status, "manual");
+    assert.equal(isModel("sonnet"), true);
+    const haiku = lookup("haiku");
+    assert.equal(haiku.kind, "model");
+    assert.equal(haiku.status, "auto");
     const gemini = lookup("gemini");
     assert.equal(gemini.kind, "model");
     assert.equal(gemini.locked, true);
