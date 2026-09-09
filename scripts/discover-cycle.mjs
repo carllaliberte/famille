@@ -66,6 +66,7 @@ export function cycle(opts = {}) {
     },
     next: "discover",
     idle: disc.findings.length === 0 && ptr.missing.length === 0,
+    extinction: false,
     live: false,
     auto_merge: false,
     truth: false,

@@ -40,6 +40,8 @@ describe("cadence.v0 — parallel across repos, one PR per repo", () => {
       openPrs: [{ repo: "famille", number: 272 }],
     });
     assert.equal(rec.next, "famille");
+    assert.equal(rec.cycle, "discover");
+    assert.equal(rec.extinction, false);
     assert.equal(rec.auto_merge, false);
     const wait = carlGate({ pr: 272, tests: "pending" });
     assert.equal(wait.action, "WAIT_TESTS");

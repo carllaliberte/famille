@@ -25,6 +25,6 @@ Roster : `schema/agents.json` (schéma `schema/agents.v0.json`). Ajouter une IA 
 Mode unique : `cognition.mjs` + `schema/cognition.v0.json` + `COGNITION.md`. COLLECTIVE_COGNITION.
 Pool de session : `pool.mjs` + `schema/pool.v0.json`. Couche session sur `acorn.v0`.
 Pas un deuxième mesh. DECLARED ≠ CONNECTED ≠ LIVE.
-`claim.mjs` · `cadence.mjs` · `workforce.mjs` — claim expire ; 1 PR / repo (`cursorGate` READY ou RAS) ; IDLE avant recruter. Jamais merge.
+`claim.mjs` · `cadence.mjs` · `workforce.mjs` — claim expire ; 1 PR / repo (`cursorGate` READY ou RAS) ; IDLE avant recruter. IDLE ≠ extinction. Jamais merge.
 
 Entrée : `node .github/swarm/review.mjs`

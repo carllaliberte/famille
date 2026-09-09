@@ -11,6 +11,7 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.ok(p.available.includes("gemini"));
     assert.ok(p.available.includes("build"));
     assert.equal(p.auto_merge, false);
+    assert.equal(p.extinction, false);
     assert.equal(recommend({ bottleneck: "merge" }).recruit, false);
     assert.equal(recommend({ bottleneck: "same_repo" }).recruit, false);
     const rec = recommend({ bottleneck: "review", need: "review" });
@@ -41,6 +42,14 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.equal(packed.human_decisions, 2);
     assert.equal(packed.auto_merge, false);
     assert.ok(packed.bundles.some((b) => b.split && b.tier === 3));
+    for (const b of packed.bundles) {
+      if (b.n < 2) continue;
+      for (let i = 0; i < b.synapses.length; i++) {
+        for (let j = i + 1; j < b.synapses.length; j++) {
+          assert.equal(canBundle(b.synapses[i], b.synapses[j]).act, "BUNDLE");
+        }
+      }
+    }
     const note = formatBundle(packed.bundles.find((b) => b.split));
     assert.match(note, /HOLD_HUMAN/);
     assert.match(note, /Carl only/);
@@ -66,5 +75,6 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.notEqual(live.authority, "mesh");
     assert.equal(live.auto_merge, false);
     assert.equal(live.live, false);
+    assert.equal(live.extinction, false);
   });
 });

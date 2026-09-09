@@ -105,6 +105,8 @@ export function afterMerge({ mergedRepo, mergedNumber, tasks, openPrs } = {}) {
     ready: b.ready,
     blocked: b.blocked,
     next: b.ready[0] || null,
+    cycle: "discover",
+    extinction: false,
     auto_merge: false,
     live: false,
   };
