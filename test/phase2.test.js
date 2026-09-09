@@ -7,7 +7,10 @@ import {
   closeQuantum,
   consilium,
   enclaveStatus,
+  enqueueHorizon,
+  expandOnce,
   finalDeploy,
+  horizon,
   telemetryFeed,
   healPolicy,
   kernelFooter,
@@ -82,5 +85,12 @@ describe("phase 2 — scheduled, not hardware", () => {
     assert.equal(feed.vectors.find((v) => v.id === "ledger").truth, false);
     assert.equal(feed.vectors.find((v) => v.id === "chrono").retro_causal, false);
     assert.equal(feed.live, false);
+    assert.equal(enqueueHorizon("omniversal", "gemini").code, "HUMAN_ONLY");
+    assert.equal(enqueueHorizon("infinite-loop", "Carl Laliberté").code, "INFINITE");
+    assert.equal(enqueueHorizon("consensus-bridge", "Carl Laliberté").ok, true);
+    assert.equal(expandOnce("Carl Laliberté").did, "consensus-bridge");
+    assert.equal(horizon().infinite, false);
+    assert.equal(horizon().auto_run, false);
+    assert.equal(horizon().cap, 8);
   });
 });
