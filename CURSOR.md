@@ -16,6 +16,7 @@ Cloud : [CURSOR-CLOUD.md](CURSOR-CLOUD.md).
 - Hôte : https://acorn-royal-dune-blend.grok.me
 - 1 PR à la fois. Squash Carl.
 - Consommer [`cadence.v0`](.github/swarm/cadence.mjs) : `cursorGate` READY → un acte ; sinon RAS. Jamais auto-merge.
+- Consommer `npm run system:official-seal` : ZK / BFT / Φ = CHANNEL NOT PRESENT. Pas de `cadence.v0.json`. `auto_merge` false. Squash Carl.
 - Ne pas s'arrêter.
 
 ## Continu
