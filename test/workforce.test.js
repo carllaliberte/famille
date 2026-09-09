@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { assign, pool, recommend, route } from "../.github/swarm/workforce.mjs";
+import { assign, bundle, neverBundle, pool, recommend, riskTier, route } from "../.github/swarm/workforce.mjs";
 
 describe("workforce.v0 — dormant bots stay in the pool", () => {
   it("counts declared guests as IDLE and wakes them before recruiting", () => {
@@ -30,5 +30,16 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.equal(syn.independent, true);
     assert.equal(syn.merge, false);
     assert.equal(syn.synapse.act, "ROUTE");
+    assert.equal(riskTier({ task: "docs eval" }), 0);
+    assert.equal(neverBundle({ files: ["juge.v0.json"] }), true);
+    const packed = bundle([
+      { task: "docs", repo: "famille", subsystem: "eval" },
+      { task: "comment", repo: "famille", subsystem: "eval" },
+      { task: "rotate signing.key", repo: "famille", subsystem: "eval" },
+    ]);
+    assert.equal(packed.synapses, 3);
+    assert.equal(packed.human_decisions, 2);
+    assert.equal(packed.auto_merge, false);
+    assert.ok(packed.bundles.some((b) => b.split && b.tier === 3));
   });
 });
