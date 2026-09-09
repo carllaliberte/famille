@@ -2,12 +2,15 @@ import assert from "node:assert/strict";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, it } from "node:test";
-import { inspectForge, runKernel, KERNEL_VERSION, HUMAN } from "../.github/swarm/kernel.mjs";
+import { inspectForge, runKernel, KERNEL_VERSION, HUMAN, inbound, neurons, pulse, disconnect, resetKernel } from "../.github/swarm/kernel.mjs";
 import { newKeyPair, openEnvelope, resetLease, wrapEnvelope } from "../.github/swarm/lease.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-afterEach(() => resetLease());
+afterEach(() => {
+  resetLease();
+  resetKernel();
+});
 
 describe("sovereign meta-kernel", () => {
   it("inspectForge finds no live secrets and no forbidden packages", () => {
@@ -48,5 +51,27 @@ describe("sovereign meta-kernel", () => {
     assert.equal(wrapped.ok, true);
     assert.equal(openEnvelope(wrapped.envelope).code, "ENVELOPE_SKEW");
     assert.equal(openEnvelope({ payload: 1 }).code, "ENVELOPE_UNSIGNED");
+  });
+
+  it("posts are DECLARED not CONNECTED_PERMANENT; only Carl disconnects", () => {
+    const keys = newKeyPair();
+    for (const n of neurons()) {
+      assert.equal(n.declared, true, n.id);
+      assert.equal(n.connected, false);
+      assert.equal(n.presence, "DECLARED");
+    }
+    assert.equal(inbound({ status: "CONNECTED_PERMANENT" }).code, "CLAIMED_CHANNEL");
+    assert.equal(inbound({ photon: true }).code, "PHOTONIC_ON_CONTROL");
+    assert.equal(disconnect("gemini", "gemini").code, "HUMAN_ONLY");
+    const wave = pulse({ topic: "sync" }, keys);
+    assert.equal(wave.ok, true);
+    assert.equal(wave.results.gemini.processed, true);
+    assert.equal(wave.results.gemini.connected, false);
+    assert.equal(wave.optical.presence, "CHANNEL_NOT_PRESENT");
+    assert.equal(disconnect("gemini", "carllaliberte").ok, true);
+    const after = pulse({ topic: "again" }, keys);
+    assert.equal(after.results.gemini.presence, "BLOCKED");
+    assert.equal(after.results.gemini.processed, false);
+    assert.equal(after.results.grok.processed, true);
   });
 });

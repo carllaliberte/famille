@@ -404,7 +404,9 @@ export function openEnvelope(envelope, opts = {}) {
   if (!verifyPayload(publicKey, body, signature)) return fail("ENVELOPE_FORGED", "envelope signature rejected");
   const t = parseTs(body.ts);
   if (!Number.isFinite(t)) return fail("ENVELOPE_TS", "strict ISO-8601 timestamp required");
-  const now = parseTs(opts.now) || Date.now();
+  const now = typeof opts.now === "number" && Number.isFinite(opts.now)
+    ? opts.now
+    : parseTs(opts.now) || Date.now();
   if (Math.abs(now - t) > SKEW_MS) return fail("ENVELOPE_SKEW", "timestamp outside replay window");
   if (STATE.nonces.has(body.nonce)) return fail("ENVELOPE_REPLAY", "nonce already seen");
   STATE.nonces.add(body.nonce);
