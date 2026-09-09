@@ -1,7 +1,7 @@
 {
   "$id": "https://github.com/carllaliberte/famille/schema/cognition.v0.json",
   "title": "famille.cognition.v0",
-  "description": "Unique cognitive mode COLLECTIVE_COGNITION. Not a mesh fork, not a judge, not a truth machine. Envelopes stay schema/mesh.v0.json. Identities stay schema/agents.json. LIVE VERIFIED is Carl only. Consensus is not truth. Do not add IA ids here.",
+  "description": "Unique cognitive mode COLLECTIVE_COGNITION. Invariants: human vision; cognition may be collective; disagreement is data; writing is a capability not an identity; consensus is not truth. Not a mesh fork, not a judge, not a truth machine. Multi-project: project_id isolates memory. Envelopes stay schema/mesh.v0.json. Identities stay schema/agents.json. LIVE VERIFIED is Carl only. Do not add IA ids here.",
   "type": "object",
   "additionalProperties": true,
   "required": ["mode"],
@@ -22,6 +22,7 @@
         "counter",
         "disagreement",
         "evidence",
+        "revision",
         "synthesis",
         "lesson",
         "memory",
@@ -55,8 +56,21 @@
       ]
     },
     "status": {
-      "enum": ["consensus", "disputed", "unresolved"],
-      "description": "Never 'truth'. Majority is a count, not a verdict."
+      "enum": [
+        "consensus",
+        "majority",
+        "minority",
+        "disputed",
+        "unresolved",
+        "evidence_insufficient",
+        "contradiction_unresolved"
+      ],
+      "description": "Never 'truth'. Majority is a count, not a verdict. Minority stays visible."
+    },
+    "project": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,24}$",
+      "description": "Project context. Memory does not leak across projects unless shareAcrossProjects is explicit."
     },
     "next": false,
     "instruction": false
