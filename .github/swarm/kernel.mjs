@@ -8,6 +8,7 @@ import { join, relative } from "node:path";
 import { OWNER_ACTOR, lookup } from "./flux.mjs";
 import {
   closeEpoch,
+  epochs,
   isIsolated,
   merkleRoot,
   newKeyPair,
@@ -37,6 +38,15 @@ export const POSTS = Object.freeze([
 
 function fail(code, error) {
   return { ok: false, code, error };
+}
+
+function isCarl(requester) {
+  const n = String(requester || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z]/g, "");
+  return n === "carllaliberte" || n === HUMAN;
 }
 
 const MESH = {
@@ -185,7 +195,7 @@ export function inbound(payload) {
 export const stateBus = inbound;
 
 export function disconnect(id, requester) {
-  if (String(requester || "").toLowerCase() !== HUMAN) {
+  if (!isCarl(requester)) {
     return fail("HUMAN_ONLY", "no neuron disconnects itself");
   }
   const agent = lookup(id);
@@ -208,7 +218,7 @@ export function tune() {
 
 /** Carl only. Presence stays DECLARED/BLOCKED, never CONNECTED_PERMANENT. */
 export function dashboard(requester) {
-  if (String(requester || "").toLowerCase() !== HUMAN) {
+  if (!isCarl(requester)) {
     return fail("HUMAN_ONLY", "dashboard is Carl only");
   }
   return {
@@ -219,9 +229,62 @@ export function dashboard(requester) {
     neurons: neurons(),
     weights: { ...MESH.weights },
     buffer: MESH.buffer.length,
+    epoch: epochs().length,
     logs: MESH.logs.slice(-10),
     live: false,
     optical: "CHANNEL_NOT_PRESENT",
+  };
+}
+
+const EVIDENCE_TYPES = new Set(["DIGITAL_SEAL_HASH", "CHAIN_OF_CUSTODY_LOG"]);
+
+/** Heterogeneous evidence on the classical bus. Not a photon. Not LIVE. */
+export function ingestEvidence(pkg = {}) {
+  const raw = pkg && typeof pkg === "object" ? pkg : {};
+  if (!clipId(raw.case_id)) return fail("EVIDENCE", "case_id required");
+  if (!EVIDENCE_TYPES.has(String(raw.evidence_type || ""))) {
+    return fail("EVIDENCE_TYPE", "unknown evidence_type");
+  }
+  if (!String(raw.payload_data || "").trim()) return fail("EVIDENCE", "payload_data required");
+  const queued = inbound({
+    case_id: String(raw.case_id),
+    evidence_type: String(raw.evidence_type),
+    payload_data: String(raw.payload_data).slice(0, 400),
+    source_channel: String(raw.source_channel || "EXTERNAL_INBOUND_GATEWAY"),
+  });
+  if (!queued.ok) return queued;
+  logTelemetry("VAULT", `${raw.evidence_type} ${raw.case_id}`);
+  return { ok: true, case_id: raw.case_id, size: queued.size, live: false };
+}
+
+function clipId(id) {
+  return String(id || "").trim();
+}
+
+/**
+ * SQ-style vault cycle: ingest → pulse → merkle seal → tune → Carl dashboard.
+ */
+export function runVault(opts = {}) {
+  resetKernel();
+  const keys = opts.keys || newKeyPair();
+  const packages = Array.isArray(opts.packages) ? opts.packages : [];
+  const ingested = packages.map((p) => ingestEvidence(p));
+  const wd = watchdog({ keys, corrupt: opts.anomaly === true });
+  const wave = pulse({ case_id: packages[0] && packages[0].case_id, vault: true }, keys);
+  const sealed = closeEpoch(keys);
+  const weights = tune();
+  const board = dashboard(opts.requester || HUMAN);
+  return {
+    ok: ingested.every((i) => i.ok) && wave.ok && sealed.ok && board.ok && wd.isolated !== true,
+    ingested,
+    watchdog: wd,
+    pulse: wave,
+    seal: sealed.ok ? sealed.epoch.root : null,
+    epoch: sealed.ok ? sealed.epoch.n : null,
+    weights: weights.weights,
+    dashboard: board,
+    live: false,
+    optical: wave.optical,
   };
 }
 

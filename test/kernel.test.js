@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, it } from "node:test";
-import { inspectForge, runKernel, KERNEL_VERSION, HUMAN, inbound, neurons, pulse, disconnect, resetKernel, dashboard, tune } from "../.github/swarm/kernel.mjs";
+import { inspectForge, runKernel, KERNEL_VERSION, HUMAN, inbound, neurons, pulse, disconnect, resetKernel, dashboard, tune, runVault, ingestEvidence } from "../.github/swarm/kernel.mjs";
 import { newKeyPair, openEnvelope, resetLease, wrapEnvelope } from "../.github/swarm/lease.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -85,5 +85,41 @@ describe("sovereign meta-kernel", () => {
     const t = tune();
     assert.ok(t.weights.grok <= 2);
     assert.equal(t.weights.gemini, board.weights.gemini);
+  });
+
+  it("vault ingests SQ-2026-904-EV, seals merkle, Carl dashboard", () => {
+    const keys = newKeyPair();
+    const cycle = runVault({
+      keys,
+      requester: "carllaliberte",
+      packages: [
+        {
+          case_id: "SQ-2026-904-EV",
+          evidence_type: "DIGITAL_SEAL_HASH",
+          payload_data: "sha256:a8f5c867b96f_evidence_stream_01",
+          source_channel: "EXTERNAL_INBOUND_GATEWAY",
+        },
+        {
+          case_id: "SQ-2026-904-EV",
+          evidence_type: "CHAIN_OF_CUSTODY_LOG",
+          payload_data: "Transfer logged: Secure node to cryptographic vault",
+          source_channel: "EXTERNAL_INBOUND_GATEWAY",
+        },
+      ],
+    });
+    assert.equal(cycle.ok, true, JSON.stringify(cycle.ingested));
+    assert.equal(cycle.ingested.length, 2);
+    assert.equal(cycle.pulse.results.deepseek.processed, true);
+    assert.equal(cycle.pulse.results.sonnet.processed, true);
+    assert.equal(cycle.pulse.results.grok.processed, true);
+    assert.equal(cycle.pulse.results.chatgpt.processed, true);
+    assert.equal(cycle.pulse.results.gemini.processed, true);
+    assert.equal(cycle.pulse.results.gemini.connected, false);
+    assert.match(cycle.seal, /^[0-9a-f]{64}$/);
+    assert.equal(cycle.dashboard.sovereign, HUMAN);
+    assert.equal(cycle.dashboard.optical, "CHANNEL_NOT_PRESENT");
+    assert.equal(cycle.live, false);
+    assert.equal(ingestEvidence({ case_id: "x" }).code, "EVIDENCE_TYPE");
+    assert.equal(dashboard("Carl Laliberté").ok, true);
   });
 });
