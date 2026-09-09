@@ -370,3 +370,56 @@ export function runKernel(opts = {}) {
     live: false,
   };
 }
+
+export const ROTATE_EVERY = 300;
+
+/** Phase 2 is scheduled. Not hardware. Not raft. Not LIVE. */
+export const PHASE2 = Object.freeze([
+  { name: "distributed_consensus_engine", presence: "CHANNEL_NOT_PRESENT", scheduled: true },
+  { name: "hardware_secure_enclave", presence: "CHANNEL_NOT_PRESENT", scheduled: true },
+  { name: "telemetry_auditor", presence: "DECLARED", scheduled: false },
+]);
+
+export function phase2() {
+  return {
+    ok: true,
+    modules: PHASE2,
+    auto_merge: false,
+    live: false,
+    optical: "CHANNEL_NOT_PRESENT",
+    enclave: "CHANNEL_NOT_PRESENT",
+    pqc: "CHANNEL_NOT_PRESENT",
+  };
+}
+
+export function enclaveStatus() {
+  return {
+    ok: true,
+    presence: "CHANNEL_NOT_PRESENT",
+    connected: false,
+    live: false,
+    reason: "no TEE on this Git",
+  };
+}
+
+/** Carl only. A foreign merkle tip does not become ours without him. */
+export function acceptForeignTip(tip, requester) {
+  if (!isCarl(requester)) return fail("HUMAN_ONLY", "consensus tip needs Carl");
+  if (!tip || !/^[0-9a-f]{64}$/.test(String(tip))) return fail("TIP", "need a sha256 tip");
+  logTelemetry("CONSENSUS", "foreign tip accepted by Carl");
+  return { ok: true, tip, by: HUMAN, live: false };
+}
+
+/** Handshake ages out every 300 epochs. Optical stays CHANNEL NOT PRESENT. */
+export function rotateHandshake(n) {
+  const epoch = Number.isFinite(n) ? n : epochs().length;
+  const due = epoch > 0 && epoch % ROTATE_EVERY === 0;
+  return {
+    ok: true,
+    epoch,
+    rotate: due,
+    optical: "CHANNEL_NOT_PRESENT",
+    live: false,
+    note: due ? "invite again — Carl only" : "invite still valid",
+  };
+}
