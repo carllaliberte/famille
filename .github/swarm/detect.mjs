@@ -1,6 +1,8 @@
 /**
+ * Les certitudes ont une date de fin.
  * Findings start PROPOSED. Never auto-normative. Carl decides.
- * First case: CFD / Navier–Stokes — do not accept the conclusion in advance.
+ * Premier cas CFD / Navier–Stokes : ALREADY_COVERED / REJECT (interdiction trop large).
+ * Pas une nouvelle règle. Do not ban the word Stokes.
  */
 import { readFileSync } from "node:fs";
 import { sha256 } from "./lease.mjs";
@@ -60,7 +62,7 @@ function haystack(ctx = {}) {
 
 /**
  * Evaluate. Look for why this could be wrong.
- * CFD/NS: projection doc names Stokes as cost — not a solver.
+ * CFD/NS first case: already covered; a word-ban is too broad → REJECT.
  */
 export function evaluate(finding, ctx = {}) {
   if (!finding || finding.state !== "PROPOSED") {
@@ -79,9 +81,9 @@ export function evaluate(finding, ctx = {}) {
     if (bansWord) {
       return {
         ok: true,
-        verdict: "REJECTED",
+        verdict: "ALREADY_COVERED",
         recommend: "REJECT",
-        why: "restriction too broad — naming a hole is not shipping a solver",
+        why: "interdiction trop large — naming a hole is not shipping a solver",
         already: "REVUE-PROJECTION.md Interdit ici: Pas de code solveur",
         could_be_wrong: "a solver could still be added later — that would be a new finding",
         action5: {
@@ -89,7 +91,7 @@ export function evaluate(finding, ctx = {}) {
           minus: "do not ban the word Stokes",
           not_aimed: "projection notes, cost comparisons, Clay claim HOLD",
         },
-        finding: { ...finding, state: "REJECTED", normative: false, truth: false },
+        finding: { ...finding, state: "ALREADY_COVERED", normative: false, truth: false },
       };
     }
     if (covered) {

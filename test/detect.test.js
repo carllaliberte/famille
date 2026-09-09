@@ -9,7 +9,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECTION = readFileSync(join(ROOT, "REVUE-PROJECTION.md"), "utf8");
 
 describe("detect.v0 — CFD/Navier–Stokes first case", () => {
-  it("does not accept the conclusion in advance; solver ban is already covered; word-ban is too broad", () => {
+  it("first case is ALREADY_COVERED / REJECT — interdiction trop large, not a new rule", () => {
     const proposed = makeFinding({
       agent: "claude",
       object: "CFD/Navier-Stokes",
@@ -19,8 +19,11 @@ describe("detect.v0 — CFD/Navier–Stokes first case", () => {
     assert.equal(proposed.finding.state, "PROPOSED");
     assert.equal(proposed.finding.normative, false);
     const wordBan = evaluate(proposed.finding, { text: PROJECTION });
-    assert.equal(wordBan.verdict, "REJECTED");
+    assert.equal(wordBan.verdict, "ALREADY_COVERED");
+    assert.equal(wordBan.recommend, "REJECT");
+    assert.equal(wordBan.finding.state, "ALREADY_COVERED");
     assert.equal(wordBan.finding.normative, false);
+    assert.match(wordBan.why, /interdiction trop large/);
     assert.match(wordBan.action5.minus, /do not ban the word Stokes/);
 
     const covered = evaluate(
