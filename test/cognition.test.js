@@ -53,7 +53,7 @@ afterEach(() => {
 });
 
 describe("COLLECTIVE_COGNITION — unique mode", () => {
-  it("is the unique mode; ten steps; four tours; open presence; distinct claims", () => {
+  it("is the unique mode; eleven steps; four tours; open presence; distinct claims", () => {
     assert.equal(MODE, "COLLECTIVE_COGNITION");
     assert.equal(COGNITION_VERSION, "cognition.v0");
     assert.deepEqual(STEPS, [
@@ -63,6 +63,7 @@ describe("COLLECTIVE_COGNITION — unique mode", () => {
       "counter",
       "disagreement",
       "evidence",
+      "revision",
       "synthesis",
       "lesson",
       "memory",

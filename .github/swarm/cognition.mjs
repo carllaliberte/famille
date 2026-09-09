@@ -28,6 +28,7 @@ export const STEPS = Object.freeze([
   "counter",
   "disagreement",
   "evidence",
+  "revision",
   "synthesis",
   "lesson",
   "memory",
@@ -99,7 +100,20 @@ export const FORBIDDEN_SEATS = Object.freeze([
   "truth_model",
   "final_ai",
   "oracle_ai",
+  "oracle_model",
 ]);
+
+/** Architectural invariants. Not a second protocol. */
+export const PRINCIPLES = Object.freeze([
+  "human_vision",
+  "collective_cognition",
+  "disagreement_is_data",
+  "writing_is_capability",
+  "consensus_is_not_truth",
+]);
+
+export const DEFAULT_PROJECT = "famille";
+const PROJECT_RE = /^[a-z][a-z0-9-]{1,24}$/;
 
 const REPLY_ACT = Object.freeze({
   AGREE: "FINDING",
@@ -172,10 +186,29 @@ export function thinkers() {
   return roster().filter(canThink);
 }
 
+/** GitHub write is a granted capability, never inferred from identity. */
+export function canWrite(agent) {
+  if (!agent) return false;
+  return (agent.capabilities || []).includes("write");
+}
+
+export function parseProject(raw) {
+  const id = String(raw || DEFAULT_PROJECT).toLowerCase();
+  if (!PROJECT_RE.test(id)) return fail("BAD_PROJECT", "project id must match mesh from/to");
+  return { ok: true, id };
+}
+
+export function memoryFor(project) {
+  const parsed = parseProject(project);
+  if (!parsed.ok) return [];
+  return MEMORY.filter((e) => e.project === parsed.id);
+}
+
 /** Documentary adapter. Kind + caps + specialty. Never `if (id === …)`. */
-export function adapterOf(agent) {
+export function adapterOf(agent, opts = {}) {
   if (!agent) return fail("UNKNOWN_AGENT", "no agent");
   const caps = agent.capabilities || [];
+  const canal = presenceOf(agent, opts);
   return {
     ok: true,
     id: agent.id,
@@ -183,9 +216,75 @@ export function adapterOf(agent) {
     kind: agent.kind,
     specialty: agent.specialty || agent.role || agent.kind,
     capabilities: [...caps],
+    think: canThink(agent),
+    write: canWrite(agent),
     protocol: MODE,
-    note: "adapter is configuration, not authority",
+    timeoutMs: Number(opts.timeoutMs) > 0 ? Number(opts.timeoutMs) : 8000,
+    retries: Number(opts.retries) >= 0 ? Number(opts.retries) : 0,
+    canal: canal.ok ? canal.presence : "ERROR",
+    connected: canal.ok ? canal.connected : false,
+    provenance: {
+      agent_id: agent.id,
+      source: "adapter",
+      project: parseProject(opts.project).ok ? parseProject(opts.project).id : DEFAULT_PROJECT,
+    },
+    note: "adapter is configuration, not authority. write is not identity.",
   };
+}
+
+/**
+ * Honest canal call. Never mint CONNECTED. Absence is CHANNEL_NOT_PRESENT / BLOCKED / UNAVAILABLE / ERROR.
+ * One failure does not stop the session.
+ */
+export function callAdapter(agent, payload = {}, opts = {}) {
+  const adapter = adapterOf(agent, opts);
+  if (!adapter.ok) return adapter;
+  const presence = presenceOf(agent, opts);
+  if (!presence.ok) {
+    return {
+      ok: false,
+      code: presence.code,
+      error: presence.error,
+      presence: "ERROR",
+      provenance: adapter.provenance,
+    };
+  }
+  if (presence.presence !== "CONNECTED" && presence.presence !== "ACTIVE") {
+    return {
+      ok: false,
+      code: "CHANNEL_ABSENT",
+      error: presence.reason,
+      presence: presence.presence,
+      provenance: adapter.provenance,
+    };
+  }
+  return {
+    ok: true,
+    presence: presence.presence,
+    structured: {
+      agent_id: agent.id,
+      message_id: newId("msg"),
+      timestamp: isoTs(opts.ts),
+      source: agent.id,
+      claim: payload.claim || "proposal",
+      confidence: clip(payload.confidence, 16) || "unscored",
+      body: clip(payload.body, 8000),
+    },
+    provenance: adapter.provenance,
+  };
+}
+
+export function isolateAgent(fn) {
+  try {
+    return fn();
+  } catch (err) {
+    return {
+      ok: false,
+      code: "AGENT_ERROR",
+      error: String(err && err.message ? err.message : err),
+      presence: "ERROR",
+    };
+  }
 }
 
 function needsKeyedCanal(agent) {
@@ -271,6 +370,7 @@ export function census(opts = {}) {
     errors,
     live: 0,
     operational,
+    cognitionOperational: thinking.length >= 2,
     label: operational ? "CHANNELS PRESENT" : "ARCHITECTURE READY",
     note: "FULL SWARM OPERATIONAL is forbidden until every thinking canal is real.",
   };
@@ -304,14 +404,29 @@ export function contradict(from, target) {
 export function clusterStatus(clusters = []) {
   const rows = [...clusters].sort((a, b) => (b.count || 0) - (a.count || 0));
   if (rows.length === 0) {
-    return { ok: true, status: "unresolved", truth: false, majority: null, minority: [] };
+    return {
+      ok: true,
+      status: "unresolved",
+      outcome: "unresolved",
+      truth: false,
+      majority: null,
+      minority: [],
+    };
   }
   if (rows.length === 1) {
-    return { ok: true, status: "consensus", truth: false, majority: rows[0], minority: [] };
+    return {
+      ok: true,
+      status: "consensus",
+      outcome: "consensus",
+      truth: false,
+      majority: rows[0],
+      minority: [],
+    };
   }
   return {
     ok: true,
     status: "disputed",
+    outcome: "majority",
     truth: false,
     majority: rows[0],
     minority: rows.slice(1),
@@ -349,10 +464,13 @@ export function remember(input) {
   if (!kind.ok) return kind;
   if (String(raw.status || "").toLowerCase() === "truth") return asTruth();
   const ts = isoTs(raw.ts);
+  const project = parseProject(raw.project);
+  if (!project.ok) return project;
   const entry = Object.freeze({
     id: String(raw.id || newId("m")),
     mode: MODE,
     pool: COGNITION_VERSION,
+    project: project.id,
     sessionId: raw.sessionId || null,
     statement,
     claim: kind.claim,
@@ -372,6 +490,31 @@ export function remember(input) {
   return { ok: true, entry };
 }
 
+/** Inter-project share is voluntary, traced, never implicit. */
+export function shareAcrossProjects(entry, toProject, opts = {}) {
+  if (!entry || !entry.id) return fail("UNKNOWN_MEMORY", "share needs a dated entry");
+  if (opts.explicit !== true) {
+    return fail("IMPLICIT_LEAK", "inter-project share must be explicit and voluntary");
+  }
+  const dest = parseProject(toProject);
+  if (!dest.ok) return dest;
+  if (entry.project === dest.id) {
+    return fail("SAME_PROJECT", "shareAcrossProjects is for a different project");
+  }
+  return remember({
+    from: opts.from || entry.from,
+    claim: entry.claim,
+    statement: entry.statement,
+    status: "unresolved",
+    sources: [...(entry.sources || []), `project:${entry.project}`, entry.id],
+    disagreement: entry.disagreement,
+    context: `from-project:${entry.project}`,
+    project: dest.id,
+    sessionId: opts.sessionId || null,
+    ts: opts.ts,
+  });
+}
+
 export function reevaluate(entry, input) {
   if (!entry || !entry.id) return fail("UNKNOWN_MEMORY", "reevaluate needs a dated entry");
   const raw = input && typeof input === "object" ? input : {};
@@ -386,6 +529,7 @@ export function reevaluate(entry, input) {
     disagreement: entry.disagreement,
     context: `reevaluate:${entry.id}`,
     sessionId: raw.sessionId || entry.sessionId,
+    project: raw.project || entry.project,
     ts: raw.ts,
   });
   if (!next.ok) return next;
@@ -428,6 +572,8 @@ export function openSession(input) {
   }
   const topic = clip(raw.topic || raw.body, 400);
   if (!topic) return fail("BODY_MISSING", "session needs a question");
+  const project = parseProject(raw.project);
+  if (!project.ok) return project;
   const ts = isoTs(raw.ts);
   const question = Object.freeze({
     id: String(raw.id || newId("q")),
@@ -440,7 +586,9 @@ export function openSession(input) {
     mode: MODE,
     cognition: COGNITION_VERSION,
     flux: FLUX_VERSION,
+    project: project.id,
     id: question.id,
+    session_id: question.id,
     question,
     topic: question.topic,
     ts: question.ts,
@@ -477,12 +625,19 @@ function thinkOne(session, agent, body, actor, ts) {
   const contribution = Object.freeze({
     id: accepted.packet.id,
     sessionId: session.id,
+    project: session.project,
+    agent_id: agent.id,
+    message_id: accepted.packet.id,
+    timestamp: accepted.packet.ts,
+    source: agent.id,
+    claim: "proposal",
+    confidence: "unscored",
     tour: "independent",
     isolated: true,
     from: agent.id,
     specialty: agent.specialty || agent.role || agent.kind,
     capabilities: Object.freeze([...(agent.capabilities || [])]),
-    claim: "proposal",
+    write: canWrite(agent),
     reply: null,
     replyTo: null,
     previousId: null,
@@ -514,8 +669,8 @@ export function runIndependent(session, opts = {}) {
       skipped.push(agent.id);
       continue;
     }
-    const r = thinkOne(session, agent, body, opts.actor, opts.ts);
-    if (!r.ok) errors.push({ id: agent.id, code: r.code, error: r.error });
+    const r = isolateAgent(() => thinkOne(session, agent, body, opts.actor, opts.ts));
+    if (!r.ok) errors.push({ id: agent.id, code: r.code, error: r.error, presence: r.presence || "ERROR" });
     else filed.push(r.contribution);
   }
   return { ok: true, session, filed, errors, skipped };
@@ -798,6 +953,7 @@ export function synthesize(session, input = {}) {
   const stored = remember({
     from,
     sessionId: session.id,
+    project: session.project,
     claim: "proposal",
     statement: body,
     status: clustered.status,
@@ -856,6 +1012,7 @@ export function runCycle(input) {
     synthesis: syn.synthesis,
     lesson: syn.lesson,
     census: census(),
+    project: session.project,
   };
 }
 

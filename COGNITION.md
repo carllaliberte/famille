@@ -9,6 +9,20 @@ Schéma du mode = [`schema/cognition.v0.json`](schema/cognition.v0.json).
 Runtime = [`.github/swarm/cognition.mjs`](.github/swarm/cognition.mjs).
 Prompt générique = [`prompts/cognition.md`](prompts/cognition.md).
 
+## Cinq invariants
+
+1. La vision reste humaine.
+2. La cognition peut devenir collective.
+3. Le désaccord est une donnée, pas un échec.
+4. L’écriture est une capacité, pas une identité.
+5. Un consensus n’est pas une vérité.
+
+## Multi-projet
+
+Une session porte `project` (défaut `famille`). La mémoire est filtrée par projet. Un savoir de A ne devient pas un savoir de B. `shareAcrossProjects(..., { explicit: true })` seulement.
+
+État réel aujourd’hui : **COLLECTIVE COGNITION OPERATIONAL** (cycle LU, plusieurs penseurs, désaccords visibles, mémoire datée). Canaux keyed : **ARCHITECTURE READY** — 0 CONNECTED tant que Carl n’a pas posé les clés. Jamais FULL SWARM OPERATIONAL depuis le code.
+
 Commande immédiate :
 
 ```bash
@@ -18,7 +32,7 @@ node .github/swarm/cognition.mjs "Les certitudes ont-elles une date de fin ?"
 Le cycle LU tourne pour tout le roster pensant (tour 1 + tour 3). Ce n'est pas une connexion provider.
 LIVE VERIFIED = Carl seulement.
 
-État réel aujourd'hui : **ARCHITECTURE READY**. Pas FULL SWARM OPERATIONAL.
+État réel aujourd'hui : **ARCHITECTURE READY** (canaux). Le cycle LU est **COLLECTIVE COGNITION OPERATIONAL**. Pas FULL SWARM OPERATIONAL.
 Clés Actions absentes. Donc 0 CONNECTED. 0 ACTIVE. 0 LIVE.
 Les identités keyed (review + auto) sont **BLOCKED — API CREDENTIAL REQUIRED**.
 Les autres penseurs sont **DECLARED — CHANNEL NOT PRESENT**.
