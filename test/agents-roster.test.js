@@ -456,6 +456,7 @@ describe("mesh roster — open ids, not an enum", () => {
     assert.match(branche, /ai\/\[a-z0-9-\]\+/);
     assert.match(branche, /une tête/);
     assert.match(branche, /une PR ouverte max/);
+    assert.match(branche, /gh pr list -R "\$\{GITHUB_REPOSITORY\}"/);
     assert.match(branches, /ai\/<piece>/);
     assert.match(hook, /ai\/\*/);
     const mesh = loadMeshSchema();
