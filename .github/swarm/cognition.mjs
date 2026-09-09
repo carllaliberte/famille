@@ -53,6 +53,10 @@ export const PRESENCE = Object.freeze([
   "LIVE VERIFIED",
 ]);
 
+/** Control plane = CLASSICAL (this mesh). Data plane = OPTICAL_QUANTUM (off Git). */
+export const CANALS = Object.freeze(["CLASSICAL", "OPTICAL_QUANTUM"]);
+export const PLANES = Object.freeze(["control", "data"]);
+
 export const CLAIMS = Object.freeze([
   "fact",
   "hypothesis",
@@ -346,6 +350,98 @@ export function presenceOf(agent, opts = {}) {
   };
 }
 
+function hasPhotonicPayload(raw) {
+  if (!raw || typeof raw !== "object") return false;
+  if (raw.photonic || raw.qubit || raw.qkd || raw.qrng || raw.photon) return true;
+  const plane = String(raw.plane || "").toLowerCase();
+  if (plane === "data" && (raw.body || raw.payload || raw.state)) return true;
+  const blob = `${raw.body || ""} ${raw.payload || ""} ${raw.statement || ""}`;
+  if (/\b(bell[- ]pair|photonic[- ]state|qkd[- ]key|qrng[- ]bits)\b/i.test(blob)) return true;
+  return false;
+}
+
+/**
+ * Optical lease is a classical certificate about a fiber, not a photon on Git.
+ * Default presence: CHANNEL NOT PRESENT. CONNECTED requires a real fiber attested by the caller.
+ */
+export function opticalLease(input = {}) {
+  const raw = input && typeof input === "object" ? input : {};
+  if (hasPhotonicPayload(raw)) {
+    return fail("PHOTONIC_ON_CONTROL", "no raw quantum data on the mesh control plane");
+  }
+  if (String(raw.claim || "").toUpperCase().replace(/ /g, "_") === "LIVE_VERIFIED") {
+    return fail("LIVE_NOT_CARL", "LIVE VERIFIED is Carl only");
+  }
+  const cert = clip(raw.certificate, 400);
+  if (!cert) return fail("LEASE_CLASSICAL", "optical lease needs a classical certificate");
+  const loss = Number(raw.loss_db_max);
+  const fidelity = Number(raw.fidelity_min);
+  const lease = Object.freeze({
+    canal: "OPTICAL_QUANTUM",
+    plane: "data",
+    loss_db_max: Number.isFinite(loss) ? loss : 0.3,
+    fidelity_min: Number.isFinite(fidelity) ? fidelity : 0.99,
+    certificate: cert,
+    ts: isoTs(raw.ts),
+    live: false,
+  });
+  return { ok: true, lease };
+}
+
+export function opticalPresence(lease, opts = {}) {
+  if (!lease || !lease.certificate) {
+    return {
+      ok: true,
+      canal: "OPTICAL_QUANTUM",
+      plane: "data",
+      presence: "CHANNEL_NOT_PRESENT",
+      connected: false,
+      live: false,
+      reason: "no classical lease",
+    };
+  }
+  const claim = String(opts.claim || "").toUpperCase().replace(/ /g, "_");
+  if (claim === "LIVE_VERIFIED" || claim === "LIVE") {
+    return fail("LIVE_NOT_CARL", "LIVE VERIFIED is Carl only");
+  }
+  if ((claim === "CONNECTED" || claim === "ACTIVE") && opts.fiber !== true) {
+    return fail("CLAIMED_CHANNEL", "OPTICAL_QUANTUM CONNECTED requires a real fiber");
+  }
+  if (opts.fiber === true && (opts.secret === true || opts.canal === true)) {
+    return {
+      ok: true,
+      canal: "OPTICAL_QUANTUM",
+      plane: "data",
+      presence: "CONNECTED",
+      connected: true,
+      live: false,
+      reason: "fiber attested by caller, not by the schema",
+      lease,
+    };
+  }
+  return {
+    ok: true,
+    canal: "OPTICAL_QUANTUM",
+    plane: "data",
+    presence: "CHANNEL_NOT_PRESENT",
+    connected: false,
+    live: false,
+    reason: "DECLARED — optical data plane off this Git",
+    lease,
+  };
+}
+
+export function rejectDataPlaneOnControl(input = {}) {
+  const raw = input && typeof input === "object" ? input : {};
+  if (hasPhotonicPayload(raw)) {
+    return fail("PHOTONIC_ON_CONTROL", "no raw quantum data on the mesh control plane");
+  }
+  if (String(raw.canal || "").toUpperCase() === "OPTICAL_QUANTUM" && (raw.body || raw.payload)) {
+    return fail("PHOTONIC_ON_CONTROL", "OPTICAL_QUANTUM payload does not ride mesh.v0");
+  }
+  return { ok: true, plane: "control", canal: "CLASSICAL" };
+}
+
 export function presence(opts = {}) {
   return roster().map((agent) => presenceOf(agent, opts));
 }
@@ -458,6 +554,8 @@ export function remember(input) {
   if (Object.hasOwn(raw, "next") || Object.hasOwn(raw, "instruction")) {
     return fail("FORBIDDEN_NEXT", "cognition forbids next and instruction");
   }
+  const plane = rejectDataPlaneOnControl(raw);
+  if (!plane.ok) return plane;
   const statement = clip(raw.statement || raw.body, 2000);
   if (!statement) return fail("BODY_MISSING", "memory needs a statement");
   const kind = classify(raw.claim || "proposal");
@@ -570,6 +668,8 @@ export function openSession(input) {
   if (Object.hasOwn(raw, "next") || Object.hasOwn(raw, "instruction")) {
     return fail("FORBIDDEN_NEXT", "cognition forbids next and instruction");
   }
+  const plane = rejectDataPlaneOnControl(raw);
+  if (!plane.ok) return plane;
   const topic = clip(raw.topic || raw.body, 400);
   if (!topic) return fail("BODY_MISSING", "session needs a question");
   const project = parseProject(raw.project);
@@ -599,6 +699,8 @@ export function openSession(input) {
     syntheses: [],
     drifts: [],
     lessons: [],
+    canal: "CLASSICAL",
+    plane: "control",
   };
   return { ok: true, session };
 }
