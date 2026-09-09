@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { assign, pool, recommend } from "../.github/swarm/workforce.mjs";
+import { assign, pool, recommend, route } from "../.github/swarm/workforce.mjs";
 
 describe("workforce.v0 — dormant bots stay in the pool", () => {
   it("counts declared guests as IDLE and wakes them before recruiting", () => {
@@ -22,5 +22,13 @@ describe("workforce.v0 — dormant bots stay in the pool", () => {
     assert.equal(woke.woke, true);
     assert.equal(woke.merge, false);
     assert.equal(assign("no-such", "x").code, "UNKNOWN_AGENT");
+    const syn = route({ task: "lu", producer: "gemini", need: "review" });
+    assert.equal(syn.ok, true);
+    assert.notEqual(syn.worker, "gemini");
+    assert.notEqual(syn.worker, "carl");
+    assert.notEqual(syn.reviewer, syn.worker);
+    assert.equal(syn.independent, true);
+    assert.equal(syn.merge, false);
+    assert.equal(syn.synapse.act, "ROUTE");
   });
 });
