@@ -5,7 +5,8 @@
  */
 import { peutDire } from "./peut-dire.js";
 
-export const HOTE = "https://acorn-royal-dune-blend.grok.me";
+export const HOTE = "https://acorn-juge.laliberte22.workers.dev";
+export const VITRINE = "https://acorn-royal-dune-blend.grok.me";
 
 /**
  * @param {object} carte
@@ -26,6 +27,7 @@ export function quoteActe(carte, opts = {}) {
     live: false,
     auto_merge: false,
     hote: HOTE,
+    vitrine: VITRINE,
     mode: verdict.mode,
     manques: verdict.manques,
     phrase: "Les certitudes ont une date de fin.",
@@ -39,9 +41,9 @@ export function quoteActe(carte, opts = {}) {
     out.http = 200;
     out.note = "Un 200 n'est pas un sceau";
   }
-  if (status === 404 && (path === "" || path === "/juge")) {
-    out.hold = true;
-    out.reason = "hold_carl";
+  if (status === 404 && path === "/juge" && (http.host === VITRINE || http.host === "vitrine")) {
+    out.hold = false;
+    out.reason = "vitrine_html_attendue";
   }
 
   if (verdict.refus) {
