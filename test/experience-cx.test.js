@@ -18,6 +18,9 @@ describe("cx — trou attest-os nommé, pas comblé", () => {
     assert.match(exp, /epsilon et horizon manquent/);
     assert.match(exp, /On ne le comble pas/);
     assert.match(exp, /acorn-royal-dune-blend\.grok\.me/);
+    assert.match(exp, /canal ≠ vitrine/);
+    assert.match(exp, /Pas un HOLD wrangler/);
+    assert.doesNotMatch(exp, /punch-list Carl \/ wrangler/);
     assert.match(exp, /Jamais « quantum-safe »/);
     assert.match(exp, /Jamais « sealed forever »/);
     assert.match(exp, /ne voit pas Φ/);

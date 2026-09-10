@@ -10,7 +10,7 @@ Un 200 n'est pas VERT.
 ## Porte
 
 Hôte unique : https://acorn-royal-dune-blend.grok.me
-GET `/juge` : punch-list Carl / wrangler — [HORIZONS.md](HORIZONS.md) Court. Pas « live ».
+GET `/juge` sur la vitrine : 404 HTML Famille — attendu (canal ≠ vitrine). Pas un HOLD wrangler. Pas « live ».
 Titre : Famille
 Ligne (`packs/fr-CA.json`) : Les certitudes ont une date de fin.
 Spoken (`packs/en.json`) : Certainties expire.
