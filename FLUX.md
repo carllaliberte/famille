@@ -29,7 +29,9 @@ QUELLE → TÉMOIN → EPSILON → HORIZON
 
 Un champ de carte manquant → MODE reste classique. Pas d'invention.
 
-La porte client attend encore le binder Carl GET `/juge` ([HORIZONS.md](HORIZONS.md) Court). Pas « live ».
+Canal JSON GET `/juge` : `https://acorn-juge.laliberte22.workers.dev/juge` (preview, pas quittance).
+Vitrine HTML : `https://acorn-royal-dune-blend.grok.me` — Vercel, pas une zone Cloudflare.
+`GET /juge` sur la vitrine = 404 HTML. Pas un bind wrangler. Pas un 2e slug. Pas « live » sur grok.me.
 
 ## Deux horizons
 
@@ -74,4 +76,5 @@ Pas de monde sans l'humain. Pas d'acte hors du fil. Pas de carte juge à une IA 
 
 Le flux se vérifie par JSON + date, pas par une puce filmée.
 
-Hôte seul : https://acorn-royal-dune-blend.grok.me
+Vitrine HTML seule : https://acorn-royal-dune-blend.grok.me  
+Canal JSON GET `/juge` : https://acorn-juge.laliberte22.workers.dev/juge

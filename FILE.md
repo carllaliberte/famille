@@ -1,11 +1,12 @@
-# File — 2026-09-09
+# File — 2026-09-10
 
 Tableau de chantier. Pas un script. Pas un nœud. Carl squash / merge.
 
 ## Live
 
-Juge : https://acorn-juge.laliberte22.workers.dev/juge
+Canal JSON : https://acorn-juge.laliberte22.workers.dev/juge
 ε=0 → 400 JSON `Error margin zero is a lie`.
+Vitrine HTML : https://acorn-royal-dune-blend.grok.me — `GET /juge` = 404 HTML (Vercel, pas CF). Pas LIVE sur grok.me.
 Deploy Actions : vert (run 13).
 Garde landing : docs/index.html sur main (#16).
 
@@ -24,7 +25,7 @@ Invariants : vision humaine · cognition collective possible · désaccord = don
 Projets isolés : `project` sur la session. Pas de fuite A→B. `shareAcrossProjects` seulement si explicite.
 `claude` = guest déclaré (LU). `chatgpt` `gemini` `deepseek` `sonnet` = identités keyed : commentent seulement si secret Actions. Déclaré ≠ connecté. Jamais ACTIVE sans canal.
 Passe du swarm : chaque identité dépose une enveloppe selon specialty (kind + caps), pas un `if (id)`. Pas une API. Pas LIVE. Carl s'abstient (juge).
-Siège locked : pas d'usurpation (`FROM_NOT_ACTOR`). Invité = id sur le fil. LIVE VERIFIED exige l'acteur GitHub `carllaliberte`.
+Siège locked : pas d'usurpation (`FROM_NOT_ACTOR`). invité = id sur le fil. LIVE VERIFIED exige l'acteur GitHub `carllaliberte`.
 Grok est branché 24/7 : PR ouverte / mergée / commentaire → chef répond. Boucle horaire, toute la nuit, America/Toronto. 1 PR max par heure. Carl merge.
 Swarm commente si les secrets Actions **de famille** existent.
 Run 34287383767 : waterfall xAI `grok-2`→`grok-2-mini` (400 skip). Gemini natif 503 / OpenRouter 402. `:free` 404. Exit 0. Carl les pose dans Settings → Secrets.
@@ -68,13 +69,14 @@ Sans credential : **DECLARED — CHANNEL NOT PRESENT**. ACTIVE = a déposé une 
 
 ## Ouvert
 
-FLAG (stood) : Soft FLAGS Carl-only — natives Anthropic/OpenAI/DeepSeek absentes ; crédits OpenRouter 402 ; xAI slugs 400 ; cron Cursor cut ; acorn-juge grok.me 404 HOLD (workers.dev) ; deploy wrangler Carl-only.
+FLAG (stood) : Soft FLAGS Carl-only — natives Anthropic/OpenAI/DeepSeek absentes ; crédits OpenRouter 402 ; xAI slugs 400 ; cron Cursor cut ; grok.me `/juge` 404 HTML attendable (chemin A, 2026-09-10) ; deploy wrangler Carl-only.
 
 | Dépôt | Item | Fait |
 |---|---|---|
 | famille | clés Actions | GEMINI + OPENROUTER + XAI posées. Natives 3 encore vides. Skip ≠ crash. |
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
-| acorn-juge | issue #3 grok.me | 404 HOLD. Pas la zone de Carl. Canal = workers.dev. |
+| acorn-juge | canal JSON | workers.dev GET `/juge` 200 preview. Vitrine grok.me ≠ canal. |
+| acorn-juge | issue #3 grok.me | 404 HTML HOLD vitrine. Pas bind CF. Chemin A. |
 | acorn-juge | deploy wrangler | Carl-only. |
 
 ## Fermé

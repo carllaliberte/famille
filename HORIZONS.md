@@ -8,11 +8,12 @@ Hors file : Estoc, contract, CreatorFlow, nœud QUANTUM.
 
 Le client voit une porte qui dit vrai.
 
-- Binder GET `/juge` sur https://acorn-royal-dune-blend.grok.me (Carl / wrangler)
-  - wrangler bind GET `/juge` sur l’hôte acorn seulement
+- Canal JSON GET `/juge` : https://acorn-juge.laliberte22.workers.dev/juge
   - même contrat juge.v0 / peut-dire — [JUGE.md](JUGE.md)
   - Preview visible ≠ quittance
   - ε=0 refuse en public
+- Vitrine HTML : https://acorn-royal-dune-blend.grok.me (Vercel). Pas une zone CF.
+  - `GET /juge` sur la vitrine = 404 HTML. Attendable. Pas un bind wrangler.
   - pas de deuxième slug grok.me
 - Phrase unique FR + sous-titre EN : Les certitudes ont une date de fin. / Certainties expire.
 - VERT / AMBRE / ROUGE lisibles (check.py --human + mobile digest)
@@ -20,7 +21,7 @@ Le client voit une porte qui dit vrai.
 - Pas de nouveau protocole. Pas d’App Store.
 - Bots : un acte / heure, log, Imagine du jour.
 
-Done quand un inconnu ouvre l’hôte et comprend : date, pas monnaie.
+Done quand un inconnu ouvre le canal JSON et comprend : date, pas monnaie.
 
 ## Moyen — mois
 
