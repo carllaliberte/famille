@@ -1,0 +1,10 @@
+# Portable job. GitHub is the active forge today. This file is not LIVE GitLab.
+# No secrets. No deploy. No merge.
+stages: [test]
+test:
+  image: node:22
+  script:
+    - npm test
+  rules:
+    - if: $CI_PIPELINE_SOURCE
+  allow_failure: false
