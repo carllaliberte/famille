@@ -7,52 +7,73 @@
 
 ## État des preuves
 
-Dernière vérification : `2026-09-09T15:09:29Z` (cron `ots-upgrade`).
+Dernière vérification : `2026-09-10T15:00:15Z` (cron `ots-upgrade`).
 
 | SHA | Fichier | État | Vérifié |
 |---|---|---|---|
-| `068570c08c7c2061b34667941943d371f8d5b599` | `.ots-anchor/068570c08c7c2061b34667941943d371f8d5b599.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `1a2e100db9b198d3e77c7e8c18a5eb866979bd1d` | `.ots-anchor/1a2e100db9b198d3e77c7e8c18a5eb866979bd1d.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `202620c4eec963315c8320ffaab9ce01eea6b23a` | `.ots-anchor/202620c4eec963315c8320ffaab9ce01eea6b23a.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `230afb58b3ad4da4650c6536bc21630b0005e05c` | `.ots-anchor/230afb58b3ad4da4650c6536bc21630b0005e05c.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `24ff0629784dae52d7d84e47881754899fc1ced3` | `.ots-anchor/24ff0629784dae52d7d84e47881754899fc1ced3.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `2a66795f197059f3e2276d5bc61b15329f4eba31` | `.ots-anchor/2a66795f197059f3e2276d5bc61b15329f4eba31.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `2a81bf7a1f0fefbd4ac2723e125a247af4d67f33` | `.ots-anchor/2a81bf7a1f0fefbd4ac2723e125a247af4d67f33.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `2c115f2fe2a9633ab90fcdef8f33273ccf8839ec` | `.ots-anchor/2c115f2fe2a9633ab90fcdef8f33273ccf8839ec.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `35be507fb2aaed3c3d51ed776c93dee29c866a64` | `.ots-anchor/35be507fb2aaed3c3d51ed776c93dee29c866a64.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `3deeda1298e8c468185bad382845374b98cbd355` | `.ots-anchor/3deeda1298e8c468185bad382845374b98cbd355.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `42160edc37452f32f1dad1d8d9e7ce27b811a9f1` | `.ots-anchor/42160edc37452f32f1dad1d8d9e7ce27b811a9f1.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `48da7e25cf548589e4991256b87cbb93908f29c8` | `.ots-anchor/48da7e25cf548589e4991256b87cbb93908f29c8.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `49b27e145976a80837decf6860d300acb6335202` | `.ots-anchor/49b27e145976a80837decf6860d300acb6335202.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `4bcfb06fccb83b68352dea6d23dcf27d21dda2f0` | `.ots-anchor/4bcfb06fccb83b68352dea6d23dcf27d21dda2f0.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `4d0c89fa6f574e48b6aacdf0fd24dd824d463564` | `.ots-anchor/4d0c89fa6f574e48b6aacdf0fd24dd824d463564.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `65c5ffe93f90f7def5b97f9392988d6f48e04f5e` | `.ots-anchor/65c5ffe93f90f7def5b97f9392988d6f48e04f5e.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `6837ba48a916bec1db6c38245bffb7bc2ab0c34a` | `.ots-anchor/6837ba48a916bec1db6c38245bffb7bc2ab0c34a.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `68a8bdb1c1abf5f7ec45f1450ded09d9e8d95bb6` | `.ots-anchor/68a8bdb1c1abf5f7ec45f1450ded09d9e8d95bb6.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `6a9ca69c986d8d1d32f0acc7d00e1e09f2a0e5da` | `.ots-anchor/6a9ca69c986d8d1d32f0acc7d00e1e09f2a0e5da.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `6d0c3da138c6b7aa3065805650ffb42fc4b10ecc` | `.ots-anchor/6d0c3da138c6b7aa3065805650ffb42fc4b10ecc.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `6f3cc134891ad9ab95892462fbab294733509d85` | `.ots-anchor/6f3cc134891ad9ab95892462fbab294733509d85.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `7734da59b08f3e6a17e1bade8e2ad5e7e14d7e59` | `.ots-anchor/7734da59b08f3e6a17e1bade8e2ad5e7e14d7e59.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `798cceaa434e1b9c2db6340a0081e8f011489e7c` | `.ots-anchor/798cceaa434e1b9c2db6340a0081e8f011489e7c.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `7ea0a50a5cd2fff24b65135005a264a4ba203276` | `.ots-anchor/7ea0a50a5cd2fff24b65135005a264a4ba203276.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `86c142ca804aadfbd32c91867067a2182f276365` | `.ots-anchor/86c142ca804aadfbd32c91867067a2182f276365.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `8d3c2595cd13d487f0560987a2e96c417f1b16ad` | `.ots-anchor/8d3c2595cd13d487f0560987a2e96c417f1b16ad.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `8ed3af560238e713624e44440356aa9b5ed35a87` | `.ots-anchor/8ed3af560238e713624e44440356aa9b5ed35a87.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `98d0f966cc3c063e1636f5deee5a7289b4b58a81` | `.ots-anchor/98d0f966cc3c063e1636f5deee5a7289b4b58a81.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `9f0c908aaab5f7eca05d1a60d6dcf0402d7ffdb2` | `.ots-anchor/9f0c908aaab5f7eca05d1a60d6dcf0402d7ffdb2.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `a34eb26cb5751bacc26dcaf1ae492f5174551e70` | `.ots-anchor/a34eb26cb5751bacc26dcaf1ae492f5174551e70.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `b83a9e4452855875050b9cd76a0c30a0d2c65db9` | `.ots-anchor/b83a9e4452855875050b9cd76a0c30a0d2c65db9.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `b88ca656b2eba2c3152f1b5c9e52d64fd5851b5d` | `.ots-anchor/b88ca656b2eba2c3152f1b5c9e52d64fd5851b5d.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `bba1234fa6763b940ba17d1affa4797790ae2818` | `.ots-anchor/bba1234fa6763b940ba17d1affa4797790ae2818.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `c70edc4528674019c9832d5a11d7037893f09b8b` | `.ots-anchor/c70edc4528674019c9832d5a11d7037893f09b8b.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `c90a6352c848d6d84d6518e23f675a68fe51cd7c` | `.ots-anchor/c90a6352c848d6d84d6518e23f675a68fe51cd7c.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `db51ad4ee593f91b42d1789b9080a7354249524b` | `.ots-anchor/db51ad4ee593f91b42d1789b9080a7354249524b.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `ddeb69a3a75394cecb29208d3e4cfd7485ff9b4a` | `.ots-anchor/ddeb69a3a75394cecb29208d3e4cfd7485ff9b4a.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `ea6fb5a30217b485f06dea1fa4509e785895a398` | `.ots-anchor/ea6fb5a30217b485f06dea1fa4509e785895a398.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `ee8ae9a6d61cf0dcd9be9de9b6f4558dfb0a9181` | `.ots-anchor/ee8ae9a6d61cf0dcd9be9de9b6f4558dfb0a9181.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `f3f8a55f991a6950b6680b6ae2a411d3b54be238` | `.ots-anchor/f3f8a55f991a6950b6680b6ae2a411d3b54be238.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `f9a36978682a2c3392993e646f7449ef7009ca6b` | `.ots-anchor/f9a36978682a2c3392993e646f7449ef7009ca6b.sha.ots` | complete | 2026-09-09T15:09:29Z |
-| `fbfea3bc7c13860a6e66a19d50a6c4be0862e17a` | `.ots-anchor/fbfea3bc7c13860a6e66a19d50a6c4be0862e17a.sha.ots` | complete | 2026-09-09T15:09:29Z |
+| `046a6a7a0dbeac1b7a6dad0367567138c1d84b78` | `.ots-anchor/046a6a7a0dbeac1b7a6dad0367567138c1d84b78.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `052a4045cbf6cbaccd125baf562bf613f9224e1d` | `.ots-anchor/052a4045cbf6cbaccd125baf562bf613f9224e1d.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `068570c08c7c2061b34667941943d371f8d5b599` | `.ots-anchor/068570c08c7c2061b34667941943d371f8d5b599.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `1a2e100db9b198d3e77c7e8c18a5eb866979bd1d` | `.ots-anchor/1a2e100db9b198d3e77c7e8c18a5eb866979bd1d.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `202620c4eec963315c8320ffaab9ce01eea6b23a` | `.ots-anchor/202620c4eec963315c8320ffaab9ce01eea6b23a.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `230afb58b3ad4da4650c6536bc21630b0005e05c` | `.ots-anchor/230afb58b3ad4da4650c6536bc21630b0005e05c.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `24ff0629784dae52d7d84e47881754899fc1ced3` | `.ots-anchor/24ff0629784dae52d7d84e47881754899fc1ced3.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `2a66795f197059f3e2276d5bc61b15329f4eba31` | `.ots-anchor/2a66795f197059f3e2276d5bc61b15329f4eba31.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `2a81bf7a1f0fefbd4ac2723e125a247af4d67f33` | `.ots-anchor/2a81bf7a1f0fefbd4ac2723e125a247af4d67f33.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `2c115f2fe2a9633ab90fcdef8f33273ccf8839ec` | `.ots-anchor/2c115f2fe2a9633ab90fcdef8f33273ccf8839ec.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `35be507fb2aaed3c3d51ed776c93dee29c866a64` | `.ots-anchor/35be507fb2aaed3c3d51ed776c93dee29c866a64.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `3d363f0957027869b69a440dc395a67d79df4795` | `.ots-anchor/3d363f0957027869b69a440dc395a67d79df4795.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `3deeda1298e8c468185bad382845374b98cbd355` | `.ots-anchor/3deeda1298e8c468185bad382845374b98cbd355.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `3e128343a94fe6c152569b5f90887549c89ac79b` | `.ots-anchor/3e128343a94fe6c152569b5f90887549c89ac79b.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `42160edc37452f32f1dad1d8d9e7ce27b811a9f1` | `.ots-anchor/42160edc37452f32f1dad1d8d9e7ce27b811a9f1.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `48da7e25cf548589e4991256b87cbb93908f29c8` | `.ots-anchor/48da7e25cf548589e4991256b87cbb93908f29c8.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `49b27e145976a80837decf6860d300acb6335202` | `.ots-anchor/49b27e145976a80837decf6860d300acb6335202.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `4bcfb06fccb83b68352dea6d23dcf27d21dda2f0` | `.ots-anchor/4bcfb06fccb83b68352dea6d23dcf27d21dda2f0.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `4d0c89fa6f574e48b6aacdf0fd24dd824d463564` | `.ots-anchor/4d0c89fa6f574e48b6aacdf0fd24dd824d463564.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `5ede43f2a4347e83624905dfdf7d2b4440107cfa` | `.ots-anchor/5ede43f2a4347e83624905dfdf7d2b4440107cfa.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `64367251d97674c06e83d217ed754a3dcbf28720` | `.ots-anchor/64367251d97674c06e83d217ed754a3dcbf28720.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `65c5ffe93f90f7def5b97f9392988d6f48e04f5e` | `.ots-anchor/65c5ffe93f90f7def5b97f9392988d6f48e04f5e.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `6837ba48a916bec1db6c38245bffb7bc2ab0c34a` | `.ots-anchor/6837ba48a916bec1db6c38245bffb7bc2ab0c34a.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `68a8bdb1c1abf5f7ec45f1450ded09d9e8d95bb6` | `.ots-anchor/68a8bdb1c1abf5f7ec45f1450ded09d9e8d95bb6.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `6a9ca69c986d8d1d32f0acc7d00e1e09f2a0e5da` | `.ots-anchor/6a9ca69c986d8d1d32f0acc7d00e1e09f2a0e5da.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `6b5def15a43c1210216934ff31f3885c183304eb` | `.ots-anchor/6b5def15a43c1210216934ff31f3885c183304eb.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `6d0c3da138c6b7aa3065805650ffb42fc4b10ecc` | `.ots-anchor/6d0c3da138c6b7aa3065805650ffb42fc4b10ecc.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `6f3cc134891ad9ab95892462fbab294733509d85` | `.ots-anchor/6f3cc134891ad9ab95892462fbab294733509d85.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `708fe305e02de2ca2f7c14c04d60636bd09bcf66` | `.ots-anchor/708fe305e02de2ca2f7c14c04d60636bd09bcf66.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `7488d1ce16e6a9a02cf3b0782766b10acac48c6c` | `.ots-anchor/7488d1ce16e6a9a02cf3b0782766b10acac48c6c.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `7576c3f6a0500699eccbb7954d67fe832c30ebd4` | `.ots-anchor/7576c3f6a0500699eccbb7954d67fe832c30ebd4.sha.ots` | pending | 2026-09-10T15:00:15Z |
+| `7734da59b08f3e6a17e1bade8e2ad5e7e14d7e59` | `.ots-anchor/7734da59b08f3e6a17e1bade8e2ad5e7e14d7e59.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `798cceaa434e1b9c2db6340a0081e8f011489e7c` | `.ots-anchor/798cceaa434e1b9c2db6340a0081e8f011489e7c.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `7c4bd22dcabac8f9e6dfdeb3eb92988be9a30485` | `.ots-anchor/7c4bd22dcabac8f9e6dfdeb3eb92988be9a30485.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `7ea0a50a5cd2fff24b65135005a264a4ba203276` | `.ots-anchor/7ea0a50a5cd2fff24b65135005a264a4ba203276.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `86c142ca804aadfbd32c91867067a2182f276365` | `.ots-anchor/86c142ca804aadfbd32c91867067a2182f276365.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `89f0ae2a8ec115e2243101be50ebcd9c6a22dac9` | `.ots-anchor/89f0ae2a8ec115e2243101be50ebcd9c6a22dac9.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `8b761fcfa49dcd70dee83577dbdeb5eecc94d0bd` | `.ots-anchor/8b761fcfa49dcd70dee83577dbdeb5eecc94d0bd.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `8d3c2595cd13d487f0560987a2e96c417f1b16ad` | `.ots-anchor/8d3c2595cd13d487f0560987a2e96c417f1b16ad.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `8ed3af560238e713624e44440356aa9b5ed35a87` | `.ots-anchor/8ed3af560238e713624e44440356aa9b5ed35a87.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `968bd43015664236cabca508316f8c2664f088a4` | `.ots-anchor/968bd43015664236cabca508316f8c2664f088a4.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `96d47687d2b500ba4efa3708d42a9025e40b9748` | `.ots-anchor/96d47687d2b500ba4efa3708d42a9025e40b9748.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `98d0f966cc3c063e1636f5deee5a7289b4b58a81` | `.ots-anchor/98d0f966cc3c063e1636f5deee5a7289b4b58a81.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `992ce9d5ad20f70ea281506cbb51db6f584d5a98` | `.ots-anchor/992ce9d5ad20f70ea281506cbb51db6f584d5a98.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `9f0c908aaab5f7eca05d1a60d6dcf0402d7ffdb2` | `.ots-anchor/9f0c908aaab5f7eca05d1a60d6dcf0402d7ffdb2.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `a34eb26cb5751bacc26dcaf1ae492f5174551e70` | `.ots-anchor/a34eb26cb5751bacc26dcaf1ae492f5174551e70.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `b0105904228dd7af67257e268fafa3c32520fa97` | `.ots-anchor/b0105904228dd7af67257e268fafa3c32520fa97.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `b097770126c7c732696e9f13631e4fbba7ac1a49` | `.ots-anchor/b097770126c7c732696e9f13631e4fbba7ac1a49.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `b83a9e4452855875050b9cd76a0c30a0d2c65db9` | `.ots-anchor/b83a9e4452855875050b9cd76a0c30a0d2c65db9.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `b88ca656b2eba2c3152f1b5c9e52d64fd5851b5d` | `.ots-anchor/b88ca656b2eba2c3152f1b5c9e52d64fd5851b5d.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `bba1234fa6763b940ba17d1affa4797790ae2818` | `.ots-anchor/bba1234fa6763b940ba17d1affa4797790ae2818.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `c70edc4528674019c9832d5a11d7037893f09b8b` | `.ots-anchor/c70edc4528674019c9832d5a11d7037893f09b8b.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `c90a6352c848d6d84d6518e23f675a68fe51cd7c` | `.ots-anchor/c90a6352c848d6d84d6518e23f675a68fe51cd7c.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `ccd9f615a9262ec6e13a3d8a169b3db4a8ce88c3` | `.ots-anchor/ccd9f615a9262ec6e13a3d8a169b3db4a8ce88c3.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `d36eee572127ac2db5b451769dbbc87db9b94308` | `.ots-anchor/d36eee572127ac2db5b451769dbbc87db9b94308.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `db51ad4ee593f91b42d1789b9080a7354249524b` | `.ots-anchor/db51ad4ee593f91b42d1789b9080a7354249524b.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `ddeb69a3a75394cecb29208d3e4cfd7485ff9b4a` | `.ots-anchor/ddeb69a3a75394cecb29208d3e4cfd7485ff9b4a.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `de482d3bb7f054ff974eedb0d804fe50efad877b` | `.ots-anchor/de482d3bb7f054ff974eedb0d804fe50efad877b.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `ea6fb5a30217b485f06dea1fa4509e785895a398` | `.ots-anchor/ea6fb5a30217b485f06dea1fa4509e785895a398.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `ee8ae9a6d61cf0dcd9be9de9b6f4558dfb0a9181` | `.ots-anchor/ee8ae9a6d61cf0dcd9be9de9b6f4558dfb0a9181.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `f3f8a55f991a6950b6680b6ae2a411d3b54be238` | `.ots-anchor/f3f8a55f991a6950b6680b6ae2a411d3b54be238.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `f9a36978682a2c3392993e646f7449ef7009ca6b` | `.ots-anchor/f9a36978682a2c3392993e646f7449ef7009ca6b.sha.ots` | complete | 2026-09-10T15:00:15Z |
+| `fbfea3bc7c13860a6e66a19d50a6c4be0862e17a` | `.ots-anchor/fbfea3bc7c13860a6e66a19d50a6c4be0862e17a.sha.ots` | complete | 2026-09-10T15:00:15Z |
 
 <!-- ots-status:end -->
 
