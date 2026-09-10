@@ -4,7 +4,7 @@ import { HOTE, juger, peutDire } from '../sdk/juger.js'
 
 describe('juger — host preview wrapper', () => {
   it('cites only the frozen host', () => {
-    assert.equal(HOTE, 'https://acorn-royal-dune-blend.grok.me')
+    assert.equal(HOTE, 'https://acorn-juge.laliberte22.workers.dev')
   })
 
   it('throws on epsilon 0 without calling the host', async () => {
@@ -18,6 +18,29 @@ describe('juger — host preview wrapper', () => {
     const r = peutDire({ quelle: 'os', temoin: 'aucun', epsilon: null, horizon: '' })
     assert.equal(r.quantique, false)
     assert.equal(r.preview, true)
+  })
+
+  it('calls GET /juge on the canal, never POST /attest', async () => {
+    const calls = []
+    const fetchImpl = async (url, init = {}) => {
+      calls.push({ url: String(url), method: init.method || 'GET' })
+      return new Response(JSON.stringify({ preview: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }
+    const r = await juger(
+      { quelle: 'os', temoin: 'aucun', epsilon: 1e-6, horizon: '2027-12-31' },
+      { fetchImpl },
+    )
+    assert.equal(calls.length, 1)
+    assert.match(calls[0].url, /^https:\/\/acorn-juge\.laliberte22\.workers\.dev\/juge\?/)
+    assert.equal(calls[0].method, 'GET')
+    assert.doesNotMatch(calls[0].url, /\/attest/)
+    assert.equal(r.preview, true)
+    assert.equal(r.receipt, false)
+    assert.equal(r.host, HOTE)
+    assert.equal(r.http, 200)
   })
 
   it('falls back to local preview when the host is not JSON', async () => {

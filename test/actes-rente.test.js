@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { HOTE, quoteActe } from "../sdk/acte.js";
+import { HOTE, VITRINE, quoteActe } from "../sdk/acte.js";
 import { peutDire } from "../sdk/peut-dire.js";
 
 const actes = readFileSync(new URL("../ACTES.md", import.meta.url), "utf8");
@@ -91,15 +91,17 @@ describe("rente — quoteActe never invents a price", () => {
     assert.deepEqual(q.manques, ["epsilon", "horizon"]);
   });
 
-  it("names GET /juge 404 as HOLD Carl, still not a product", () => {
+  it("names GET /juge 404 on vitrine as vitrine_html_attendue, chemin A", () => {
     const q = quoteActe(osExample, {
       today: "2026-09-09",
-      http: { status: 404, path: "/juge" },
+      http: { status: 404, path: "/juge", host: VITRINE },
     });
-    assert.equal(q.hold, true);
-    assert.equal(q.reason, "hold_carl");
+    assert.equal(q.hold, false);
+    assert.equal(q.reason, "vitrine_html_attendue");
     assert.equal(q.sale, false);
     assert.equal(q.price, null);
+    assert.equal(q.vitrine, VITRINE);
+    assert.equal(q.hote, HOTE);
     assert.deepEqual(q.manques, ["epsilon", "horizon"]);
   });
 
