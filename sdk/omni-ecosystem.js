@@ -92,14 +92,55 @@ export function architectureMap() {
     live: false,
   };
 }
+export function operationalReality() {
+  return {
+    constitution: "DOCUMENTED+TESTED",
+    collective_cognition: "IMPLEMENTED+TESTED",
+    nerve: "IMPLEMENTED+TESTED",
+    organism: "IMPLEMENTED+TESTED",
+    inter_organism: "IMPLEMENTED+TESTED",
+    omni: "IMPLEMENTED+TESTED",
+    swarm_gemini: "CHANNEL_NOT_PRESENT",
+    CONNECTED: false,
+    ACTIVE: false,
+    MEASURED: "NOT_MEASURED",
+    LIVE_VERIFIED: false,
+  };
+}
+export function loopStatus() {
+  return {
+    SIGNAL: "IMPLEMENTED",
+    SYNAPSE: "IMPLEMENTED",
+    ROUTING: "IMPLEMENTED",
+    COGNITION: "IMPLEMENTED",
+    COUNTER_ANALYSIS: "IMPLEMENTED",
+    EVIDENCE: "IMPLEMENTED",
+    MEASUREMENT: "IMPLEMENTED",
+    PROVENANCE: "IMPLEMENTED",
+    MEMORY: "IMPLEMENTED",
+    MODEL: "IMPLEMENTED",
+    PREDICTION: "NOT_MEASURED",
+    ACTION_EXTERNAL: "NOT_IMPLEMENTED",
+    LIVE_FEEDBACK: "NOT_IMPLEMENTED",
+  };
+}
 export function diagnose() {
   return {
-    unused: [], duplicates_named: ["emergence helpers overlap measureEmergence"],
-    live_invented: false, measured: { CONNECTED: "NOT_MEASURED", ACTIVE: "NOT_MEASURED" },
+    unused: ["blackHoleExample is didactic only"],
+    duplicates_named: ["emergence helpers overlap measureEmergence"],
+    orphans: [],
+    dead_ends: ["ACTION_EXTERNAL", "LIVE_FEEDBACK"],
+    single_points: ["GitHub as sole persistence of this branch"],
+    centralization: false,
+    live_invented: false,
+    measured: { CONNECTED: "NOT_MEASURED", ACTIVE: "NOT_MEASURED", latency: "NOT_MEASURED" },
+    unasked: "WHAT ARE WE NOT EVEN THINKING TO ASK?",
+    reality: operationalReality(),
+    loop: loopStatus(),
   };
 }
 export function fitness() {
-  return { dimensions: ["coherence","resilience","honesty"], single_score: null, truth: false };
+  return { dimensions: ["coherence","resilience","honesty","simplicity"], single_score: null, truth: false };
 }
 export function blackHoleExample() {
   return {
@@ -144,5 +185,7 @@ export function e2e() {
     superior: superiorSource({ id: "x" }),
     uu: unknownUnknown(),
     map: architectureMap(),
+    ops: operationalReality(),
+    diag: diagnose(),
   };
 }
