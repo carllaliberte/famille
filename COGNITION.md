@@ -167,3 +167,8 @@ Architecture prête ≠ réseau connecté. 0 CONNECTED / 0 ACTIVE / 0 LIVE tant 
 - La session `pool.v0` est sur `main` (PR #245 mergée). Cette règle unique s'y superpose : mode `COLLECTIVE_COGNITION` + session `pool.v0`. Pas deux mesh.
 - Un prompt de rôle listait `from: gemini|claude|chatgpt|…`. Le protocole reste ouvert : `from` = identifiant du roster, pas une enum.
 - « FULL SWARM CONNECTÉ » est l'objectif. Sans secrets Actions, l'état réel est ARCHITECTURE READY, pas FULL SWARM OPERATIONAL. Inventer les canaux serait un faux.
+
+## Nerve
+
+Circulation overlay : [`NERVE.md`](NERVE.md) · [`schema/nerve.v0.json`](schema/nerve.v0.json) · [`sdk/nerve.js`](sdk/nerve.js).
+Pas un second mesh. Boucle ouverte ∞ = horizon, pas omniscience.
