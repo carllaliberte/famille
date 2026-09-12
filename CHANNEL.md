@@ -1,20 +1,22 @@
-# Channel — GitHub (dépôt seulement)
+# Channels — LIVE limités (lecture)
 
-Premier canal externe **exercé**, pas le système entier.
+Système entier ≠ LIVE. Organismes A–Z = DECLARED.
+ACTION_EXTERNAL / LIVE_FEEDBACK = NOT_IMPLEMENTED.
+Latence/coût = NOT_MEASURED.
 
-- endpoint : GitHub connector `github___get_me`
-- auth : connecteur utilisateur (secret non commité, non affiché)
-- timestamp : 2026-09-12T17:35Z approx.
-- réponse validée : `login=carllaliberte` `id=54148864` (donnée publique de profil)
-- HTTP : succès outil (pas de simulation locale)
-- latence : NOT_MEASURED (horloge outil non exposée en ms fiables)
-- coût : NOT_MEASURED
-- qualité : réponse parseable, identité attendue
-- provenance : connector GitHub → get_me → rapport
-- révocation : déconnecter le connecteur GitHub côté compte Carl
+## 1. GitHub `get_me`
+- preuve : login=carllaliberte id=54148864
+- état : LIVE_VERIFIED (profil)
 
-LIVE_VERIFIED **du canal GitHub lecture profil**.
-Pas LIVE du réseau d’organismes.
-Pas LIVE_FEEDBACK monde.
-ACTION_EXTERNAL = NOT_IMPLEMENTED.
-Organismes A–Z restent DECLARED.
+## 2. Google Calendar `search`
+- fenêtre : 2026-09-12 America/New_York
+- preuve : réponse réelle `events: []` (calendrier vide ce jour, pas une simulation)
+- état : LIVE_VERIFIED (lecture)
+- écriture : non exercée
+
+## 3. Gmail `search newer_than:1d`
+- preuve : 1 thread reçu (notification CI GitHub famille, sans corps publié ici)
+- état : LIVE_VERIFIED (lecture)
+- envoi mail : NOT_IMPLEMENTED / non autorisé dans ce chantier
+
+Révocation : déconnecter les connecteurs côté compte Carl.
