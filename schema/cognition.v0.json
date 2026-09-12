@@ -95,6 +95,56 @@
         }
       }
     },
+    "episteme": {
+      "enum": ["KNOWN", "MEASURABLE", "OBSERVED", "UNEXPLAINED", "UNKNOWN"],
+      "description": "Not interchangeable. A name is not a certainty."
+    },
+    "record_kind": {
+      "enum": [
+        "CLAIM",
+        "OBSERVATION",
+        "MEASUREMENT",
+        "EVIDENCE",
+        "INTERPRETATION",
+        "HYPOTHESIS",
+        "UNKNOWN",
+        "UNRESOLVED"
+      ],
+      "description": "A consciousness utterance is CLAIM, never EVIDENCE by default. Never consciousness=true."
+    },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Open set D = {d1..dn}. n is not fixed. consciousness is a candidate dimension, never an established fact. Unknown stays UNKNOWN/UNRESOLVED. Adding a dimension must not reinterpret prior evidence.",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,24}$" },
+        "status": {
+          "enum": ["HYPOTHESIS", "DEFINED", "OBSERVABLE", "MEASURED", "UNKNOWN", "UNRESOLVED"]
+        },
+        "candidate": { "type": "boolean" },
+        "established": { "const": false },
+        "human_validated": { "type": "boolean" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "ts", "context"],
+      "properties": {
+        "from": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,24}$" },
+        "ts": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+        },
+        "context": { "type": "string", "minLength": 1 },
+        "episteme": {
+          "enum": ["KNOWN", "MEASURABLE", "OBSERVED", "UNEXPLAINED", "UNKNOWN"]
+        },
+        "measurement": { "type": ["string", "null"] },
+        "relation": { "type": ["string", "null"] },
+        "disagreements": { "type": "array", "items": { "type": "string" } }
+      }
+    },
     "next": false,
     "instruction": false
   }

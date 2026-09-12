@@ -1,6 +1,6 @@
 # Modèles — lecteurs du flux
 
-Pas de liste fermée. Toute IA peut réfléchir. Aucune n'est un nœud pour avoir lu.
+Pas de liste fermée. Toute intelligence présente ou future peut réfléchir. La nature n'est pas présumée. Aucune n'est un nœud pour avoir lu.
 `LU` = texte vu + citation juste, **sur la PR**. `PRÉSENT` (conso) = hors rôle IA.
 GPT-5.4 nano : écho ; hors colonne LU si pas de citation.
 
