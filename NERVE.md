@@ -8,6 +8,8 @@ SOURCE → SIGNAL → SYNAPSE → ROUTAGE → CONTEXTE → COGNITION → CONTRE-
 
 ∞ = horizon ouvert. Pas omniscience. Pas système terminé.
 
+Carte des organes : [`ORGANISM.md`](ORGANISM.md).
+
 ## Ce qui existe déjà (ne pas reconstruire)
 
 | Voie | Où |
