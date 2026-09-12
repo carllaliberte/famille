@@ -98,41 +98,29 @@ export function futureIntelligenceCycle() {
   const roster = declareIntelligence({ agents: [] }, { id: "futurex", caps: ["CAPABILITY_NEW"] });
   return { discovered: i.discover(), hs: i.handshake(), invoked: i.invoke(), roster_n: roster.agents.length, routed: routeByCapability({ need: "CAPABILITY_NEW" }, [i]), gone: i.disconnect(), isolated: i.revoke(), authority: i.authority, closed_list: false, mode: MODE };
 }
-
 export function hypothesis(partial = {}) {
-  return {
-    hypothesis_id: partial.hypothesis_id || "h1",
-    statement: partial.statement || "",
-    origin: partial.origin || "audit",
-    provenance: partial.provenance || { source: partial.origin || "audit" },
-    context: partial.context || "falsify",
-    timestamp: partial.timestamp || new Date().toISOString(),
-    expected_observation: partial.expected_observation,
-    falsifier: partial.falsifier,
-    test_method: partial.test_method,
-    competing_models: partial.competing_models || [],
-    epistemic_status: partial.epistemic_status || "HYPOTHESIS",
-    established: false,
-    truth: false,
-    hidden: !!partial.hidden,
-  };
+  return { hypothesis_id: partial.hypothesis_id || "h1", statement: partial.statement || "", origin: partial.origin || "audit", provenance: partial.provenance || { source: partial.origin || "audit" }, context: partial.context || "falsify", timestamp: partial.timestamp || new Date().toISOString(), expected_observation: partial.expected_observation, falsifier: partial.falsifier, test_method: partial.test_method, competing_models: partial.competing_models || [], epistemic_status: partial.epistemic_status || "HYPOTHESIS", established: false, truth: false, hidden: !!partial.hidden };
 }
 export function hiddenAssumption(statement) {
   return hypothesis({ hypothesis_id: "hidden", statement, hidden: true, epistemic_status: "HIDDEN_ASSUMPTION" });
 }
 export function falsify(h, observation) {
-  if (h.falsifier && observation && observation.matches_falsifier) {
-    return { ...h, epistemic_status: "REFUTED", established: false, truth: false, observation };
-  }
-  if (observation && observation.supports) {
-    return { ...h, epistemic_status: "PARTIALLY_SUPPORTED", established: false, truth: false, observation };
-  }
-  if (!observation || observation.not_measured) {
-    return { ...h, epistemic_status: "NOT_TESTABLE", established: false, truth: false };
-  }
+  if (h.falsifier && observation && observation.matches_falsifier) return { ...h, epistemic_status: "REFUTED", established: false, truth: false, observation };
+  if (observation && observation.supports) return { ...h, epistemic_status: "PARTIALLY_SUPPORTED", established: false, truth: false, observation };
+  if (!observation || observation.not_measured) return { ...h, epistemic_status: "NOT_TESTABLE", established: false, truth: false };
   return { ...h, epistemic_status: "UNRESOLVED", established: false, truth: false };
 }
 export function noChange({ expected_value = 0, cost = 1, risk = 1, complexity = 1 } = {}) {
   return { decision: expected_value < cost + risk + complexity ? "NO_CHANGE" : "CONSIDER", authority: false };
 }
 export function stale(h) { return { ...h, epistemic_status: "STALE", reassess: true, truth: false }; }
+export function unauthorizedProbe() {
+  return { status: "BLOCKED", topology: undefined, nodes: undefined, capabilities: undefined, version: undefined };
+}
+export function disclose(principal, payload) {
+  if (principal !== "carl") return { disclosed: false };
+  return { disclosed: true, payload };
+}
+export function isolateCompromised(id) {
+  return { id, isolated: true, revoked: true, evidence_kept: true, fabric_intact: true };
+}
