@@ -128,6 +128,6 @@ A bot, a rail, a bank, a mint, a second grok.me, a photon in the index.
 
 See [INTERDIT.md](INTERDIT.md) · [JUGE.md](JUGE.md) · [CURSOR.md](CURSOR.md) · [PHILOSOPHIE.md](PHILOSOPHIE.md).
 
-© 2026 Carl Laliberté. MIT for listed protocols. Estoc stays off the file. QUANTUM stays off Git.
+© 2026 Carl Laliberté. FAMILLE map (this repository) is MIT. See LICENSE. Estoc stays off the file. QUANTUM stays off Git.
 Marks: see [NOTICE](NOTICE). Regimes: see [COPYRIGHT.md](COPYRIGHT.md).
 Reading an idea is not a licence to the Acorn work. Provenance is the commit SHA.
