@@ -154,3 +154,61 @@ export function countPresence(rows) {
   }
   return out;
 }
+
+/** Generic adapter. No vendor list. Capabilities may be UNKNOWN. */
+export function intelligenceAdapter(partial = {}) {
+  const caps = partial.capabilities || [];
+  const unknown = caps.includes("CAPABILITY_UNKNOWN") || caps.includes("CAPABILITY_NEW") || caps.length === 0;
+  return {
+    id: partial.id || "future-x",
+    provider: partial.provider || "UNKNOWN",
+    version: partial.version || "UNKNOWN",
+    capabilities: unknown && caps.length === 0 ? ["CAPABILITY_UNKNOWN"] : caps,
+    protocol: partial.protocol || "open-intelligence.v0",
+    presence: "DECLARED",
+    authority: false,
+    live: false,
+    discover() { return { id: this.id, presence: "DECLARED", trusted: false }; },
+    handshake() { return { compatible: true, trusted: false, verified: false }; },
+    invoke() { return { invoked: false, reason: "CHANNEL_NOT_PRESENT", live: false }; },
+    observe(x) { return { kind: "OBSERVATION", x, established: false }; },
+    measure() { return { status: "NOT_MEASURED" }; },
+    provenance() { return { source: this.id, invented: false }; },
+    health() { return { presence: this.presence, live: false }; },
+    disconnect() { return { presence: "DISCONNECTED", live: false }; },
+    revoke() { return { presence: "REVOKED", live: false, history_kept: true }; },
+  };
+}
+
+export function routeByCapability(task, adapters) {
+  return (adapters || []).filter((a) => {
+    const caps = a.capabilities || [];
+    if (caps.includes("CAPABILITY_UNKNOWN")) return true;
+    return !task.need || caps.includes(task.need);
+  }).map((a) => ({ id: a.id, authority: false, live: false }));
+}
+
+export function futureIntelligenceCycle() {
+  const i = intelligenceAdapter({
+    id: "future-x",
+    provider: "UNKNOWN",
+    version: "UNKNOWN",
+    capabilities: ["CAPABILITY_NEW"],
+  });
+  const roster = declareIntelligence({ agents: [] }, { id: "futurex", caps: ["CAPABILITY_NEW"] });
+  const routed = routeByCapability({ need: "CAPABILITY_NEW" }, [i]);
+  const gone = i.disconnect();
+  const isolated = i.revoke();
+  return {
+    discovered: i.discover(),
+    hs: i.handshake(),
+    invoked: i.invoke(),
+    roster_n: roster.agents.length,
+    routed,
+    gone,
+    isolated,
+    authority: i.authority,
+    closed_list: false,
+    mode: MODE,
+  };
+}
