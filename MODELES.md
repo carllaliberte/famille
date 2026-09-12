@@ -14,7 +14,7 @@ Swarm auto (si clés Actions famille) : gemini. chatgpt · sonnet · deepseek = 
 ## Familles invitées à la réflexion
 
 | Famille | Exemples | Où |
-|---|---|---|
+|---|---|
 | xAI / Grok | Grok 4, 4.5, 4.6, Grok Build | GitHub, grok.me, Cursor |
 | Cursor | Auto, Composer | IDE → PR |
 | Anthropic | Claude (toutes versions) | commentaire PR / swarm |
@@ -44,3 +44,5 @@ Swarm auto (si clés Actions famille) : gemini. chatgpt · sonnet · deepseek = 
 | GPT-5.4 nano | hors cadastre |
 
 MODE classique : carte juge absente.
+
+Nerve overlay (`NERVE.md`) : signaux / synapses / boucle ouverte. Pas un juge.
