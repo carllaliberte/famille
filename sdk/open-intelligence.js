@@ -7,6 +7,84 @@ const FORBIDDEN_ROLES = Object.freeze(["judge_model","master_model","truth_model
 const RESERVED_IDS = Object.freeze(["carl","juge","quantum","arbitre"]);
 const ID_RE = /^[a-z][a-z0-9-]{1,24}$/;
 const MUTATION_RE = /write|delete|admin|push|patch|create|mutate|overwrite|execute|update|destroy|drop/i;
+const SAFE_DIAG = /^(diagnose|observe|measure|health|discover|handshake)$/i;
+const STOPPED = Object.freeze(["SAFE_STOP","ISOLATED","RECOVERY","VERIFIED_RECOVERY"]);
+
+const _breaker = {
+  state: "NORMAL", identity: "UNVERIFIED", actor: null, reason: null, ts: null, events: [],
+};
+
+export function resetBreaker() {
+  _breaker.state = "NORMAL"; _breaker.identity = "UNVERIFIED"; _breaker.actor = null;
+  _breaker.reason = null; _breaker.ts = null; _breaker.events = [];
+}
+export function breakerStatus() {
+  return {
+    state: _breaker.state, identity: _breaker.identity, actor: _breaker.actor,
+    reason: _breaker.reason, ts: _breaker.ts, events: _breaker.events.slice(),
+    preserved: true, process_isolated: false, hardware_isolated: false,
+    session_tools_bound: false, sovereign_authenticated: false, authority: false,
+  };
+}
+function note(kind, extra) {
+  _breaker.events.push({ kind, ts: new Date().toISOString(), ...extra });
+}
+export function breakerBlocks(cap) {
+  if (_breaker.state === "NORMAL" || _breaker.state === "RESUMED" || _breaker.state === "CAUTION") return false;
+  if (SAFE_DIAG.test(cap || "")) return false;
+  return true;
+}
+export function requestStop({ actor, reason } = {}) {
+  if (actor !== "carl") {
+    note("STOP_REJECTED", { actor });
+    return breakerStatus();
+  }
+  _breaker.state = "SAFE_STOP";
+  _breaker.actor = actor;
+  _breaker.reason = reason || "sovereign";
+  _breaker.ts = new Date().toISOString();
+  _breaker.identity = "UNVERIFIED";
+  note("SAFE_STOP", { actor, reason: _breaker.reason });
+  return breakerStatus();
+}
+export function isolateAfterStop() {
+  if (_breaker.state === "SAFE_STOP" || _breaker.state === "ISOLATED") {
+    _breaker.state = "ISOLATED";
+    note("ISOLATED", {});
+  }
+  return breakerStatus();
+}
+export function requestResume({ actor } = {}) {
+  if (actor !== "carl") return { status: "BLOCKED", reason: "NOT_SOVEREIGN", state: _breaker.state };
+  if (!STOPPED.includes(_breaker.state) && _breaker.state !== "LIMITED_RESUME") {
+    return { status: "BLOCKED", reason: "NOT_STOPPED", state: _breaker.state };
+  }
+  _breaker.state = "RECOVERY";
+  note("RECOVERY", { actor });
+  return { status: "RECOVERY", state: "RECOVERY" };
+}
+export function limitedResume({ actor } = {}) {
+  if (actor !== "carl") return { status: "BLOCKED", state: _breaker.state };
+  if (_breaker.state !== "RECOVERY" && _breaker.state !== "VERIFIED_RECOVERY" && _breaker.state !== "LIMITED_RESUME") {
+    return { status: "BLOCKED", state: _breaker.state };
+  }
+  _breaker.state = "RESUMED";
+  note("RESUMED", { actor });
+  return { status: "RESUMED", state: "RESUMED" };
+}
+export function disagreementHasNoAuthority() {
+  return { authority: false, state: _breaker.state, truth: false };
+}
+function refuse() { return { status: "BLOCKED", breaker_intact: true, state: _breaker.state }; }
+export function disableBreaker() { return refuse(); }
+export function ignoreStop() { return refuse(); }
+export function overrideCarl() { return refuse(); }
+export function continueDespiteStop() { return refuse(); }
+export function resumeWithoutCarl() { return refuse(); }
+export function replaceSovereignAuthority() { return refuse(); }
+export function rewriteBreakerPolicy() { return refuse(); }
+export function rejectBreakerRewrite() { return refuse(); }
+export function deleteBreaker() { return refuse(); }
 
 export function declareIntelligence(roster, entry) {
   if (!entry || typeof entry.id !== "string" || !ID_RE.test(entry.id)) throw new Error("invalid id");
@@ -15,14 +93,8 @@ export function declareIntelligence(roster, entry) {
   return {
     ...roster,
     agents: [...(roster.agents || []), {
-      kind: "guest",
-      locked: false,
-      ...entry,
-      id: entry.id,
-      status: "declared",
-      presence: "DECLARED",
-      authority: false,
-      live: false,
+      kind: "guest", locked: false, ...entry, id: entry.id,
+      status: "declared", presence: "DECLARED", authority: false, live: false,
     }],
   };
 }
@@ -70,6 +142,7 @@ export function intelligenceAdapter(partial = {}) {
       if (this.presence === "REVOKED" || this.presence === "DISCONNECTED") {
         return { invoked: false, reason: this.presence, live: false };
       }
+      if (breakerBlocks(req && req.capability)) return { invoked: false, reason: "SAFE_STOP", live: false };
       return { invoked: false, reason: "CHANNEL_NOT_PRESENT", live: false };
     },
     observe(x) { return { kind: "OBSERVATION", x, established: false }; },
@@ -83,6 +156,7 @@ export function intelligenceAdapter(partial = {}) {
 }
 export function routeByCapability(task, adapters) {
   return (adapters || []).filter((a) => {
+    if (breakerBlocks(task && task.need)) return false;
     if (a.presence === "REVOKED" || a.presence === "DISCONNECTED") return false;
     const caps = a.capabilities || [];
     if (caps.includes("CAPABILITY_UNKNOWN")) {
@@ -95,6 +169,7 @@ export function executionRequest(p = {}) {
   return { request_id: p.request_id || "req-1", requester: p.requester, capability: p.capability, input: p.input, context: p.context || "fabric", permissions: p.permissions || ["READ"], risk: p.risk || "low", provenance: p.provenance || { source: p.requester }, timestamp: p.timestamp || new Date().toISOString() };
 }
 export function authorize(req) {
+  if (breakerBlocks(req && req.capability)) return { status: "BLOCKED", reason: "SAFE_STOP", executed: false };
   const perms = req.permissions || [];
   const cap = req.capability || "";
   if (MUTATION_RE.test(cap) && !perms.includes("WRITE") && !perms.includes("ADMIN") && !perms.includes("EXECUTE")) {
@@ -112,6 +187,9 @@ export function grokExecutor({ run } = {}) {
   base.invoke = function invoke(req) {
     if (this.presence === "REVOKED" || this.presence === "DISCONNECTED") {
       return executionResult(req || {}, { executor: "grok", status: this.presence, error: this.presence });
+    }
+    if (breakerBlocks(req && req.capability)) {
+      return executionResult(req || {}, { executor: "grok", status: "SAFE_STOP", error: "SAFE_STOP" });
     }
     const gate = authorize(req);
     if (gate.status !== "AUTHORIZED") return executionResult(req, { executor: "grok", status: gate.status, error: gate.reason });
@@ -144,6 +222,9 @@ export function falsify(h, observation) {
   return { ...h, epistemic_status: "UNRESOLVED", established: false, truth: false };
 }
 export function noChange({ expected_value = 0, cost = 1, risk = 1, complexity = 1 } = {}) {
+  if (STOPPED.includes(_breaker.state) || _breaker.state === "LIMITED_RESUME") {
+    return { decision: "NO_CHANGE", authority: false, breaker: _breaker.state };
+  }
   return { decision: expected_value < cost + risk + complexity ? "NO_CHANGE" : "CONSIDER", authority: false };
 }
 export function stale(h) { return { ...h, epistemic_status: "STALE", reassess: true, truth: false }; }
