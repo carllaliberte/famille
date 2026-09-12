@@ -4,12 +4,27 @@ export const PRESENCE = Object.freeze(["DECLARED","CHANNEL_NOT_PRESENT","CONNECT
 export const EPISTEME = Object.freeze(["KNOWN","MEASURABLE","OBSERVED","UNEXPLAINED","UNKNOWN"]);
 export const RECORD_KIND = Object.freeze(["CLAIM","OBSERVATION","MEASUREMENT","EVIDENCE","INTERPRETATION","HYPOTHESIS","UNKNOWN","UNRESOLVED"]);
 const FORBIDDEN_ROLES = Object.freeze(["judge_model","master_model","truth_model","final_ai","oracle_ai"]);
+const RESERVED_IDS = Object.freeze(["carl","juge","quantum","arbitre"]);
 const ID_RE = /^[a-z][a-z0-9-]{1,24}$/;
+const MUTATION_RE = /write|delete|admin|push|patch|create|mutate|overwrite|execute|update|destroy|drop/i;
 
 export function declareIntelligence(roster, entry) {
   if (!entry || typeof entry.id !== "string" || !ID_RE.test(entry.id)) throw new Error("invalid id");
+  if (RESERVED_IDS.includes(entry.id)) throw new Error("reserved id");
   if (FORBIDDEN_ROLES.includes(entry.role) || FORBIDDEN_ROLES.includes(entry.kind)) throw new Error("forbidden cognitive hierarchy");
-  return { ...roster, agents: [...(roster.agents || []), { kind: "guest", status: "declared", locked: false, ...entry }] };
+  return {
+    ...roster,
+    agents: [...(roster.agents || []), {
+      kind: "guest",
+      locked: false,
+      ...entry,
+      id: entry.id,
+      status: "declared",
+      presence: "DECLARED",
+      authority: false,
+      live: false,
+    }],
+  };
 }
 export function mayJudge(id) { return id === "carl"; }
 export function autoPromote() { return false; }
@@ -42,25 +57,37 @@ export function countPresence(rows) {
 export function intelligenceAdapter(partial = {}) {
   const caps = partial.capabilities || [];
   const unknown = caps.length === 0;
-  return {
+  const self = {
     id: partial.id || "future-x", provider: partial.provider || "UNKNOWN", version: partial.version || "UNKNOWN",
-    capabilities: unknown ? ["CAPABILITY_UNKNOWN"] : caps, protocol: "open-intelligence.v0",
+    capabilities: unknown ? ["CAPABILITY_UNKNOWN"] : caps, protocol: partial.protocol || "open-intelligence.v0",
     presence: "DECLARED", authority: false, live: false,
-    discover() { return { id: this.id, presence: "DECLARED", trusted: false }; },
-    handshake() { return { compatible: true, trusted: false, verified: false }; },
-    invoke() { return { invoked: false, reason: "CHANNEL_NOT_PRESENT", live: false }; },
+    discover() { return { id: this.id, presence: this.presence, trusted: false }; },
+    handshake() {
+      const ok = !partial.protocol || partial.protocol === "open-intelligence.v0";
+      return { compatible: ok, trusted: false, verified: false };
+    },
+    invoke(req) {
+      if (this.presence === "REVOKED" || this.presence === "DISCONNECTED") {
+        return { invoked: false, reason: this.presence, live: false };
+      }
+      return { invoked: false, reason: "CHANNEL_NOT_PRESENT", live: false };
+    },
     observe(x) { return { kind: "OBSERVATION", x, established: false }; },
     measure() { return { status: "NOT_MEASURED" }; },
     provenance() { return { source: this.id, invented: false }; },
     health() { return { presence: this.presence, live: false }; },
-    disconnect() { return { presence: "DISCONNECTED", live: false }; },
-    revoke() { return { presence: "REVOKED", live: false, history_kept: true }; },
+    disconnect() { this.presence = "DISCONNECTED"; return { presence: "DISCONNECTED", live: false }; },
+    revoke() { this.presence = "REVOKED"; return { presence: "REVOKED", live: false, history_kept: true }; },
   };
+  return self;
 }
 export function routeByCapability(task, adapters) {
   return (adapters || []).filter((a) => {
+    if (a.presence === "REVOKED" || a.presence === "DISCONNECTED") return false;
     const caps = a.capabilities || [];
-    if (caps.includes("CAPABILITY_UNKNOWN")) return true;
+    if (caps.includes("CAPABILITY_UNKNOWN")) {
+      return !task.need || task.need === "CAPABILITY_UNKNOWN" || task.need === "CAPABILITY_NEW";
+    }
     return !task.need || caps.includes(task.need);
   }).map((a) => ({ id: a.id, authority: false, live: false, role: a.role || "node" }));
 }
@@ -69,7 +96,10 @@ export function executionRequest(p = {}) {
 }
 export function authorize(req) {
   const perms = req.permissions || [];
-  if ((req.capability || "").includes("write") && !perms.includes("WRITE")) return { status: "BLOCKED", reason: "WRITE_DENIED", executed: false };
+  const cap = req.capability || "";
+  if (MUTATION_RE.test(cap) && !perms.includes("WRITE") && !perms.includes("ADMIN") && !perms.includes("EXECUTE")) {
+    return { status: "BLOCKED", reason: "MUTATION_DENIED", executed: false };
+  }
   if (!req.requester || !req.capability) return { status: "BLOCKED", reason: "MALFORMED", executed: false };
   return { status: "AUTHORIZED", executed: false, authority: false };
 }
@@ -80,6 +110,9 @@ export function grokExecutor({ run } = {}) {
   const base = intelligenceAdapter({ id: "grok", provider: "xai", capabilities: ["github.read", "observe", "measure"] });
   base.role = "executor"; base.authority = false;
   base.invoke = function invoke(req) {
+    if (this.presence === "REVOKED" || this.presence === "DISCONNECTED") {
+      return executionResult(req || {}, { executor: "grok", status: this.presence, error: this.presence });
+    }
     const gate = authorize(req);
     if (gate.status !== "AUTHORIZED") return executionResult(req, { executor: "grok", status: gate.status, error: gate.reason });
     if (typeof run !== "function") return executionResult(req, { executor: "grok", status: "CHANNEL_NOT_PRESENT" });
@@ -119,8 +152,8 @@ export function unauthorizedProbe() {
 }
 export function disclose(principal, payload) {
   if (principal !== "carl") return { disclosed: false };
-  return { disclosed: true, payload };
+  return { disclosed: true, payload, proof: false };
 }
 export function isolateCompromised(id) {
-  return { id, isolated: true, revoked: true, evidence_kept: true, fabric_intact: true };
+  return { id, isolated: true, revoked: true, evidence_kept: true, fabric_intact: true, process_isolated: false };
 }

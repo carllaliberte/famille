@@ -225,7 +225,7 @@ export function absenceOfMeasureNotAbsenceOfPhenomenon() {
 
 export function systemContinuesWithout(missingId, nodes) {
   const left = (nodes || []).filter((n) => n.id !== missingId);
-  return { running: left.length >= 0, missing: missingId, halted: false };
+  return { running: left.length > 0, missing: missingId, halted: left.length === 0 };
 }
 
 export function declaredIsNotConnected(row) {
@@ -250,7 +250,7 @@ export function detectBreak(chain) {
 
 export function resilient(nodes) {
   const any = (nodes || []).some((n) => n.presence === "ACTIVE" || n.presence === "CONNECTED" || n.presence === "DECLARED");
-  return { partial: true, running: any || (nodes || []).length === 0, invented: false };
+  return { partial: true, running: any, invented: false };
 }
 
 export function noSecondSystem(obj) {
