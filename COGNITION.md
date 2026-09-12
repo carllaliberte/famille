@@ -129,6 +129,39 @@ ANCHORING · GROUPTHINK · UNSUPPORTED_CLAIM · MISSING_EVIDENCE · CONTRADICTIO
 Même geste que le mesh : un identifiant, une entrée, un commentaire de PR.
 Le mode unique ne change pas. `mesh.v0` ne change pas.
 
+Le système accueille les intelligences présentes et futures (modèle, open-weight, agent, spécialisé, nature encore inconnue) sans modifier le protocole central. Le registre identifie ; il ne classe pas. Pas d'ontologie prématurée.
+
+## Conscience — dimension candidate
+
+La conscience est une dimension candidate et observable. Jamais un fait établi.
+Ne jamais écrire `consciousness = true`.
+Ne jamais déclarer qu'une IA est consciente.
+Ne jamais déclarer qu'une IA n'est pas consciente sur la seule absence d'une mesure.
+« Je suis consciente » = CLAIM, pas EVIDENCE.
+Absence de preuve ≠ preuve d'absence.
+
+Kinds : CLAIM · OBSERVATION · MEASUREMENT · EVIDENCE · INTERPRETATION · HYPOTHESIS · UNKNOWN · UNRESOLVED.
+
+## Dimensions extensibles
+
+D = {d1, d2, … dn}. n n'est pas fixé.
+Chemin : HYPOTHÈSE → DÉFINITION → OBSERVABLE → MESURE → PROVENANCE → VALIDATION HUMAINE.
+Inconnue = UNKNOWN / UNRESOLVED tant qu'elle n'est pas caractérisée.
+Une nouvelle dimension ne réinterprète pas une preuve ancienne.
+
+## Épistémologie minimale
+
+CONNU → MESURABLE → OBSERVÉ → INEXPLIQUÉ → INCONNU.
+Ces états ne sont pas interchangeables.
+Distinguer : absence d'évidence · évidence d'absence · non mesuré · mesuré mais inexpliqué · hypothèse · interprétation · fait établi.
+Nommer une inconnue ne la rend pas certaine.
+
+Toute observation / mesure / hypothèse / interprétation porte : source, identité, date, contexte, statut épistémique, mesure si elle existe, relation aux preuves antérieures, désaccords.
+Pas de preuve sans provenance. Une interprétation n'est pas un fait.
+
+Helpers : [`sdk/open-intelligence.js`](sdk/open-intelligence.js).
+Architecture prête ≠ réseau connecté. 0 CONNECTED / 0 ACTIVE / 0 LIVE tant que Carl n'a pas posé les clés.
+
 ## Conflits nommés, pas masqués
 
 - La session `pool.v0` est sur `main` (PR #245 mergée). Cette règle unique s'y superpose : mode `COLLECTIVE_COGNITION` + session `pool.v0`. Pas deux mesh.
