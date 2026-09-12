@@ -15,7 +15,8 @@ test("probe non autorisé : aucune topologie", () => {
 
 test("divulgation : seul carl reçoit le payload", () => {
   assert.equal(disclose("stranger", { nodes: ["A"] }).disclosed, false);
-  assert.equal(disclose("carl", { ok: true }).disclosed, true);
+  assert.equal(disclose("carl", { ok: true }).disclosed, false);
+  assert.equal(disclose("carl", { ok: true }, true).disclosed, true);
 });
 
 test("compromission isolée sans détruire le fabric", () => {

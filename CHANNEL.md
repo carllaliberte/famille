@@ -6,10 +6,12 @@ EXTERNAL_FEEDBACK = NOT_IMPLEMENTED.
 INTERNAL_FEEDBACK = IMPLEMENTED (sdk).
 Latence/coût = NOT_MEASURED.
 
-## Boucle 2026-09-12 (main 046f25e)
+## Boucle 2026-09-12 (main 7873234)
 
 INTERNE — FERMÉE opérationnellement :
-OBSERVE (get_me login=carllaliberte) → TEST (38 pass / 0 fail fabric) → DIAGNOSE → MEMORY (ce fichier) → REASSESS → NO_CHANGE architecture.
+OBSERVE (get_me login=carllaliberte) → TEST → DIAGNOSE → MEMORY (ce fichier) → REASSESS.
+
+SESSION TOOLS — UNBOUND.
 
 EXTERNE — OUVERTE :
 ACTION_EXTERNAL / LIVE_FEEDBACK / 2e intelligence = CHANNEL_NOT_PRESENT.
