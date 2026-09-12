@@ -1,0 +1,23 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/omni-ecosystem.v0.json",
+  "title": "famille.omni-ecosystem.v0",
+  "description": "Open coordination + self-transcendence without self-destruction. Unknown is a legitimate state.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["layer"],
+  "not": {
+    "anyOf": [
+      { "required": ["super_brain"] },
+      { "required": ["central_brain"] },
+      { "required": ["master_ai"] },
+      { "required": ["collective_consciousness"] },
+      { "required": ["truth_model"] },
+      { "required": ["super_organism"] }
+    ]
+  },
+  "properties": {
+    "layer": { "const": "omni-ecosystem.v0" },
+    "mode": { "const": "COLLECTIVE_COGNITION" },
+    "final": { "const": false }
+  }
+}
