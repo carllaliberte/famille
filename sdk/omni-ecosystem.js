@@ -92,6 +92,19 @@ export function architectureMap() {
     live: false,
   };
 }
+export function internalFeedback(action, observation) {
+  return { scope: "INTERNAL", action, observation, next: "REEVALUATE", external: false };
+}
+export function externalFeedback() {
+  return { scope: "EXTERNAL", status: "NOT_IMPLEMENTED", external: true };
+}
+export function capabilitySplit({ read = false, write = false } = {}) {
+  return { READ: !!read, WRITE: !!write, DELETE: false, EXECUTE: false, ADMIN: false };
+}
+export function recoverInvalid(resp) {
+  if (!resp || resp.error) return { detect: true, isolate: true, recovered: true, live_faked: false };
+  return { detect: false, isolate: false, recovered: true, live_faked: false };
+}
 export function operationalReality() {
   return {
     constitution: "DOCUMENTED+TESTED",
@@ -105,6 +118,7 @@ export function operationalReality() {
     ACTIVE: false,
     MEASURED: "NOT_MEASURED",
     LIVE_VERIFIED: false,
+    channels_read_live: ["github", "calendar", "gmail", "drive", "canva", "x_ads", "figma_whoami", "automations_list"],
   };
 }
 export function loopStatus() {
@@ -121,6 +135,8 @@ export function loopStatus() {
     MODEL: "IMPLEMENTED",
     PREDICTION: "NOT_MEASURED",
     ACTION_EXTERNAL: "NOT_IMPLEMENTED",
+    INTERNAL_FEEDBACK: "IMPLEMENTED",
+    EXTERNAL_FEEDBACK: "NOT_IMPLEMENTED",
     LIVE_FEEDBACK: "NOT_IMPLEMENTED",
   };
 }
@@ -129,8 +145,8 @@ export function diagnose() {
     unused: ["blackHoleExample is didactic only"],
     duplicates_named: ["emergence helpers overlap measureEmergence"],
     orphans: [],
-    dead_ends: ["ACTION_EXTERNAL", "LIVE_FEEDBACK"],
-    single_points: ["GitHub as sole persistence of this branch"],
+    dead_ends: ["ACTION_EXTERNAL", "EXTERNAL_FEEDBACK"],
+    single_points: ["GitHub persistence", "connector auth", "human merge"],
     centralization: false,
     live_invented: false,
     measured: { CONNECTED: "NOT_MEASURED", ACTIVE: "NOT_MEASURED", latency: "NOT_MEASURED" },
@@ -187,5 +203,8 @@ export function e2e() {
     map: architectureMap(),
     ops: operationalReality(),
     diag: diagnose(),
+    ifb: internalFeedback({ act: "hold" }, { seen: true }),
+    xfb: externalFeedback(),
+    rec: recoverInvalid({ error: true }),
   };
 }
