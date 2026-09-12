@@ -1,0 +1,23 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/nerve.v0.json",
+  "title": "famille.nerve.v0",
+  "description": "Thin nervous-system overlay. Circulates signals across existing rails. Not a mesh fork. Not a second cognitive mode. Not a judge. ∞ = open horizon, not omniscience.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["layer"],
+  "not": {
+    "anyOf": [
+      { "required": ["judge_model"] },
+      { "required": ["master_model"] },
+      { "required": ["truth_model"] },
+      { "required": ["oracle_ai"] },
+      { "required": ["final_ai"] }
+    ]
+  },
+  "properties": {
+    "layer": { "const": "nerve.v0" },
+    "mode": { "const": "COLLECTIVE_COGNITION" },
+    "open": { "const": true },
+    "horizon": { "const": "open" }
+  }
+}
