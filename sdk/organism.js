@@ -98,7 +98,7 @@ export function humanDecide(proposal, actor) {
     proposal,
     decided: actor === "carl",
     actor,
-    live: actor === "carl",
+    live: false,
   };
 }
 
