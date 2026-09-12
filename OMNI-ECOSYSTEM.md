@@ -1,20 +1,13 @@
 # Omni-ecosystem
 
-Couche de **coordination ouverte** entre organismes. Pas un troisième cerveau. Pas un second mesh. Pas LIVE.
+Couche de coordination ouverte. Pas un troisième cerveau. Pas LIVE.
 
-Pile réelle :
+Le **modèle n’est pas le monde**.
 
-CONSTITUTION → COLLECTIVE_COGNITION → NERVE → ORGANISM → INTER-ORGANISM → OMNI-ECOSYSTEM → ∞
+REALITY → OBSERVABLE → MEASURABLE → OBSERVED → INFERRED → MODELED → PREDICTED → DISCREPANCY → UNEXPLAINED → UNKNOWN → UNREPRESENTED → UNKNOWN-UNKNOWN → ∞
 
-Réutilise `sdk/inter-organism.js`. Ici : négociation, collaboration temporaire, références, révocation, émergence mesurable, expérience, learning / meta-learning, unknown, reconfiguration.
+Frontière d’observation ≠ frontière ontologique.
+Absence de preuve ≠ preuve d’absence.
+UNKNOWN ≠ FALSE. Modèles concurrents autorisés. Événement non classifiable reste non classifiable.
 
-## Self-transcendence without self-destruction
-
-KNOWN → UNKNOWN → DETECT → OBSERVE → ISOLATE → HYPOTHESIZE → MEASURE → CONTRADICT → EXPERIMENT → LEARN → ADAPT → VALIDATE → INTEGRATE → REASSESS → UNKNOWN → ∞
-
-UNKNOWN n’est pas FALSE. Absence de mesure ≠ preuve d’absence.
-Sandbox avant intégration. EVOLUTION_REJECTED + ROLLBACK si récupération menacée.
-Performance ≠ autorité. Émergence ≠ conscience. Consensus ≠ vérité.
-DECLARED ≠ CONNECTED ≠ ACTIVE ≠ LIVE_VERIFIED.
-
-Carl décide.
+SELF-DISCOVERY ≠ SELF-AUTHORITY. Carl décide.
