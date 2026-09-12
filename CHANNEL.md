@@ -3,20 +3,19 @@
 Système entier ≠ LIVE. Organismes A–Z = DECLARED.
 ACTION_EXTERNAL / LIVE_FEEDBACK = NOT_IMPLEMENTED.
 Latence/coût = NOT_MEASURED.
+Tests post-#340 (main 992373d) : 51 pass / 0 fail (sous-ensemble omni).
 
-## 1. GitHub `get_me`
-- preuve : login=carllaliberte id=54148864
-- état : LIVE_VERIFIED (profil)
+## LIVE_VERIFIED lecture
+1. GitHub get_me — login=carllaliberte
+2. Calendar search 2026-09-12 — events=[]
+3. Gmail newer_than:1d — 1 thread (CI)
+4. Drive list root — 3 dossiers (noms d’années, pas de contenu copié)
+5. Canva search-designs owned — réponse réelle items=[]
+6. X Ads list_accounts — 1 compte ACCEPTED (MetavArmy) ; campagnes non listées ici
 
-## 2. Google Calendar `search`
-- fenêtre : 2026-09-12 America/New_York
-- preuve : réponse réelle `events: []` (calendrier vide ce jour, pas une simulation)
-- état : LIVE_VERIFIED (lecture)
-- écriture : non exercée
-
-## 3. Gmail `search newer_than:1d`
-- preuve : 1 thread reçu (notification CI GitHub famille, sans corps publié ici)
-- état : LIVE_VERIFIED (lecture)
-- envoi mail : NOT_IMPLEMENTED / non autorisé dans ce chantier
+## NON EXERCÉ / WRITE
+Figma create = écriture, non exercé.
+Voice / Automations : non exercés.
+Envoi mail / écriture calendrier : non exercés.
 
 Révocation : déconnecter les connecteurs côté compte Carl.
