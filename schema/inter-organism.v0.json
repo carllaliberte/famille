@@ -1,0 +1,23 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/inter-organism.v0.json",
+  "title": "famille.inter-organism.v0",
+  "description": "Communication fabric between organisms. Not a central brain. Not collective consciousness. Reuses nerve.v0 + organism.v0 + COLLECTIVE_COGNITION.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["layer"],
+  "not": {
+    "anyOf": [
+      { "required": ["judge_model"] },
+      { "required": ["master_organism"] },
+      { "required": ["final_organism"] },
+      { "required": ["oracle_ai"] },
+      { "required": ["collective_consciousness"] }
+    ]
+  },
+  "properties": {
+    "layer": { "const": "inter-organism.v0" },
+    "mode": { "const": "COLLECTIVE_COGNITION" },
+    "nerve": { "const": "nerve.v0" },
+    "central": { "const": false }
+  }
+}
