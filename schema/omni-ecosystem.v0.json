@@ -1,0 +1,22 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/omni-ecosystem.v0.json",
+  "title": "famille.omni-ecosystem.v0",
+  "description": "Open coordination layer. Reuses inter-organism.v0. Not a central brain. Not collective consciousness.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["layer"],
+  "not": {
+    "anyOf": [
+      { "required": ["super_brain"] },
+      { "required": ["central_brain"] },
+      { "required": ["master_ai"] },
+      { "required": ["collective_consciousness"] },
+      { "required": ["truth_model"] }
+    ]
+  },
+  "properties": {
+    "layer": { "const": "omni-ecosystem.v0" },
+    "mode": { "const": "COLLECTIVE_COGNITION" },
+    "final": { "const": false }
+  }
+}
