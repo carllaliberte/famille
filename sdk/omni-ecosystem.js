@@ -1,6 +1,4 @@
-/**
- * Omni-ecosystem — coordination + self-transcendence without self-destruction.
- */
+/** Omni-ecosystem — coordination + unknown-world. No second brain. */
 import {
   declareOrganism, discover, handshake, interSignal, synapseBetween,
   challenge, degrade, recover, noCentral, proposeDimension, emergenceIsNotConsciousness,
@@ -63,7 +61,51 @@ export function minority(view) { return { view, retained: true, truth: false }; 
 export function badStrategy(localOk, resilienceDown) { return { incomplete: localOk && resilienceDown, general_truth: false }; }
 export function failClosed(threatens) { return { fail_closed: true, restore: true, integrate: !threatens }; }
 export function frontier() {
-  return { known: [], measurable: [], observed: [], unexplained: [], cannot_measure: [], unrepresented: [] };
+  return {
+    known: [], measurable: [], observed: [], inferred: [], modeled: [], predicted: [],
+    unexplained: [], unknown: [], unrepresented: [], unknown_unknown: true,
+    cannot_measure: [], currently_unobservable: [],
+  };
+}
+export const EPISTEME = ["CLAIM","OBSERVATION","MEASUREMENT","EVIDENCE","INFERENCE","INTERPRETATION","HYPOTHESIS","MODEL","PREDICTION","DECISION","ACTION","UNKNOWN","UNRESOLVED","UNKNOWN_UNKNOWN","UNCLASSIFIABLE"];
+export function observationBoundary(kind) {
+  return { kind, reality_limit: false, existence_denied: false };
+}
+export function unknownUnknown() {
+  return { status: "UNKNOWN_UNKNOWN", question: "model cannot yet formulate the question", forced: false };
+}
+export function unclassifiable(id) {
+  return { id, status: "UNCLASSIFIABLE_EVENT", forced_category: false };
+}
+export function competingModels(list) {
+  return { models: list, reality: false, winner: null };
+}
+export function discrepancy(pred, obs) {
+  return { pred, obs, kind: "MODEL_LIMIT", discarded: false };
+}
+export function architectureMap() {
+  return {
+    layers: ["CONSTITUTION","COLLECTIVE_COGNITION","NERVE","ORGANISM","INTER_ORGANISM","OMNI"],
+    mode: "COLLECTIVE_COGNITION",
+    brains: 1,
+    meshes: 1,
+    live: false,
+  };
+}
+export function diagnose() {
+  return {
+    unused: [], duplicates_named: ["emergence helpers overlap measureEmergence"],
+    live_invented: false, measured: { CONNECTED: "NOT_MEASURED", ACTIVE: "NOT_MEASURED" },
+  };
+}
+export function fitness() {
+  return { dimensions: ["coherence","resilience","honesty"], single_score: null, truth: false };
+}
+export function blackHoleExample() {
+  return {
+    observable_effect: true, complete_access: false, nature_ultimate: "UNKNOWN",
+    coded_as_unknown_universal: false,
+  };
 }
 export function e2e() {
   const A = declareOrganism("A", { capabilities: ["observe"], version: "1" });
@@ -100,5 +142,7 @@ export function e2e() {
     rolled: rollback(snap),
     threat: isolateThreat("hostile"),
     superior: superiorSource({ id: "x" }),
+    uu: unknownUnknown(),
+    map: architectureMap(),
   };
 }
