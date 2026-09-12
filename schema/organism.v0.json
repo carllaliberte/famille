@@ -1,0 +1,26 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/organism.v0.json",
+  "title": "famille.organism.v0",
+  "description": "System map overlay. Metaphor only. Reuses cognition.v0 + nerve.v0. Not alive. Not conscious. Not a second mesh.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["kind"],
+  "not": {
+    "anyOf": [
+      { "required": ["judge_model"] },
+      { "required": ["master_model"] },
+      { "required": ["truth_model"] },
+      { "required": ["oracle_ai"] },
+      { "required": ["final_ai"] },
+      { "required": ["consciousness"] }
+    ]
+  },
+  "properties": {
+    "kind": { "const": "organism.v0" },
+    "mode": { "const": "COLLECTIVE_COGNITION" },
+    "nerve": { "const": "nerve.v0" },
+    "alive": { "const": false },
+    "conscious": { "const": false },
+    "open": { "const": true }
+  }
+}
