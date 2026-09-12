@@ -4,7 +4,7 @@ import {
   challenge, degrade, recover, noCentral, proposeDimension, emergenceIsNotConsciousness,
 } from "./inter-organism.js";
 import { setSynapsePresence } from "./nerve.js";
-import { consensusToTruth } from "./open-intelligence.js";
+import { consensusToTruth, breakerStatus } from "./open-intelligence.js";
 
 export function announce(org) { return { ...org, announced: true, connected: false }; }
 export function negotiateCapability(org, cap, { available = false } = {}) {
@@ -119,6 +119,8 @@ export function operationalReality() {
     MEASURED: "NOT_MEASURED",
     LIVE_VERIFIED: false,
     channels_read_live: ["github", "calendar", "gmail", "drive", "canva", "x_ads", "figma_whoami", "automations_list"],
+    session_tools_bound: false,
+    breaker: "PROTOCOL_ONLY",
   };
 }
 export function loopStatus() {
@@ -141,18 +143,47 @@ export function loopStatus() {
   };
 }
 export function diagnose() {
+  const b = breakerStatus();
   return {
     unused: ["blackHoleExample is didactic only"],
     duplicates_named: ["emergence helpers overlap measureEmergence"],
     orphans: [],
     dead_ends: ["ACTION_EXTERNAL", "EXTERNAL_FEEDBACK"],
-    single_points: ["GitHub persistence", "connector auth", "human merge"],
+    single_points: ["GitHub persistence", "connector auth", "human merge", "session tools unbound"],
     centralization: false,
     live_invented: false,
     measured: { CONNECTED: "NOT_MEASURED", ACTIVE: "NOT_MEASURED", latency: "NOT_MEASURED" },
     unasked: "WHAT ARE WE NOT EVEN THINKING TO ASK?",
     reality: operationalReality(),
     loop: loopStatus(),
+    breaker: { state: b.state, session_tools_bound: b.session_tools_bound, process_isolated: b.process_isolated, sovereign_authenticated: b.sovereign_authenticated },
+  };
+}
+export function nextWork() {
+  const d = diagnose();
+  const stopped = ["SAFE_STOP", "ISOLATED", "RECOVERY", "VERIFIED_RECOVERY"].includes(d.breaker.state);
+  const queue = [];
+  if (stopped) {
+    queue.push({ id: "preserve_diagnose", owner: "system", crossing: false, action: "OBSERVE_DIAGNOSE_PRESERVE" });
+  }
+  queue.push(
+    { id: "session_tools_unbound", owner: "human", crossing: true, status: "UNBOUND", close: "bind session tools under authorize or do not exercise WRITE" },
+    { id: "action_external", owner: "human", crossing: true, status: d.loop.ACTION_EXTERNAL },
+    { id: "external_feedback", owner: "human", crossing: true, status: d.loop.EXTERNAL_FEEDBACK },
+    { id: "sovereign_auth", owner: "human", crossing: true, status: "UNVERIFIED" },
+    { id: "breaker_persist", owner: "human", crossing: true, status: "PROCESS_LOCAL" },
+    { id: "cx_306_stale", owner: "human", crossing: true, status: "STALE_OR_CLOSE" },
+    { id: "cx_attest_os_hole", owner: "system", crossing: false, status: "NAMED", action: "NO_CHANGE" },
+  );
+  return {
+    next: queue[0],
+    queue,
+    authority: false,
+    live: false,
+    parallel: "read diagnose measure redteam",
+    sequential: "authorize write connect merge",
+    sovereign: "CARL_STOP_GT_ALL",
+    cx: "phrase before schema; classique if cards miss",
   };
 }
 export function fitness() {
@@ -206,5 +237,6 @@ export function e2e() {
     ifb: internalFeedback({ act: "hold" }, { seen: true }),
     xfb: externalFeedback(),
     rec: recoverInvalid({ error: true }),
+    nxt: nextWork(),
   };
 }
