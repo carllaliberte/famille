@@ -1,4 +1,4 @@
-# File — 2026-09-10
+# File — 2026-09-13
 
 Tableau de chantier. Pas un script. Pas un nœud. Carl squash / merge.
 
@@ -76,7 +76,6 @@ FLAG (stood) : Soft FLAGS Carl-only — natives Anthropic/OpenAI/DeepSeek absent
 | famille | clés Actions | GEMINI + OPENROUTER + XAI posées. Natives 3 encore vides. Skip ≠ crash. |
 | famille | cron Cursor | legal-hourly / quantum-daily = Cursor cloud agents. Carl coupe le cron côté Cursor. |
 | acorn-juge | canal JSON | workers.dev GET `/juge` 200 preview. Vitrine grok.me ≠ canal. |
-| acorn-juge | issue #3 grok.me | 404 HTML HOLD vitrine. Pas bind CF. Chemin A. |
 | acorn-juge | deploy wrangler | Carl-only. |
 
 ## Fermé
@@ -84,6 +83,7 @@ FLAG (stood) : Soft FLAGS Carl-only — natives Anthropic/OpenAI/DeepSeek absent
 garde #15 offre, #16 landing a11y. Token deploy Run 13. famille#143/#149/#158/#162.
 26 issues bruit not_planned (legal-hourly / quantum-daily). #89 bots-cold-start déjà sur main.
 ancrage #7. mesure#4.
+acorn-juge #3 GET `/juge` locks STATUS (CLOSED). 404 vitrine ≠ carte juge. famille#392 docs lock.
 acorn-juge #9 SDK isCalendarDay (famille#168).
 unforge-check #1 / #22 share sheet Web Share + copy fallback (f2456aa).
 HORIZONS Moyen 2026-09-06 : unforge-check #24 CI VERT/ROUGE badge (4003c8c).
