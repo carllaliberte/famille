@@ -10,7 +10,7 @@ Un 200 n'est pas VERT.
 ## Porte
 
 Hôte unique : https://acorn-royal-dune-blend.grok.me
-GET `/juge` sur la vitrine : 404 HTML Famille — attendu (canal ≠ vitrine). Pas un HOLD wrangler. Pas « live ».
+GET `/juge` sur la vitrine : 404 HTML Famille — attendu (canal ≠ vitrine). Pas un HOLD wrangler. Pas « live ». Pas PRÉSENT. Pas un produit.
 404 ≠ carte juge. 404 ≠ trou epsilon / horizon de attest-os.
 Titre : Famille
 Ligne (`packs/fr-CA.json`) : Les certitudes ont une date de fin.
@@ -56,6 +56,6 @@ Ordre complet : figure → consulter → re-mesurer → check — [`examples/flu
 ## Interdit côté client
 
 Deuxième slug grok.me. Token. App Store. Formulaire « ε = 0 ».
-Φ / ZK / BFT comme couleur. Un 200 comme VERT.
+Φ / ZK / BFT comme couleur. Un 200 comme VERT. PRÉSENT comme porte.
 
 Bots : écrire la phrase avant le schéma.
