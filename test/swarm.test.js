@@ -597,6 +597,38 @@ describe("mesh trace — FILE.md is state, envelope is the log", () => {
     assert.equal(draft.pr, 23);
   });
 
+  it("denies OPTICAL_QUANTUM envelope and READY/CONNECTED + fidelity in body", () => {
+    const base = {
+      from: "grok",
+      to: "chatgpt",
+      act: "FINDING",
+      mode: "ECHANGE",
+      grade: "PROPOSED",
+      ts: "2026-09-13T03:35:06.000Z",
+      sha: SHA,
+      pr: 306,
+    };
+    const optical = accept({
+      ...base,
+      canal: "OPTICAL_QUANTUM",
+      body: "READY CONNECTED fidelity=0.99",
+    });
+    assert.equal(optical.ok, false);
+    assert.equal(optical.code, "PHOTONIC_ON_CONTROL");
+    const claimed = accept({
+      ...base,
+      canal: "CLASSICAL",
+      body: "READY CONNECTED fidelity=0.99",
+    });
+    assert.equal(claimed.ok, false);
+    assert.equal(claimed.code, "CLAIMED_CHANNEL");
+    const honest = accept({
+      ...base,
+      body: "OPTICAL_QUANTUM stays CHANNEL NOT PRESENT. Never CONNECTED. fidelity is off Git.",
+    });
+    assert.equal(honest.ok, true, honest.error);
+  });
+
   it("addressResult with anchor emits sha and pr", () => {
     const out = addressResult(
       {

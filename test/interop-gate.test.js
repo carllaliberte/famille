@@ -28,6 +28,8 @@ describe("interop — cursorGate n'est pas une carte", () => {
     assert.match(interop, /pas une 5e carte/i);
     assert.match(interop, /Ce n'est pas le même trou/);
     assert.match(interop, /Jamais carl/);
+    assert.match(interop, /canal=OPTICAL_QUANTUM/);
+    assert.match(interop, /400 lie/);
     assert.match(walk, /cursorGate/);
     assert.match(walk, /route\(\)/);
     assert.match(walk, /activate\(\)/);
