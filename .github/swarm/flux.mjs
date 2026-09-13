@@ -420,6 +420,16 @@ function claimsQuantum(text) {
   return true;
 }
 
+/** Control plane only. OPTICAL_QUANTUM + READY/CONNECTED/fidelity is a claimed fiber. */
+function claimsOpticalPresence(text) {
+  const t = String(text || "");
+  if (/\bCHANNEL[ _]?NOT[ _]?PRESENT\b/i.test(t)) return false;
+  if (/\b(never|not|jamais|interdit|forbid)\b[\s\S]{0,80}\b(CONNECTED|READY)\b/i.test(t)) {
+    return false;
+  }
+  return /\b(READY|CONNECTED)\b/.test(t) && /\bfidelity\b/i.test(t);
+}
+
 function claimsNewHost(text) {
   return /second\s+\*\.grok\.me|new\s+\*\.grok\.me|invent(?:s|ing)?\s+another\s+\*\.grok\.me/i.test(
     String(text || ""),
@@ -513,6 +523,15 @@ export function accept(input) {
   }
   if (from === to && to !== "*") {
     return fail("NO_LOOP", "from and to must differ (use to:* to broadcast)");
+  }
+  if (String(raw.canal || "").toUpperCase() === "OPTICAL_QUANTUM") {
+    return fail("PHOTONIC_ON_CONTROL", "OPTICAL_QUANTUM payload does not ride mesh.v0");
+  }
+  if (String(raw.plane || "").toLowerCase() === "data") {
+    return fail("PHOTONIC_ON_CONTROL", "data plane does not ride mesh.v0");
+  }
+  if (claimsOpticalPresence(body)) {
+    return fail("CLAIMED_CHANNEL", "OPTICAL_QUANTUM CONNECTED requires a real fiber");
   }
   if (claimsQuantum(body)) {
     return fail("FORBIDDEN_QUANTUM", "QUANTUM is not licensed here. Preview ≠ receipt.");
