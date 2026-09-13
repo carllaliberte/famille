@@ -9,6 +9,8 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  actions: write
+  issues: write
 
 concurrency:
   group: cadence-${{ github.workflow }}-${{ github.ref }}
@@ -40,6 +42,14 @@ jobs:
           DISCOVER_TRIGGER: ${{ github.event_name }}
           MERGED: ${{ github.event.pull_request.number }}
         run: node scripts/discover-cycle.mjs
+      - name: Dispatch swarm on merged SHA
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -eu
+          echo "cadence dispatch swarm ref=${SHA}"
+          gh workflow run swarm.yml --ref "${SHA}" -f "ref=${SHA}"
       - name: Comment (no merge)
         if: github.event.pull_request.number
         env:
