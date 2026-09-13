@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { intelligenceAdapter } from "../sdk/open-intelligence.js";
-import { considerUnknownChannel, advanceChannel } from "../sdk/open-channel.js";
+import { considerUnknownChannel, advanceChannel, classifyProbe } from "../sdk/open-channel.js";
 
 test("unknown provider name is DISCOVERED not CONNECTED", () => {
   const c = considerUnknownChannel({ id: "not-in-inventory-xyz", provider: "not-in-inventory-xyz" });
@@ -30,4 +30,21 @@ test("no real call stays NOT_EXECUTED even if name known", () => {
   const r = advanceChannel({ provider: "openai", real_call: false });
   assert.equal(r.status, "NOT_EXECUTED");
   assert.equal(r.next, "NOT_EXECUTED");
+});
+
+test("401 means VERIFIED host not AUTHENTICATED", () => {
+  const r = classifyProbe({ url: "https://api.openai.com/v1/models", http: 401 });
+  assert.equal(r.status, "VERIFIED");
+  assert.equal(r.authenticated, false);
+  assert.equal(r.live, false);
+  assert.equal(r.failure, "MISSING_SECRET");
+  assert.equal(r.next, "HOLD_HUMAN");
+});
+
+test("directory 200 is not a completion REAL_CALL", () => {
+  const r = classifyProbe({ url: "https://openrouter.ai/api/v1/models", http: 200 });
+  assert.equal(r.status, "VERIFIED");
+  assert.equal(r.directory_reachable, true);
+  assert.equal(r.completion, false);
+  assert.equal(r.live, false);
 });
