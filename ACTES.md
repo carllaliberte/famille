@@ -9,11 +9,11 @@ Champ juge manquant (`quelle` · `temoin` · `epsilon` · `horizon`) → MODE cl
 Ce n'est pas un acte à quatre cartes. On nomme le trou. On ne le comble pas.
 On n'invente pas le prix. Preview ≠ quittance. Un 200 n'est pas un sceau.
 
-Rail : [`sdk/acte.js`](sdk/acte.js) `quoteActe` — `price` reste null. Quatre champs présents → Carl écrit le prix. Champ manquant → classique. GET `/juge` 404 → HOLD Carl. Un 200 n'est pas une facture.
+Rail : [`sdk/acte.js`](sdk/acte.js) `quoteActe` — `price` reste null. Quatre champs présents → Carl écrit le prix. Champ manquant → classique. GET `/juge` sur la vitrine = 404 HTML. Pas un HOLD wrangler. Pas un produit. Un 200 n'est pas une facture.
 
 Exemple honnête : [`examples/attest-os.json`](examples/attest-os.json) — epsilon + horizon manquent → classique.
 
-Hôte : https://acorn-royal-dune-blend.grok.me — GET `/juge` 404 = HOLD Carl, pas un produit.
+Hôte : https://acorn-royal-dune-blend.grok.me — GET `/juge` sur la vitrine = 404 HTML. Pas un HOLD wrangler. Pas un produit.
 
 Un finding `detect.v0` reste PROPOSED (`truth` false, `normative` false). Ce n'est pas un acte. Ce n'est pas une facture.
 

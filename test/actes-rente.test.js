@@ -26,6 +26,11 @@ describe("rente — acte classique si champ juge manque", () => {
     assert.match(actes, /Ce n'est pas une facture/);
     assert.match(actes, /quoteActe/);
     assert.match(actes, /Un 200 n'est pas une facture/);
+    assert.match(actes, /sur la vitrine = 404 HTML/);
+    assert.match(actes, /Pas un HOLD wrangler/);
+    assert.match(actes, /Pas un produit/);
+    assert.doesNotMatch(actes, /404 → HOLD Carl/);
+    assert.doesNotMatch(actes, /404 = HOLD Carl/);
     assert.match(rente, /Champ manquant → aperçu classique/);
     assert.match(rente, /Pas une vente à quatre cartes/);
     assert.match(rente, /Les lignes ACTES ne sont pas un tarif/);
