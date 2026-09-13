@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { intelligenceAdapter, considerUnknownChannel, advanceChannel } from "../sdk/open-intelligence.js";
+import { intelligenceAdapter } from "../sdk/open-intelligence.js";
+import { considerUnknownChannel, advanceChannel } from "../sdk/open-channel.js";
 
 test("unknown provider name is DISCOVERED not CONNECTED", () => {
   const c = considerUnknownChannel({ id: "not-in-inventory-xyz", provider: "not-in-inventory-xyz" });
