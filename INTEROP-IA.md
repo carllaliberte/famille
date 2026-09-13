@@ -20,6 +20,8 @@ Les certitudes ont une date de fin.
 `activate()` non plus : compétences pertinentes en parallèle. Skip / quota = CAPABILITY UNAVAILABLE, pas PROJECT BLOCKED. Jamais merge. Pas une carte juge. Pas `cursorGate`. Pas `route()`.
 Champ carte manquant → MODE classique. PR ouverte → RAS. Synapse ≠ trou epsilon / horizon. Ce n'est pas le même trou.
 
+Hôte : https://acorn-royal-dune-blend.grok.me — GET `/juge` vitrine = 404 HTML. Pas « live ». Pas PRÉSENT. Pas un bind wrangler. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon. Cursor appelle le juge, ne comble pas. Canal JSON : https://acorn-juge.laliberte22.workers.dev/juge (preview, pas quittance). Un 200 n'est pas un sceau.
+
 ## 1. Carte juge — n'importe qui *lit*
 
 Quatre clés : `quelle` · `temoin` · `epsilon` · `horizon`
