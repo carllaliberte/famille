@@ -19,6 +19,8 @@ Tag absent du tableau : spoken [`packs/en.json`](packs/en.json), étiquette clas
 
 Rail : [`sdk/pack-lieu.js`](sdk/pack-lieu.js) — `packLieu(tag)`. Vide → `fr-CA`. `en-CA` → `en`. Absent → spoken en / classique. Casse BCP 47 ignorée (`fr-ca` / `EN-CA` → même pack). Pas un nouveau fichier. Le pack est une phrase, pas une carte. Il ne comble pas epsilon ni horizon.
 
+Hôte : https://acorn-royal-dune-blend.grok.me — GET `/juge` sur la vitrine = 404 HTML. Pas PRÉSENT. Pas un bind wrangler. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon. Un pack n'est pas une carte.
+
 Inconnu : [`examples/world-bcp47.md`](examples/world-bcp47.md).
 
 ## Droit

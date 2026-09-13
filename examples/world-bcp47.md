@@ -14,3 +14,4 @@ Vide → porte `fr-CA`. `en-CA` → fichier `en`. Casse ignorée : `fr-ca` = `fr
 Le pack ne comble pas `epsilon` ni `horizon`. Trou nommé : [`attest-os.json`](attest-os.json) reste classique.
 
 Hôte seul : https://acorn-royal-dune-blend.grok.me
+GET `/juge` sur la vitrine = 404 HTML. Pas PRÉSENT. Pas un bind wrangler. 404 ≠ carte juge. Le pack ne comble pas.

@@ -91,6 +91,23 @@ describe("world BCP 47 — same judge, local phrases only", () => {
     assert.match(intl, /ne comble pas epsilon ni horizon/);
   });
 
+  it("names vitrine /juge 404 as not PRESENT and not the card", () => {
+    const intl = read("INTERNATIONAL.md");
+    const world = read("examples/world-bcp47.md");
+    for (const text of [intl, world]) {
+      assert.match(text, /GET [` /]*juge/);
+      assert.match(text, /404 HTML/);
+      assert.match(text, /Pas PRÉSENT/);
+      assert.match(text, /Pas un bind wrangler/);
+      assert.match(text, /404 ≠ carte juge/);
+    }
+    assert.match(intl, /404 ≠ trou epsilon \/ horizon/);
+    assert.match(intl, /Un pack n'est pas une carte/);
+    assert.match(world, /Le pack ne comble pas/);
+    assert.doesNotMatch(intl, /404 → HOLD Carl/);
+    assert.doesNotMatch(world, /404 → HOLD Carl/);
+  });
+
   it("resolves born tags, aliases en-CA, and keeps unknown spoken en", () => {
     assert.deepEqual([...PACK_FILES].sort(), TAGS.slice().sort());
     const fr = packLieu("fr-CA");
