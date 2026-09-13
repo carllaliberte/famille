@@ -883,3 +883,9 @@ if (isMain) {
     },
   );
 }
+grok46: {
+  provider: "xai",
+  secret: "XAI_API_KEY",
+  model: "grok-4.6",
+  maxTokens: 2048,
+},
