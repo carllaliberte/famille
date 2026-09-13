@@ -1,5 +1,6 @@
 # Cursor — assigné 2026-09-02 · boucle 2026-09-08
 
+Les certitudes ont une date de fin.
 Cursor n'est pas MASTER. Grok est le Chef (kernel / system). Carl merge (humain). Cursor consomme le juge.
 Priorité : expérience client → techno ouverte → fichiers pour que Quantum et Cursor ne s'éteignent pas.
 
@@ -13,7 +14,7 @@ Cloud : [CURSOR-CLOUD.md](CURSOR-CLOUD.md).
 - 4 cartes + satellites MESURE / ANCRAGE
 - Consommer `schema/juge.v0.json` via [`examples/interop-juge-v0.md`](examples/interop-juge-v0.md) avant de dire « quantique »
 - Packs BCP 47 via [INTEROP-IA.md](INTEROP-IA.md) / [INTERNATIONAL.md](INTERNATIONAL.md) (fr-CA · en / en-CA · es-MX · en-NG · pt-BR · de-DE) ; inconnu → spoken en / classique
-- Hôte : https://acorn-royal-dune-blend.grok.me
+- Hôte : https://acorn-royal-dune-blend.grok.me — GET `/juge` vitrine = 404 HTML. Pas un HOLD wrangler. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon.
 - 1 PR à la fois. Squash Carl.
 - Consommer [`cadence.v0`](.github/swarm/cadence.mjs) : `cursorGate` READY → un acte ; sinon RAS. Jamais auto-merge.
 - Consommer `npm run system:official-seal` : ZK / BFT / Φ = CHANNEL NOT PRESENT. Pas de `cadence.v0.json`. `auto_merge` false. Squash Carl.

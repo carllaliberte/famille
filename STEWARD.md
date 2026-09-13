@@ -19,7 +19,9 @@ Cadence.v0 : 1 PR / repo. Cursor `cursorGate` READY → un acte, sinon RAS. Work
 Goût Expert → Quantum vert → Carl squash (humain). `merged=true` sur GitHub = fini (jamais un langage leave-draft après merge). Horloge America/Montreal.
 
 Imagine : parole et écran EN ; docs FR OK.
+Les certitudes ont une date de fin.
 Hôte : https://acorn-royal-dune-blend.grok.me — Preview ≠ receipt. Unforge does not sign. ε=0 is a lie.
+GET `/juge` sur la vitrine = 404 HTML. Pas un HOLD wrangler. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon.
 
 ### Cadence Imagine
 
