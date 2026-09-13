@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   errorLoop, forgetOperational, metabolism, novelty, outOfDistribution,
   regime, correlationIsNotCause, counterfactual, curiosity, missingQuestions,
-  diversity, selfFalsify, observeVsAct, blockedIfStop,
+  diversity, selfFalsify, observeVsAct, blockedIfStop, refuseToRepresent,
 } from "../sdk/opt.js";
 import { resetBreaker, requestStop } from "../sdk/open-intelligence.js";
 
@@ -66,4 +66,10 @@ test("world action not implemented", () => {
 test("STOP blocks opt act", () => {
   requestStop({ actor: "carl" });
   assert.equal(blockedIfStop("opt.act").status, "BLOCKED");
+});
+
+test("refuse to represent stays uncategorized", () => {
+  const r = refuseToRepresent("would lie");
+  assert.equal(r.status, "REFUSE_TO_REPRESENT");
+  assert.equal(r.category, false);
 });
