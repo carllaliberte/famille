@@ -29,7 +29,7 @@ Exemple honnête (téléphone, classique) : [`attest-os.json`](attest-os.json).
 - UFHY1 est un nom de suite, pas une date
 - Preview ≠ quittance. Unforge ne signe pas.
 - Hôte seul : https://acorn-royal-dune-blend.grok.me
-- GET `/juge` sur la vitrine = 404 HTML. Pas un bind wrangler. Pas cette carte. 404 ≠ trou epsilon / horizon.
+- GET `/juge` sur la vitrine = 404 HTML. Pas un bind wrangler. Pas « live ». Pas PRÉSENT. Pas cette carte. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon.
 - Canal JSON : https://acorn-juge.laliberte22.workers.dev/juge (preview, pas quittance). Un 200 n'est pas un sceau.
 - Cursor *appelle* le juge. Cursor n'est pas le juge.
 - `cursorGate` (cadence.v0) est un autre rail : READY ou RAS. Pas cette carte.
