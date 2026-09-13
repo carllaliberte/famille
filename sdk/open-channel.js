@@ -43,3 +43,40 @@ export function advanceChannel(obs = {}) {
     next: "REPRODUCE_OR_HOLD",
   };
 }
+
+/** Map an observed HTTP status. Never promotes to LIVE. Directory 200 ≠ completion. */
+export function classifyProbe({ url, http, invented } = {}) {
+  if (invented) return { status: "NOT_EXECUTED", reason: "INVENTED_RESPONSE", live: false };
+  if (http == null) return { status: "DISCOVERED", verified: false, live: false, next: "PROBE_OR_HOLD" };
+  if (http === 401 || http === 403) {
+    return {
+      status: "VERIFIED",
+      authenticated: false,
+      executable: false,
+      live: false,
+      failure: "MISSING_SECRET",
+      next: "HOLD_HUMAN",
+      url: url || undefined,
+    };
+  }
+  if (http >= 200 && http < 300) {
+    return {
+      status: "VERIFIED",
+      authenticated: false,
+      executable: false,
+      directory_reachable: true,
+      completion: false,
+      live: false,
+      next: "HOLD_HUMAN",
+      url: url || undefined,
+    };
+  }
+  return {
+    status: "DISCOVERED",
+    verified: false,
+    live: false,
+    failure: "PROVIDER_ERROR",
+    http,
+    next: "HOLD",
+  };
+}
