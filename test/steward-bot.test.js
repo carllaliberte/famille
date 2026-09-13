@@ -7,6 +7,7 @@ import { peutDire } from "../sdk/peut-dire.js";
 
 const steward = readFileSync(new URL("../STEWARD.md", import.meta.url), "utf8");
 const cursor = readFileSync(new URL("../CURSOR.md", import.meta.url), "utf8");
+const agents = readFileSync(new URL("../AGENTS.md", import.meta.url), "utf8");
 const osExample = JSON.parse(
   readFileSync(new URL("../examples/attest-os.json", import.meta.url), "utf8"),
 );
@@ -19,15 +20,24 @@ describe("bot — 404 vitrine n'est pas un HOLD wrangler", () => {
     assert.match(steward, /Preview ≠ receipt/);
     assert.match(steward, /GET [` /]*juge/);
     assert.match(steward, /sur la vitrine = 404 HTML/);
+    assert.match(steward, /Pas PRÉSENT/);
+    assert.match(steward, /Pas un bind wrangler/);
     assert.match(steward, /Pas un HOLD wrangler/);
     assert.match(steward, /404 ≠ carte juge/);
     assert.match(steward, /404 ≠ trou epsilon \/ horizon/);
     assert.match(cursor, /acorn-royal-dune-blend\.grok\.me/);
     assert.match(cursor, /GET [` /]*juge/);
     assert.match(cursor, /vitrine = 404 HTML/);
+    assert.match(cursor, /Pas PRÉSENT/);
     assert.match(cursor, /Pas un HOLD wrangler/);
     assert.match(cursor, /404 ≠ carte juge/);
     assert.match(cursor, /404 ≠ trou epsilon \/ horizon/);
+    assert.match(agents, /GET [` /]*juge/);
+    assert.match(agents, /404 HTML/);
+    assert.match(agents, /Pas PRÉSENT/);
+    assert.match(agents, /404 ≠ carte juge/);
+    assert.match(agents, /HOLD FILE ≠ 404 vitrine/);
+    assert.match(agents, /HOLD FILE\.md \(humain\)/);
     assert.doesNotMatch(steward, /404 → HOLD Carl/);
     assert.doesNotMatch(cursor, /404 → HOLD Carl/);
     assert.doesNotMatch(steward, /quantum-safe/i);
