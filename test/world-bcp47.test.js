@@ -81,11 +81,13 @@ describe("world BCP 47 — same judge, local phrases only", () => {
     assert.match(portes, /en \/ en-CA/);
     assert.match(rente, /en \/ en-CA/);
     assert.match(world, /Tag BCP 47 sans fichier : spoken EN/);
+    assert.match(world, /Casse ignorée : `fr-ca` = `fr-CA`/);
     assert.match(world, /pack-lieu/);
     assert.match(world, /ne comble pas/);
     assert.match(intl, /Tag absent du tableau : spoken/);
     assert.match(intl, /étiquette classique/);
     assert.match(intl, /pack-lieu/);
+    assert.match(intl, /Casse BCP 47 ignorée/);
     assert.match(intl, /ne comble pas epsilon ni horizon/);
   });
 
@@ -112,6 +114,25 @@ describe("world BCP 47 — same judge, local phrases only", () => {
     assert.equal(unknown.pack.ligne, "Certainties expire.");
     assert.equal(unknown.pack.classique, "It does not hold. Classical.");
     assert.equal(unknown.hote, HOST);
+    const folded = packLieu("fr-ca");
+    assert.equal(folded.connu, true);
+    assert.equal(folded.tag, "fr-CA");
+    assert.equal(folded.demande, "fr-ca");
+    assert.equal(folded.pack.ligne, "Les certitudes ont une date de fin.");
+    const aliasFold = packLieu("EN-CA");
+    assert.equal(aliasFold.connu, true);
+    assert.equal(aliasFold.tag, "en");
+    assert.equal(aliasFold.demande, "EN-CA");
+    const regionFold = packLieu("PT-BR");
+    assert.equal(regionFold.connu, true);
+    assert.equal(regionFold.tag, "pt-BR");
+    const deFold = packLieu("de-de");
+    assert.equal(deFold.connu, true);
+    assert.equal(deFold.tag, "de-DE");
+    const languageOnly = packLieu("fr");
+    assert.equal(languageOnly.connu, false);
+    assert.equal(languageOnly.tag, "en");
+    assert.equal(languageOnly.raison, "inconnu");
   });
 
   it("does not fill the named card hole when choosing a pack", () => {
