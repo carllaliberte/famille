@@ -50,6 +50,19 @@ describe("flux — LU n'est pas consulter", () => {
     assert.equal(fused.refus.code, "horizon");
   });
 
+  it("names vitrine /juge 404, not a wrangler bind", () => {
+    assert.match(flux, /Le client voit VERT \/ AMBRE \/ ROUGE et une date\. Pas une quittance\./);
+    assert.match(flux, /GET [` /]*juge/);
+    assert.match(flux, /sur la vitrine = 404 HTML/);
+    assert.match(flux, /Pas un bind wrangler/);
+    assert.match(flux, /acorn-juge\.laliberte22\.workers\.dev\/juge/);
+    assert.doesNotMatch(flux, /attend encore le binder Carl/);
+    assert.match(walk, /GET [` /]*juge/);
+    assert.match(walk, /sur la vitrine = 404 HTML/);
+    assert.match(walk, /Pas un bind wrangler/);
+    assert.match(walk, /acorn-juge\.laliberte22\.workers\.dev\/juge/);
+  });
+
   it("does not fill epsilon or horizon on the published os example", () => {
     const r = peutDire(osExample, { today: "2026-09-09" });
     assert.equal(r.quantique, false);
