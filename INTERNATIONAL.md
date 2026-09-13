@@ -29,5 +29,7 @@ Un pays de plus = un pack BCP 47, pas un nouveau grok.me.
 
 ## Distribution
 
-GitHub public rails. Hôte cité unique. PyPI / Action plus tard (CROISSANCE).
+GitHub public rails. Hôte cité unique : https://acorn-royal-dune-blend.grok.me
+GET `/juge` sur la vitrine = 404 HTML. Pas « live ». Pas PRÉSENT. Pas un bind wrangler. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon. Le pack ne comble pas.
+PyPI / Action plus tard (CROISSANCE).
 Pas de boutique tant que check.py n'est pas ennuyeux.
