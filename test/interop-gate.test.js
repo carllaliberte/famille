@@ -40,17 +40,21 @@ describe("interop — cursorGate n'est pas une carte", () => {
 
   it("names vitrine /juge 404 as not the card, not live, not PRÉSENT", () => {
     assert.match(interop, /vitrine = 404 HTML/);
+    assert.match(interop, /Pas un bind wrangler/);
     assert.match(interop, /Pas « live »/);
     assert.match(interop, /Pas PRÉSENT/);
     assert.match(interop, /404 ≠ carte juge/);
     assert.match(interop, /404 ≠ trou epsilon \/ horizon/);
     assert.match(interop, /acorn-juge\.laliberte22\.workers\.dev\/juge/);
     assert.match(interop, /Un 200 n'est pas un sceau/);
+    assert.match(interop, /Le mesh `\/flux` n'est pas ce GET/);
+    assert.doesNotMatch(interop, /attend encore le binder Carl/);
     assert.doesNotMatch(interop, /404 → HOLD Carl/);
     assert.match(walk, /sur la vitrine = 404 HTML/);
     assert.match(walk, /Pas un bind wrangler/);
     assert.match(walk, /Pas « live »/);
     assert.match(walk, /Pas PRÉSENT/);
+    assert.match(walk, /Pas cette carte/);
     assert.match(walk, /404 ≠ carte juge/);
     assert.match(walk, /404 ≠ trou epsilon \/ horizon/);
     assert.match(walk, /acorn-juge\.laliberte22\.workers\.dev\/juge/);
