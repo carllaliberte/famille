@@ -38,6 +38,15 @@ describe("interop — cursorGate n'est pas une carte", () => {
     assert.match(walk, /Les certitudes ont une date de fin/);
   });
 
+  it("names vitrine /juge 404 as not the card", () => {
+    assert.match(walk, /sur la vitrine = 404 HTML/);
+    assert.match(walk, /Pas un bind wrangler/);
+    assert.match(walk, /404 ≠ trou epsilon \/ horizon/);
+    assert.match(walk, /acorn-juge\.laliberte22\.workers\.dev\/juge/);
+    assert.match(walk, /Un 200 n'est pas un sceau/);
+    assert.doesNotMatch(walk, /attend encore le binder Carl/);
+  });
+
   it("keeps the named card hole: epsilon and horizon stay missing", () => {
     const r = peutDire(osExample, { today: "2026-09-09" });
     assert.equal(r.quantique, false);
