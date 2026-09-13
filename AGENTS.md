@@ -79,6 +79,7 @@ Ne pas chercher `famille#N` pour un autre repo. Coller l'URL raw.
 Fermé : mesure-protocol#4 (`sha_sur`), ancrage-protocol#4 (flock ecrire), ancrage-protocol#6 (test LOCK_EX).
 Fermé : unforge-check `oubli.py` appliquer = flock LOCK_EX sur l'objet, sha256 depuis ce fd, puis unlink. Sidecar `.lock` n'est pas la jail.
 File ouverte CODE : aucune ici. HOLD FILE.md (humain) : clés Actions famille, cron Cursor, wrangler / hôte grok.me.
+GET `/juge` sur la vitrine = 404 HTML. Pas PRÉSENT. Pas un bind wrangler. 404 ≠ carte juge. HOLD FILE ≠ 404 vitrine.
 
 Vision : expérience client au centre de toutes les décisions.
 Personne ne dit « quantique » sans les quatre cartes.
