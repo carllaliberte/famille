@@ -25,7 +25,7 @@ test("six secrets stay mapped; no live claim", () => {
     "OPENROUTER_API_KEY",
     "XAI_API_KEY",
   ]) {
-    assert.match(yml, new RegExp(`${k}: \\${{ secrets\\.${k} }}`.replace(/\\/g, "\\")));
+    assert.ok(yml.includes(`${k}: ${{ secrets.${k} }}`.replace("${{", "${{")), k);
   }
   assert.doesNotMatch(yml, /LIVE VERIFIED/);
   assert.doesNotMatch(yml, /auto_merge:\s*true/);
