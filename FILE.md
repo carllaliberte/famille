@@ -1,4 +1,4 @@
-# File — 2026-09-10
+# File — 2026-09-13
 
 Tableau de chantier. Pas un script. Pas un nœud. Carl squash / merge.
 
@@ -11,6 +11,7 @@ Deploy Actions : vert (run 13).
 Garde landing : docs/index.html sur main (#16).
 
 OTS : [PR #218](https://github.com/carllaliberte/famille/pull/218) + [#221](https://github.com/carllaliberte/famille/pull/221) mergées. Dernière preuve `.ots-anchor/` — OTS actif pending (upgrade). Échec de stamp → issue `ots-anchor-status`.
+PR famille open : 0 (constat 2026-09-13T19:17Z).
 
 ## Canal
 
