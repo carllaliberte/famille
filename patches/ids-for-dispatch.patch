@@ -1,0 +1,78 @@
+--- a/.github/swarm/review.mjs
++++ b/.github/swarm/review.mjs
+@@ -95,6 +95,12 @@
+     model: "grok-2",
+     maxTokens: 2048,
+   },
++  openrouter: {
++    provider: "openrouter",
++    secret: "OPENROUTER_API_KEY",
++    model: "google/gemini-2.5-flash",
++    maxTokens: 2048,
++  },
+ });
+ 
+ function rosterRow(id) {
+@@ -189,6 +195,7 @@
+   if (wanted.size > 0) return [...wanted];
+   if (action === "labeled") return [];
+   if (event === "issue_comment") return [];
++  if (event === "workflow_dispatch") return [];
+   return autoIds();
+ }
+ 
+@@ -268,6 +275,20 @@
+   );
+ }
+ 
++
++/** Dispatch: every canal whose secret is present. Roster status is not a gate. */
++export function idsForDispatch(env = process.env) {
++  const ids = [];
++  const seen = new Set();
++  for (const [id, spec] of Object.entries(MODELS)) {
++    if (String(env[spec.secret] || "").trim() && !seen.has(id)) {
++      seen.add(id);
++      ids.push(id);
++    }
++  }
++  return ids;
++}
++
+ export function keyedModels(ids, env = process.env) {
+   const run = [];
+   const skip = [];
+@@ -539,6 +560,7 @@
+   deepseek: callDeepSeek,
+   gemini: callGemini,
+   xai: callXai,
++  openrouter: callOpenRouter,
+ };
+ 
+ export async function reviewOne(spec, system, user, env = process.env) {
+@@ -730,7 +752,8 @@
+     meta.action,
+     meta.label,
+   );
+-  const ids = routed.ids;
++  const ids =
++    meta.event === "workflow_dispatch" ? idsForDispatch(env) : routed.ids;
+   if (!ids.length) {
+     if (routed.flux) {
+       if (isMeshEnvelope(meta.comment)) {
+@@ -827,10 +850,13 @@
+       }
+     }
+   } else {
+-    const batch = await Promise.all(
++    const settled = await Promise.allSettled(
+       run.map((spec) => reviewOne(spec, system, user, env)),
+     );
+-    results.push(...batch);
++    for (const row of settled) {
++      if (row.status === "fulfilled") results.push(row.value);
++      else results.push({ skipped: true, reason: "settled-reject", error: String(row.reason || "") });
++    }
+   }
+ 
+   const kind = routed.flux ? "mesh" : "review";
