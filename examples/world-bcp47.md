@@ -10,7 +10,7 @@ Pas un 7e chantier. Même juge : [`schema/juge.v0.json`](../schema/juge.v0.json)
 3. Appeler `peut-dire`. Preview ≠ receipt. Unforge does not sign.
 
 Rail : [`sdk/pack-lieu.js`](../sdk/pack-lieu.js) — `packLieu(tag)`.
-Vide → porte `fr-CA`. `en-CA` → fichier `en`. Tag BCP 47 sans fichier : spoken EN (`packs/en.json`). Label classique. Never a second slug.
+Vide → porte `fr-CA`. `en-CA` → fichier `en`. Casse ignorée : `fr-ca` = `fr-CA`. Tag BCP 47 sans fichier : spoken EN (`packs/en.json`). Label classique. Never a second slug.
 Le pack ne comble pas `epsilon` ni `horizon`. Trou nommé : [`attest-os.json`](attest-os.json) reste classique.
 
 Hôte seul : https://acorn-royal-dune-blend.grok.me
