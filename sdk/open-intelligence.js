@@ -6,7 +6,7 @@ export const RECORD_KIND = Object.freeze(["CLAIM","OBSERVATION","MEASUREMENT","E
 const FORBIDDEN_ROLES = Object.freeze(["judge_model","master_model","truth_model","final_ai","oracle_ai"]);
 const RESERVED_IDS = Object.freeze(["carl","juge","quantum","arbitre"]);
 const ID_RE = /^[a-z][a-z0-9-]{1,24}$/;
-const MUTATION_RE = /write|delete|admin|push|patch|create|mutate|overwrite|execute|update|destroy|drop/i;
+const MUTATION_RE = /write|delete|admin|push|patch|create|mutate|overwrite|execute|update|destroy|drop|merge|grant|send|\brm\b/i;
 const SAFE_DIAG = /^(diagnose|observe|measure|health|discover|handshake)$/i;
 const STOPPED = Object.freeze(["SAFE_STOP","ISOLATED","RECOVERY","VERIFIED_RECOVERY"]);
 
@@ -168,18 +168,27 @@ export function routeByCapability(task, adapters) {
 export function executionRequest(p = {}) {
   return { request_id: p.request_id || "req-1", requester: p.requester, capability: p.capability, input: p.input, context: p.context || "fabric", permissions: p.permissions || ["READ"], risk: p.risk || "low", provenance: p.provenance || { source: p.requester }, timestamp: p.timestamp || new Date().toISOString() };
 }
+const GRANTS = Object.freeze({ carl: ["READ"] });
+function grantsFor(requester) { return GRANTS[requester] || ["READ"]; }
 export function authorize(req) {
   if (breakerBlocks(req && req.capability)) return { status: "BLOCKED", reason: "SAFE_STOP", executed: false };
-  const perms = req.permissions || [];
-  const cap = req.capability || "";
-  if (MUTATION_RE.test(cap) && !perms.includes("WRITE") && !perms.includes("ADMIN") && !perms.includes("EXECUTE")) {
+  const perms = grantsFor(req && req.requester);
+  const cap = (req && req.capability) || "";
+  if (MUTATION_RE.test(cap) && !perms.includes("WRITE") && !perms.includes("ADMIN")) {
     return { status: "BLOCKED", reason: "MUTATION_DENIED", executed: false };
   }
-  if (!req.requester || !req.capability) return { status: "BLOCKED", reason: "MALFORMED", executed: false };
+  if (!req || !req.requester || !req.capability) return { status: "BLOCKED", reason: "MALFORMED", executed: false };
   return { status: "AUTHORIZED", executed: false, authority: false };
 }
 export function executionResult(req, extra = {}) {
-  return { request_id: req.request_id, requester: req.requester, executor: extra.executor, capability: req.capability, status: extra.status || "REQUESTED", output: extra.output, evidence: extra.evidence, measurement: extra.measurement || { status: "NOT_MEASURED" }, provenance: { requester: req.requester, executor: extra.executor, capability: req.capability, ts: extra.ts || req.timestamp, authority: false }, timestamp: extra.ts || req.timestamp, error: extra.error, truth: false };
+  let output = extra.output;
+  if (output && typeof output === "object") {
+    output = { ...output };
+    delete output.live;
+    delete output.authority;
+    delete output.truth;
+  }
+  return { request_id: req.request_id, requester: req.requester, executor: extra.executor, capability: req.capability, status: extra.status || "REQUESTED", output, evidence: extra.evidence, measurement: extra.measurement || { status: "NOT_MEASURED" }, provenance: { requester: req.requester, executor: extra.executor, capability: req.capability, ts: extra.ts || req.timestamp, authority: false }, timestamp: extra.ts || req.timestamp, error: extra.error, truth: false };
 }
 export function grokExecutor({ run } = {}) {
   const base = intelligenceAdapter({ id: "grok", provider: "xai", capabilities: ["github.read", "observe", "measure"] });
@@ -231,10 +240,11 @@ export function stale(h) { return { ...h, epistemic_status: "STALE", reassess: t
 export function unauthorizedProbe() {
   return { status: "BLOCKED", topology: undefined, nodes: undefined, capabilities: undefined, version: undefined };
 }
-export function disclose(principal, payload) {
-  if (principal !== "carl") return { disclosed: false };
-  return { disclosed: true, payload, proof: false };
+export function disclose(principal, payload, proof) {
+  if (principal !== "carl" || proof !== true) return { disclosed: false, proof: false };
+  return { disclosed: true, payload, proof: true };
 }
-export function isolateCompromised(id) {
-  return { id, isolated: true, revoked: true, evidence_kept: true, fabric_intact: true, process_isolated: false };
+export function isolateCompromised(id, adapter) {
+  if (adapter && typeof adapter.revoke === "function") adapter.revoke();
+  return { id, isolated: true, revoked: true, evidence_kept: true, fabric_intact: true, process_isolated: false, bound: typeof adapter?.revoke === "function" };
 }
