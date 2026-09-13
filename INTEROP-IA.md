@@ -19,6 +19,7 @@ Les certitudes ont une date de fin.
 `route()` non plus : worker ≠ producer ≠ reviewer. Jamais carl. Jamais merge. Pas une carte juge. Pas `cursorGate`.
 `activate()` non plus : compétences pertinentes en parallèle. Skip / quota = CAPABILITY UNAVAILABLE, pas PROJECT BLOCKED. Jamais merge. Pas une carte juge. Pas `cursorGate`. Pas `route()`.
 Champ carte manquant → MODE classique. PR ouverte → RAS. Synapse ≠ trou epsilon / horizon. Ce n'est pas le même trou.
+GET `/juge` sur la vitrine = 404 HTML. Pas un bind wrangler. Pas « live ». Pas PRÉSENT. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon. Hôte : https://acorn-royal-dune-blend.grok.me. Le mesh `/flux` n'est pas ce GET. Cursor consomme le juge, ne comble pas.
 
 ## 1. Carte juge — n'importe qui *lit*
 
