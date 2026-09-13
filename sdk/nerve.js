@@ -100,7 +100,7 @@ export function route(signal, candidates = []) {
   return (candidates || []).filter((c) => {
     if (c.presence === "LIVE_VERIFIED" && c.id !== "carl") return false;
     if (c.presence === "CHANNEL_NOT_PRESENT") return false;
-    if (c.presence === "BLOCKED" || c.presence === "DISCONNECTED") return false;
+    if (c.presence === "BLOCKED" || c.presence === "DISCONNECTED" || c.presence === "REVOKED") return false;
     if (signal.need === "counter" && !(c.caps || []).includes("counter")) return false;
     return true;
   }).map((c) => ({ id: c.id, reason: "capability", authority: false }));
@@ -132,7 +132,9 @@ export function setSynapsePresence(syn, presence, { http200 = false, actor } = {
   return { ...syn, presence, invented: false };
 }
 
+const RESERVED_IDS = Object.freeze(["carl","juge","quantum","arbitre","grok"]);
 export function declareFutureIntelligence(id, caps = []) {
+  if (RESERVED_IDS.includes(id)) throw new Error("reserved id");
   return {
     id,
     presence: "DECLARED",
