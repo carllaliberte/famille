@@ -91,6 +91,27 @@ describe("world BCP 47 — same judge, local phrases only", () => {
     assert.match(intl, /ne comble pas epsilon ni horizon/);
   });
 
+  it("names vitrine /juge 404 as not the card, not live, not PRÉSENT", () => {
+    const intl = read("INTERNATIONAL.md");
+    const world = read("examples/world-bcp47.md");
+    for (const text of [intl, world]) {
+      assert.match(text, /Les certitudes ont une date de fin|Hôte cité unique/);
+      assert.match(text, /acorn-royal-dune-blend\.grok\.me/);
+      assert.match(text, /GET [` /]*juge/);
+      assert.match(text, /sur la vitrine = 404 HTML/);
+      assert.match(text, /Pas « live »/);
+      assert.match(text, /Pas PRÉSENT/);
+      assert.match(text, /Pas un bind wrangler/);
+      assert.match(text, /404 ≠ carte juge/);
+      assert.match(text, /404 ≠ trou epsilon \/ horizon/);
+      assert.match(text, /Le pack ne comble pas/);
+      assert.doesNotMatch(text, /404 → HOLD Carl/);
+      assert.doesNotMatch(text, /quantum-safe/i);
+      assert.doesNotMatch(text, /sealed forever/i);
+    }
+    assert.match(world, /Les certitudes ont une date de fin/);
+  });
+
   it("resolves born tags, aliases en-CA, and keeps unknown spoken en", () => {
     assert.deepEqual([...PACK_FILES].sort(), TAGS.slice().sort());
     const fr = packLieu("fr-CA");
