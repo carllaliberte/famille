@@ -21,7 +21,7 @@ Goût Expert → Quantum vert → Carl squash (humain). `merged=true` sur GitHub
 Imagine : parole et écran EN ; docs FR OK.
 Les certitudes ont une date de fin.
 Hôte : https://acorn-royal-dune-blend.grok.me — Preview ≠ receipt. Unforge does not sign. ε=0 is a lie.
-GET `/juge` sur la vitrine = 404 HTML. Pas un HOLD wrangler. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon.
+GET `/juge` sur la vitrine = 404 HTML. Pas PRÉSENT. Pas un bind wrangler. Pas un HOLD wrangler. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon. Cursor consomme le juge, ne comble pas.
 
 ### Cadence Imagine
 
