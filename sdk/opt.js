@@ -90,3 +90,7 @@ export function blockedIfStop(op) {
   if (breakerBlocks(op)) return { status: "BLOCKED" };
   return { status: "ALLOWED", authority: false };
 }
+
+export function refuseToRepresent(reason = "distortion") {
+  return { status: "REFUSE_TO_REPRESENT", reason, category: false, truth: false };
+}
