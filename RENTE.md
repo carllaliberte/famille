@@ -1,5 +1,7 @@
 # Rentabiliser — sans monnaie inventée
 
+Les certitudes ont une date de fin.
+
 Interdit : token, L1, coin quantique, second slug payant, « quantum-safe as a service ».
 
 ## Payer
@@ -9,7 +11,7 @@ Champ manquant → aperçu classique. Pas une vente à quatre cartes. Pas un fin
 
 - Chemin : [ACTES.md](ACTES.md) · [`sdk/acte.js`](sdk/acte.js) `quoteActe`. Carl écrit les prix. Les bots n'inventent pas. Les lignes ACTES ne sont pas un tarif. Un 200 n'est pas une facture.
 - Locale : packs BCP 47 — fr-CA, en / en-CA, es-MX, en-NG, pt-BR, de-DE — table [INTERNATIONAL.md](INTERNATIONAL.md) · [examples/world-bcp47.md](examples/world-bcp47.md). Même acte, pack du lieu. Pas un 7e chantier.
-- Preview ≠ receipt. Unforge ne signe pas. Hôte seul : https://acorn-royal-dune-blend.grok.me
+- Preview ≠ receipt. Unforge ne signe pas. Hôte seul : https://acorn-royal-dune-blend.grok.me — GET `/juge` sur la vitrine = 404 HTML. Pas un produit. Pas « live ». Pas PRÉSENT. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon.
 - Compteur honnête : 0 licences Acorn écrites. Ne pas fictifier.
 
 ## Ce qui peut rapporter
