@@ -32,5 +32,5 @@ Carte trouée : [`attest-os.json`](attest-os.json) — epsilon + horizon manquen
 Flux quantique = MODE collapse + date. Pas un photon. Pas un QPU sur Git.
 
 Vitrine HTML : https://acorn-royal-dune-blend.grok.me
-GET `/juge` sur la vitrine = 404 HTML. Pas un bind wrangler.
+GET `/juge` sur la vitrine = 404 HTML. Pas un bind wrangler. Pas « live ». Pas PRÉSENT. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon.
 Canal JSON : https://acorn-juge.laliberte22.workers.dev/juge (preview, pas quittance).

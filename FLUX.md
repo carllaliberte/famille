@@ -31,7 +31,7 @@ Un champ de carte manquant → MODE reste classique. Pas d'invention.
 
 Canal JSON GET `/juge` : `https://acorn-juge.laliberte22.workers.dev/juge` (preview, pas quittance).
 Vitrine HTML : `https://acorn-royal-dune-blend.grok.me` — Vercel, pas une zone Cloudflare.
-`GET /juge` sur la vitrine = 404 HTML. Pas un bind wrangler. Pas un 2e slug. Pas « live » sur grok.me.
+`GET /juge` sur la vitrine = 404 HTML. Pas un bind wrangler. Pas un 2e slug. Pas « live » sur grok.me. Pas PRÉSENT. 404 ≠ carte juge. 404 ≠ trou epsilon / horizon.
 
 ## Deux horizons
 
