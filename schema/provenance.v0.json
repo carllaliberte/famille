@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://famille.local/schema/provenance.v0.json",
+  "title": "provenance.v0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "observed_at",
+    "signals",
+    "error_margin_epsilon",
+    "write",
+    "preview",
+    "receipt"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["LU", "OBJECTION", "CONTRADICTION", "INSUFFICIENT", "UNKNOWN", "ERROR", "OFFLINE"]
+    },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "signals": { "type": "array", "items": { "$ref": "#/$defs/signal" } },
+    "agreement": { "type": "boolean" },
+    "contradiction": { "type": "boolean" },
+    "error_margin_epsilon": { "type": "number", "exclusiveMinimum": 0 },
+    "write": { "const": "DENIED" },
+    "live": { "const": false },
+    "certified": { "const": false },
+    "preview": { "type": "boolean" },
+    "receipt": { "type": "boolean" }
+  },
+  "$defs": {
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node_id", "status", "error_margin_epsilon"],
+      "properties": {
+        "node_id": { "type": "string" },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "output": true,
+        "status": {
+          "type": "string",
+          "enum": ["LU", "OBJECTION", "CONTRADICTION", "INSUFFICIENT", "UNKNOWN", "ERROR", "OFFLINE"]
+        },
+        "confidence_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "error_margin_epsilon": { "type": "number", "exclusiveMinimum": 0 },
+        "objections": { "type": "array" },
+        "latency_ms": { "type": ["number", "null"] },
+        "cost_usd": { "type": ["number", "null"] },
+        "invented": { "const": false }
+      }
+    }
+  }
+}

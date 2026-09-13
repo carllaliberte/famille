@@ -4,11 +4,13 @@ Ordre : client → technologie → Grok Bot + Cursor.
 
 Le client voit une porte, une phrase, une couleur.
 Il ne voit pas un rail, un Worker, un ε.
+Il ne voit pas Φ, ZK, ni BFT. Le sceau officiel reste CHANNEL NOT PRESENT. Ce n'est pas une couleur.
+Un 200 n'est pas VERT.
 
 ## Porte
 
 Hôte unique : https://acorn-royal-dune-blend.grok.me
-GET `/juge` : punch-list Carl / wrangler — [HORIZONS.md](HORIZONS.md) Court. Pas « live ».
+GET `/juge` sur la vitrine : 404 HTML Famille — attendu (canal ≠ vitrine). Pas un HOLD wrangler. Pas « live ».
 Titre : Famille
 Ligne (`packs/fr-CA.json`) : Les certitudes ont une date de fin.
 Spoken (`packs/en.json`) : Certainties expire.
@@ -30,6 +32,8 @@ The human still merges. Labels do not live forever.
 Phrases porte : `packs/*.json` (source). Clé `sous_ligne`.
 
 Jamais « sealed forever ». Jamais « quantum-safe ».
+Jamais Φ / ZK / BFT comme couleur de porte. CHANNEL NOT PRESENT n'est pas VERT.
+Un 200 n'est pas VERT.
 Preview is not a receipt.
 
 ## Efficacité
@@ -51,5 +55,6 @@ Ordre complet : figure → consulter → re-mesurer → check — [`examples/flu
 ## Interdit côté client
 
 Deuxième slug grok.me. Token. App Store. Formulaire « ε = 0 ».
+Φ / ZK / BFT comme couleur. Un 200 comme VERT.
 
 Bots : écrire la phrase avant le schéma.
