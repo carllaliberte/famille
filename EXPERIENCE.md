@@ -11,6 +11,7 @@ Un 200 n'est pas VERT.
 
 Hôte unique : https://acorn-royal-dune-blend.grok.me
 GET `/juge` sur la vitrine : 404 HTML Famille — attendu (canal ≠ vitrine). Pas un HOLD wrangler. Pas « live ».
+404 ≠ carte juge. 404 ≠ trou epsilon / horizon de attest-os.
 Titre : Famille
 Ligne (`packs/fr-CA.json`) : Les certitudes ont une date de fin.
 Spoken (`packs/en.json`) : Certainties expire.
