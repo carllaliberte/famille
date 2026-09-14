@@ -239,6 +239,9 @@ export function addSynapse(work, input = {}) {
     created_at: iso(input.at),
   };
   if (/LIVE/i.test(syn.grade)) return fail("LIVE_NOT_CARL", "synapse is not a network proof");
+  if (syn.grade === "EXECUTED" || syn.grade === "VERIFIED") {
+    return fail("NOT_EXECUTED", "create is PROPOSED only");
+  }
   const next = clone(work);
   next.synapses = [...next.synapses, syn];
   return { ok: true, work: bump(next, "addSynapse", input.at, input.node) };
@@ -403,3 +406,165 @@ export function openNext(work, input = {}) {
     required_capabilities: work.required_capabilities,
   });
 }
+
+export const SYNAPSE_GRADES = Object.freeze([
+  "PROPOSED",
+  "OBSERVED",
+  "EXECUTED",
+  "VERIFIED",
+]);
+
+/** Roster seat is declared. Never LIVE. Never inferred from a key. */
+export function discoverCapabilities(work, rosterPool = pool()) {
+  const need = [...(work?.required_capabilities || [])].map(String);
+  const candidates = (rosterPool.rows || []).map((r) => {
+    const caps = (r.capabilities || []).map(String);
+    const spec = String(r.specialty || "");
+    const complementarity = need.filter(
+      (c) => caps.includes(c) || spec.toLowerCase().includes(c.toLowerCase()),
+    );
+    return {
+      identity: r.id,
+      capabilities: caps,
+      limits: { merge: false, live: false },
+      specialties: spec,
+      trust: r.access || "limited",
+      context: { seat: r.seat, roster_status: r.roster_status },
+      availability: r.seat,
+      complementarity,
+      declared: true,
+      available: r.seat === "AVAILABLE" || r.seat === "IDLE",
+      live: false,
+      verified: false,
+      provenance: { source: "workforce.pool", measured: false },
+    };
+  });
+  const matched = candidates.filter((c) => c.complementarity.length);
+  const missing = need.filter(
+    (c) => !matched.some((m) => m.complementarity.includes(c)),
+  );
+  return {
+    ok: true,
+    need,
+    missing,
+    candidates: matched,
+    live: false,
+    executed: false,
+  };
+}
+
+export function transferContext(work, fromId, toId, input = {}) {
+  if (!work) return fail("FABRIC", "no work");
+  const from = (work.branches || []).find((b) => b.branch_id === fromId);
+  const to = (work.branches || []).find((b) => b.branch_id === toId);
+  if (!from || !to) return fail("NOT_FOUND", "branch");
+  const packet = {
+    origin: from.worker,
+    task: work.task_id,
+    branch: from.branch_id,
+    inputs: { ...(from.context || {}) },
+    observations: (work.observations || []).filter((o) => o.node === from.worker),
+    evidence: [...(work.evidence || [])],
+    objections: [...(work.objections || [])],
+    constraints: [...(work.constraints || [])],
+    timestamp: iso(input.at),
+    version: work.version,
+    provenance: stamp(from.worker, "transferContext", input.at),
+  };
+  const insufficient = !from.result && packet.observations.length === 0;
+  if (insufficient && input.require === true) {
+    return { ok: false, code: "INSUFFICIENT", error: "context incomplete", packet };
+  }
+  const next = clone(work);
+  const dest = next.branches.find((b) => b.branch_id === toId);
+  dest.context = { ...dest.context, transfer: packet, insufficient };
+  next.synapses = [
+    ...next.synapses,
+    {
+      synapse_id: newId("syn"),
+      from: from.worker,
+      to: to.worker,
+      act: "TRANSFER",
+      context: { from: fromId, to: toId, insufficient },
+      grade: "PROPOSED",
+      created_at: iso(input.at),
+    },
+  ];
+  return {
+    ok: true,
+    work: bump(next, "transferContext", input.at, input.node),
+    insufficient,
+  };
+}
+
+export function markSynapse(work, synapseId, grade, input = {}) {
+  if (!work) return fail("FABRIC", "no work");
+  if (!SYNAPSE_GRADES.includes(grade)) return fail("GRADE", String(grade || ""));
+  if (grade === "EXECUTED" && input.executed !== true) {
+    return fail("NOT_EXECUTED", "route is not a collaboration");
+  }
+  if (grade === "VERIFIED" && !isCarl(input.actor) && input.measured !== true) {
+    return fail("NOT_VERIFIED", "VERIFIED needs measure or Carl");
+  }
+  const next = clone(work);
+  const syn = next.synapses.find((s) => s.synapse_id === synapseId);
+  if (!syn) return fail("NOT_FOUND", String(synapseId || ""));
+  syn.grade = grade;
+  syn.marked_at = iso(input.at);
+  return { ok: true, work: bump(next, "markSynapse", input.at, input.node) };
+}
+
+export function counters(work) {
+  if (!work) {
+    return { tasks_created: 0, live: false, loop: "DEFINED" };
+  }
+  const syn = work.synapses || [];
+  return {
+    tasks_created: 1,
+    tasks_routed: syn.filter((s) => s.act === "ROUTE").length,
+    branches_created: (work.branches || []).length,
+    branches_parallel: (work.branches || []).length > 1 ? 1 : 0,
+    synapses_proposed: syn.filter((s) => s.grade === "PROPOSED").length,
+    synapses_executed: syn.filter((s) => s.grade === "EXECUTED").length,
+    synapses_verified: syn.filter((s) => s.grade === "VERIFIED").length,
+    context_transfers: syn.filter((s) => s.act === "TRANSFER").length,
+    observations: (work.observations || []).length,
+    evidence: (work.evidence || []).length,
+    objections: (work.objections || []).length,
+    measurements: (work.measurements || []).length,
+    syntheses: work.synthesis ? 1 : 0,
+    human_decisions: work.decision && work.decision.status === "DECIDED" ? 1 : 0,
+    blocked: work.state === "BLOCKED" ? 1 : 0,
+    failed: 0,
+    live: false,
+    loop: "DEFINED",
+  };
+}
+
+export function cannotMerge() {
+  return {
+    ok: false,
+    code: "HUMAN",
+    error: "AI cannot merge",
+    auto_merge: false,
+    live: false,
+  };
+}
+
+export function cycleDefined() {
+  return {
+    steps: Object.freeze([
+      "observe",
+      "understand",
+      "act",
+      "measure",
+      "correct",
+      "next",
+    ]),
+    loop: "DEFINED",
+    executed: false,
+    continuous: false,
+    live: false,
+  };
+}
+

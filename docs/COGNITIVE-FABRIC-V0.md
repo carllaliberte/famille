@@ -11,7 +11,10 @@ Couche **work object** sur le mesh existant. Pas un deuxième roster, pas un deu
 - Branches parallèles, synapses (grade PROPOSED), observations, evidence, objections, mesures, synthèse
 - DECISION = `PENDING_HUMAN` · authority carl · `human_required: true`
 - `readyOf()` : objectif, capacités couvertes par une branche, pas d’objection BLOCKING ouverte
-- Réutilise `workforce.route` / `assign` et `schema/agents.json`
+- `discoverCapabilities()` via `workforce.pool` — declared ≠ available ≠ LIVE
+- `transferContext()` — INSUFFICIENT si vide ; synapse TRANSFER grade PROPOSED
+- `counters()` — chiffres tirés de l’objet, `loop: DEFINED` pas EXECUTED
+- `cannotMerge()` toujours false
 
 ## Proposé, pas exécuté
 
