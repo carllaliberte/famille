@@ -26,7 +26,7 @@ async function gh(path, { token, method = "GET", body } = {}) {
 export function parseSwarmComment(body = "") {
   const text = String(body || "");
   if (!/^## Swarm review\b/m.test(text)) return [];
-  const matches = [...text.matchAll(/^### (.+?) \(`([^`]+)`\)\n([\s\S]*?)(?=^### |^_Prompt:|\z)/gm)];
+  const matches = [...text.matchAll(/^### (.+?) \(`([^`]+)`\)\n([\s\S]*?)(?=^### |^_Prompt:|$)/gm)];
   return matches
     .map((m) => ({ label: m[1].trim(), model: m[2].trim(), text: m[3].trim() }))
     .filter((r) => r.text && !/^Skipped —/i.test(r.text) && !/^Provider error —/i.test(r.text));
@@ -72,12 +72,7 @@ async function main(env = process.env) {
     return 0;
   }
 
-  const one = await reviewOne(
-    coordinator,
-    loadPrompt(),
-    synthesisPrompt(results),
-    env,
-  );
+  const one = await reviewOne(coordinator, loadPrompt(), synthesisPrompt(results), env);
   if (one.skipped || one.error || !one.text) {
     console.log(`collaboration skip (${one.reason || one.error || "empty"})`);
     return 0;
@@ -89,7 +84,7 @@ async function main(env = process.env) {
     "",
     "Independent findings were produced first. This pass compares them without voting and preserves disagreement.",
     `Sources: ${sources}`,
-    `Coordinator: ${coordinator.id} (${coordinator.model})` ,
+    `Coordinator: ${coordinator.id} (${coordinator.model})`,
     "CODE VERIFIED ≠ TEST VERIFIED ≠ LIVE VERIFIED.",
     "",
     one.text,
