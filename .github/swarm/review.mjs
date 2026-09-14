@@ -95,6 +95,12 @@ export const CANALS = Object.freeze({
     model: "grok-2",
     maxTokens: 2048,
   },
+  grok46: {
+    provider: "xai",
+    secret: "XAI_API_KEY",
+    model: "grok-4.6",
+    maxTokens: 2048,
+  },
   openrouter: {
     provider: "openrouter",
     secret: "OPENROUTER_API_KEY",
