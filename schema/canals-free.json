@@ -4,7 +4,7 @@
     "provider": "openrouter",
     "secret": "OPENROUTER_API_KEY",
     "model": "openrouter/free",
-    "maxTokens": 2048
+    "maxTokens": 1024
   },
   {
     "id": "gemma431",

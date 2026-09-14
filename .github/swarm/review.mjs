@@ -179,8 +179,8 @@ export const MODELS = Object.freeze(
   ),
 );
 
-/** Native xAI cascade. 400/403 on one slug tries the next. */
-export const XAI_FALLBACK = Object.freeze(["grok-2", "grok-2-mini"]);
+/** Native xAI cascade. 400/403 on one slug tries the next. No grok-2-mini. */
+export const XAI_FALLBACK = Object.freeze(["grok-4.6"]);
 
 function autoIds() {
   return Object.values(MODELS)
@@ -338,7 +338,8 @@ export function idsForDispatch(env = process.env) {
   let freeN = 0;
   for (const [id, spec] of Object.entries(MODELS)) {
     if (String(env[spec.secret] || "").trim() && !seen.has(id)) {
-      const isFree = String(spec.model || "").includes(":free");
+      const isFree =
+        id === "orfree" || String(spec.model || "").includes(":free");
       if (isFree && freeN >= FREE_DISPATCH_CAP) continue;
       seen.add(id);
       ids.push(id);
