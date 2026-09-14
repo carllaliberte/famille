@@ -24,8 +24,16 @@ Carl squash/merge. DISPATCH=NO. Crédits cloud = 0.
 
 1. **P0** — cette trace
 2. **P1** — contrat/tests `siege()` : déjà sur main (#429). REAL=1 ssi HTTP 2xx + texte
-3. **P2** — warm-one + recette A→B→C — **pas encore**
+3. **P2** — `node scripts/warm-one.mjs` — séquentiel, N présents (pas ×3)
 4. **P3** — UX README (chemin 30 s déjà ; recette locale pas encore)
+
+## Essayer en 3 commandes
+
+```bash
+npm test
+node scripts/warm-one.mjs --ci    # skip si daemon DOWN (CI verte)
+node scripts/warm-one.mjs         # 1 modèle à la fois ; exit 1 si DOWN
+```
 
 Pas LIVE. Pas de pont public. Pas de 127.0.0.1 dans Secrets GitHub.
 review.mjs n’est pas modifié par cette trace.
