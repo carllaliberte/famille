@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
  * ACORN COGNITIVE WORKER
- * One bounded cycle: observe -> discover -> compose -> dispatch -> measure.
+ * One bounded cycle: observe -> discover -> compose -> route -> dispatch -> measure.
  * Never writes source, never merges, never claims LIVE. Human authority remains Carl.
  */
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { cycle } from "./discover-cycle.mjs";
+import { composeFabric } from "./cognitive-fabric.mjs";
 import { assertSystemMayProceed, controlState } from "../.github/swarm/system-breaker.mjs";
 
 export const LIMIT = 20;
@@ -33,6 +34,11 @@ export function composePlan(fronts, state = controlState()) {
   };
 }
 
+export function composeRouting(observation, fronts, env = process.env) {
+  const sources = [...new Set((observation.auto || []).map(String))].map((id) => ({ id, channel: "model", capability: "review" }));
+  return composeFabric({ fronts, sources, env });
+}
+
 export function executeDispatch(fronts, run = execFileSync, env = process.env) {
   const results = [];
   for (const front of fronts) {
@@ -48,11 +54,11 @@ export function executeDispatch(fronts, run = execFileSync, env = process.env) {
   return results;
 }
 
-export function buildEvidence(observation, plan, dispatches, state = controlState()) {
+export function buildEvidence(observation, plan, routing, dispatches, state = controlState()) {
   const succeeded = dispatches.filter((x) => x.state === "DISPATCHED").length;
   const blocked = dispatches.filter((x) => x.state === "BLOCKED_BREAKER").length;
   const failed = dispatches.filter((x) => x.state === "DISPATCH_FAILED").length;
-  return { v: "cognitive-worker.v2", executed: true, observed: true, verified: false, live: false, auto_merge: false, human_decision: "PENDING_HUMAN", authority: "carl", system_mode: state.mode, breaker_closed: state.breaker_closed, diagnostic: state.diagnostic, observation, discovered: plan.fronts.length, dispatched: succeeded, dispatch_failed: failed, breaker_blocked: blocked, dispatches, next: state.diagnostic ? "diagnostic-observe" : "observe" };
+  return { v: "cognitive-worker.v3", executed: true, observed: true, verified: false, live: false, auto_merge: false, human_decision: "PENDING_HUMAN", authority: "carl", system_mode: state.mode, breaker_closed: state.breaker_closed, diagnostic: state.diagnostic, observation, discovered: plan.fronts.length, routed: routing?.route_count || 0, synapses: routing?.synapse_count || 0, collective: Boolean(routing?.collective), dispatched: succeeded, dispatch_failed: failed, breaker_blocked: blocked, dispatches, routing: routing || null, next: state.diagnostic ? "diagnostic-observe" : "observe" };
 }
 
 export function runWorker(opts = {}) {
@@ -65,8 +71,9 @@ export function runWorker(opts = {}) {
   else raw = gh("gh", ["pr", "list", "--repo", env.GITHUB_REPOSITORY, "--state", "open", "--limit", String(LIMIT), "--json", "number,headRefOid,isDraft,updatedAt", "--jq", ".[] | [.number,.headRefOid,.isDraft,.updatedAt] | @tsv"], { encoding: "utf8", stdio: "pipe" });
   const fronts = parseFronts(raw);
   const plan = composePlan(fronts, state);
+  const routing = state.mode === "OFF" ? null : composeRouting(observation, fronts, env);
   const dispatches = opts.dispatch === false ? [] : state.mode === "OFF" ? fronts.map((front) => ({ number: front.number, sha: front.sha, state: "BLOCKED_BREAKER" })) : executeDispatch(fronts, gh, env);
-  const evidence = buildEvidence(observation, plan, dispatches, state);
+  const evidence = buildEvidence(observation, plan, routing, dispatches, state);
   if (opts.evidencePath) writeFileSync(opts.evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
   if (evidence.dispatch_failed > 0 && opts.failOnDispatchError !== false) throw new Error(`cognitive worker dispatch failed for ${evidence.dispatch_failed} front(s)`);
   return evidence;
