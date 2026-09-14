@@ -49,7 +49,9 @@ jobs:
         run: |
           set -eu
           echo "cadence dispatch swarm ref=${SHA}"
-          gh workflow run swarm.yml --ref "${SHA}" -f "ref=${SHA}"
+          # workflow_dispatch itself needs a branch/tag ref; the swarm workflow
+          # receives the exact merged SHA through its explicit ref input.
+          gh workflow run swarm.yml --ref main -f "ref=${SHA}"
       - name: Comment (no merge)
         if: github.event.pull_request.number
         env:
