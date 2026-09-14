@@ -43,7 +43,7 @@ export const OPENROUTER_ROUTES = Object.freeze({
 });
 
 /** HTTP transport only. Not the join. Join = schema/agents.json. */
-export const CANALS = Object.freeze({
+const CANALS_CORE = Object.freeze({
   sonnet: {
     provider: "anthropic",
     secret: "ANTHROPIC_API_KEY",
@@ -113,6 +113,46 @@ export const CANALS = Object.freeze({
     model: "llama3.2",
     maxTokens: 2048,
   },
+});
+
+/** Known callers only. Groq and unknown providers stay out. Collision keeps the existing seat. */
+const CANAL_PROVIDERS = Object.freeze([
+  "anthropic",
+  "openai",
+  "deepseek",
+  "gemini",
+  "xai",
+  "openrouter",
+  "ollama",
+]);
+
+function loadFreeCanals(core) {
+  let rows = [];
+  try {
+    rows = JSON.parse(readFileSync(join(ROOT, "schema/canals-free.json"), "utf8"));
+  } catch {
+    rows = [];
+  }
+  if (!Array.isArray(rows)) rows = [];
+  const extra = {};
+  for (const row of rows) {
+    const id = row && String(row.id || "").trim();
+    if (!id || core[id] || extra[id]) continue;
+    if (row.provider === "groq") continue;
+    if (!CANAL_PROVIDERS.includes(row.provider)) continue;
+    extra[id] = Object.freeze({
+      provider: row.provider,
+      secret: row.secret,
+      model: row.model,
+      maxTokens: Number(row.maxTokens) || 2048,
+    });
+  }
+  return extra;
+}
+
+export const CANALS = Object.freeze({
+  ...CANALS_CORE,
+  ...loadFreeCanals(CANALS_CORE),
 });
 
 function rosterRow(id) {
