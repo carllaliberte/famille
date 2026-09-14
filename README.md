@@ -29,6 +29,11 @@ Dernière mesure datée — 2026-09-14, run [34876044826](https://github.com/car
 Cognition locale, séquentielle. File P0–P3 : [docs/TABLE-LOCALE.md](docs/TABLE-LOCALE.md).
 Parallèle ×3 interdit. Cloud en pause. Carl merge.
 
+## Mémoire / backup
+
+Cerveau-mémoire, pas un 2ᵉ fabric. Spec P0 : [docs/BACKUP.md](docs/BACKUP.md). Restore mesuré avant EXECUTED. Carl merge.
+
+
 A typed-evidence lattice for post-quantum cybersecurity and composable proof.
 Not fourteen scripts. Not a blockchain. Not a coin.
 
