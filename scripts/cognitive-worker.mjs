@@ -50,11 +50,22 @@ export function composePlan(fronts) {
   };
 }
 
-export function executeDispatch(fronts, run = execFileSync) {
+/**
+ * Dispatch through the real /swarm issue-comment path instead of workflow_dispatch.
+ * This is intentional: workflow_dispatch uses the bounded free-route cap, while
+ * /swarm resolves the PR head and sends every keyed automatic roster node through
+ * the existing fail-closed keyedModels() path. The worker still never writes code.
+ */
+export function executeDispatch(fronts, run = execFileSync, env = process.env) {
   const results = [];
   for (const front of fronts) {
     try {
-      run("gh", ["workflow", "run", "swarm.yml", "--ref", "main", "-f", `ref=${front.sha}`], {
+      run("gh", [
+        "api",
+        `repos/${env.GITHUB_REPOSITORY}/issues/${front.number}/comments`,
+        "--method", "POST",
+        "-f", "body=/swarm",
+      ], {
         stdio: "pipe",
         encoding: "utf8",
       });
@@ -115,7 +126,7 @@ export function runWorker(opts = {}) {
 
   const fronts = parseFronts(raw);
   const plan = composePlan(fronts);
-  const dispatches = opts.dispatch === false ? [] : executeDispatch(fronts, gh);
+  const dispatches = opts.dispatch === false ? [] : executeDispatch(fronts, gh, env);
   const evidence = buildEvidence(observation, plan, dispatches);
 
   if (opts.evidencePath) {
