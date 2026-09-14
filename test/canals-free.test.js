@@ -20,6 +20,13 @@ describe("canals-free — catalogue additif, collision skip, pas Groq", () => {
     }
     assert.ok(rows.some((r) => r.id === "orfree"));
     assert.ok(rows.some((r) => r.id === "llama32f"));
+    assert.ok(
+      rows.some(
+        (r) =>
+          r.id === "nemotroncs" &&
+          r.model === "nvidia/nemotron-3.5-content-safety:free",
+      ),
+    );
   });
 
   it("keeps frozen paid/local seats", () => {
@@ -36,6 +43,7 @@ describe("canals-free — catalogue additif, collision skip, pas Groq", () => {
     assert.equal(CANALS.orfree.maxTokens, 1024);
     assert.equal(CANALS.gemma431.model, "google/gemma-4-31b-it:free");
     assert.equal(CANALS.llama32f.model, "meta-llama/llama-3.2-3b-instruct:free");
+    assert.equal(CANALS.nemotroncs.model, "nvidia/nemotron-3.5-content-safety:free");
     assert.equal(MODELS.orfree.secret, "OPENROUTER_API_KEY");
     assert.equal(MODELS.orfree.auto, false);
     assert.equal(MODELS.llama.id, "llama");
