@@ -25,5 +25,6 @@ Si un champ juge manque : MODE classique. Arrête et écris le trou.
 Carl seul squash/merge. Un geste par PR. Pas de stub / PLACEHOLDER / Contents API sur `review.mjs`.
 MIT = ce repo (protocoles listés). Acorn, marques, nœuds QUANTUM : hors MIT.
 Cloud pause (crédits 0) → DISPATCH=NO. Parallèle Ollama ×3 interdit.
-File : [docs/TABLE-LOCALE.md](docs/TABLE-LOCALE.md) · rôles : [docs/BUILD-REPLACEMENT.md](docs/BUILD-REPLACEMENT.md) · P0 : [docs/prompts/P0.md](docs/prompts/P0.md) · P1 (ne pas exécuter dans P0) : [docs/prompts/P1.md](docs/prompts/P1.md).
+File : [docs/TABLE-LOCALE.md](docs/TABLE-LOCALE.md) · rôles : [docs/BUILD-REPLACEMENT.md](docs/BUILD-REPLACEMENT.md) · P0 : [docs/prompts/P0.md](docs/prompts/P0.md) · P1 (ne pas exécuter dans P0) : [docs/prompts/P1.md](docs/prompts/P1.md) · Codex : [docs/prompts/CODEX.md](docs/prompts/CODEX.md).
+Cursor, Codex et Quantum préparent des PR draft. Aucun ne merge.
 
