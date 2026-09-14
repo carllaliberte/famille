@@ -1,0 +1,35 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/fabric.v0.json",
+  "title": "famille.fabric.v0",
+  "description": "Cognitive work object. Not a mesh fork, not a judge, not LIVE. Roster stays schema/agents.json. workforce.v0 assigns seats. Cognition stays COLLECTIVE_COGNITION. EXECUTED is never inferred from this schema.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["v", "task_id", "state"],
+  "properties": {
+    "v": { "const": "fabric.v0" },
+    "task_id": { "type": "string" },
+    "state": {
+      "enum": [
+        "PROPOSED",
+        "READY",
+        "WORKING",
+        "REVIEWING",
+        "BLOCKED",
+        "DECISION",
+        "DONE",
+        "REJECTED"
+      ]
+    },
+    "live": { "const": false },
+    "auto_merge": { "const": false },
+    "executed": { "const": false },
+    "decision": {
+      "type": "object",
+      "properties": {
+        "status": { "enum": ["PENDING_HUMAN", "DECIDED"] },
+        "authority": { "const": "carl" },
+        "human_required": { "const": true }
+      }
+    }
+  }
+}
