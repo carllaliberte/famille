@@ -238,7 +238,7 @@ describe("keyedModels fail-closed", () => {
 
   it("XAI_API_KEY is an optional native slot, not chef grok", () => {
     assert.equal(MODELS.xai.model, "grok-2");
-    assert.deepEqual([...XAI_FALLBACK], ["grok-2", "grok-2-mini"]);
+    assert.deepEqual([...XAI_FALLBACK], ["grok-4.6"]);
     assert.equal(MODELS.xai.id, "xai");
     assert.equal(MODELS.xai.secret, "XAI_API_KEY");
     assert.equal(MODELS.xai.auto, false);
