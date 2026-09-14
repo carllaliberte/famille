@@ -82,12 +82,16 @@ describe("world BCP 47 — same judge, local phrases only", () => {
     assert.match(rente, /en \/ en-CA/);
     assert.match(world, /Tag BCP 47 sans fichier : spoken EN/);
     assert.match(world, /Casse ignorée : `fr-ca` = `fr-CA`/);
+    assert.match(world, /`fr` seul n'est pas `fr-CA`/);
+    assert.match(world, /Pas un pack inventé/);
     assert.match(world, /pack-lieu/);
     assert.match(world, /ne comble pas/);
     assert.match(intl, /Tag absent du tableau : spoken/);
     assert.match(intl, /étiquette classique/);
     assert.match(intl, /pack-lieu/);
     assert.match(intl, /Casse BCP 47 ignorée/);
+    assert.match(intl, /`fr` seul \(langue sans région\) n'est pas `fr-CA`/);
+    assert.match(intl, /Pas un pack inventé/);
     assert.match(intl, /ne comble pas epsilon ni horizon/);
   });
 
@@ -154,6 +158,9 @@ describe("world BCP 47 — same judge, local phrases only", () => {
     assert.equal(languageOnly.connu, false);
     assert.equal(languageOnly.tag, "en");
     assert.equal(languageOnly.raison, "inconnu");
+    assert.notEqual(languageOnly.pack.tag, "fr-CA");
+    assert.equal(languageOnly.pack.ligne, "Certainties expire.");
+    assert.equal(languageOnly.pack.classique, "It does not hold. Classical.");
   });
 
   it("does not fill the named card hole when choosing a pack", () => {
