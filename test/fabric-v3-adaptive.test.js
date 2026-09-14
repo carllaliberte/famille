@@ -73,11 +73,18 @@ test("failed correction readback remains unverified and becomes blocking", () =>
     worker: "corr",
     capability: "lu",
     output: { expected: true },
+    expected: { other: true },
     at: AT,
   });
 
   assert.equal(result.ok, true);
-  assert.equal(result.verified, true);
-  assert.equal(result.readback.verification, "VERIFIED");
+  assert.equal(result.verified, false);
+  assert.equal(result.readback.verification, "UNVERIFIED");
+  assert.equal(result.readback.state, "CONFLICT");
+  assert.equal(result.work.state, "BLOCKED");
+  assert.equal(
+    result.work.objections.some((o) => o.reason === "CORRECTION_READBACK_CONFLICT" && o.severity === "BLOCKING"),
+    true,
+  );
   assert.equal(result.work.measurements.some((m) => m.metric === "adaptive_correction"), true);
 });
