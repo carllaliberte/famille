@@ -107,6 +107,12 @@ export const CANALS = Object.freeze({
     model: "google/gemini-2.5-flash",
     maxTokens: 2048,
   },
+  local: {
+    provider: "ollama",
+    secret: "OLLAMA_HOST",
+    model: "llama3.2",
+    maxTokens: 2048,
+  },
 });
 
 function rosterRow(id) {
@@ -146,6 +152,7 @@ function buildTriggers() {
   const t = {
     "/swarm": autoIds(),
     "/fabre": ["fable"],
+    "/ollama": ["local"],
   };
   for (const id of Object.keys(CANALS)) t["/" + id] = [id];
   for (const row of ROSTER_DOC.agents || []) {
@@ -560,6 +567,63 @@ async function callXai(spec, system, user, key) {
   throw last;
 }
 
+function httpHost(raw) {
+  const s = String(raw || "").trim().replace(/\/+$/, "");
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return "";
+    return s;
+  } catch {
+    return "";
+  }
+}
+
+/** Local daemon. POST /api/chat, one /v1/chat/completions fallback on 404. Never invent text. */
+async function callOllama(spec, system, user, host) {
+  const base = httpHost(host);
+  if (!base) throw new Error("ollama 400: OLLAMA_HOST must be http or https");
+  const origin = `${base}/`;
+  const messages = [
+    { role: "system", content: system },
+    { role: "user", content: user },
+  ];
+  const native = await postJson(new URL("api/chat", origin).href, {
+    id: spec.id,
+    body: {
+      model: spec.model,
+      stream: false,
+      messages,
+      options: { num_predict: spec.maxTokens || 2048 },
+    },
+  });
+  if (native.ok) {
+    const text = native.json?.message?.content;
+    return typeof text === "string" ? text : "";
+  }
+  if (native.status !== 404) {
+    throw new Error(
+      `ollama ${native.status}: ${JSON.stringify(native.json).slice(0, 400)}`,
+    );
+  }
+  const openai = await postJson(new URL("v1/chat/completions", origin).href, {
+    id: spec.id,
+    body: {
+      model: spec.model,
+      max_tokens: spec.maxTokens || 2048,
+      messages,
+    },
+  });
+  if (!openai.ok) {
+    throw new Error(
+      `ollama ${openai.status}: ${JSON.stringify(openai.json).slice(0, 400)}`,
+    );
+  }
+  const text = openai.json?.choices?.[0]?.message?.content;
+  return typeof text === "string" ? text : "";
+}
+
+const callLocal = callOllama;
+
 const CALLERS = {
   anthropic: callAnthropic,
   openai: callOpenAI,
@@ -567,6 +631,7 @@ const CALLERS = {
   gemini: callGemini,
   xai: callXai,
   openrouter: callOpenRouter,
+  ollama: callOllama,
 };
 
 export async function reviewOne(spec, system, user, env = process.env) {
