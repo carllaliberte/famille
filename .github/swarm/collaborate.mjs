@@ -4,8 +4,10 @@
  * It reads the already-posted Swarm review; it does not re-run providers.
  * No vote, no merge, no LIVE claim. Carl remains the human decision node.
  */
+import { writeFileSync } from "node:fs";
 import { reviewOne, idsForDispatch, keyedModels, loadPrompt } from "./review.mjs";
 import { synthesisPrompt, collaborationState } from "./collaboration-engine.mjs";
+import { collaborationSummary, loadCollaborationMemory, updateCollaborationMemory } from "../../scripts/collaboration-memory.mjs";
 
 async function gh(path, { token, method = "GET", body } = {}) {
   const res = await fetch(`https://api.github.com${path}`, {
@@ -48,6 +50,18 @@ export function chooseCoordinator(results, specs) {
   return (specs || []).find((s) => ids.has(s.id)) || null;
 }
 
+export function collaborationEvent(sources, synthesisText, completed = true) {
+  const text = String(synthesisText || "");
+  return {
+    sources,
+    capability: "review",
+    completed,
+    synthesis_received: Boolean(text),
+    disagreement: /(?:^|\n)DISAGREEMENT\b/i.test(text),
+    correction: /(?:^|\n)CORRECTION\b/i.test(text),
+  };
+}
+
 async function main(env = process.env) {
   const token = env.GITHUB_TOKEN;
   const repo = env.GITHUB_REPOSITORY;
@@ -56,21 +70,18 @@ async function main(env = process.env) {
   const [owner, name] = repo.split("/");
   let pr = String(env.PR_NUMBER || "");
   const runSha = String(env.RUN_SHA || "");
-
-  // workflow_run may omit pull_requests for issue_comment/workflow_dispatch runs.
-  // Resolve the PR from the exact swarm head SHA instead of skipping a valid pass.
   if (!pr && runSha) {
     const pulls = await gh(`/repos/${owner}/${name}/commits/${runSha}/pulls?per_page=20`, { token });
     const open = (pulls || []).find((p) => p.state === "open");
     const matching = open || (pulls || [])[0];
     if (matching?.number) pr = String(matching.number);
   }
-
   if (!pr) {
     console.log("collaboration skip (no PR resolved from swarm run)");
     return 0;
   }
 
+  const memory = loadCollaborationMemory(undefined, env);
   const comments = await gh(`/repos/${owner}/${name}/issues/${pr}/comments?per_page=100`, { token });
   const swarm = [...(comments || [])].reverse().find((c) => /^## Swarm review\b/m.test(c.body || ""));
   if (!swarm) {
@@ -106,6 +117,10 @@ async function main(env = process.env) {
   }
 
   const sources = state.independent.join(", ");
+  const event = collaborationEvent(state.independent, one.text, true);
+  const nextMemory = updateCollaborationMemory(memory, event);
+  writeFileSync("collaboration-memory.json", `${JSON.stringify(nextMemory, null, 2)}\n`);
+
   const body = [
     "## Swarm collaboration — second pass",
     "",
@@ -113,6 +128,7 @@ async function main(env = process.env) {
     `Sources: ${sources}`,
     `Coordinator: ${coordinator.id} (${coordinator.model})`,
     "CODE VERIFIED ≠ TEST VERIFIED ≠ LIVE VERIFIED.",
+    `Collaboration memory: ${collaborationSummary(nextMemory).collaborations} measured combination(s).`,
     "",
     one.text,
     "",

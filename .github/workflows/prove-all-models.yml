@@ -15,6 +15,7 @@ permissions:
   contents: read
   issues: write
   pull-requests: read
+  actions: read
 jobs:
   prove:
     runs-on: ubuntu-latest
@@ -55,3 +56,9 @@ jobs:
         with:
           name: all-model-proof
           path: all-model-proof.json
+      - name: Upload model execution memory
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-execution-memory
+          path: model-execution-memory.json
+          retention-days: 90
