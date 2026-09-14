@@ -7,6 +7,7 @@ permissions:
   contents: read
   issues: write
   pull-requests: read
+  actions: read
 jobs:
   second-pass:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
@@ -41,3 +42,10 @@ jobs:
           LLAMA_API_KEY: ${{ secrets.LLAMA_API_KEY }}
           QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
         run: node .github/swarm/collaborate.mjs
+      - name: Upload collaboration memory
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-collaboration-memory
+          path: collaboration-memory.json
+          if-no-files-found: ignore
+          retention-days: 90
