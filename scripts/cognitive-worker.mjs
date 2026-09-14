@@ -11,6 +11,9 @@ import { cycle } from "./discover-cycle.mjs";
 import { composeFabric } from "./cognitive-fabric.mjs";
 import { assertSystemMayProceed, controlState } from "../.github/swarm/system-breaker.mjs";
 import { loadMemory, rankSources, updateMemory, memorySummary } from "./synaptic-memory.mjs";
+import { loadCollaborationMemory, collaborationSummary } from "./collaboration-memory.mjs";
+import { loadModelExecutionMemory, modelExecutionSummary } from "./model-execution-memory.mjs";
+import { assertMemoryIndexSafe, buildMemoryIndex, memoryIndexSummary } from "./cognitive-memory-index.mjs";
 
 export const LIMIT = 20;
 
@@ -58,11 +61,11 @@ export function executeDispatch(fronts, run = execFileSync, env = process.env) {
   return results;
 }
 
-export function buildEvidence(observation, plan, routing, dispatches, state = controlState(), memory = null) {
+export function buildEvidence(observation, plan, routing, dispatches, state = controlState(), memory = null, memoryIndex = null) {
   const succeeded = dispatches.filter((x) => x.state === "DISPATCHED").length;
   const blocked = dispatches.filter((x) => x.state === "BLOCKED_BREAKER").length;
   const failed = dispatches.filter((x) => x.state === "DISPATCH_FAILED").length;
-  return { v: "cognitive-worker.v4", executed: true, observed: true, verified: false, live: false, auto_merge: false, human_decision: "PENDING_HUMAN", authority: "carl", system_mode: state.mode, breaker_closed: state.breaker_closed, diagnostic: state.diagnostic, observation, discovered: plan.fronts.length, routed: routing?.route_count || 0, synapses: routing?.synapse_count || 0, collective: Boolean(routing?.collective), dispatched: succeeded, dispatch_failed: failed, breaker_blocked: blocked, dispatches, routing: routing || null, synaptic_memory: memory ? memorySummary(memory) : null, next: state.diagnostic ? "diagnostic-observe" : "observe" };
+  return { v: "cognitive-worker.v5", executed: true, observed: true, verified: false, live: false, auto_merge: false, human_decision: "PENDING_HUMAN", authority: "carl", system_mode: state.mode, breaker_closed: state.breaker_closed, diagnostic: state.diagnostic, observation, discovered: plan.fronts.length, routed: routing?.route_count || 0, synapses: routing?.synapse_count || 0, collective: Boolean(routing?.collective), dispatched: succeeded, dispatch_failed: failed, breaker_blocked: blocked, dispatches, routing: routing || null, synaptic_memory: memory ? memorySummary(memory) : null, cognitive_memory_index: memoryIndex ? memoryIndexSummary(memoryIndex) : null, next: state.diagnostic ? "diagnostic-observe" : "observe" };
 }
 
 export function runWorker(opts = {}) {
@@ -71,6 +74,15 @@ export function runWorker(opts = {}) {
   const state = controlState(env);
   const observation = cycle({ env, trigger: "worker", sha: env.GITHUB_SHA || "unknown" });
   const memory = opts.memory || loadMemory(gh, env);
+  const collaborationMemory = opts.collaborationMemory || loadCollaborationMemory(gh, env);
+  const modelExecutionMemory = opts.modelExecutionMemory || loadModelExecutionMemory(gh, env);
+  const memoryIndex = opts.memoryIndex || buildMemoryIndex({
+    synaptic: memory,
+    collaboration: collaborationMemory,
+    modelExecution: modelExecutionMemory,
+    observedAt: new Date().toISOString(),
+  });
+  assertMemoryIndexSafe(memoryIndex);
   let raw = "";
   if (opts.frontsText != null) raw = opts.frontsText;
   else raw = gh("gh", ["pr", "list", "--repo", env.GITHUB_REPOSITORY, "--state", "open", "--limit", String(LIMIT), "--json", "number,headRefOid,isDraft,updatedAt", "--jq", ".[] | [.number,.headRefOid,.isDraft,.updatedAt] | @tsv"], { encoding: "utf8", stdio: "pipe" });
@@ -79,14 +91,15 @@ export function runWorker(opts = {}) {
   const routing = state.mode === "OFF" ? null : composeRouting(observation, fronts, env, memory);
   const dispatches = opts.dispatch === false ? [] : state.mode === "OFF" ? fronts.map((front) => ({ number: front.number, sha: front.sha, state: "BLOCKED_BREAKER" })) : executeDispatch(fronts, gh, env);
   const nextMemory = updateMemory(memory, routing, dispatches);
-  const evidence = buildEvidence(observation, plan, routing, dispatches, state, nextMemory);
+  const evidence = buildEvidence(observation, plan, routing, dispatches, state, nextMemory, memoryIndex);
   if (opts.memoryPath) writeFileSync(opts.memoryPath, `${JSON.stringify(nextMemory, null, 2)}\n`);
+  if (opts.memoryIndexPath) writeFileSync(opts.memoryIndexPath, `${JSON.stringify(memoryIndex, null, 2)}\n`);
   if (opts.evidencePath) writeFileSync(opts.evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
   if (evidence.dispatch_failed > 0 && opts.failOnDispatchError !== false) throw new Error(`cognitive worker dispatch failed for ${evidence.dispatch_failed} front(s)`);
   return evidence;
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const evidence = runWorker({ evidencePath: process.env.WORKER_EVIDENCE || "worker-evidence.json", memoryPath: process.env.SYNAPTIC_MEMORY || "synaptic-memory.json" });
+  const evidence = runWorker({ evidencePath: process.env.WORKER_EVIDENCE || "worker-evidence.json", memoryPath: process.env.SYNAPTIC_MEMORY || "synaptic-memory.json", memoryIndexPath: process.env.COGNITIVE_MEMORY_INDEX || "cognitive-memory-index.json" });
   console.log(JSON.stringify(evidence, null, 2));
 }
