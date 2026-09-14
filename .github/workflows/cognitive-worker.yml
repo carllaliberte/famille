@@ -2,6 +2,7 @@
 # Observe -> discover -> dispatch -> measure through existing swarm/collaboration workflows.
 # Synaptic memory persists routing outcomes through workflow artifacts, never source.
 # Unified memory index joins measured routing/collaboration/execution evidence without authority.
+# Measured ranking changes only from measured evidence; it never grants authority.
 # Never writes source, never merges, never claims LIVE.
 name: cognitive-worker
 on:
@@ -39,6 +40,7 @@ jobs:
           WORKER_EVIDENCE: worker-evidence.json
           SYNAPTIC_MEMORY: synaptic-memory.json
           COGNITIVE_MEMORY_INDEX: cognitive-memory-index.json
+          MEASURED_RANKING: measured-intelligence-ranking.json
         run: node scripts/cognitive-worker.mjs
       - name: Preserve cycle evidence
         if: always()
@@ -64,10 +66,19 @@ jobs:
           path: cognitive-memory-index.json
           if-no-files-found: warn
           retention-days: 90
+      - name: Preserve measured intelligence ranking
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: measured-intelligence-ranking
+          path: measured-intelligence-ranking.json
+          if-no-files-found: warn
+          retention-days: 90
       - name: Record bounded result
         if: always()
         run: |
-          echo "cognitive-worker.v5 — observe/discover/compose/route/dispatch/measure/memory-index cycle completed."
+          echo "cognitive-worker.v6 — observe/discover/compose/route/dispatch/measure/memory-index/ranking cycle completed."
           echo "DEFINED != EXECUTED != VERIFIED != LIVE."
-          echo "memory index = measured routing/collaboration/execution evidence only."
+          echo "ranking = measured execution/collaboration/routing evidence only."
+          echo "unmeasured identities never outrank measured identities."
           echo "auto_merge=false; live=false; human authority=carl"
