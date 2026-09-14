@@ -330,13 +330,19 @@ export function meshUser(baseUser, flux) {
 
 
 /** Dispatch: every canal whose secret is present. Roster status is not a gate. */
+export const FREE_DISPATCH_CAP = 3;
+
 export function idsForDispatch(env = process.env) {
   const ids = [];
   const seen = new Set();
+  let freeN = 0;
   for (const [id, spec] of Object.entries(MODELS)) {
     if (String(env[spec.secret] || "").trim() && !seen.has(id)) {
+      const isFree = String(spec.model || "").includes(":free");
+      if (isFree && freeN >= FREE_DISPATCH_CAP) continue;
       seen.add(id);
       ids.push(id);
+      if (isFree) freeN += 1;
     }
   }
   return ids;

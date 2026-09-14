@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { CANALS, idsForDispatch, MODELS } from "../.github/swarm/review.mjs";
+import { CANALS, FREE_DISPATCH_CAP, idsForDispatch, MODELS, parseTrigger } from "../.github/swarm/review.mjs";
 
 const rows = JSON.parse(
   readFileSync(new URL("../schema/canals-free.json", import.meta.url), "utf8"),
@@ -41,17 +41,30 @@ describe("canals-free — catalogue additif, collision skip, pas Groq", () => {
     assert.equal(MODELS.llama.id, "llama");
   });
 
-  it("idsForDispatch follows OPENROUTER_API_KEY for new seats", () => {
-    assert.equal(idsForDispatch({}).includes("orfree"), false);
+  it("each catalog id keeps its slug; llama/xai/grok46 intact", () => {
+    for (const row of rows) {
+      assert.equal(CANALS[row.id].model, row.model);
+      assert.equal(CANALS[row.id].secret, "OPENROUTER_API_KEY");
+    }
+    assert.equal(CANALS.llama.model, "meta-llama/llama-3.3-70b-instruct:free");
+    assert.equal(CANALS.xai.model, "grok-2");
+    assert.equal(CANALS.grok46.model, "grok-4.6");
+  });
+
+  it("OPENROUTER_API_KEY alone dispatches at most FREE_DISPATCH_CAP :free", () => {
+    assert.equal(FREE_DISPATCH_CAP, 3);
     const withOr = idsForDispatch({ OPENROUTER_API_KEY: "x" });
+    const free = withOr.filter((id) => String(MODELS[id].model).includes(":free"));
+    assert.ok(free.length <= FREE_DISPATCH_CAP);
     assert.ok(withOr.includes("openrouter"));
-    assert.ok(withOr.includes("orfree"));
-    assert.ok(withOr.includes("gemma431"));
-    assert.ok(withOr.includes("llama32f"));
     assert.equal(withOr.includes("llama"), false);
     const xaiOnly = idsForDispatch({ XAI_API_KEY: "x" });
     assert.ok(xaiOnly.includes("xai"));
     assert.ok(xaiOnly.includes("grok46"));
     assert.equal(xaiOnly.includes("orfree"), false);
+  });
+
+  it("/gemma431 triggers gemma431 one-by-one", () => {
+    assert.deepEqual(parseTrigger("/gemma431", [], "issue_comment"), ["gemma431"]);
   });
 });
