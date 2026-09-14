@@ -5,13 +5,8 @@
  * Never merges, never writes source, never claims LIVE.
  */
 import { writeFileSync } from "node:fs";
-import {
-  MODELS,
-  reviewOne,
-  loadPrompt,
-  loadCanon,
-  buildUserMessage,
-} from "../.github/swarm/review.mjs";
+import { MODELS, reviewOne, loadPrompt, loadCanon, buildUserMessage } from "../.github/swarm/review.mjs";
+import { loadModelExecutionMemory, updateModelExecutionMemory, modelExecutionSummary } from "./model-execution-memory.mjs";
 
 const env = process.env;
 const token = String(env.GITHUB_TOKEN || "").trim();
@@ -50,13 +45,7 @@ async function main() {
   const fileRows = await github(`/repos/${owner}/${name}/pulls/${pr}/files?per_page=100`);
   const files = (fileRows || []).map((f) => f.filename);
   const diff = (fileRows || []).map((f) => `--- ${f.filename}\n${f.patch || ""}`).join("\n\n");
-  const user = buildUserMessage({
-    title: pull.title || "",
-    body: pull.body || "",
-    diff,
-    files,
-    canon: loadCanon(),
-  });
+  const user = buildUserMessage({ title: pull.title || "", body: pull.body || "", diff, files, canon: loadCanon() });
   const system = loadPrompt();
 
   const specs = autoModels();
@@ -77,6 +66,8 @@ async function main() {
     });
   }
 
+  const memory = loadModelExecutionMemory(undefined, env);
+  const nextMemory = updateModelExecutionMemory(memory, results);
   const counts = results.reduce((a, r) => {
     a[r.status] = (a[r.status] || 0) + 1;
     return a;
@@ -89,8 +80,10 @@ async function main() {
     policy: { merge: false, live: false, source_write: false },
     counts,
     results,
+    model_execution_memory: modelExecutionSummary(nextMemory),
   };
   writeFileSync("all-model-proof.json", JSON.stringify(evidence, null, 2) + "\n");
+  writeFileSync("model-execution-memory.json", JSON.stringify(nextMemory, null, 2) + "\n");
 
   const lines = [
     "## All-model execution proof",
@@ -99,6 +92,7 @@ async function main() {
     "",
     `Auto models attempted: **${results.length}**`,
     `SUCCEEDED: **${counts.SUCCEEDED || 0}** · SKIPPED: **${counts.SKIPPED || 0}** · ERROR: **${counts.ERROR || 0}** · EMPTY: **${counts.EMPTY || 0}**`,
+    `Persistent execution memory cycles: **${nextMemory.cycles}**`,
     "",
   ];
   for (const r of results) {
@@ -106,10 +100,7 @@ async function main() {
     lines.push(`- ${marker} **${r.id}** — ${r.status} — ${r.reason || r.via || "response"}`);
   }
   lines.push("", "`all-model-proof.json` is the machine-readable evidence. Configured ≠ attempted ≠ succeeded ≠ LIVE.");
-  await github(`/repos/${owner}/${name}/issues/${pr}/comments`, {
-    method: "POST",
-    body: { body: lines.join("\n") },
-  });
+  await github(`/repos/${owner}/${name}/issues/${pr}/comments`, { method: "POST", body: { body: lines.join("\n") } });
 }
 
 main().catch((err) => {
