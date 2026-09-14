@@ -1,6 +1,7 @@
 # Acorn Cognitive Worker — bounded continuous cognition.
 # Observe -> discover -> dispatch -> measure through existing swarm/collaboration workflows.
 # Synaptic memory persists routing outcomes through workflow artifacts, never source.
+# Unified memory index joins measured routing/collaboration/execution evidence without authority.
 # Never writes source, never merges, never claims LIVE.
 name: cognitive-worker
 on:
@@ -37,6 +38,7 @@ jobs:
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
           WORKER_EVIDENCE: worker-evidence.json
           SYNAPTIC_MEMORY: synaptic-memory.json
+          COGNITIVE_MEMORY_INDEX: cognitive-memory-index.json
         run: node scripts/cognitive-worker.mjs
       - name: Preserve cycle evidence
         if: always()
@@ -54,10 +56,18 @@ jobs:
           path: synaptic-memory.json
           if-no-files-found: warn
           retention-days: 90
+      - name: Preserve cognitive memory index
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-memory-index
+          path: cognitive-memory-index.json
+          if-no-files-found: warn
+          retention-days: 90
       - name: Record bounded result
         if: always()
         run: |
-          echo "cognitive-worker.v4 — observe/discover/compose/route/dispatch/measure/memory cycle completed."
+          echo "cognitive-worker.v5 — observe/discover/compose/route/dispatch/measure/memory-index cycle completed."
           echo "DEFINED != EXECUTED != VERIFIED != LIVE."
-          echo "synaptic memory = measured dispatch outcomes only."
+          echo "memory index = measured routing/collaboration/execution evidence only."
           echo "auto_merge=false; live=false; human authority=carl"
