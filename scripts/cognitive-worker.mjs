@@ -11,6 +11,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import { cycle } from "./discover-cycle.mjs";
 
 export const LIMIT = 20;
@@ -120,10 +121,13 @@ export function runWorker(opts = {}) {
   if (opts.evidencePath) {
     writeFileSync(opts.evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
   }
+  if (evidence.dispatch_failed > 0 && opts.failOnDispatchError !== false) {
+    throw new Error(`cognitive worker dispatch failed for ${evidence.dispatch_failed} front(s)`);
+  }
   return evidence;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const evidence = runWorker({ evidencePath: process.env.WORKER_EVIDENCE || "worker-evidence.json" });
   console.log(JSON.stringify(evidence, null, 2));
 }
