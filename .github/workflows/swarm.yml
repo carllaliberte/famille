@@ -87,4 +87,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           OLLAMA_HOST: ${{ secrets.OLLAMA_HOST }}
+          HAIKU_API_KEY: ${{ secrets.HAIKU_API_KEY }}
+          LLAMA_API_KEY: ${{ secrets.LLAMA_API_KEY }}
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
         run: node .github/swarm/review.mjs
