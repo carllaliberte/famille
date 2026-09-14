@@ -17,7 +17,7 @@ Même schéma [`schema/juge.v0.json`](schema/juge.v0.json) ; phrases locales onl
 
 Tag absent du tableau : spoken [`packs/en.json`](packs/en.json), étiquette classique. Pas de nouvel hôte.
 
-Rail : [`sdk/pack-lieu.js`](sdk/pack-lieu.js) — `packLieu(tag)`. Vide → `fr-CA`. `en-CA` → `en`. Absent → spoken en / classique. Casse BCP 47 ignorée (`fr-ca` / `EN-CA` → même pack). Pas un nouveau fichier. Le pack est une phrase, pas une carte. Il ne comble pas epsilon ni horizon.
+Rail : [`sdk/pack-lieu.js`](sdk/pack-lieu.js) — `packLieu(tag)`. Vide → `fr-CA`. `en-CA` → `en`. Absent → spoken en / classique. Casse BCP 47 ignorée (`fr-ca` / `EN-CA` → même pack). `fr` seul (langue sans région) n'est pas `fr-CA`. Vide → porte. `fr` → spoken en / classique. Pas un pack inventé. Pas un nouveau fichier. Le pack est une phrase, pas une carte. Il ne comble pas epsilon ni horizon.
 
 Inconnu : [`examples/world-bcp47.md`](examples/world-bcp47.md).
 
