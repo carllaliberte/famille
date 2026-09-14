@@ -22,7 +22,12 @@
     },
     "live": { "const": false },
     "auto_merge": { "const": false },
-    "executed": { "const": false },
+    "executed": {
+      "type": "boolean",
+      "description": "true only after runEngine actually walked the cycle. Constructor remains false. Not LIVE."
+    },
+    "loop": { "enum": ["DEFINED", "EXECUTED"] },
+    "engine": { "const": "fabric.v1" },
     "decision": {
       "type": "object",
       "properties": {

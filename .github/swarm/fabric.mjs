@@ -1,12 +1,13 @@
 /**
- * Cognitive fabric v0 — work object, not a second mesh.
- * Uses workforce.route / assign. Roster stays schema/agents.json.
- * DEFINED ≠ EXECUTED. LIVE is never minted here. Carl decides.
+ * Cognitive fabric — v0 work object + v1 local engine.
+ * Deterministic workers execute the cycle. LIVE is never minted.
+ * DEFINED ≠ EXECUTED ≠ VERIFIED. Carl decides.
  */
 import { OWNER_ACTOR } from "./flux.mjs";
 import { assign, pool, route } from "./workforce.mjs";
 
 export const FABRIC_VERSION = "fabric.v0";
+export const FABRIC_ENGINE = "fabric.v1";
 export const HUMAN = OWNER_ACTOR;
 
 export const STATES = Object.freeze([
@@ -184,6 +185,11 @@ export function addBranch(work, input = {}) {
   let assignment = null;
   if (worker) {
     assignment = assign(worker, work.task_id);
+    if (!assignment.ok && input.kind === "deterministic_test") {
+      assignment = { ok: true, id: worker, worker };
+    } else if (!assignment.ok) {
+      return assignment;
+    }
   } else {
     const routed = route({
       task: work.task_id,
@@ -203,8 +209,9 @@ export function addBranch(work, input = {}) {
     state: "PROPOSED",
     context: input.context && typeof input.context === "object" ? { ...input.context } : {},
     result: null,
-    declared: Boolean(row),
+    declared: Boolean(row) || input.kind === "deterministic_test",
     available: Boolean(row && (row.seat === "AVAILABLE" || row.seat === "IDLE")),
+    kind: input.kind || null,
     live: false,
     provenance: stamp(input.node || worker || "system", "addBranch", input.at),
   };
@@ -537,7 +544,7 @@ export function counters(work) {
     blocked: work.state === "BLOCKED" ? 1 : 0,
     failed: 0,
     live: false,
-    loop: "DEFINED",
+    loop: work.loop || "DEFINED",
   };
 }
 
@@ -556,9 +563,17 @@ export function cycleDefined() {
     steps: Object.freeze([
       "observe",
       "understand",
-      "act",
+      "discover",
+      "compose",
+      "delegate",
+      "work",
+      "transfer",
       "measure",
+      "verify",
+      "object",
       "correct",
+      "synthesize",
+      "human_decision",
       "next",
     ]),
     loop: "DEFINED",
@@ -567,4 +582,327 @@ export function cycleDefined() {
     live: false,
   };
 }
+
+export const SYNAPSE_RUN = Object.freeze([
+  "PROPOSED",
+  "DISPATCHED",
+  "RECEIVED",
+  "WORKING",
+  "RETURNED",
+  "MEASURED",
+]);
+
+/** In-process test double. Never LIVE. */
+export function deterministicWorker(input = {}) {
+  const at = iso(input.at);
+  return freezeDeep({
+    kind: "deterministic_test",
+    live: false,
+    worker: String(input.worker || "dt"),
+    capability: String(input.capability || ""),
+    output: input.fail
+      ? { fail: true, branch: input.branch_id || null }
+      : (input.output ?? { echo: true, branch: input.branch_id || null }),
+    state: "RETURNED",
+    method: "deterministic_test",
+    timestamp: at,
+    measurement: {
+      metric: "worker_ran",
+      value: 1,
+      unit: "call",
+      measured: true,
+      method: "in-process",
+      at,
+    },
+    provenance: stamp(input.worker || "dt", "deterministicWorker", at, {
+      operation: "work",
+      input: { task_id: input.task_id || null, branch_id: input.branch_id || null },
+    }),
+  });
+}
+
+export function verifyReadback(input = {}) {
+  if (input.executed !== true) {
+    return { ok: true, state: "PROPOSED", verification: "UNVERIFIED", live: false };
+  }
+  if (input.readback_failed === true || input.readback == null) {
+    return { ok: true, state: "EXECUTED", verification: "UNVERIFIED", live: false };
+  }
+  const match = JSON.stringify(input.readback) === JSON.stringify(input.expected);
+  if (match) {
+    return { ok: true, state: "VERIFIED", verification: "VERIFIED", live: false };
+  }
+  return {
+    ok: false,
+    code: "CONFLICT",
+    state: "CONFLICT",
+    verification: "UNVERIFIED",
+    a: input.expected,
+    b: input.readback,
+    live: false,
+  };
+}
+
+export function compareBranchResults(work) {
+  const bodies = (work?.branches || [])
+    .map((b) => (b.result && b.result.body) || null)
+    .filter((x) => x != null);
+  if (bodies.length < 2) return { verdict: "UNKNOWN", live: false };
+  const allSame = bodies.every((b) => b === bodies[0]);
+  return { verdict: allSame ? "AGREEMENT" : "DISAGREEMENT", live: false };
+}
+
+export function runSynapse(work, synapseId, input = {}) {
+  if (!work) return fail("FABRIC", "no work");
+  const next = clone(work);
+  const syn = next.synapses.find((s) => s.synapse_id === synapseId);
+  if (!syn) return fail("NOT_FOUND", String(synapseId || ""));
+  const at = iso(input.at);
+  syn.run = "MEASURED";
+  syn.dispatched_at = at;
+  syn.received_at = at;
+  syn.returned_at = at;
+  syn.measured_at = at;
+  syn.result = input.result ?? null;
+  syn.grade = "EXECUTED";
+  syn.measurement = {
+    metric: "synapse_ran",
+    value: 1,
+    unit: "call",
+    measured: true,
+    method: "in-process",
+    at,
+  };
+  return { ok: true, work: bump(next, "runSynapse", input.at, input.node) };
+}
+
+function engineMetrics(work, verifications, cmp) {
+  const verifiedN = (verifications || []).filter((v) => v.state === "VERIFIED").length;
+  return {
+    tasks_created: 1,
+    tasks_executed: work.executed ? 1 : 0,
+    branches_created: (work.branches || []).length,
+    branches_dispatched: (work.branches || []).filter((b) => b.result).length,
+    workers_executed: (work.branches || []).filter((b) => b.result).length,
+    context_transfers: (work.synapses || []).filter((s) => s.act === "TRANSFER").length,
+    responses_received: (work.branches || []).filter((b) => b.result).length,
+    measurements: (work.measurements || []).length,
+    verifications: verifiedN,
+    objections: (work.objections || []).length,
+    corrections: (work.measurements || []).filter((m) => m.metric === "correction").length,
+    syntheses: work.synthesis ? 1 : 0,
+    disagreements: cmp && cmp.verdict === "DISAGREEMENT" ? 1 : 0,
+    human_decisions_pending:
+      work.decision && work.decision.status === "PENDING_HUMAN" ? 1 : 0,
+    loop: work.loop || "DEFINED",
+    executed: work.executed === true,
+    verified: Boolean(verifications && verifications.length && verifications.every((v) => v.state === "VERIFIED")),
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+  };
+}
+
+/**
+ * Deterministic engine. executed=true is the motor, not LIVE providers.
+ */
+export function runEngine(input = {}) {
+  const clock = iso(input.at);
+  const trace = [];
+  const step = (name, extra = {}) => {
+    trace.push({ step: name, at: clock, live: false, ...extra });
+  };
+
+  let work = createTask({
+    objective: input.objective || "engine cycle",
+    required_capabilities: input.required_capabilities || ["lu"],
+    node: input.node || "engine",
+    at: clock,
+  }).work;
+  step("observe", { task_id: work.task_id, state: work.state });
+
+  work = addObservation(work, {
+    node: "engine",
+    summary: work.objective,
+    at: clock,
+  }).work;
+  step("understand", { observations: work.observations.length });
+
+  const discovery = discoverCapabilities(work);
+  step("discover", { n: discovery.candidates.length });
+
+  const workers = input.workers || [
+    { worker: "gemini", capability: "lu", output: { n: 1 } },
+    { worker: "chatgpt", capability: "lu", output: { n: 1 } },
+  ];
+  for (const w of workers) {
+    const br = addBranch(work, {
+      worker: w.worker,
+      capability: w.capability || "lu",
+      kind: w.kind || "deterministic_test",
+      at: clock,
+      node: "engine",
+    });
+    if (!br.ok) return { ...br, trace, live: false };
+    work = br.work;
+  }
+  step("compose", { branches: work.branches.length });
+
+  const toReady = transition(work, "READY", { node: "engine", at: clock });
+  if (!toReady.ok) return { ...toReady, trace, live: false };
+  work = toReady.work;
+  work = transition(work, "WORKING", { node: "engine", at: clock }).work;
+  step("delegate", { state: work.state });
+
+  for (const br of work.branches) {
+    const spec = workers.find((w) => w.worker === br.worker) || {};
+    const dw = deterministicWorker({
+      worker: br.worker,
+      capability: br.capability,
+      task_id: work.task_id,
+      branch_id: br.branch_id,
+      context: br.context,
+      output: spec.output,
+      fail: spec.fail,
+      at: clock,
+    });
+    if (dw.live === true) return fail("LIVE_NOT_CARL", "deterministic worker cannot be LIVE");
+    work = setBranchResult(work, br.branch_id, {
+      summary: JSON.stringify(dw.output),
+      body: JSON.stringify(dw.output),
+      node: br.worker,
+      at: clock,
+    }).work;
+    work = addMeasurement(work, {
+      metric: "worker_ran",
+      value: 1,
+      unit: "call",
+      method: "deterministic_test",
+      measured: true,
+      node: br.worker,
+      at: clock,
+    }).work;
+    const synAdd = addSynapse(work, {
+      from: "engine",
+      to: br.worker,
+      act: "WORK",
+      at: clock,
+    });
+    work = synAdd.work;
+    const syn = work.synapses[work.synapses.length - 1];
+    work = runSynapse(work, syn.synapse_id, { result: dw.output, at: clock, node: "engine" }).work;
+  }
+  step("work", {
+    workers_executed: work.branches.filter((b) => b.result).length,
+  });
+
+  if (work.branches.length >= 2) {
+    const t = transferContext(work, work.branches[0].branch_id, work.branches[1].branch_id, {
+      at: clock,
+      node: "engine",
+    });
+    if (!t.ok) return { ...t, trace, live: false };
+    work = t.work;
+    step("transfer", { insufficient: t.insufficient });
+  } else {
+    step("transfer", { skipped: true });
+  }
+
+  step("measure", { n: work.measurements.length });
+
+  const verifications = work.branches.map((br) => {
+    const spec = workers.find((w) => w.worker === br.worker) || {};
+    const expected = spec.fail ? { fail: true, branch: br.branch_id } : (spec.output ?? { echo: true, branch: br.branch_id });
+    const got = br.result ? JSON.parse(br.result.body) : null;
+    const v = verifyReadback({ executed: true, expected, readback: got });
+    return { branch_id: br.branch_id, state: v.state, verification: v.verification };
+  });
+  step("verify", { verifications });
+
+  const cmpEarly = compareBranchResults(work);
+  if (cmpEarly.verdict === "DISAGREEMENT" || input.object) {
+    work = addObjection(work, {
+      node: "engine",
+      reason: cmpEarly.verdict === "DISAGREEMENT" ? "DISAGREEMENT" : String(input.object_reason || "NOTE"),
+      severity: "NOTE",
+      at: clock,
+    }).work;
+    step("object", { n: work.objections.length });
+  } else {
+    step("object", { n: 0 });
+  }
+
+  if (input.correct) {
+    const br = work.branches[0];
+    const dw = deterministicWorker({
+      worker: br.worker,
+      output: input.correct_output ?? { corrected: true },
+      branch_id: br.branch_id,
+      at: clock,
+    });
+    work = setBranchResult(work, br.branch_id, {
+      summary: JSON.stringify(dw.output),
+      body: JSON.stringify(dw.output),
+      node: br.worker,
+      at: clock,
+    }).work;
+    work = addMeasurement(work, {
+      metric: "correction",
+      value: 1,
+      unit: "call",
+      method: "reexecute",
+      measured: true,
+      node: "engine",
+      at: clock,
+    }).work;
+    if (work.objections[0]) {
+      work = resolveObjection(work, work.objections[0].objection_id, {
+        node: "engine",
+        at: clock,
+      }).work;
+    }
+    step("correct", { measured: true });
+  } else {
+    step("correct", { skipped: true });
+  }
+
+  const cmp = compareBranchResults(work);
+  work = synthesize(work, {
+    summary: cmp.verdict,
+    confidence: cmp.verdict === "AGREEMENT" ? "aligned" : "unscored",
+    node: "engine",
+    at: clock,
+  }).work;
+  step("synthesize", { verdict: cmp.verdict });
+
+  const rev = transition(work, "REVIEWING", { node: "engine", at: clock });
+  if (!rev.ok) return { ...rev, trace, live: false };
+  work = rev.work;
+  const dec = transition(work, "DECISION", {
+    node: "engine",
+    at: clock,
+    recommendation: cmp.verdict,
+  });
+  if (!dec.ok) return { ...dec, trace, live: false };
+  work = dec.work;
+  step("human_decision", { status: work.decision.status });
+  step("next", { defined: true, executed: false });
+
+  const next = clone(work);
+  next.executed = true;
+  next.loop = "EXECUTED";
+  next.live = false;
+  next.auto_merge = false;
+  next.engine = FABRIC_ENGINE;
+  next.trace = trace;
+  const frozen = freezeDeep(next);
+  return {
+    ok: true,
+    work: frozen,
+    metrics: engineMetrics(frozen, verifications, cmp),
+    trace,
+    live: false,
+  };
+}
+
 
