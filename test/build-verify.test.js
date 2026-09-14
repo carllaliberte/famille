@@ -20,7 +20,8 @@ describe("make + build-verify — native node, not rust/python", () => {
     const yml = read(".github/workflows/build-verify.yml");
     assert.match(yml, /^on:\n  pull_request:\n  push:\n    branches: \[main\]/m);
     assert.match(yml, /make build/);
-    assert.match(yml, /make test/);
+    assert.doesNotMatch(yml, /run: make test/);
+    assert.match(read(".github/workflows/carte.yml"), /npm test/);
     assert.doesNotMatch(yml, /rustup|dtolnay\/rust-toolchain|python-version:/);
     assert.doesNotMatch(yml, /wrangler deploy/);
     assert.doesNotMatch(yml, /git push/);
