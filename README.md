@@ -24,6 +24,11 @@ Pas de clé. Ollama est optionnel, local, un modèle à la fois. Carl squash/mer
 
 Dernière mesure datée — 2026-09-14, run [34876044826](https://github.com/carllaliberte/famille/actions/runs/34876044826), SHA `c23ce6f` (plus vieux que ce main) : cloud REAL_RESPONSE=0 (gemini 503, xai 400, grok46 403, openrouter 402). Job GitHub ✓ ≠ REAL. llama3.2 sur machine Build (pas Actions) : chaud ~139 ms (1 jeton), utile ~3,6 s, froid ~20 s.
 
+## Table locale
+
+Cognition locale, séquentielle. File P0–P3 : [docs/TABLE-LOCALE.md](docs/TABLE-LOCALE.md).
+Parallèle ×3 interdit. Cloud en pause. Carl merge.
+
 A typed-evidence lattice for post-quantum cybersecurity and composable proof.
 Not fourteen scripts. Not a blockchain. Not a coin.
 
