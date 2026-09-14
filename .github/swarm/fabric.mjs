@@ -130,6 +130,8 @@ export function createTask(input = {}) {
     evidence: [],
     objections: [],
     measurements: [],
+    claims: [],
+    conflicts: [],
     synthesis: null,
     decision: null,
     next: null,
@@ -556,9 +558,17 @@ export function cycleDefined() {
     steps: Object.freeze([
       "observe",
       "understand",
-      "act",
+      "discover",
+      "compose",
+      "delegate",
+      "work",
+      "transfer",
       "measure",
+      "verify",
+      "object",
       "correct",
+      "synthesize",
+      "human_decision",
       "next",
     ]),
     loop: "DEFINED",
@@ -567,4 +577,260 @@ export function cycleDefined() {
     live: false,
   };
 }
+
+export const INFO_STATES = Object.freeze([
+  "OBSERVED",
+  "MEASURED",
+  "EXECUTED",
+  "VERIFIED",
+  "INFERRED",
+  "PROPOSED",
+  "UNKNOWN",
+  "INSUFFICIENT",
+  "CONFLICT",
+]);
+
+const CLAIM_KEYS = Object.freeze(["what", "source", "actor", "method"]);
+
+const BARE_WORDS = Object.freeze([
+  "connected",
+  "available",
+  "live",
+  "executed",
+  "verified",
+  "certified",
+  "written",
+  "merged",
+]);
+
+export function makeClaim(input = {}) {
+  const missing = CLAIM_KEYS.filter((k) => !String(input[k] || "").trim());
+  let state = String(input.state || "PROPOSED").toUpperCase().replace(/ /g, "_");
+  if (state === "LIVE" || state === "LIVE_VERIFIED") {
+    return fail("LIVE_NOT_CARL", "LIVE is never minted here");
+  }
+  if (!INFO_STATES.includes(state)) state = "UNKNOWN";
+  if (state === "VERIFIED" && input.readback !== true) {
+    return fail("NOT_VERIFIED", "VERIFIED needs independent readback");
+  }
+  if (state === "EXECUTED" && input.executed !== true) {
+    return fail("NOT_EXECUTED", "EXECUTED needs measured execution");
+  }
+  if (missing.length && (state === "VERIFIED" || state === "EXECUTED")) {
+    state = "INSUFFICIENT";
+  }
+  return {
+    ok: true,
+    claim: freezeDeep({
+      what: String(input.what || ""),
+      state,
+      source: String(input.source || ""),
+      actor: String(input.actor || ""),
+      when: iso(input.when),
+      method: String(input.method || ""),
+      evidence: input.evidence ?? null,
+      measure: input.measure ?? null,
+      confidence: missing.length ? "low" : String(input.confidence || "unscored"),
+      objections: [...(input.objections || [])],
+      missing,
+      live: false,
+    }),
+  };
+}
+
+export function addClaim(work, input = {}) {
+  const made = makeClaim(input);
+  if (!made.ok) return made;
+  if (!work) return fail("FABRIC", "no work");
+  const next = clone(work);
+  next.claims = [...(next.claims || []), made.claim];
+  return { ok: true, work: bump(next, "addClaim", input.when, input.actor) };
+}
+
+/** ACTION → READBACK → COMPARE. Internal ok is not proof. */
+export function verifyOp(input = {}) {
+  const executed = input.executed === true;
+  const readback = input.readback;
+  const expected = input.expected;
+  const readbackFailed = input.readback_failed === true;
+  if (!executed) {
+    return { ok: true, state: "PROPOSED", verification: "UNVERIFIED", live: false };
+  }
+  if (readbackFailed || readback == null) {
+    return { ok: true, state: "EXECUTED", verification: "UNVERIFIED", live: false };
+  }
+  const match = JSON.stringify(readback) === JSON.stringify(expected);
+  if (match) {
+    return { ok: true, state: "VERIFIED", verification: "VERIFIED", live: false };
+  }
+  return {
+    ok: false,
+    code: "CONFLICT",
+    state: "CONFLICT",
+    verification: "UNVERIFIED",
+    a: expected,
+    b: readback,
+    live: false,
+  };
+}
+
+export function recordConflict(work, a, b, input = {}) {
+  if (!work) return fail("FABRIC", "no work");
+  const row = {
+    conflict_id: newId("cf"),
+    a,
+    b,
+    provenance_a: a && a.provenance ? a.provenance : null,
+    provenance_b: b && b.provenance ? b.provenance : null,
+    at: iso(input.at),
+    method: String(input.method || "compare"),
+    action: "OBJECT",
+    live: false,
+  };
+  const next = clone(work);
+  next.conflicts = [...(next.conflicts || []), row];
+  next.objections = [
+    ...next.objections,
+    {
+      objection_id: newId("obj"),
+      node: String(input.node || "system"),
+      reason: "CONFLICT",
+      severity: "BLOCKING",
+      status: "open",
+      at: iso(input.at),
+      conflict_id: row.conflict_id,
+      provenance: stamp(input.node || "system", "recordConflict", input.at),
+    },
+  ];
+  next.state = "BLOCKED";
+  return { ok: true, work: bump(next, "recordConflict", input.at, input.node), conflict: row };
+}
+
+export function correctConflict(work, conflictId, input = {}) {
+  if (!work) return fail("FABRIC", "no work");
+  const cf = (work.conflicts || []).find((c) => c.conflict_id === conflictId);
+  if (!cf) return fail("NOT_FOUND", String(conflictId || ""));
+  const obj = (work.objections || []).find((o) => o.conflict_id === conflictId);
+  const next = clone(work);
+  if (obj) {
+    const hit = next.objections.find((o) => o.objection_id === obj.objection_id);
+    hit.status = "resolved";
+    hit.resolved_at = iso(input.at);
+  }
+  next.measurements = [
+    ...next.measurements,
+    {
+      measurement_id: newId("ms"),
+      metric: "conflict_resolved",
+      value: input.value ?? null,
+      unit: "state",
+      method: String(input.method || "recheck"),
+      measured: input.measured === true,
+      at: iso(input.at),
+      provenance: stamp(input.node || "system", "correctConflict", input.at),
+    },
+  ];
+  if (input.measured === true && next.state === "BLOCKED") next.state = "READY";
+  return { ok: true, work: bump(next, "correctConflict", input.at, input.node) };
+}
+
+export function githubCapability(obs = {}) {
+  return freezeDeep({
+    connector_available: obs.connector_available === true,
+    authenticated: obs.authenticated === true,
+    readable: obs.readable === true,
+    writable: obs.writable === true,
+    write_attempted: obs.write_attempted === true,
+    write_succeeded: obs.write_succeeded === true,
+    write_readback_verified: obs.write_readback_verified === true,
+    http: obs.http === undefined ? null : obs.http,
+    live: false,
+    ok: false,
+  });
+}
+
+export function compareResults(a, b) {
+  if (a == null || b == null || a.value === undefined || b.value === undefined) {
+    return { verdict: "UNKNOWN", live: false };
+  }
+  if (JSON.stringify(a.value) === JSON.stringify(b.value)) {
+    return {
+      verdict: "AGREEMENT",
+      provenance: { a: a.provenance || null, b: b.provenance || null },
+      live: false,
+    };
+  }
+  const ka = a.value && typeof a.value === "object" ? Object.keys(a.value) : [];
+  const kb = b.value && typeof b.value === "object" ? Object.keys(b.value) : [];
+  const share = ka.filter((k) => kb.includes(k));
+  if (share.length && share.length < Math.max(ka.length, kb.length)) {
+    const same = share.filter((k) => JSON.stringify(a.value[k]) === JSON.stringify(b.value[k]));
+    if (same.length && same.length < share.length) {
+      return {
+        verdict: "PARTIAL_AGREEMENT",
+        share: same,
+        provenance: { a: a.provenance || null, b: b.provenance || null },
+        live: false,
+      };
+    }
+  }
+  return {
+    verdict: "DISAGREEMENT",
+    provenance: { a: a.provenance || null, b: b.provenance || null },
+    live: false,
+  };
+}
+
+export function reliabilityScore(claim = {}) {
+  const parts = {
+    execution: claim.state === "EXECUTED" || claim.state === "VERIFIED" ? 1 : 0,
+    readback: claim.state === "VERIFIED" ? 1 : 0,
+    provenance: claim.actor && claim.source && claim.method ? 1 : 0,
+    independent_verification: claim.state === "VERIFIED" ? 1 : 0,
+    consistency: claim.state === "CONFLICT" ? 0 : 1,
+    objections: Array.isArray(claim.objections) && claim.objections.length ? 0 : 1,
+  };
+  const total = Object.values(parts).reduce((s, n) => s + n, 0);
+  return { parts, total, max: 6, magic: false, live: false };
+}
+
+export function assertOperational(word, proof) {
+  const w = String(word || "").toLowerCase();
+  if (!BARE_WORDS.includes(w)) {
+    return { ok: true, state: "UNKNOWN", word: w, live: false };
+  }
+  if (!proof || proof.measured !== true) {
+    return { ok: false, code: "INSUFFICIENT", state: "UNKNOWN", word: w, live: false };
+  }
+  if (w === "live" || w === "certified") {
+    return fail("LIVE_NOT_CARL", "LIVE/certified not minted from proof flag");
+  }
+  if (w === "merged") {
+    return fail("HUMAN", "merge is Carl only");
+  }
+  return { ok: true, state: "MEASURED", word: w, live: false };
+}
+
+export function realityTrace(steps = []) {
+  const rows = (steps || []).map((s) => ({
+    step: String(s.step || ""),
+    state: String(s.state || "PROPOSED"),
+    provenance: stamp(s.actor || "system", s.step || "trace", s.at),
+    evidence: s.evidence ?? null,
+    live: false,
+  }));
+  const order = ["request", "observe", "action", "readback", "measure", "verify"];
+  const names = rows.map((r) => r.step);
+  const complete = order.every((x) => names.includes(x));
+  const verified = rows.some((r) => r.step === "verify" && r.state === "VERIFIED");
+  return {
+    ok: true,
+    rows,
+    complete,
+    verification: verified ? "VERIFIED" : complete ? "PARTIAL" : "UNVERIFIED",
+    executed: rows.some((r) => r.step === "action" && r.state === "EXECUTED"),
+    live: false,
+  };
+}
+
 
