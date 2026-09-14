@@ -21,12 +21,14 @@ test("cognitive worker never merges or writes repository contents", () => {
   assert.doesNotMatch(runtime, /git push/);
 });
 
-test("worker dispatches exact PR head SHAs through the existing swarm runtime", () => {
+test("worker dispatches each PR through the real /swarm comment path", () => {
   assert.match(workflow, /node scripts\/cognitive-worker\.mjs/);
   assert.match(runtime, /headRefOid/);
-  assert.match(runtime, /gh", \["workflow", "run", "swarm\.yml"/);
-  assert.match(runtime, /-f/,);
-  assert.match(runtime, /ref=\$\{front\.sha\}/);
+  assert.match(runtime, /gh", \[/);
+  assert.match(runtime, /api/);
+  assert.match(runtime, /issues\/\$\{front\.number\}\/comments/);
+  assert.match(runtime, /body=\/swarm/);
+  assert.doesNotMatch(runtime, /workflow.*run.*swarm\.yml/);
 });
 
 test("worker preserves machine evidence without changing source of record", () => {
