@@ -1,0 +1,55 @@
+# Acorn Cognitive Worker — bounded continuous cognition.
+# Observe -> discover -> dispatch -> measure through existing swarm/collaboration workflows.
+# Never writes source, never merges, never claims LIVE.
+name: cognitive-worker
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: write
+
+concurrency:
+  group: cognitive-worker
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Execute integrated cognitive worker cycle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          WORKER_EVIDENCE: worker-evidence.json
+        run: node scripts/cognitive-worker.mjs
+
+      - name: Preserve cycle evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-worker-cycle-${{ github.run_id }}
+          path: worker-evidence.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Record bounded result
+        if: always()
+        run: |
+          echo "cognitive-worker.v1 — observe/discover/compose/dispatch/measure cycle completed."
+          echo "DEFINED != EXECUTED != VERIFIED != LIVE."
+          echo "auto_merge=false; live=false; human authority=carl"
