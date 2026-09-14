@@ -15,6 +15,12 @@ import {
   readyOf,
   setBranchResult,
   synthesize,
+  cannotMerge,
+  counters,
+  cycleDefined,
+  discoverCapabilities,
+  markSynapse,
+  transferContext,
   transition,
 } from "../.github/swarm/fabric.mjs";
 
@@ -247,5 +253,70 @@ describe("fabric.v0 — work object, not LIVE", () => {
     assert.throws(() => {
       a.state = "DONE";
     });
+  });
+});
+
+describe("fabric.v0 — discovery, transfer, counters, sovereignty", () => {
+  it("capability discovery never mints LIVE", () => {
+    const w = createTask({
+      objective: "x",
+      required_capabilities: ["lu", "no-such-cap"],
+    }).work;
+    const d = discoverCapabilities(w);
+    assert.equal(d.live, false);
+    assert.ok(d.missing.includes("no-such-cap"));
+    assert.ok(d.candidates.some((c) => c.identity && c.live === false));
+    assert.ok(d.candidates.every((c) => c.verified === false));
+  });
+
+  it("context transfer keeps provenance; INSUFFICIENT if empty", () => {
+    let w = withBranch(base()).work;
+    w = addBranch(w, { worker: "chatgpt", capability: "lu" }).work;
+    const a = w.branches[0].branch_id;
+    const b = w.branches[1].branch_id;
+    const miss = transferContext(w, a, b, { require: true });
+    assert.equal(miss.code, "INSUFFICIENT");
+    w = addObservation(w, { node: w.branches[0].worker, summary: "seen" }).work;
+    const t = transferContext(w, a, b);
+    assert.equal(t.ok, true);
+    assert.equal(t.work.branches[1].context.transfer.origin, w.branches[0].worker);
+    assert.equal(t.work.synapses.some((s) => s.act === "TRANSFER" && s.grade === "PROPOSED"), true);
+  });
+
+  it("synapse EXECUTED requires attestation", () => {
+    const w = addSynapse(base(), { from: "a", to: "b", act: "FINDING" }).work;
+    const id = w.synapses[0].synapse_id;
+    assert.equal(markSynapse(w, id, "EXECUTED").code, "NOT_EXECUTED");
+    const m = markSynapse(w, id, "EXECUTED", { executed: true });
+    assert.equal(m.ok, true);
+    assert.equal(m.work.synapses[0].grade, "EXECUTED");
+  });
+
+  it("counters come from the object", () => {
+    let w = withBranch(base()).work;
+    w = addBranch(w, { worker: "chatgpt", capability: "lu" }).work;
+    w = addObservation(w, { node: "gemini", summary: "o" }).work;
+    const c = counters(w);
+    assert.equal(c.tasks_created, 1);
+    assert.equal(c.branches_created, 2);
+    assert.equal(c.branches_parallel, 1);
+    assert.equal(c.observations, 1);
+    assert.equal(c.live, false);
+    assert.equal(c.loop, "DEFINED");
+    assert.equal(c.synapses_executed, 0);
+  });
+
+  it("AI cannot merge or fabricate human decision", () => {
+    assert.equal(cannotMerge().auto_merge, false);
+    assert.equal(cannotMerge().code, "HUMAN");
+    let w = withBranch(base()).work;
+    w = synthesize(w, { summary: "x" }).work;
+    w = transition(w, "READY").work;
+    w = transition(w, "WORKING").work;
+    w = transition(w, "REVIEWING").work;
+    w = transition(w, "DECISION").work;
+    assert.equal(humanDecide(w, { actor: "grok", outcome: "DONE" }).code, "HUMAN");
+    assert.equal(cycleDefined().executed, false);
+    assert.equal(cycleDefined().continuous, false);
   });
 });
