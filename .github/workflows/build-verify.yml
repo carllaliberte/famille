@@ -1,5 +1,6 @@
-# Verify Makefile gate. Never writes main. Never auto-merge.
+# Verify Makefile syntax gate. Never writes main. Never auto-merge.
 # Native node only — no rustc, no python kernel, no wrangler, no photon.
+# npm test lives in carte.yml only — do not run the suite twice.
 name: build-verify
 
 on:
@@ -26,6 +27,3 @@ jobs:
 
       - name: make build
         run: make build
-
-      - name: make test
-        run: make test
