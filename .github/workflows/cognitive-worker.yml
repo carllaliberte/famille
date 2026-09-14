@@ -30,58 +30,26 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Observe and discover
+      - name: Execute integrated cognitive worker cycle
         env:
-          DISCOVER_TRIGGER: worker
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
-        run: |
-          set -eu
-          node scripts/discover-cycle.mjs | tee worker-cycle.json
-
-      - name: Discover open work fronts
-        id: fronts
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -eu
-          gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 20 \
-            --json number,headRefOid,isDraft,updatedAt \
-            --jq '.[] | [.number,.headRefOid,.isDraft,.updatedAt] | @tsv' > open-prs.tsv
-          count=$(grep -c . open-prs.tsv || true)
-          echo "count=${count}" >> "$GITHUB_OUTPUT"
-          echo "worker: open work fronts=${count}"
-          cat open-prs.tsv
-
-      - name: Dispatch swarm on every discovered front
-        if: steps.fronts.outputs.count != '0'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -eu
-          dispatched=0
-          while IFS=$'\t' read -r number sha draft updated; do
-            [ -n "${number:-}" ] || continue
-            [ -n "${sha:-}" ] || continue
-            echo "worker: dispatch swarm PR #${number} sha=${sha} draft=${draft} updated=${updated}"
-            gh workflow run swarm.yml --ref main -f "ref=${sha}"
-            dispatched=$((dispatched + 1))
-          done < open-prs.tsv
-          echo "worker: dispatched=${dispatched}"
+          WORKER_EVIDENCE: worker-evidence.json
+        run: node scripts/cognitive-worker.mjs
 
       - name: Preserve cycle evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cognitive-worker-cycle-${{ github.run_id }}
-          path: |
-            worker-cycle.json
-            open-prs.tsv
+          path: worker-evidence.json
           if-no-files-found: warn
           retention-days: 14
 
       - name: Record bounded result
         if: always()
         run: |
-          echo "cognitive-worker.v1 — observe/discover/dispatch/measure cycle completed."
+          echo "cognitive-worker.v1 — observe/discover/compose/dispatch/measure cycle completed."
           echo "DEFINED != EXECUTED != VERIFIED != LIVE."
           echo "auto_merge=false; live=false; human authority=carl"
