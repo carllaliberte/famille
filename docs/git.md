@@ -1,4 +1,4 @@
-# Git — squash et conflits
+# Git — squash, rebase et conflits
 
 Carl seul squash. Jamais merge commit. Jamais auto-merge. Jamais une branche stub.
 
@@ -13,6 +13,36 @@ Avant squash : base = main, un sujet, pas de PLACEHOLDER / SEE_ARTIFACT, lecture
 Après squash : relire main, pas la PR. cadence n’est pas un verdict.
 
 Une branche stub se supprime. Elle ne se merge pas.
+
+## rebase
+
+Rejouer tes commits par-dessus une autre base, au lieu de les fusionner.
+
+Merge : deux histoires qui se rejoignent.
+Rebase : une seule ligne. Tes commits sont recopiés au bout du nouveau main. Les anciens SHA meurent.
+
+Chez Acorn : c’est « rejouer sur le main du matin ». Branche courte, avant squash. On ne rebase pas main.
+
+```bash
+git fetch origin
+git checkout ma-branche
+git rebase origin/main
+```
+
+Conflit : un commit à la fois, `git add`, `git rebase --continue`.
+Tout lâcher : `git rebase --abort`.
+
+Après rebase, l’historique local a changé :
+
+```bash
+git push --force-with-lease
+```
+
+`--force-with-lease` seulement si toi seul touches la branche.
+
+Ne pas rebase : main ; une branche déjà squash-mergée ; une branche partagée dont tu n’es pas sûr.
+
+Rebase ≠ squash Carl. Rebase = ligne propre avant la PR. Squash = toi, sur GitHub, après lecture.
 
 ## Conflits
 
