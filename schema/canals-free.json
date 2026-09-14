@@ -49,6 +49,13 @@
     "maxTokens": 2048
   },
   {
+    "id": "nemotroncs",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "nvidia/nemotron-3.5-content-safety:free",
+    "maxTokens": 2048
+  },
+  {
     "id": "qwen3c",
     "provider": "openrouter",
     "secret": "OPENROUTER_API_KEY",
