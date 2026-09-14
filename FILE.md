@@ -101,6 +101,7 @@ famille#224 plagiat-watch canaris MERGED (259f1fc). dispatch Carl, PR pas main.
 famille#218 ots-anchor MERGED ; famille#221 ots-hardening MERGED (313215a). Spec `unforge-check/OTS.md`. Exception `ots-bot`. Preuve ACTIF pending upgrade.
 famille#222 license-options MERGED. Deux candidats `LICENSE.option-open` (MIT) / `LICENSE.option-closed` (ARR). Pas de rename en `LICENSE`. NOTICE.md = provenance, pas une position juridique.
 famille#227 offre non daté MERGED (49b27e1). On n'enlève pas le juge. On enlève le tampon à vide.
+famille#379 review.mjs stub wipe CLOSED — review.mjs CODE_PRESENT ~25ko on main (intégrité; pas un stub Contents API). Bad tip merge `51c08647`. Restore on current main `781cb641`.
 
 ## Licence (nouveautés)
 
