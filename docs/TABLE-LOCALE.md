@@ -1,13 +1,13 @@
 # Table locale — trace P0
 
-Date : 2026-09-14. Provenance : SHA `a938408` (origin/main, merge #431).
+Date : 2026-09-14. Provenance : SHA `b3fe0cf` (origin/main, merge #432).
 
 Carl squash/merge. DISPATCH=NO. Crédits cloud = 0.
-Build (Grok sandbox) **n’est plus le siège** : Cursor + bot Quantum reprennent ce contrat.
+Build (Grok sandbox) **n’est plus le siège** : Cursor, Codex et Quantum reprennent ce contrat.
 
 ## État mesuré
 
-- SHA_MAIN = `a938408`
+- SHA_MAIN = `b3fe0cf`
 - `.github/swarm/review.mjs` : 27191 octets, pas PLACEHOLDER, pas stub 12 o
 - `xai.model` = `grok-2` · `grok46.model` = `grok-4.6` · `local.model` = `llama3.2`
 - cloud = **PAUSE crédits** · DISPATCH=NO · REAL_RESPONSE=0 (swarm [34876044826](https://github.com/carllaliberte/famille/actions/runs/34876044826), SHA `c23ce6f`)
@@ -26,7 +26,7 @@ non exécuté (pack docs). Dernière vue Build, ne pas la fusionner avec Quantum
 3. **P2** — `warm-one.mjs` séquentiel — déjà sur main (#431)
 4. **P3** — UX recette README — pas encore
 
-Prompts : [P0.md](prompts/P0.md) · [P1.md](prompts/P1.md) (P1 = file, pas un ordre de ce tour).
+Prompts : [P0.md](prompts/P0.md) · [P1.md](prompts/P1.md) (ne pas exécuter maintenant) · [CODEX.md](prompts/CODEX.md).
 Rôles : [BUILD-REPLACEMENT.md](BUILD-REPLACEMENT.md).
 
 Pas LIVE. Pas de pont public. Pas de `127.0.0.1` dans Secrets GitHub.
