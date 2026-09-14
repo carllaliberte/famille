@@ -1,0 +1,52 @@
+name: prove-all-models
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request receiving the proof report
+        required: true
+        type: string
+      ref:
+        description: Commit or ref to inspect
+        required: false
+        default: main
+        type: string
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Execute every auto model
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          PROOF_REF: ${{ inputs.ref }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          OLLAMA_HOST: ${{ secrets.OLLAMA_HOST }}
+          HAIKU_API_KEY: ${{ secrets.HAIKU_API_KEY }}
+          LLAMA_API_KEY: ${{ secrets.LLAMA_API_KEY }}
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+        run: node scripts/prove-all-models.mjs
+      - name: Upload proof evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-model-proof
+          path: all-model-proof.json
