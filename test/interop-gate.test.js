@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { cursorGate } from "../.github/swarm/cadence.mjs";
 import { activate, CAPABILITY_UNAVAILABLE, route } from "../.github/swarm/workforce.mjs";
+import { packLieu } from "../sdk/pack-lieu.js";
 import { peutDire } from "../sdk/peut-dire.js";
 
 const interop = readFileSync(new URL("../INTEROP-IA.md", import.meta.url), "utf8");
@@ -61,6 +62,30 @@ describe("interop — cursorGate n'est pas une carte", () => {
     assert.match(walk, /Un 200 n'est pas un sceau/);
     assert.doesNotMatch(walk, /attend encore le binder Carl/);
     assert.doesNotMatch(walk, /404 → HOLD Carl/);
+  });
+
+  it("treats a language-only pack as not a judge card", () => {
+    assert.match(interop, /Le pack lieu n'est pas une carte juge/);
+    assert.match(interop, /`fr` seul n'est pas `fr-CA`/);
+    assert.match(interop, /Pas un pack inventé/);
+    assert.match(interop, /Le pack ne comble pas epsilon ni horizon/);
+    assert.match(interop, /Cursor appelle `peut-dire`/);
+    assert.match(walk, /Pack lieu ≠ carte juge/);
+    assert.match(walk, /`fr` seul n'est pas `fr-CA`/);
+    assert.match(walk, /Pas un pack inventé/);
+    assert.match(walk, /Le pack ne comble pas epsilon ni horizon/);
+    const languageOnly = packLieu("fr");
+    assert.equal(languageOnly.connu, false);
+    assert.equal(languageOnly.tag, "en");
+    assert.equal(languageOnly.raison, "inconnu");
+    assert.notEqual(languageOnly.pack.tag, "fr-CA");
+    assert.equal(Object.hasOwn(languageOnly.pack, "epsilon"), false);
+    assert.equal(Object.hasOwn(languageOnly.pack, "horizon"), false);
+    const r = peutDire(osExample, { today: "2026-09-09" });
+    assert.equal(r.mode, "classique");
+    assert.deepEqual(r.manques, ["epsilon", "horizon"]);
+    assert.equal(osExample.epsilon, null);
+    assert.equal(osExample.horizon, "");
   });
 
   it("keeps the named card hole: epsilon and horizon stay missing", () => {

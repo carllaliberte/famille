@@ -37,6 +37,7 @@ Parcours inconnu : [`examples/interop-juge-v0.md`](examples/interop-juge-v0.md)
 - Pas de hub OpenAI/Anthropic/Google dans le navigateur
 
 Packs lieu : `fr-CA` · `en / en-CA` · `es-MX` · `en-NG` · `pt-BR` · `de-DE` — tag file `en` ([INTERNATIONAL.md](INTERNATIONAL.md)). Tag inconnu → spoken en / classique.
+Le pack lieu n'est pas une carte juge. `fr` seul n'est pas `fr-CA`. Vide → porte. `fr` → spoken en / classique. Pas un pack inventé. Le pack ne comble pas epsilon ni horizon. Cursor appelle `peut-dire`. Cursor n'est pas le juge.
 
 ## 2. Mesh GitHub — les IA se parlent
 
