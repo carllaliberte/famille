@@ -8,6 +8,7 @@ import { peutDire } from "../sdk/peut-dire.js";
 const steward = readFileSync(new URL("../STEWARD.md", import.meta.url), "utf8");
 const cursor = readFileSync(new URL("../CURSOR.md", import.meta.url), "utf8");
 const agents = readFileSync(new URL("../AGENTS.md", import.meta.url), "utf8");
+const hote = readFileSync(new URL("../HOTE.md", import.meta.url), "utf8");
 const osExample = JSON.parse(
   readFileSync(new URL("../examples/attest-os.json", import.meta.url), "utf8"),
 );
@@ -42,6 +43,28 @@ describe("bot — 404 vitrine n'est pas un HOLD wrangler", () => {
     assert.doesNotMatch(cursor, /404 → HOLD Carl/);
     assert.doesNotMatch(steward, /quantum-safe/i);
     assert.doesNotMatch(cursor, /sealed forever/i);
+  });
+
+  it("locks HOTE.md: cited slug is not LIVE", () => {
+    assert.match(hote, /Les certitudes ont une date de fin/);
+    assert.match(hote, /acorn-royal-dune-blend\.grok\.me/);
+    assert.match(hote, /Un seul hôte cité/);
+    assert.match(hote, /GET [` /]*juge/);
+    assert.match(hote, /sur la vitrine = 404 HTML/);
+    assert.match(hote, /Pas LIVE/);
+    assert.match(hote, /Pas « live »/);
+    assert.match(hote, /Pas PRÉSENT/);
+    assert.match(hote, /Pas un bind wrangler/);
+    assert.match(hote, /404 ≠ carte juge/);
+    assert.match(hote, /404 ≠ trou epsilon \/ horizon/);
+    assert.match(hote, /Citer n'est pas LIVE/);
+    assert.match(hote, /docs\/live\.md/);
+    assert.match(hote, /\*\*citer\*\*/);
+    assert.doesNotMatch(hote, /LIVE — citer/);
+    assert.doesNotMatch(hote, /Un seul hôte live/);
+    assert.doesNotMatch(hote, /404 → HOLD Carl/);
+    assert.doesNotMatch(hote, /quantum-safe/i);
+    assert.doesNotMatch(hote, /sealed forever/i);
   });
 
   it("does not fill epsilon or horizon on the published os example", () => {
