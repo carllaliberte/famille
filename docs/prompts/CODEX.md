@@ -12,4 +12,5 @@ ChatGPT Codex (IDE/CLI OpenAI) sur un **clone authentifié**. Carl merge. Codex 
 8. MIT = protocoles listés. Acorn / marques / nœuds QUANTUM hors MIT.
 
 Interdits = ceux de Cursor. Tableau : [BUILD-REPLACEMENT.md](../BUILD-REPLACEMENT.md).
+Inventaire : [MODELES.md](../MODELES.md) — observer, n’ajouter aucun modèle ce tour.
 P1 = [P1.md](P1.md) — **ne pas exécuter dans un tour P0**.

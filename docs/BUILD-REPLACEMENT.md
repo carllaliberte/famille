@@ -1,6 +1,6 @@
 # Remplacement Build
 
-Date : 2026-09-14. SHA_MAIN `b3fe0cf`.
+Date : 2026-09-14. SHA_MAIN `c816888`.
 Le sandbox Grok Build ne porte plus la table locale. Le contrat vit dans Git.
 
 Carl squash/merge. Les trois préparent des PR **draft**. Aucun ne merge.
@@ -19,3 +19,5 @@ DISPATCH=NO. Crédits cloud = 0. Pas de LIVE.
 
 MIT = protocoles listés dans ce dépôt. Acorn / UNFORGE / nœuds QUANTUM hors MIT.
 VERT ≠ CORRECT. DEFINED ≠ EXECUTED. Job ✓ ≠ REAL_RESPONSE.
+
+Inventaire permanent (aucun ajout ce tour) : [MODELES.md](MODELES.md).
