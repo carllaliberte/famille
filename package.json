@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "system:official-seal": "node scripts/official-seal.mjs",
-    "peut-dire": "node sdk/cli.js"
+    "peut-dire": "node sdk/cli.js",
+    "prepare": "husky"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -14,5 +15,8 @@
     "./schema": "./schema/juge.v0.json",
     "./interop": "./map/interop.v0.json",
     "./agents": "./schema/agents.json"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
   }
 }

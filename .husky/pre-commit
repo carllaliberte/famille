@@ -1,0 +1,22 @@
+if git diff --cached --name-only | grep -q .
+then
+  if git diff --cached | grep -qE '^(<<<<<<<|>>>>>>>|=======)'
+  then
+    echo "marqueurs de conflit dans l'index — abort"
+    exit 1
+  fi
+  if git diff --cached --name-only | grep -qx '.github/swarm/review.mjs'
+  then
+    bytes=$(git show :.github/swarm/review.mjs | wc -c)
+    if [ "$bytes" -lt 1000 ]
+    then
+      echo "review.mjs trop petit ($bytes o) — probable stub"
+      exit 1
+    fi
+    if git show :.github/swarm/review.mjs | grep -qE 'PLACEHOLDER|SEE_ARTIFACT'
+    then
+      echo "review.mjs stub — abort"
+      exit 1
+    fi
+  fi
+fi
