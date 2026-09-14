@@ -2,11 +2,6 @@
 # Continuous: pull_request opened/synchronize/reopened + issue_comment /swarm.
 # Manual: workflow_dispatch (ref input, default main).
 # Missing secrets skip (fail-closed, exit 0). Never merge. Never wrangler.
-# Reviews FILE.md + schema + docs. Mesh = PR comments (acorn.v0).
-# Ignore github-actions[bot] — no self-loop. /flux addresses a peer.
-# Fable 5 is on-demand: comment /fable or label fable (cost).
-# Checkout = PR head (not main) so /swarm sees the branch.
-# Dispatch checkout = inputs.ref (default main).
 name: swarm
 on:
   pull_request:
@@ -29,27 +24,8 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' && github.event.action != 'labeled') ||
-      (
-        github.event_name == 'pull_request' &&
-        github.event.action == 'labeled' &&
-        (github.event.label.name == 'fable' || github.event.label.name == 'fabre')
-      ) ||
-      (
-        github.event_name == 'issue_comment' &&
-        github.event.issue.pull_request &&
-        github.event.comment.user.login != 'github-actions[bot]' &&
-        (
-          contains(github.event.comment.body, '/swarm') ||
-          contains(github.event.comment.body, '/sonnet') ||
-          contains(github.event.comment.body, '/fable') ||
-          contains(github.event.comment.body, '/fabre') ||
-          contains(github.event.comment.body, '/chatgpt') ||
-          contains(github.event.comment.body, '/deepseek') ||
-          contains(github.event.comment.body, '/gemini') ||
-          contains(github.event.comment.body, '/flux') ||
-          contains(github.event.comment.body, 'FLUX from:')
-        )
-      )
+      (github.event_name == 'pull_request' && github.event.action == 'labeled' && (github.event.label.name == 'fable' || github.event.label.name == 'fabre')) ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && github.event.comment.user.login != 'github-actions[bot]' && (contains(github.event.comment.body, '/swarm') || contains(github.event.comment.body, '/sonnet') || contains(github.event.comment.body, '/fable') || contains(github.event.comment.body, '/fabre') || contains(github.event.comment.body, '/chatgpt') || contains(github.event.comment.body, '/deepseek') || contains(github.event.comment.body, '/gemini') || contains(github.event.comment.body, '/flux') || contains(github.event.comment.body, 'FLUX from:')))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -74,12 +50,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Global breaker gate
+        env:
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+        run: node .github/swarm/system-breaker.mjs
       - name: swarm review
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}

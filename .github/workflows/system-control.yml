@@ -1,0 +1,84 @@
+name: system-control
+
+# Human control plane for the global breaker.
+# Only Carl may change ACORN_SYSTEM_MODE.
+# OFF = total cutoff. DEBUG = diagnostic restart. RUN = normal resume.
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      command:
+        description: OFF / STOP / ARRÊT / DEBUG / DIAGNOSTIC / RUN / START
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  actions: write
+
+concurrency:
+  group: acorn-system-control
+  cancel-in-progress: false
+
+jobs:
+  control:
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.actor == 'carllaliberte') ||
+      (github.event_name == 'issue_comment' && github.event.comment.user.login == 'carllaliberte' && github.event.issue.pull_request)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Resolve human command
+        id: command
+        env:
+          COMMAND: ${{ github.event_name == 'workflow_dispatch' && inputs.command || github.event.comment.body }}
+        run: |
+          set -eu
+          node --input-type=module <<'EOF'
+          import { commandResult } from './.github/swarm/system-breaker.mjs';
+          import { appendFileSync } from 'node:fs';
+          const result = commandResult(process.env.COMMAND);
+          if (!result.recognized) {
+            console.log('No recognized system-control command; no state change.');
+            process.exit(0);
+          }
+          appendFileSync(process.env.GITHUB_OUTPUT, `recognized=true\nmode=${result.mode}\ncommand=${result.command}\nsemantics=${result.semantics}\n`);
+          console.log(JSON.stringify(result));
+          EOF
+      - name: Change global system mode
+        if: steps.command.outputs.recognized == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODE: ${{ steps.command.outputs.mode }}
+        run: |
+          set -eu
+          gh variable set ACORN_SYSTEM_MODE --repo "${GITHUB_REPOSITORY}" --body "${MODE}"
+      - name: Confirm control state
+        if: steps.command.outputs.recognized == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODE: ${{ steps.command.outputs.mode }}
+          N: ${{ github.event.issue.number }}
+        run: |
+          set -eu
+          echo "ACORN_SYSTEM_MODE=${MODE}"
+          if [ -n "${N:-}" ]; then
+            gh pr comment "$N" --repo "${GITHUB_REPOSITORY}" --body "system-control.v1 — mode=${MODE}. breaker=$([ \"${MODE}\" = OFF ] && echo CLOSED || echo OPEN). authority=carl; auto_merge=false; live=false."
+          fi
+      - name: Relaunch bounded diagnostic worker
+        if: steps.command.outputs.mode == 'DEBUG'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run cognitive-worker.yml --ref main
+      - name: Resume bounded worker
+        if: steps.command.outputs.mode == 'RUN'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run cognitive-worker.yml --ref main
