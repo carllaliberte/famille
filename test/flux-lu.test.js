@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { isCalendarDay, peutDire } from "../sdk/peut-dire.js";
+import { packLieu } from "../sdk/pack-lieu.js";
 import { makeClaim, markLu } from "../.github/swarm/claim.mjs";
 
 const flux = readFileSync(new URL("../FLUX.md", import.meta.url), "utf8");
@@ -76,6 +77,29 @@ describe("flux — LU n'est pas consulter", () => {
   it("does not fill epsilon or horizon on the published os example", () => {
     const r = peutDire(osExample, { today: "2026-09-09" });
     assert.equal(r.quantique, false);
+    assert.equal(r.mode, "classique");
+    assert.deepEqual(r.manques, ["epsilon", "horizon"]);
+    assert.equal(osExample.epsilon, null);
+    assert.equal(osExample.horizon, "");
+  });
+
+  it("treats a language-only pack as not a judge card", () => {
+    assert.match(flux, /Le pack lieu \(BCP 47\) n'est pas une carte juge/);
+    assert.match(flux, /`fr` seul \(langue sans région\) n'est pas `fr-CA`/);
+    assert.match(flux, /Pas un pack inventé/);
+    assert.match(flux, /Le pack ne comble pas epsilon ni horizon/);
+    assert.match(walk, /Pack lieu ≠ carte/);
+    assert.match(walk, /`fr` seul n'est pas `fr-CA`/);
+    assert.match(walk, /Pas un pack inventé/);
+    assert.match(walk, /Le pack ne comble pas epsilon ni horizon/);
+    const languageOnly = packLieu("fr");
+    assert.equal(languageOnly.connu, false);
+    assert.equal(languageOnly.tag, "en");
+    assert.equal(languageOnly.raison, "inconnu");
+    assert.notEqual(languageOnly.pack.tag, "fr-CA");
+    assert.equal(Object.hasOwn(languageOnly.pack, "epsilon"), false);
+    assert.equal(Object.hasOwn(languageOnly.pack, "horizon"), false);
+    const r = peutDire(osExample, { today: "2026-09-09" });
     assert.equal(r.mode, "classique");
     assert.deepEqual(r.manques, ["epsilon", "horizon"]);
     assert.equal(osExample.epsilon, null);

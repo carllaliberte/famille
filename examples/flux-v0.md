@@ -28,6 +28,7 @@ Deux cartes. Ne pas les fusionner.
 
 LU sur une PR = le texte a été vu (`claim.v0`, processus). Ce n'est pas l'étape 2 (`consulter`).
 Carte trouée : [`attest-os.json`](attest-os.json) — epsilon + horizon manquent → classique. Pas d'invention.
+Pack lieu ≠ carte. `fr` seul n'est pas `fr-CA`. `fr` → spoken en / classique. Pas un pack inventé. Le pack ne comble pas epsilon ni horizon.
 
 Flux quantique = MODE collapse + date. Pas un photon. Pas un QPU sur Git.
 

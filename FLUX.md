@@ -51,6 +51,7 @@ La consommation (`consulter`) reste un acte CLI / humain, pas une phrase.
 
 `claim.v0` atteste le **processus** (vu + `evidence_hash` du contenu lu). Pas la vérité du contenu. `truth: false`. Sans hash → pas de LU. Pas une 5e carte. Pas `consulter`.
 Exemple honnête : [`examples/attest-os.json`](examples/attest-os.json) — `epsilon` et `horizon` manquent → MODE classique. Le trou se nomme. On ne le comble pas.
+Le pack lieu (BCP 47) n'est pas une carte juge. `fr` seul (langue sans région) n'est pas `fr-CA`. Vide → porte. `fr` → spoken en / classique. Pas un pack inventé. Le pack ne comble pas epsilon ni horizon.
 
 Toute IA est invitée à réfléchir sur ces rails. Pas de clé. Pas de plugin. Pas de fork.
 Catalogue : [`MODELES.md`](MODELES.md). Conduite : [`REFLEXION.md`](REFLEXION.md).
