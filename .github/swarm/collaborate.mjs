@@ -24,12 +24,23 @@ async function gh(path, { token, method = "GET", body } = {}) {
 }
 
 export function parseSwarmComment(body = "") {
-  const text = String(body || "");
-  if (!/^## Swarm review\b/m.test(text)) return [];
-  const matches = [...text.matchAll(/^### (.+?) \(`([^`]+)`\)\n([\s\S]*?)(?=^### |^_Prompt:|$)/gm)];
-  return matches
-    .map((m) => ({ label: m[1].trim(), model: m[2].trim(), text: m[3].trim() }))
-    .filter((r) => r.text && !/^Skipped —/i.test(r.text) && !/^Provider error —/i.test(r.text));
+  const lines = String(body || "").split(/\r?\n/);
+  if (!lines.some((line) => /^## Swarm review\b/.test(line))) return [];
+  const out = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const heading = lines[i].match(/^### (.+?) \(`([^`]+)`\)$/);
+    if (!heading) continue;
+    const content = [];
+    for (let j = i + 1; j < lines.length; j += 1) {
+      if (/^### /.test(lines[j]) || /^_Prompt:/.test(lines[j])) break;
+      content.push(lines[j]);
+    }
+    const text = content.join("\n").trim();
+    if (text && !/^Skipped —/i.test(text) && !/^Provider error —/i.test(text)) {
+      out.push({ label: heading[1].trim(), model: heading[2].trim(), text });
+    }
+  }
+  return out;
 }
 
 export function chooseCoordinator(results, specs) {
