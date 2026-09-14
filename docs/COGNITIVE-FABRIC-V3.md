@@ -29,3 +29,5 @@ The measured rule is:
 `DEFINED ≠ EXECUTED ≠ VERIFIED ≠ LIVE`
 
 A disagreement therefore becomes work. It does not become an arbitrary winner, a discarded objection, or a false certification.
+
+Repository branch policy is also preserved: implementation branches use the accepted `ai/<name>` namespace when that namespace is required by repository automation.
