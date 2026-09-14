@@ -51,10 +51,26 @@ export function chooseCoordinator(results, specs) {
 async function main(env = process.env) {
   const token = env.GITHUB_TOKEN;
   const repo = env.GITHUB_REPOSITORY;
-  const pr = String(env.PR_NUMBER || "");
-  if (!token || !repo || !pr) return 0;
+  if (!token || !repo) return 0;
 
   const [owner, name] = repo.split("/");
+  let pr = String(env.PR_NUMBER || "");
+  const runSha = String(env.RUN_SHA || "");
+
+  // workflow_run may omit pull_requests for issue_comment/workflow_dispatch runs.
+  // Resolve the PR from the exact swarm head SHA instead of skipping a valid pass.
+  if (!pr && runSha) {
+    const pulls = await gh(`/repos/${owner}/${name}/commits/${runSha}/pulls?per_page=20`, { token });
+    const open = (pulls || []).find((p) => p.state === "open");
+    const matching = open || (pulls || [])[0];
+    if (matching?.number) pr = String(matching.number);
+  }
+
+  if (!pr) {
+    console.log("collaboration skip (no PR resolved from swarm run)");
+    return 0;
+  }
+
   const comments = await gh(`/repos/${owner}/${name}/issues/${pr}/comments?per_page=100`, { token });
   const swarm = [...(comments || [])].reverse().find((c) => /^## Swarm review\b/m.test(c.body || ""));
   if (!swarm) {
@@ -108,7 +124,7 @@ async function main(env = process.env) {
     token,
     body: { body },
   });
-  console.log(`collaboration posted sources=${sources}`);
+  console.log(`collaboration posted sources=${sources} pr=${pr}`);
   return 0;
 }
 
