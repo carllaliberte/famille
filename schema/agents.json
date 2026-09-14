@@ -25,7 +25,7 @@
     {"id": "qwen", "name": "Qwen", "kind": "guest", "role": "open guest", "specialty": "open-cn", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "generalist"},
     {"id": "claude", "name": "Claude", "kind": "guest", "role": "lu doctrine", "specialty": "lu-doc", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "generalist"},
     {"id": "opus", "name": "Claude Opus", "kind": "guest", "role": "guest review", "specialty": "guest review", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "specialist"},
-    {"id": "astra", "name": "Astra", "kind": "guest", "role": "guest", "specialty": "guest-lu", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "generalist"},
+    {"id": "astra", "name": "Astra", "kind": "model", "role": "independent", "specialty": "software-engineering", "capabilities": ["lu", "flux", "review", "build"], "status": "auto", "locked": true},
     {"id": "codex", "name": "Codex", "kind": "guest", "role": "agent", "specialty": "agent", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "specialist"},
     {"id": "cohere", "name": "Cohere Command", "kind": "guest", "role": "open guest", "specialty": "retrieval", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "generalist"},
     {"id": "nova", "name": "Amazon Nova", "kind": "guest", "role": "open guest", "specialty": "cloud-aws", "capabilities": ["lu", "flux"], "status": "declared", "locked": false, "lane": "generalist"},
