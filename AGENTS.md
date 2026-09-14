@@ -19,6 +19,8 @@ Lire le contexte commun (raw + SHA) **et** les LU déjà sur le fil. Analyser. C
 
 Aucune IA n'est le juge. Aucune IA n'est LIVE VERIFIED. Carl décide et valide.
 
+Toute IA identifie son travail (id roster). Une erreur avise **toujours** l’IA impliquée (`docs/IDENTIFY.md`) — optimisation, pas merge.
+
 L'écriture GitHub n'est pas le but de l'intégration. Le but est la cognition collective.
 Un write Git = acte Carl (ou prompt Carl → un Build, une PR). Pas « le swarm a parlé donc on pousse ».
 
