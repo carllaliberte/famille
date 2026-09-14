@@ -5,6 +5,25 @@ Certainties expire.
 On n'enlève pas le juge. On enlève le tampon à vide. — [EXPERIENCE.md](EXPERIENCE.md)
 The human still merges. Labels do not live forever. — [RENTE.md](RENTE.md)
 
+## 30 secondes
+
+```bash
+git clone https://github.com/carllaliberte/famille.git
+cd famille
+npm test
+node sdk/cli.js examples/attest-os.json   # exit 2 = classique — correct
+```
+
+Pas de clé. Ollama est optionnel, local, un modèle à la fois. Carl squash/merge. Les bots préparent. DISPATCH seulement si Carl le dit après lecture de main.
+
+| Ce repo | Pas ce repo |
+|---|---|
+| Carte MIT, `npm test`, consommateur local | Œuvre Acorn (privée), marques UNFORGE, sceau QUANTUM |
+| Commentaire swarm si un secret Actions existe | Appel cloud payant (pause, crédits 0) |
+| Ollama local optionnel | GitHub Actions qui joindrait `127.0.0.1` |
+
+Dernière mesure datée — 2026-09-14, run [34876044826](https://github.com/carllaliberte/famille/actions/runs/34876044826), SHA `c23ce6f` (plus vieux que ce main) : cloud REAL_RESPONSE=0 (gemini 503, xai 400, grok46 403, openrouter 402). Job GitHub ✓ ≠ REAL. llama3.2 sur machine Build (pas Actions) : chaud ~139 ms (1 jeton), utile ~3,6 s, froid ~20 s.
+
 A typed-evidence lattice for post-quantum cybersecurity and composable proof.
 Not fourteen scripts. Not a blockchain. Not a coin.
 
