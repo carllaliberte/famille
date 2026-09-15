@@ -602,6 +602,40 @@ function dedupeTasks(tasks) {
   }
   return out;
 }
+function parseTaskMetadata(text) {
+  const src = String(text || "");
+  const files = [];
+  const fileLine = src.match(/^files:\s*(.+)$/im);
+  if (fileLine) {
+    for (const part of fileLine[1].split(/[, ]+/)) {
+      const f = part.trim();
+      if (f && /[./]/.test(f) && !/^https?:/i.test(f)) files.push(f);
+    }
+  }
+  const factor = (names) => {
+    for (const n of names) {
+      const m = src.match(new RegExp(`(?:${n}):\\s*([0-5])\\b`, "i"));
+      if (m) return Number(m[1]);
+    }
+    return void 0;
+  };
+  const dep = src.match(/dependsOnPr:\s*#?(\d+)/i);
+  const hashes = [...src.matchAll(/#(\d{1,6})\b/g)].map((m) => Number(m[1]));
+  return {
+    files,
+    impact: factor(["impact"]),
+    urgency: factor(["urgence", "urgency"]),
+    risk: factor(["risque", "risk"]),
+    effort: factor(["effort"]),
+    measureValue: factor(["mesure", "measureValue", "valeur"]),
+    architecturalCoherence: factor(["coherence", "coh[ée]rence"]),
+    dependsOnPr: dep ? Number(dep[1]) : void 0,
+    mentionedIssues: hashes
+  };
+}
+function extractTaskNumbers(text) {
+  return [...new Set([...String(text || "").matchAll(/#(\d{1,6})\b/g)].map((m) => Number(m[1])))];
+}
 function provenanceRecord(input) {
   if (input.who === "codex" && input.source !== "codex") {
     throw new Error("refuse to attribute non-Codex work to Codex");
@@ -876,11 +910,13 @@ export {
   errorSignature,
   escalateDebug,
   evaluateTrigger,
+  extractTaskNumbers,
   fabricNode,
   humanRequired,
   hydrateMemory,
   isArchitecturalCategory,
   loopPosition,
+  parseTaskMetadata,
   prioritize,
   provenanceRecord,
   recordErrorSignature,

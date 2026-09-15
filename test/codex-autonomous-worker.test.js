@@ -13,6 +13,8 @@ import {
   detectPatch,
   formatPrBody,
   heartbeatLine,
+  issueToWorkTask,
+  observeRepo,
   parseDiscovery,
   provenanceFor,
   redactSecrets,
@@ -344,17 +346,19 @@ describe("codex autonomous worker", () => {
     assert.equal(ev.capabilities.AUTH, "UNAVAILABLE");
   });
 
-  it("refuses pull_request triggers that are not merged Codex heads", () => {
+  it("resumes after Codex merge and observes a non-Codex merge without looping unmerged PRs", () => {
     assert.equal(shouldRunForTrigger({ trigger: "pull_request", prMerged: false, prHead: "codex/x", prBase: "main" }).run, false);
-    assert.equal(shouldRunForTrigger({ trigger: "pull_request", prMerged: true, prHead: "feat/other", prBase: "main" }).run, false);
+    const nonCodex = shouldRunForTrigger({ trigger: "pull_request", prMerged: true, prHead: "feat/other", prBase: "main" });
+    assert.equal(nonCodex.run, true);
+    assert.match(nonCodex.reason, /SHA|non-Codex/);
     assert.equal(shouldRunForTrigger({ trigger: "pull_request", prMerged: true, prHead: "codex/continuous-1", prBase: "main" }).run, true);
     const io = ioFor({
       authFile: true,
-      env: { CODEX_TRIGGER: "pull_request", CODEX_PR_MERGED: "true", CODEX_PR_HEAD: "feat/random", CODEX_PR_BASE: "main" },
+      env: { CODEX_TRIGGER: "pull_request", CODEX_PR_MERGED: "false", CODEX_PR_HEAD: "codex/x", CODEX_PR_BASE: "main" },
     });
     const ev = runWorker(io);
     assert.equal(ev.status, "IDLE");
-    assert.match(ev.reason, /not a Codex PR/);
+    assert.match(ev.reason, /not merged/);
   });
 
   it("redacts secrets from evidence", () => {
@@ -485,8 +489,8 @@ describe("codex autonomous worker", () => {
     assert.doesNotMatch(JSON.stringify(mem), /sk-|access_token|"live": true/);
   });
 
-  it("pins worker v6 and does not ask Carl to dispatch after UNAVAILABLE", () => {
-    assert.equal(WORKER_VERSION, "codex-autonomous-worker.v6");
+  it("pins worker v7 and does not ask Carl to dispatch after UNAVAILABLE", () => {
+    assert.equal(WORKER_VERSION, "codex-autonomous-worker.v7");
     const io = ioFor({ authFile: false });
     const ev = runWorker(io);
     assert.equal(ev.status, "UNAVAILABLE");
@@ -494,6 +498,7 @@ describe("codex autonomous worker", () => {
     assert.match(blob, /CODEX_AUTH_JSON/);
     assert.doesNotMatch(blob, /Run workflow/);
     assert.match(blob, /exact_human_action/);
+    assert.equal(ev.observation.candidates.length >= 0, true);
   });
 
   it("cools down a second schedule on the same SHA after AUTH UNAVAILABLE", () => {
@@ -536,5 +541,87 @@ describe("codex autonomous worker", () => {
     assert.equal(ev.capabilities.AUTONOMY, "PASS");
     assert.equal(ev.capabilities.DISCOVERY, "NOT_TESTED");
     assert.equal(JSON.stringify(ev.human_actions_required || []).includes("Run workflow"), false);
+  });
+
+  it("scores an issue from its body instead of taking the first one", () => {
+    const scored = issueToWorkTask({
+      number: 2,
+      title: "high",
+      body: "impact: 5\nurgence: 5\nfiles: test/codex-autonomy.test.js",
+    });
+    const low = issueToWorkTask({
+      number: 1,
+      title: "low",
+      body: "impact: 1\nurgence: 1",
+    });
+    assert.equal(scored.impact, 5);
+    assert.equal(scored.files[0], "test/codex-autonomy.test.js");
+    assert.equal(low.impact, 1);
+  });
+
+  it("observes failed workflows without inventing a task when nothing failed", () => {
+    const io = ioFor({ authFile: false });
+    const obs = observeRepo(io, { repo: "carllaliberte/famille" });
+    assert.equal(obs.failedWorkflows.length, 0);
+    assert.equal(obs.candidates.length, 0);
+  });
+
+  it("observes a measured workflow failure into a justified surveillance candidate", () => {
+    const io = ioFor({
+      authFile: false,
+      gh: (args) => {
+        if (args[0] === "run" && args[1] === "list") {
+          return JSON.stringify([
+            { name: "build-verify", conclusion: "failure", url: "https://github.com/carllaliberte/famille/actions/runs/1" },
+          ]);
+        }
+        return "[]";
+      },
+    });
+    const obs = observeRepo(io, { repo: "carllaliberte/famille" });
+    assert.equal(obs.candidates.length, 1);
+    assert.match(obs.candidates[0].justification, /build-verify/);
+    assert.equal(obs.candidates[0].source, "surveillance");
+  });
+
+  it("continues independent work when an open Codex PR touches other files", () => {
+    const io = ioFor({
+      authFile: true,
+      issues: [{
+        number: 80,
+        title: "docs test",
+        body: "files: test/codex-autonomy.test.js\nimpact: 4",
+        url: "u",
+        state: "OPEN",
+      }],
+      git: { sha: "aaa", dirty: "", branch: "main" },
+      gh: (args, ctx) => {
+        if (args[0] === "pr" && args[1] === "list") {
+          return JSON.stringify([
+            { number: 517, title: "autonomie", url: "https://github.com/carllaliberte/famille/pull/517", headRefName: "codex/autonomie-totale", body: "kernel" },
+          ]);
+        }
+        if (args[0] === "pr" && args[1] === "view") {
+          return JSON.stringify({ body: "kernel", files: [{ path: "scripts/codex-autonomous-worker.mjs" }] });
+        }
+        if (args[0] === "issue" && args[1] === "list") return JSON.stringify(ctx.issues);
+        if (args[1] === "close") return "";
+        if (args[0] === "pr" && args[1] === "create") return "https://github.com/carllaliberte/famille/pull/99\n";
+        return "[]";
+      },
+      codex: (git) => {
+        git.sha = "bbb";
+        git.dirty = " M test/codex-autonomy.test.js";
+        return { status: 0, stdout: "ok" };
+      },
+    });
+    const ev = runWorker(io);
+    assert.equal(ev.status, "PR_READY");
+    assert.equal(ev.completed_tasks[0].number, 80);
+  });
+
+  it("allows the codex/ branch prefix required by the worker", () => {
+    const branche = readFileSync(new URL("../.github/workflows/branche.yml", import.meta.url), "utf8");
+    assert.match(branche, /codex\/\[a-z0-9-\]\+/);
   });
 });

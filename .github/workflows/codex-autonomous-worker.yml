@@ -102,7 +102,7 @@ jobs:
           CODEX_WORKER_MEMORY: evidence/codex/worker-memory.json
           CODEX_TASK_LABEL: codex-task
           CODEX_TASK_TIMEOUT_MINUTES: "20"
-          CODEX_REPAIR_ATTEMPTS: "1"
+          CODEX_REPAIR_ATTEMPTS: "3"
           CODEX_MAX_TASKS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_tasks || '12' }}
           CODEX_MAX_RUN_MINUTES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_minutes || '300' }}
           CODEX_TASK_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.task_number || '' }}

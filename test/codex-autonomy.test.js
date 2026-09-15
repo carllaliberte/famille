@@ -19,6 +19,7 @@ import {
   hydrateMemory,
   humanRequired,
   loopPosition,
+  parseTaskMetadata,
   prioritize,
   provenanceRecord,
   recordErrorSignature,
@@ -42,6 +43,18 @@ describe("acorn autonomy kernel", () => {
     assert.equal(LOOP_STEPS.at(-1), "RESUME");
     assert.equal(LOOP_STEPS[12], "WAIT_FOR_HUMAN_MERGE");
   });
+  it("parseTaskMetadata reads explainable factors from an issue body, never invents them", () => {
+    const meta = parseTaskMetadata("impact: 5\nurgence: 4\nfiles: scripts/foo.mjs test/foo.test.js\ndependsOnPr: #12\nsee #513");
+    assert.equal(meta.impact, 5);
+    assert.equal(meta.urgency, 4);
+    assert.deepEqual(meta.files, ["scripts/foo.mjs", "test/foo.test.js"]);
+    assert.equal(meta.dependsOnPr, 12);
+    assert.ok(meta.mentionedIssues.includes(513));
+    const empty = parseTaskMetadata("Continue making the repo better.");
+    assert.equal(empty.impact, undefined);
+    assert.equal(empty.files.length, 0);
+  });
+
   it("scores tasks with an explainable justification, not first-come", () => {
     const low = scoreTask(task({ id: "a", title: "low", impact: 1, urgency: 1, measureValue: 1, effort: 5, risk: 5, blockers: 3 }));
     const high = scoreTask(task({ id: "b", title: "high", impact: 5, urgency: 5, measureValue: 5, effort: 1, risk: 0, blockers: 0, architecturalCoherence: 5 }));
