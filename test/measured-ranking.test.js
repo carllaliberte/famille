@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertRankingSafe, orderByMeasuredRank, rankAgents, scoreEvidence } from "../scripts/measured-ranking.mjs";
+import { assertRankingSafe, compareRankings, orderByMeasuredRank, rankAgents, scoreEvidence } from "../scripts/measured-ranking.mjs";
 
 const agents = [
   { id: "astra", name: "Astra", kind: "model", specialty: "software-engineering", capabilities: ["review", "build"] },
@@ -60,6 +60,18 @@ test("routing order follows measured rank and leaves unmeasured last", () => {
     measured: [{ id: "grok", rank: 1 }, { id: "astra", rank: 2 }],
   });
   assert.deepEqual(ids, ["grok", "astra", "new-model"]);
+});
+
+test("rank movement is explicit and measurable", () => {
+  const changes = compareRankings(
+    { measured: [{ id: "astra", rank: 1 }, { id: "grok", rank: 2 }] },
+    { measured: [{ id: "grok", rank: 1 }, { id: "astra", rank: 2 }, { id: "new-model", rank: 3 }] },
+  );
+  assert.deepEqual(changes, [
+    { id: "astra", type: "DEMOTED", from: 1, to: 2, delta: -1 },
+    { id: "grok", type: "PROMOTED", from: 2, to: 1, delta: 1 },
+    { id: "new-model", type: "MEASURED", from: null, to: 3, delta: null },
+  ]);
 });
 
 test("ranking remains non-authoritative and non-live", () => {
