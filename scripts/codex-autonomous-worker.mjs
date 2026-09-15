@@ -138,7 +138,7 @@ export function classifyError(err) {
   const msg = String(err?.message || err || "").toLowerCase();
   const code = err?.code || err?.status;
   if (/unexpected argument|unknown (?:option|flag)|usage: codex exec/.test(msg)) return "CLI";
-  if (/auth|login|unauthorized|401/.test(msg)) return "AUTH";
+  if (/auth|login|unauthorized|401|402|payment required|credits/.test(msg)) return "AUTH";
   if (/codex/.test(msg) && /not found|enoent|127/.test(msg)) return "CLI";
   if (code === "ENOENT" || /enoent/.test(msg)) return "ENVIRONMENT";
   if (/dirty|worktree|not clean/.test(msg)) return "WORKTREE";
@@ -357,17 +357,22 @@ export function tomlEscape(value) {
 }
 
 export function buildCodexConfig(io, auth = classifyAuth(io)) {
+  const openrouterOnly = Boolean(auth.openrouter && !auth.path_exists);
   const lines = [
     "approval_policy = \"never\"",
     "sandbox_mode = \"danger-full-access\"",
-    "model_reasoning_effort = \"high\"",
+    `model_reasoning_effort = "${openrouterOnly ? "low" : "high"}"`,
     "",
   ];
-  if (auth.openrouter && !auth.path_exists) {
+  if (openrouterOnly) {
     const model = String(io.env.CODEX_MODEL || "google/gemini-2.5-flash").trim() || "google/gemini-2.5-flash";
+    const maxOut = Number(io.env.CODEX_MAX_OUTPUT_TOKENS || 1024) || 1024;
     lines.push(
       "model_provider = \"openrouter\"",
       `model = "${tomlEscape(model)}"`,
+      `model_max_output_tokens = ${maxOut}`,
+      "model_context_window = 16384",
+      "model_reasoning_summary = \"none\"",
       "",
       "[model_providers.openrouter]",
       "name = \"openrouter\"",
@@ -375,6 +380,10 @@ export function buildCodexConfig(io, auth = classifyAuth(io)) {
       "env_key = \"OPENROUTER_API_KEY\"",
       "wire_api = \"responses\"",
       "supports_websockets = false",
+      "",
+      "[model_providers.openrouter.auth]",
+      "command = \"sh\"",
+      "args = [\"-c\", \"printf '%s' \\\"$OPENROUTER_API_KEY\\\"\"]",
       "",
     );
   }
@@ -1106,9 +1115,24 @@ export function runWorker(io = createIo()) {
     cycle.codex.push(run);
 
     for (let attempt = 0; (run.status === "CODEX_FAILED" || run.status === "TIMEOUT") && attempt < cfg.maxRepairAttempts; attempt++) {
-      recordErrorSignature(memory, { category: "CODEX", message: run.stderr_tail || run.status, sha: baseSha, now: io.now() });
-      const repeated = classifyRepetition({ memory, category: "CODEX", message: run.stderr_tail || run.status, sha: baseSha });
-      const level = escalateDebug({ attempt: attempt + 1, category: "CODEX" });
+      const category = classifyError({ message: run.stderr_tail || run.status });
+      recordErrorSignature(memory, { category, message: run.stderr_tail || run.status, sha: baseSha, now: io.now() });
+      const repeated = classifyRepetition({ memory, category, message: run.stderr_tail || run.status, sha: baseSha });
+      const level = escalateDebug({ attempt: attempt + 1, category });
+      if (category === "AUTH") {
+        setAuthCooldown(memory, baseSha, io.now());
+        evidence.status = "UNAVAILABLE";
+        evidence.reason = "provider quota or auth rejected the request";
+        evidence.human_actions_required.push(humanRequired({
+          reason: evidence.reason,
+          evidence: [String(run.stderr_tail || "").slice(-400)],
+          attempts: attempt + 1,
+          what_was_done: ["classified 402/auth", "stopped retries"],
+          what_remains: ["credits, CODEX_AUTH_JSON, or a cheaper model"],
+          exact_human_action: "Lire l'evidence du worker et décider — pas un « go ».",
+        }));
+        break;
+      }
       if (repeated.status !== "CONTINUE") {
         evidence.status = repeated.status;
         evidence.reason = `même erreur Codex × ${repeated.count}`;
