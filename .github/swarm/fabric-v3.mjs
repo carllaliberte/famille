@@ -111,7 +111,7 @@ export function executeCorrection(task, spec = {}) {
   work = measurement.work;
 
   const branchResult = work.branches.find((b) => b.branch_id === branch.branch_id)?.result;
-  const expected = spec.output ?? { corrected: true };
+  const expected = spec.expected ?? spec.output ?? { corrected: true };
   const readback = verifyReadback({ executed: true, expected, readback: branchResult ? JSON.parse(branchResult.body) : null });
   if (readback.state !== "VERIFIED") {
     const objection = addObjection(work, {
