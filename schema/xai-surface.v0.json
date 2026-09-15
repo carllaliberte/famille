@@ -1,0 +1,47 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/xai-surface.v0.json",
+  "title": "famille.xai-surface.v0",
+  "description": "Dated xAI/Grok surface for Acorn kernel surveillance. Catalog is not CONNECTED. Catalog is not LIVE. Paid API is an optional adapter. Horizon expires the catalog; it does not make history false.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "measured_on", "horizon", "provider", "secret", "auto_merge", "live", "human_authority", "surfaces"],
+  "properties": {
+    "version": { "const": "xai-surface.v0" },
+    "measured_on": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "horizon": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "provider": { "const": "xai" },
+    "base_url": { "type": "string" },
+    "secret": { "const": "XAI_API_KEY" },
+    "auto_merge": { "const": false },
+    "live": { "const": false },
+    "human_authority": { "const": "carl" },
+    "kernel": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "const": "SOVEREIGN_KERNEL" },
+        "flux": { "const": "acorn.v0" },
+        "inseparable": { "type": "boolean" },
+        "required_for_run": { "const": false }
+      }
+    },
+    "surfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "layer", "status", "runtime"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,24}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "layer": { "enum": ["roster", "api", "product", "infra", "out-of-runtime"] },
+          "status": { "enum": ["shipping", "announced", "retired", "not-canal"] },
+          "runtime": { "enum": ["chef", "consult", "adapter", "guest", "forbidden"] },
+          "roster_id": { "type": ["string", "null"] },
+          "slug": { "type": ["string", "null"] },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  }
+}
