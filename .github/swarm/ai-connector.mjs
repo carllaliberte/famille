@@ -3,18 +3,18 @@
  * ACORN AI / COGNITIVE CONNECTOR
  *
  * Common ingress boundary for external intelligences, models, tools and
- * future channels. System automation lives here; protected execution then
- * crosses the Global Breaker immediately after this layer.
+ * future channels. The Connector transports the original human intent and
+ * its ingress frame; it does not create the Acorn cognitive task.
+ * Protected execution crosses the Global Breaker before Acorn creates the
+ * canonical task for downstream intelligence.
  */
 import { assertSystemMayProceed, controlState } from "./system-breaker.mjs";
 import { inspectSystems, planSystems } from "./system-automation.mjs";
-import { createCognitiveTask } from "./cognitive-task.mjs";
 
 export const CONNECTOR_VERSION = "ai-connector.v1";
 
 export function acceptIngress({ channel = "unknown", source = "unknown", payload = null, capabilities = ["lu"], context = null, ref = "main", env = process.env } = {}) {
   const intent = typeof payload === "string" ? payload : payload?.intent ?? payload?.prompt ?? "";
-  const task = createCognitiveTask({ intent, source, channel, ref, capabilities, context, env });
   const systems = planSystems({ capabilities, env });
   const state = assertSystemMayProceed({ env, origin: source, action: `AI ingress channel=${channel}` });
   return {
@@ -24,14 +24,21 @@ export function acceptIngress({ channel = "unknown", source = "unknown", payload
     source,
     mode: state.mode,
     diagnostic: state.diagnostic,
-    task,
-    systems,
+    ingress: {
+      intent,
+      provenance: { source, channel, ref },
+      capabilities: [...new Set((Array.isArray(capabilities) ? capabilities : [capabilities]).map((x) => String(x || "").trim().toLowerCase()).filter(Boolean))],
+      context,
+      systems,
+    },
     provenance: { source, channel, ref },
     payload,
     production_write_allowed: false,
     auto_merge: false,
     live: false,
     human_authority: "carl",
+    task_owner: "acorn",
+    task_created_by_connector: false,
   };
 }
 
@@ -51,6 +58,8 @@ export function inspectIngress({ channel = "unknown", source = "unknown", capabi
     auto_merge: false,
     live: false,
     human_authority: "carl",
+    task_owner: "acorn",
+    task_created_by_connector: false,
   };
 }
 

@@ -2,9 +2,11 @@
 /**
  * ACORN COGNITIVE TASK
  *
- * One human intent, one deterministic task envelope. Every intelligence can
- * consume the same task without the human translating it between systems.
- * Packaging only: protected execution still crosses the Global Breaker.
+ * Acorn owns creation of the one canonical cognitive task after the
+ * Connector has transported the original human intent and the Global
+ * Breaker has authorized protected execution.
+ * Every intelligence consumes the same task without the human translating
+ * it between systems.
  */
 export const COGNITIVE_TASK_VERSION = "cognitive-task.v1";
 
@@ -28,6 +30,7 @@ export function createCognitiveTask({
 
   return {
     task: COGNITIVE_TASK_VERSION,
+    owner: "acorn",
     intent: clean(intent),
     provenance: {
       source: clean(source, "unknown"),
@@ -54,6 +57,7 @@ export function taskPrompt(task) {
   const value = task || {};
   return [
     "ACORN TASK — preserve the original human intent exactly.",
+    `Owner: ${clean(value.owner, "acorn")}`,
     `Intent: ${clean(value.intent)}`,
     `Source: ${clean(value.provenance?.source, "unknown")}`,
     `Channel: ${clean(value.provenance?.channel, "unknown")}`,
