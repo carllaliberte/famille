@@ -68,6 +68,24 @@ test("runtime starts a fresh time slice when resumed from a completed checkpoint
   assert.equal(second.cycle, first.cycle + 1);
 });
 
+test("runtime inherits cycle lineage passed by the renewing workflow", async () => {
+  const env = {
+    ACORN_SYSTEM_MODE: "RUN",
+    ACORN_RUNTIME_MINUTES: "1",
+    ACORN_RUNTIME_MAX_CYCLES: "1",
+    ACORN_RUNTIME_RESUME_CYCLE: "41",
+    ACORN_RUNTIME_PARENT_RUN_ID: "123456",
+  };
+  const result = await runAutonomousRuntime({
+    env,
+    worker: () => ({ verified: false, dispatches: [], measurement_record: { ok: true } }),
+    sleepFn: async () => {},
+  });
+  assert.equal(result.state, "TIME_SLICE_COMPLETE");
+  assert.equal(result.cycle, 42);
+  assert.equal(result.parent_run_id, "123456");
+});
+
 test("runtime stops when the breaker changes to OFF between cycles", async () => {
   const env = {
     ACORN_SYSTEM_MODE: "RUN",
