@@ -406,6 +406,13 @@ export const CODEX_WRITE_ARGS = Object.freeze([
   "--dangerously-bypass-approvals-and-sandbox",
 ]);
 
+export function extraCodexConfigArgs(io) {
+  const auth = classifyAuth(io);
+  if (!auth.openrouter || auth.path_exists) return [];
+  const maxOut = Number(io.env.CODEX_MAX_OUTPUT_TOKENS || 1024) || 1024;
+  return ["-c", `model_max_output_tokens=${maxOut}`, "-c", "model_reasoning_effort=\"low\""];
+}
+
 export function classifyCli(io) {
   const probe = io.spawn("codex", ["--version"], { cwd: io.root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   const available = probe.status === 0;
@@ -732,7 +739,7 @@ ${correction ? `\nIMMEDIATE DEBUG/REPAIR:\n${correction}\n` : ""}`;
 function runCodex(io, cfg, task, correction = "") {
   const beforeSha = git(io, ["rev-parse", "HEAD"]).trim();
   const beforeDirty = git(io, ["status", "--porcelain"]);
-  const result = io.spawn("codex", [...CODEX_WRITE_ARGS, taskPrompt(task, correction)], {
+  const result = io.spawn("codex", [...CODEX_WRITE_ARGS, ...extraCodexConfigArgs(io), taskPrompt(task, correction)], {
     cwd: io.root,
     encoding: "utf8",
     timeout: cfg.taskTimeout * 60 * 1000,
@@ -776,7 +783,7 @@ Otherwise return ONLY valid JSON:
 {"title":"...","body":"...","justification":"...","files":[],"tests":[],"priority":"normal"}
 
 The justification must cite existing evidence (failing test, incomplete worker path, measured gap). Prefer fixing a real gap over inventing architecture.`;
-  const r = io.spawn("codex", ["exec", "--ephemeral", "--sandbox", "read-only", "--dangerously-bypass-approvals-and-sandbox", prompt], {
+  const r = io.spawn("codex", ["exec", "--ephemeral", "--sandbox", "read-only", "--dangerously-bypass-approvals-and-sandbox", ...extraCodexConfigArgs(io), prompt], {
     cwd: io.root,
     encoding: "utf8",
     timeout: Math.min(cfg.taskTimeout, 10) * 60 * 1000,
@@ -1008,9 +1015,10 @@ export function runWorker(io = createIo()) {
   ensureBranch(io, branch);
   evidence.workspace = { branch, base_sha: baseSha, head_sha: baseSha, clean: true };
 
+  const skippedTasks = new Set();
   while (evidence.completed_tasks.length < cfg.maxTasks && timeLeft()) {
     let tasks;
-    try { tasks = listTasks(io, cfg); } catch (error) {
+    try { tasks = listTasks(io, cfg).filter((t) => !skippedTasks.has(t.number)); } catch (error) {
       const category = classifyError(error);
       evidence.debug.push(debugBlock(io, "TASK", { category, error: String(error.message || error) }));
       evidence.blocked.push({ category, status: "FAILED" });
@@ -1037,6 +1045,10 @@ export function runWorker(io = createIo()) {
 
     let discovery = null;
     if (!tasks.length) {
+      if (skippedTasks.size && !evidence.completed_tasks.length) {
+        evidence.reason = evidence.reason || "no remaining executable task after bounded skip";
+        break;
+      }
       const obs = observeRepo(io, cfg);
       evidence.observation = {
         failed_workflows: obs.failedWorkflows.length,
@@ -1160,8 +1172,15 @@ export function runWorker(io = createIo()) {
     if (run.status !== "PATCHED" || run.patch_source !== "codex") {
       evidence.cycles.push(cycle);
       memory.failed_tasks.push({ number: task.number, title: task.title, status: run.status });
+      skippedTasks.add(task.number);
+      const failCat = classifyError({ message: run.stderr_tail || run.status });
+      tasks = tasks.filter((t) => t.number !== task.number);
+      if (failCat === "AUTH" || failCat === "PERMISSION" || failCat === "GOVERNANCE") {
+        evidence.status = failCat === "AUTH" ? (evidence.status || "UNAVAILABLE") : run.status;
+        break;
+      }
       evidence.status = run.status;
-      break;
+      continue;
     }
 
     let tests = testChanges(io, cfg);
@@ -1202,8 +1221,8 @@ export function runWorker(io = createIo()) {
     const completed = { number: task.number, title: task.title, url: task.url };
     evidence.completed_tasks.push(completed);
     memory.completed_tasks.push(completed);
+    skippedTasks.add(task.number);
     memory.current_task = null;
-    if (cfg.taskNumber) break;
   }
 
   if (!timeLeft() && evidence.status == null) evidence.status = "TIME_BUDGET";
