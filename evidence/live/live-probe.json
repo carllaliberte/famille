@@ -1,0 +1,174 @@
+{
+  "v": "live-probe.v1",
+  "tested_at": "2026-09-15T22:06:43.253Z",
+  "tested_sha": "83bdc6907fab35676017296e95c66024157fbbcc",
+  "probes": {
+    "vitrine_home": {
+      "url": "https://acorn-royal-dune-blend.grok.me/",
+      "method": "GET",
+      "class": "OK",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "latency_ms": 129,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "server": "cloudflare",
+        "x-vercel-id": "iad1::iad1::pqmwh-1789510003425-ef175da4b797"
+      },
+      "json": null,
+      "body_prefix": "<!DOCTYPE html><html lang=\"fr\"><head><meta name=\"twitter:card\" content=\"summary_large_image\"><meta property=\"og:title\" content=\"Famille\"><meta property=\"og:image\" content=\"https://acorn-royal-dune-blend.grok.me/og.jpg\"><meta property=\"og:image:width\" content=\"1200\"><meta property=\"og:image:height\" content=\"630\"><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/assets/styles-BSFN0vpu.css\" data-precedence=\"default\"/><link rel=",
+      "sha": null
+    },
+    "vitrine_privacy": {
+      "url": "https://acorn-royal-dune-blend.grok.me/privacy",
+      "method": "GET",
+      "class": "HTTP_FAILURE",
+      "status": 404,
+      "content_type": "text/html; charset=utf-8",
+      "latency_ms": 55,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "server": "cloudflare",
+        "x-vercel-id": "iad1::iad1::xltps-1789510003480-9434bb25014b"
+      },
+      "json": null,
+      "body_prefix": "<!DOCTYPE html><html lang=\"fr\"><head><meta name=\"twitter:card\" content=\"summary_large_image\"><meta property=\"og:title\" content=\"Famille\"><meta property=\"og:image\" content=\"https://acorn-royal-dune-blend.grok.me/og.jpg\"><meta property=\"og:image:width\" content=\"1200\"><meta property=\"og:image:height\" content=\"630\"><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/assets/styles-BSFN0vpu.css\" data-precedence=\"default\"/><link rel=",
+      "sha": null
+    },
+    "vitrine_juge": {
+      "url": "https://acorn-royal-dune-blend.grok.me/juge",
+      "method": "GET",
+      "class": "HTTP_FAILURE",
+      "status": 404,
+      "content_type": "text/html; charset=utf-8",
+      "latency_ms": 55,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-type": "text/html; charset=utf-8",
+        "server": "cloudflare",
+        "x-vercel-id": "iad1::iad1::tmd56-1789510003542-54526c6c3f42"
+      },
+      "json": null,
+      "body_prefix": "<!DOCTYPE html><html lang=\"fr\"><head><meta name=\"twitter:card\" content=\"summary_large_image\"><meta property=\"og:title\" content=\"Famille\"><meta property=\"og:image\" content=\"https://acorn-royal-dune-blend.grok.me/og.jpg\"><meta property=\"og:image:width\" content=\"1200\"><meta property=\"og:image:height\" content=\"630\"><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"stylesheet\" href=\"/assets/styles-BSFN0vpu.css\" data-precedence=\"default\"/><link rel=",
+      "sha": null
+    },
+    "canal_home": {
+      "url": "https://acorn-juge.laliberte22.workers.dev/",
+      "method": "GET",
+      "class": "HTTP_FAILURE",
+      "status": 404,
+      "content_type": "application/json; charset=utf-8",
+      "latency_ms": 57,
+      "headers": {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+        "server": "cloudflare"
+      },
+      "json": {
+        "error": "not_this_canal",
+        "preview": true,
+        "phrase": "Unknown path. This Worker does not proxy the vitrine.",
+        "juge": "/juge"
+      },
+      "body_prefix": "{\"error\":\"not_this_canal\",\"preview\":true,\"phrase\":\"Unknown path. This Worker does not proxy the vitrine.\",\"juge\":\"/juge\"}",
+      "sha": null
+    },
+    "canal_privacy": {
+      "url": "https://acorn-juge.laliberte22.workers.dev/privacy",
+      "method": "GET",
+      "class": "OK",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "latency_ms": 15,
+      "headers": {
+        "cache-control": "no-store",
+        "content-type": "text/html; charset=utf-8",
+        "server": "cloudflare"
+      },
+      "json": null,
+      "body_prefix": "<!DOCTYPE html>\n<html lang=\"fr\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Vie privée — acorn-juge</title>\n<style>body{font-family:system-ui,sans-serif;max-width:42rem;margin:2rem auto;padding:0 1rem;line-height:1.45}h1{font-size:1.4rem}h2{font-size:1.1rem;margin-top:1.6rem}table{border-collapse:collapse;width:100%;font-size:.95rem}th,td{border:1px solid #555;padding:.3rem .45rem;text-align:left}.lamp{display:inline-block;width:.7re",
+      "sha": null
+    },
+    "critical_juge": {
+      "url": "https://acorn-juge.laliberte22.workers.dev/juge?quelle=os&temoin=aucun&epsilon=0.1&horizon=2027-12-31",
+      "method": "GET",
+      "class": "OK",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "latency_ms": 13,
+      "headers": {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+        "server": "cloudflare"
+      },
+      "json": {
+        "id": "preview-2026-09-15",
+        "status": "CLASSIQUE",
+        "preview": true,
+        "receipt": false,
+        "quelle": "os",
+        "temoin": "aucun",
+        "epsilon": 0.1,
+        "horizon": "2027-12-31",
+        "as_of": "2026-09-15",
+        "phrase": "Classical — phone entropy is not quantum"
+      },
+      "body_prefix": "{\"id\":\"preview-2026-09-15\",\"status\":\"CLASSIQUE\",\"preview\":true,\"receipt\":false,\"quelle\":\"os\",\"temoin\":\"aucun\",\"epsilon\":0.1,\"horizon\":\"2027-12-31\",\"as_of\":\"2026-09-15\",\"phrase\":\"Classical — phone entropy is not quantum\"}",
+      "sha": null
+    },
+    "epsilon_zero": {
+      "url": "https://acorn-juge.laliberte22.workers.dev/juge?quelle=os&temoin=aucun&epsilon=0&horizon=2027-12-31",
+      "method": "GET",
+      "class": "HTTP_FAILURE",
+      "status": 400,
+      "content_type": "application/json; charset=utf-8",
+      "latency_ms": 11,
+      "headers": {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+        "server": "cloudflare"
+      },
+      "json": {
+        "error": "lie",
+        "phrase": "Error margin zero is a lie",
+        "preview": true
+      },
+      "body_prefix": "{\"error\":\"lie\",\"phrase\":\"Error margin zero is a lie\",\"preview\":true}",
+      "sha": null
+    },
+    "missing_epsilon": {
+      "url": "https://acorn-juge.laliberte22.workers.dev/juge?quelle=os&temoin=aucun&horizon=2027-12-31",
+      "method": "GET",
+      "class": "HTTP_FAILURE",
+      "status": 400,
+      "content_type": "application/json; charset=utf-8",
+      "latency_ms": 39,
+      "headers": {
+        "cache-control": "no-store",
+        "content-type": "application/json; charset=utf-8",
+        "server": "cloudflare"
+      },
+      "json": {
+        "error": "EPSILON_MISSING",
+        "preview": true,
+        "phrase": "Missing ε is not a zero margin. This canal returns 400. famille sdk (d55799e) treats missing ε as classique. GARDE fail-closes until they agree.",
+        "consumers": {
+          "acorn-juge": "400",
+          "famille-sdk": "classique",
+          "garde": "EPSILON_MISSING"
+        }
+      },
+      "body_prefix": "{\"error\":\"EPSILON_MISSING\",\"preview\":true,\"phrase\":\"Missing ε is not a zero margin. This canal returns 400. famille sdk (d55799e) treats missing ε as classique. GARDE fail-closes until they agree.\",\"consumers\":{\"acorn-juge\":\"400\",\"famille-sdk\":\"classique\",\"garde\":\"EPSILON_MISSING\"}}",
+      "sha": null
+    }
+  },
+  "auto_merge": false,
+  "live": false,
+  "seal": {
+    "v": "evidence-seal.v1",
+    "algorithm": "sha256",
+    "digest": "6f0fae472007167eb2287e5a10d4abaa49d1075cb66e4cefb2b13cf3477c9973"
+  }
+}
