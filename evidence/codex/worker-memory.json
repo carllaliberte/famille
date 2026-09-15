@@ -1,0 +1,19 @@
+{
+  "v": "codex-worker-memory.v1",
+  "authority": "carl",
+  "auto_merge": false,
+  "live": false,
+  "current_task": null,
+  "completed_tasks": [],
+  "failed_tasks": [],
+  "repairs": [],
+  "tests": [],
+  "open_prs": [],
+  "blocked_items": [],
+  "human_actions_required": [],
+  "discoveries": [],
+  "measurements": [],
+  "next_candidates": [],
+  "updated_at": null,
+  "note": "Operational memory. Reconstructible from GitHub issues, PRs, and run evidence. Not a parallel source of truth. Secrets never stored."
+}
