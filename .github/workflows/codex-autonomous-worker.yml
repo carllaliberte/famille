@@ -70,8 +70,13 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Install Codex CLI
-        run: npm install --global @openai/codex
+      - name: Install Codex CLI (pinned)
+        run: npm install --global @openai/codex@0.153.4
+
+      - name: Verify Codex CLI version
+        run: |
+          codex --version
+          test "$(codex --version)" = "codex-cli 0.153.4"
 
       - name: Restore optional ChatGPT Codex authentication
         env:
