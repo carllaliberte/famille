@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       max_tasks:
-        description: "Task budget for this run"
+        description: "Task budget for this run (diagnostic; not required for autonomy)"
         required: false
         default: "1"
         type: string
@@ -32,6 +32,10 @@ on:
         type: boolean
   pull_request:
     types: [closed]
+  push:
+    branches: [main]
+  issues:
+    types: [opened, labeled, reopened]
 
 permissions:
   contents: write
@@ -46,10 +50,13 @@ concurrency:
 jobs:
   codex:
     if: >
-      github.event_name != 'pull_request' ||
-      (github.event.pull_request.merged == true &&
-       github.event.pull_request.base.ref == 'main' &&
-       startsWith(github.event.pull_request.head.ref, 'codex/'))
+      (github.event_name != 'pull_request' ||
+       (github.event.pull_request.merged == true &&
+        github.event.pull_request.base.ref == 'main' &&
+        startsWith(github.event.pull_request.head.ref, 'codex/'))) &&
+      (github.event_name != 'issues' ||
+       contains(join(github.event.issue.labels.*.name, ','), 'codex-task')) &&
+      (github.event_name != 'push' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 350
     steps:
@@ -95,7 +102,7 @@ jobs:
           CODEX_WORKER_MEMORY: evidence/codex/worker-memory.json
           CODEX_TASK_LABEL: codex-task
           CODEX_TASK_TIMEOUT_MINUTES: "20"
-          CODEX_REPAIR_ATTEMPTS: "1"
+          CODEX_REPAIR_ATTEMPTS: "3"
           CODEX_MAX_TASKS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_tasks || '12' }}
           CODEX_MAX_RUN_MINUTES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_minutes || '300' }}
           CODEX_TASK_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.task_number || '' }}
@@ -105,13 +112,17 @@ jobs:
           CODEX_PR_HEAD: ${{ github.event.pull_request.head.ref || '' }}
           CODEX_PR_BASE: ${{ github.event.pull_request.base.ref || 'main' }}
           CODEX_PR_MERGED: ${{ github.event.pull_request.merged || false }}
+          CODEX_HEAD_SHA: ${{ github.sha }}
+          CODEX_BEFORE_SHA: ${{ github.event.before || '' }}
+          CODEX_ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
+          CODEX_MERGED_PR_NUMBER: ${{ github.event.pull_request.number || '' }}
         run: node scripts/codex-autonomous-worker.mjs
 
       - name: Heartbeat summary
         if: always()
         run: |
           if [ -f codex-worker-evidence.json ]; then
-            node -e 'const e=require("./codex-worker-evidence.json"); const h=`HEARTBEAT status=${e.status} patch_source=${e.codex?.patch_source||"none"} codex.available=${Boolean(e.codex?.available)} codex.executed=${Boolean(e.codex?.executed)} tasks=${(e.completed_tasks||[]).length} pr=${e.prs?.[0]?.url||"none"}`; console.log(h); console.log(JSON.stringify({status:e.status,codex:e.codex,human:e.human_actions_required,capabilities:e.capabilities||null},null,2));'
+            node -e 'const e=require("./codex-worker-evidence.json"); const h=`HEARTBEAT status=${e.status} patch_source=${e.codex?.patch_source||"none"} codex.available=${Boolean(e.codex?.available)} codex.executed=${Boolean(e.codex?.executed)} tasks=${(e.completed_tasks||[]).length} pr=${e.prs?.[0]?.url||"none"}`; console.log(h); console.log(JSON.stringify({status:e.status,codex:e.codex,human:e.human_actions_required,capabilities:e.capabilities||null,autonomy:e.trigger_gate||null},null,2));'
           else
             echo "HEARTBEAT status=FAILED reason=no-evidence-file"
             exit 0

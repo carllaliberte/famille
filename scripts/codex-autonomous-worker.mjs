@@ -1,15 +1,33 @@
 #!/usr/bin/env node
 /**
- * ACORN CODEX AUTONOMOUS WORKER
- * observe → choose → Codex → measure → debug → test → evidence → PR (Carl).
- * Never merges. Never invents Codex provenance. Never claims LIVE.
+ * ACORN CODEX AUTONOMOUS WORKER v6
+ * OBSERVE → UNDERSTAND → DISCOVER → PRIORITIZE → TASK → CODE → TEST → DEBUG
+ * → REPAIR → MEASURE → EVIDENCE → PR → WAIT FOR HUMAN MERGE → DETECT MERGE → RESUME.
+ * Carl is not an operational dependency. Merge remains human. Never auto-merge. Never LIVE.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import {
+  afterMergeSync,
+  applyLoopGuards,
+  candidateFromSurveillance,
+  classifyRepetition,
+  escalateDebug,
+  evaluateTrigger,
+  extractTaskNumbers,
+  hydrateMemory,
+  humanRequired,
+  parseTaskMetadata,
+  recordErrorSignature,
+  runTruthSuite,
+  selectNextWork,
+  setAuthCooldown,
+  emptyMemory as kernelEmpty,
+} from "./codex-autonomy.mjs";
 
-export const WORKER_VERSION = "codex-autonomous-worker.v4";
+export const WORKER_VERSION = "codex-autonomous-worker.v7";
 export const MEMORY_PATH = "evidence/codex/worker-memory.json";
 export const WORKER_FILES = new Set([
   "codex-worker-evidence.json",
@@ -28,6 +46,7 @@ export const SELF_TEST_KEYS = [
   "DEBUG",
   "PR",
   "LOOP",
+  "AUTONOMY",
 ];
 
 const SECRET_KEY = /secret|token|password|authorization|api[_-]?key|auth\.json|codex_auth/i;
@@ -74,7 +93,7 @@ export function configFrom(io) {
     memoryPath: resolve(io.root, env.CODEX_WORKER_MEMORY || MEMORY_PATH),
     taskLabel: env.CODEX_TASK_LABEL || "codex-task",
     taskTimeout: Number(env.CODEX_TASK_TIMEOUT_MINUTES || 20),
-    maxRepairAttempts: Number(env.CODEX_REPAIR_ATTEMPTS || 1),
+    maxRepairAttempts: Number(env.CODEX_REPAIR_ATTEMPTS || 3),
     maxTasks: Number(env.CODEX_MAX_TASKS || 12),
     maxRunMinutes: Number(env.CODEX_MAX_RUN_MINUTES || 300),
     taskNumber: String(env.CODEX_TASK_NUMBER || "").trim(),
@@ -86,6 +105,10 @@ export function configFrom(io) {
     prBase: env.CODEX_PR_BASE || "main",
     prMerged: truth(env.CODEX_PR_MERGED),
     breakerOff: String(env.ACORN_SYSTEM_MODE || "RUN").trim().toUpperCase() === "OFF",
+    headSha: env.CODEX_HEAD_SHA || "",
+    beforeSha: env.CODEX_BEFORE_SHA || "",
+    issueLabels: String(env.CODEX_ISSUE_LABELS || "").split(",").map((x) => x.trim()).filter(Boolean),
+    mergedPrNumber: Number(env.CODEX_MERGED_PR_NUMBER || 0) || null,
   };
 }
 
@@ -133,19 +156,21 @@ export function shouldRunForTrigger(cfg) {
     if (!cfg.prMerged) return { run: false, reason: "PR not merged" };
     if (cfg.prBase && cfg.prBase !== "main") return { run: false, reason: "base is not main" };
     if (!String(cfg.prHead || "").startsWith("codex/")) {
-      return { run: false, reason: "not a Codex PR head; refusing accidental loop" };
+      return { run: true, reason: "merge non-Codex: détecter le SHA, synchroniser, reprendre si travail indépendant" };
     }
     return { run: true, reason: "resume after Codex PR merge" };
+  }
+  if (cfg.trigger === "workflow_run") {
+    return { run: true, reason: "échec mesuré — diagnostiquer sans attendre le cron" };
   }
   return { run: true, reason: cfg.trigger || "direct" };
 }
 
 export function emptyMemory() {
+  const v2 = kernelEmpty();
   return {
-    v: "codex-worker-memory.v1",
-    authority: "carl",
-    auto_merge: false,
-    live: false,
+    ...v2,
+    v: "codex-worker-memory.v2",
     current_task: null,
     completed_tasks: [],
     failed_tasks: [],
@@ -165,7 +190,8 @@ export function loadMemory(io, path) {
   try {
     if (!io.exists(path)) return emptyMemory();
     const parsed = JSON.parse(io.read(path));
-    return { ...emptyMemory(), ...parsed, auto_merge: false, live: false, authority: "carl" };
+    const v2 = hydrateMemory(parsed);
+    return { ...emptyMemory(), ...v2, ...parsed, auto_merge: false, live: false, authority: "carl" };
   } catch {
     return emptyMemory();
   }
@@ -182,6 +208,55 @@ export function saveMemory(io, path, memory) {
   });
   io.write(path, `${JSON.stringify(next, null, 2)}\n`);
   return next;
+}
+
+export function recordMemory(io, cfg, evidence, memory) {
+  const compact = {
+    run_id: evidence.run_id,
+    status: evidence.status || null,
+    reason: evidence.reason || null,
+    trigger: evidence.trigger || null,
+    at: new Date(io.now()).toISOString(),
+    at_ms: io.now(),
+    sha: evidence.workspace?.head_sha || evidence.workspace?.base_sha || null,
+    patch_source: evidence.codex?.patch_source || "none",
+    authenticated: Boolean(evidence.codex?.authenticated),
+  };
+  memory.measurements = [...(memory.measurements || []), compact].slice(-32);
+  memory.human_actions_required = evidence.human_actions_required || [];
+  if (evidence.status === "UNAVAILABLE" || evidence.status === "BLOCKED_BY_BREAKER" || evidence.status === "HUMAN_REQUIRED") {
+    memory.blocked_items = [
+      ...(memory.blocked_items || []),
+      { status: evidence.status, reason: evidence.reason || null, run_id: evidence.run_id },
+    ].slice(-16);
+  }
+  const saved = saveMemory(io, cfg.memoryPath, memory);
+  evidence.memory = {
+    current_task: saved.current_task,
+    completed_count: (saved.completed_tasks || []).length,
+    failed_count: (saved.failed_tasks || []).length,
+    open_prs: (saved.open_prs || []).length,
+    last_status: evidence.status,
+    updated_at: saved.updated_at,
+  };
+  return saved;
+}
+
+export function capabilitySnapshot({ cli, auth, workspace, executed, patched, tested, pr, debuged, looped } = {}) {
+  const cap = {};
+  for (const key of SELF_TEST_KEYS) cap[key] = "NOT_TESTED";
+  cap.WORKER = "PASS";
+  if (cli) cap.CODEX_CLI = cli.available ? "PASS" : "UNAVAILABLE";
+  if (auth) cap.AUTH = auth.available ? "PASS" : "UNAVAILABLE";
+  if (workspace === "clean") cap.WORKSPACE = "PASS";
+  else if (workspace === "dirty") cap.WORKSPACE = "FAIL";
+  if (debuged) cap.DEBUG = "PASS";
+  if (executed) cap.EXECUTION = "PASS";
+  if (patched) cap.PATCH = "PASS";
+  if (tested) cap.TEST = "PASS";
+  if (pr) cap.PR = "PASS";
+  if (looped) cap.LOOP = "PASS";
+  return cap;
 }
 
 export function parsePorcelain(text) {
@@ -345,28 +420,33 @@ export function decideNext({ tasks, discovery, timeLeft, taskBudget, lastStatus 
 
 function humanAuthAction() {
   return {
-    category: "HUMAN_REQUIRED",
+    ...humanRequired({
+      reason: "ChatGPT Codex session is not available on this runner",
+      evidence: ["auth.json missing", "CLI present", "worker refused to simulate Codex"],
+      attempts: 1,
+      what_was_done: ["installed Codex CLI", "probed ~/.codex/auth.json", "persisted UNAVAILABLE memory"],
+      what_remains: ["create repository secret CODEX_AUTH_JSON"],
+      exact_human_action: "Ajouter le secret CODEX_AUTH_JSON (contenu de ~/.codex/auth.json). Une fois. Carl only.",
+      url: "https://github.com/carllaliberte/famille/settings/secrets/actions",
+    }),
     action: "Add repository secret CODEX_AUTH_JSON with a ChatGPT Codex session (~/.codex/auth.json)",
-    url: "https://github.com/carllaliberte/famille/settings/secrets/actions",
-    why: "The worker will not simulate Codex. ChatGPT/Codex free-session auth is the supported path; a paid OpenAI API key is not required.",
+    why: "The worker will not simulate Codex. ChatGPT/Codex free-session auth is the supported path; a paid OpenAI API key is not required. Cron plus merge triggers resume without Carl typing Go.",
   };
 }
 
 function humanBreakerAction() {
   return {
-    category: "HUMAN_REQUIRED",
+    ...humanRequired({
+      reason: "Global breaker is OFF",
+      evidence: ["ACORN_SYSTEM_MODE=OFF"],
+      attempts: 0,
+      what_was_done: ["worker refused to execute"],
+      what_remains: ["set ACORN_SYSTEM_MODE=RUN"],
+      exact_human_action: "Mettre ACORN_SYSTEM_MODE=RUN. Carl only. Gouvernance.",
+      url: "https://github.com/carllaliberte/famille/settings/variables/actions",
+    }),
     action: "Set repository variable ACORN_SYSTEM_MODE=RUN",
-    url: "https://github.com/carllaliberte/famille/settings/variables/actions",
     why: "Global breaker is OFF; no execution is permitted.",
-  };
-}
-
-function humanDispatchAction() {
-  return {
-    category: "HUMAN_REQUIRED",
-    action: "Run workflow codex-autonomous-worker (workflow_dispatch)",
-    url: "https://github.com/carllaliberte/famille/actions/workflows/codex-autonomous-worker.yml",
-    why: "Manual first heartbeat. Use max_tasks=1, max_minutes=20, debug=true.",
   };
 }
 
@@ -421,6 +501,8 @@ export function runSelfTest(io = createIo()) {
   const execute = decideNext({ tasks: [{ number: 1 }], timeLeft: true, taskBudget: 2 });
   const loopOk = idle.status === "IDLE" && stopBudget.status === "TASK_BUDGET" && execute.action === "EXECUTE";
   mark("LOOP", loopOk ? "PASS" : "FAIL", "in-process state machine");
+  const truth = runTruthSuite();
+  mark("AUTONOMY", truth.every((t) => t.status === "PASS") ? "PASS" : "FAIL", truth.map((t) => `${t.id}:${t.status}`).join(" "));
 
   for (const key of SELF_TEST_KEYS) {
     if (!capabilities[key]) capabilities[key] = "NOT_TESTED";
@@ -445,11 +527,11 @@ export function runSelfTest(io = createIo()) {
     human_actions_required: [
       ...(!cli.available ? [{ category: "HUMAN_REQUIRED", action: "Codex CLI missing in this environment", why: "Install happens on GitHub Actions; local absence is expected." }] : []),
       ...(!auth.available ? [humanAuthAction()] : []),
-      humanDispatchAction(),
     ],
     measurements: [{ name: "self-test", at: new Date(io.now()).toISOString(), capabilities }],
   });
   io.write(cfg.evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
+  recordMemory(io, cfg, evidence, loadMemory(io, cfg.memoryPath));
   return evidence;
 }
 
@@ -458,7 +540,81 @@ function listTasks(io, cfg) {
     const issue = JSON.parse(io.gh(["issue", "view", cfg.taskNumber, "--repo", cfg.repo, "--json", "number,title,body,url,state,labels"]));
     return [issue];
   }
-  return JSON.parse(io.gh(["issue", "list", "--repo", cfg.repo, "--state", "open", "--label", cfg.taskLabel, "--limit", "5", "--json", "number,title,body,url"]) || "[]");
+  return JSON.parse(io.gh(["issue", "list", "--repo", cfg.repo, "--state", "open", "--label", cfg.taskLabel, "--limit", "20", "--json", "number,title,body,url"]) || "[]");
+}
+
+function listOpenCodexPrs(io, cfg) {
+  try {
+    const prs = JSON.parse(io.gh(["pr", "list", "--repo", cfg.repo, "--state", "open", "--limit", "20", "--json", "number,title,url,headRefName,body"]) || "[]");
+    return (prs || [])
+      .filter((p) => String(p.headRefName || p.head || "").startsWith("codex/"))
+      .map((p) => {
+        let files = p.files || [];
+        let body = p.body || "";
+        try {
+          const detail = JSON.parse(io.gh(["pr", "view", String(p.number), "--repo", cfg.repo, "--json", "files,body,title"]) || "{}");
+          body = detail.body || body;
+          files = (detail.files || []).map((f) => f.path || f.filename || f).filter(Boolean);
+        } catch { /* list payload is enough for WAIT_HUMAN_MERGE */ }
+        const taskNumbers = [
+          ...(p.taskNumbers || []),
+          ...extractTaskNumbers(`${p.title || ""}\n${body}`),
+        ];
+        return {
+          number: p.number,
+          title: p.title,
+          head: p.headRefName || p.head,
+          url: p.url,
+          files,
+          taskNumbers: [...new Set(taskNumbers)],
+        };
+      });
+  } catch {
+    return [];
+  }
+}
+
+export function issueToWorkTask(issue) {
+  const meta = parseTaskMetadata(`${issue.title || ""}\n${issue.body || ""}`);
+  return {
+    id: String(issue.number ?? issue.id),
+    number: issue.number,
+    title: issue.title,
+    body: issue.body,
+    source: "issue",
+    files: issue.files?.length ? issue.files : meta.files,
+    justification: String(issue.body || issue.title || "").slice(0, 500),
+    kind: "code",
+    impact: meta.impact,
+    urgency: meta.urgency,
+    risk: meta.risk,
+    effort: meta.effort,
+    measureValue: meta.measureValue,
+    architecturalCoherence: meta.architecturalCoherence,
+    dependsOnPr: meta.dependsOnPr,
+  };
+}
+
+export function observeRepo(io, cfg) {
+  let failedWorkflows = [];
+  let blockedPrs = [];
+  try {
+    const runs = JSON.parse(io.gh([
+      "run", "list", "--repo", cfg.repo, "--status", "failure", "--limit", "10",
+      "--json", "name,conclusion,url,headSha,displayTitle",
+    ]) || "[]");
+    failedWorkflows = (runs || [])
+      .filter((r) => r.conclusion === "failure")
+      .map((r) => ({ name: r.name || r.displayTitle || "workflow", conclusion: r.conclusion, url: r.url || "" }));
+  } catch { /* observation is best-effort */ }
+  try {
+    const prs = JSON.parse(io.gh(["pr", "list", "--repo", cfg.repo, "--state", "open", "--limit", "20", "--json", "number,title,url,headRefName"]) || "[]");
+    blockedPrs = (prs || [])
+      .filter((p) => String(p.headRefName || "").startsWith("codex/"))
+      .map((p) => ({ number: p.number, title: p.title }));
+  } catch { /* */ }
+  const candidates = candidateFromSurveillance({ failedWorkflows, blockedPrs });
+  return { failedWorkflows, blockedPrs, candidates };
 }
 
 function closeTask(io, cfg, task) {
@@ -645,12 +801,14 @@ export function runWorker(io = createIo()) {
   const startedIso = new Date(started).toISOString();
   const timeLeft = () => (io.now() - started) < cfg.maxRunMinutes * 60 * 1000;
   const evidence = baseEvidence(io, cfg, { started_at: startedIso });
+  const memory = loadMemory(io, cfg.memoryPath);
   const write = () => {
     evidence.finished_at = new Date(io.now()).toISOString();
     evidence.workspace = {
       ...(evidence.workspace || {}),
       head_sha: (() => { try { return git(io, ["rev-parse", "HEAD"]).trim(); } catch { return evidence.workspace?.head_sha || null; } })(),
     };
+    recordMemory(io, cfg, evidence, memory);
     const redacted = redactSecrets(evidence);
     io.write(cfg.evidencePath, `${JSON.stringify(redacted, null, 2)}\n`);
     io.log(heartbeatLine(redacted));
@@ -674,7 +832,39 @@ export function runWorker(io = createIo()) {
     evidence.blocked.push({ category: "GOVERNANCE", status: "BLOCKED_BY_BREAKER" });
     evidence.human_actions_required.push(humanBreakerAction());
     evidence.debug.push(debugBlock(io, "BLOCKED_BY_BREAKER", { category: "GOVERNANCE" }));
+    evidence.capabilities = capabilitySnapshot({ debuged: true });
     return stop("BLOCKED_BY_BREAKER");
+  }
+
+  let shaHint = cfg.headSha || "";
+  try { if (!shaHint) shaHint = git(io, ["rev-parse", "HEAD"]).trim(); } catch { /* workspace probed later */ }
+
+  if (cfg.trigger === "schedule" || cfg.trigger === "push" || cfg.trigger === "issues" || cfg.trigger === "direct" || cfg.trigger === "workflow_run" || cfg.trigger === "failure") {
+    const decision = evaluateTrigger({
+      event: cfg.trigger === "direct" ? "schedule" : cfg.trigger === "workflow_run" ? "failure" : cfg.trigger,
+      now: io.now(),
+      currentSha: shaHint || "unknown",
+      issueLabels: cfg.issueLabels,
+      memory,
+      authAvailable: classifyAuth(io).available,
+      breakerOff: cfg.breakerOff,
+      taskLabel: cfg.taskLabel,
+    });
+    evidence.trigger_gate = { ...triggerGate, autonomy: decision };
+    if (!decision.run) {
+      return stop(decision.status, { reason: decision.reason, loop_step: decision.step });
+    }
+  }
+
+  if ((cfg.trigger === "pull_request" || cfg.trigger === "push") && shaHint) {
+    const sync = afterMergeSync({
+      memory,
+      previousSha: memory.last_main_sha || cfg.beforeSha || null,
+      newSha: shaHint,
+      mergedPr: cfg.mergedPrNumber,
+      now: io.now(),
+    });
+    evidence.merge_sync = { changed: sync.changed, actions: sync.actions };
   }
 
   const cli = classifyCli(io);
@@ -698,11 +888,28 @@ export function runWorker(io = createIo()) {
       why: "npm install --global @openai/codex did not produce a working `codex --version`.",
     });
     evidence.debug.push(debugBlock(io, "UNAVAILABLE", { category: "CLI", cli }));
+    evidence.capabilities = capabilitySnapshot({ cli, auth, debuged: true });
     return stop("UNAVAILABLE", { reason: "codex CLI absent" });
   }
   if (!auth.available) {
+    recordErrorSignature(memory, {
+      category: "AUTH",
+      message: "chatgpt authentication missing",
+      sha: shaHint || "unknown",
+      now: io.now(),
+    });
+    setAuthCooldown(memory, shaHint || "unknown", io.now());
+    const obs = observeRepo(io, cfg);
+    memory.next_candidate = obs.candidates[0] || null;
+    memory.next_candidates = obs.candidates.slice(0, 5);
+    evidence.observation = {
+      failed_workflows: obs.failedWorkflows.length,
+      blocked_prs: obs.blockedPrs.length,
+      candidates: obs.candidates.map((c) => ({ id: c.id, title: c.title, source: c.source })),
+    };
     evidence.human_actions_required.push(humanAuthAction());
     evidence.debug.push(debugBlock(io, "UNAVAILABLE", { category: "AUTH", auth }));
+    evidence.capabilities = capabilitySnapshot({ cli, auth, debuged: true });
     return stop("UNAVAILABLE", { reason: "Codex CLI present but ChatGPT authentication is not available to this runner" });
   }
 
@@ -719,7 +926,6 @@ export function runWorker(io = createIo()) {
   const branch = `codex/continuous-${cfg.runId}`;
   ensureBranch(io, branch);
   evidence.workspace = { branch, base_sha: baseSha, head_sha: baseSha, clean: true };
-  const memory = loadMemory(io, cfg.memoryPath);
 
   while (evidence.completed_tasks.length < cfg.maxTasks && timeLeft()) {
     let tasks;
@@ -743,26 +949,82 @@ export function runWorker(io = createIo()) {
       return stop("IDLE", { reason: `task #${cfg.taskNumber} is closed` });
     }
 
+    const openPrs = listOpenCodexPrs(io, cfg);
+    evidence.open_codex_prs = openPrs.map((p) => ({ number: p.number, head: p.head, url: p.url }));
+    memory.prs = openPrs;
+    memory.open_prs = openPrs;
+
+    let discovery = null;
     if (!tasks.length) {
-      const discovery = discoverTask(io, cfg);
-      evidence.discovery.push(discovery);
-      memory.discoveries.push({ at: new Date(io.now()).toISOString(), status: discovery.status, title: discovery.task?.title || null });
-      if (discovery.status === "CANDIDATE") {
-        try {
-          const created = createTask(io, cfg, discovery.task);
-          evidence.discovery.push({ status: "CREATED", task: { number: created.number, title: created.title, url: created.url } });
-          tasks = [created];
-        } catch (error) {
-          evidence.debug.push(debugBlock(io, "TASK", { category: classifyError(error), error: String(error.message || error) }));
-          return stop("FAILED", { reason: "could not create discovered task" });
-        }
+      const obs = observeRepo(io, cfg);
+      evidence.observation = {
+        failed_workflows: obs.failedWorkflows.length,
+        blocked_prs: obs.blockedPrs.length,
+      };
+      if (obs.candidates.length) {
+        discovery = { status: "CANDIDATE", task: obs.candidates[0], source: "surveillance" };
       } else {
-        evidence.status = discovery.status === "IDLE" ? "IDLE" : discovery.status;
-        break;
+        discovery = discoverTask(io, cfg);
+      }
+      evidence.discovery.push(discovery);
+      memory.discoveries.push({ at: io.now(), status: discovery.status, title: discovery.task?.title || null, source: discovery.source || "discovery" });
+    }
+
+    const next = selectNextWork({
+      tasks: tasks.map(issueToWorkTask),
+      openPrs,
+      discovery: discovery && discovery.status === "CANDIDATE"
+        ? { status: "CANDIDATE", task: { id: "discovered", title: discovery.task.title, body: discovery.task.body, source: "discovery", files: discovery.task.files || [], justification: discovery.task.justification, kind: "code" } }
+        : discovery,
+      timeLeft: timeLeft(),
+      taskBudget: cfg.maxTasks - evidence.completed_tasks.length,
+    });
+    evidence.decisions = [...(evidence.decisions || []), { action: next.action, status: next.status || null, justification: next.justification }];
+
+    if (next.action === "CREATE_TASK" && discovery?.task) {
+      try {
+        const created = createTask(io, cfg, discovery.task);
+        evidence.discovery.push({ status: "CREATED", task: { number: created.number, title: created.title, url: created.url } });
+        tasks = [created];
+        next.action = "EXECUTE";
+        next.task = issueToWorkTask(created);
+      } catch (error) {
+        evidence.debug.push(debugBlock(io, "TASK", { category: classifyError(error), error: String(error.message || error) }));
+        return stop("FAILED", { reason: "could not create discovered task" });
       }
     }
 
-    const task = tasks[0];
+    if (next.action === "WAIT_HUMAN_MERGE") {
+      evidence.status = "WAIT_HUMAN_MERGE";
+      evidence.human_actions_required.push({
+        category: "HUMAN_REQUIRED",
+        action: `Review and merge open Codex PR — Carl only, no auto-merge`,
+        exact_human_action: "Fusionner la PR Codex ouverte. Carl only.",
+        url: openPrs[0]?.url,
+        why: next.justification,
+        reason: next.justification,
+        evidence: openPrs.map((p) => p.url || String(p.number)),
+        attempts: 0,
+        what_was_done: ["independent work scanned", "dependent work deferred"],
+        what_remains: ["human merge"],
+      });
+      break;
+    }
+    if (next.action === "STOP") {
+      evidence.status = next.status || "IDLE";
+      evidence.reason = next.justification;
+      break;
+    }
+    if (next.action === "DISCOVER" && !discovery) {
+      continue;
+    }
+    if (!tasks.length) {
+      evidence.status = discovery?.status === "IDLE" ? "IDLE" : (discovery?.status || "IDLE");
+      break;
+    }
+
+    const selectedNumber = next.task?.number;
+    const task = tasks.find((t) => t.number === selectedNumber) || tasks[0];
     memory.current_task = { number: task.number, title: task.title, url: task.url };
     const cycle = { task: { number: task.number, title: task.title, url: task.url }, codex: [], tests: [], debug: [] };
     let run = runCodex(io, cfg, task);
@@ -772,11 +1034,27 @@ export function runWorker(io = createIo()) {
     cycle.codex.push(run);
 
     for (let attempt = 0; (run.status === "CODEX_FAILED" || run.status === "TIMEOUT") && attempt < cfg.maxRepairAttempts; attempt++) {
-      const debug = debugBlock(io, run.status, { attempt: attempt + 1, category: "CODEX", exit_code: run.exit_code, stderr_tail: run.stderr_tail });
+      recordErrorSignature(memory, { category: "CODEX", message: run.stderr_tail || run.status, sha: baseSha, now: io.now() });
+      const repeated = classifyRepetition({ memory, category: "CODEX", message: run.stderr_tail || run.status, sha: baseSha });
+      const level = escalateDebug({ attempt: attempt + 1, category: "CODEX" });
+      if (repeated.status !== "CONTINUE") {
+        evidence.status = repeated.status;
+        evidence.reason = `même erreur Codex × ${repeated.count}`;
+        evidence.human_actions_required.push(humanRequired({
+          reason: evidence.reason,
+          evidence: [repeated.signature],
+          attempts: repeated.count,
+          what_was_done: ["classified", "retried bounded repairs"],
+          what_remains: ["architectural or human decision"],
+          exact_human_action: "Lire l'evidence du worker et décider — pas un « go ».",
+        }));
+        break;
+      }
+      const debug = debugBlock(io, run.status, { attempt: attempt + 1, category: "CODEX", exit_code: run.exit_code, stderr_tail: run.stderr_tail, level: level.level });
       cycle.debug.push(debug);
       evidence.debug.push(debug);
-      evidence.repairs.push({ task: task.number, attempt: attempt + 1, kind: "codex", at: debug.at });
-      memory.repairs.push({ task: task.number, attempt: attempt + 1, kind: "codex" });
+      evidence.repairs.push({ task: task.number, attempt: attempt + 1, kind: "codex", at: debug.at, level: level.level });
+      memory.repairs.push({ task: task.number, attempt: attempt + 1, kind: "codex", level: level.level });
       run = runCodex(io, cfg, task, `Previous execution failed. Debug evidence: ${JSON.stringify({ reason: debug.reason, exit_code: run.exit_code, stderr_tail: run.stderr_tail?.slice(-2000) })}. Debug immediately, repair the root cause, and rerun focused validation.`);
       evidence.codex.status = run.status;
       evidence.codex.patch_source = run.patch_source;
@@ -870,13 +1148,17 @@ export function runWorker(io = createIo()) {
   }
 
   memory.next_candidates = evidence.status === "IDLE" ? [] : memory.next_candidates;
-  saveMemory(io, cfg.memoryPath, memory);
-  evidence.memory = {
-    current_task: memory.current_task,
-    completed_count: memory.completed_tasks.length,
-    failed_count: memory.failed_tasks.length,
-    open_prs: memory.open_prs.length,
-  };
+  evidence.capabilities = capabilitySnapshot({
+    cli,
+    auth,
+    workspace: finalDirty ? "dirty" : "clean",
+    executed: Boolean(evidence.codex?.executed),
+    patched: evidence.codex?.patch_source === "codex",
+    tested: (evidence.tests || []).some((t) => t.status === "PASSED"),
+    pr: (evidence.prs || []).length > 0,
+    debuged: (evidence.debug || []).length > 0,
+    looped: true,
+  });
   return write();
 }
 
