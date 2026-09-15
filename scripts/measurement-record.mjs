@@ -72,7 +72,11 @@ function artifactFile(dir) {
 function readRunRecord(run, dir, runCommand) {
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
-  runCommand("gh", ["run", "download", String(run.databaseId), "--repo", run.repository, "--name", MEASUREMENT_RECORD_ARTIFACT, "--dir", dir], { encoding: "utf8", stdio: "pipe" });
+  try {
+    runCommand("gh", ["run", "download", String(run.databaseId), "--repo", run.repository, "--name", MEASUREMENT_RECORD_ARTIFACT, "--dir", dir], { encoding: "utf8", stdio: "pipe" });
+  } catch {
+    return null;
+  }
   const file = artifactFile(dir);
   if (!file) return null;
   try {
