@@ -22,6 +22,7 @@ export function emptyMeasurementRecord() {
     live: false,
     executed: false,
     verified: false,
+    previous_record_digest: null,
     ranking_digest: null,
     feedback_digest: null,
     memory_index_digest: null,
@@ -31,12 +32,13 @@ export function emptyMeasurementRecord() {
   };
 }
 
-export function buildMeasurementRecord({ env = process.env, observedAt = new Date().toISOString(), observation = {}, ranking = null, feedback = null, memoryIndex = null, dispatches = [] } = {}) {
+export function buildMeasurementRecord({ env = process.env, observedAt = new Date().toISOString(), observation = {}, ranking = null, feedback = null, memoryIndex = null, dispatches = [], previousRecord = null } = {}) {
   const record = {
     ...emptyMeasurementRecord(),
     observed_at: observedAt,
     source_sha: env.GITHUB_SHA || null,
     executed: true,
+    previous_record_digest: previousRecord?.seal?.digest || null,
     ranking_digest: ranking?.seal?.digest || evidenceDigest(ranking || {}),
     feedback_digest: feedback?.seal?.digest || evidenceDigest(feedback || {}),
     memory_index_digest: evidenceDigest(memoryIndex || {}),
@@ -99,6 +101,7 @@ export function measurementRecordSummary(record = {}) {
     v: record.v || MEASUREMENT_RECORD_VERSION,
     observed_at: record.observed_at || null,
     source_sha: record.source_sha || null,
+    previous_record_digest: record.previous_record_digest || null,
     integrity: record.integrity || "UNKNOWN",
     executed: record.executed === true,
     verified: record.verified === true,
