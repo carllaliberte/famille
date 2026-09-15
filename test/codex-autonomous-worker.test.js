@@ -484,4 +484,57 @@ describe("codex autonomous worker", () => {
     assert.equal(ev.capabilities.PATCH, "NOT_TESTED");
     assert.doesNotMatch(JSON.stringify(mem), /sk-|access_token|"live": true/);
   });
+
+  it("pins worker v6 and does not ask Carl to dispatch after UNAVAILABLE", () => {
+    assert.equal(WORKER_VERSION, "codex-autonomous-worker.v6");
+    const io = ioFor({ authFile: false });
+    const ev = runWorker(io);
+    assert.equal(ev.status, "UNAVAILABLE");
+    const blob = JSON.stringify(ev.human_actions_required);
+    assert.match(blob, /CODEX_AUTH_JSON/);
+    assert.doesNotMatch(blob, /Run workflow/);
+    assert.match(blob, /exact_human_action/);
+  });
+
+  it("cools down a second schedule on the same SHA after AUTH UNAVAILABLE", () => {
+    const root = tmpRoot();
+    const first = ioFor({ authFile: false, root, env: { CODEX_TRIGGER: "schedule", GITHUB_RUN_ID: "1" } });
+    const a = runWorker(first);
+    assert.equal(a.status, "UNAVAILABLE");
+    const second = ioFor({ authFile: false, root, env: { CODEX_TRIGGER: "schedule", GITHUB_RUN_ID: "2" } });
+    const b = runWorker(second);
+    assert.ok(["WAIT", "IDLE"].includes(b.status), b.status);
+    assert.equal(b.codex?.executed || false, false);
+    assert.match(String(b.reason || ""), /cooldown|debounce|WAIT|auth/i);
+  });
+
+  it("WAIT_HUMAN_MERGE when the only remaining task belongs to an open Codex PR", () => {
+    const io = ioFor({
+      authFile: true,
+      issues: [{ number: 513, title: "seed", body: "do the work", url: "https://example/513", state: "OPEN" }],
+      gh: (args, ctx) => {
+        if (args[0] === "pr" && args[1] === "list") {
+          return JSON.stringify([
+            { number: 516, title: "persist", url: "https://github.com/carllaliberte/famille/pull/516", headRefName: "codex/persist-unavailable-memory", taskNumbers: [513] },
+          ]);
+        }
+        if (args[0] === "issue" && args[1] === "list") return JSON.stringify(ctx.issues);
+        if (args[0] === "issue" && args[1] === "view") return JSON.stringify(ctx.issues[0]);
+        if (args[0] === "pr" && args[1] === "create") return "https://github.com/carllaliberte/famille/pull/42\n";
+        return "[]";
+      },
+    });
+    const ev = runWorker(io);
+    assert.equal(ev.status, "WAIT_HUMAN_MERGE");
+    assert.equal(ev.completed_tasks.length, 0);
+    assert.equal(ev.auto_merge, false);
+  });
+
+  it("self-test records AUTONOMY PASS from in-process truth suite A–G", () => {
+    const io = ioFor({ cli: false, authFile: false, argv: ["--self-test"] });
+    const ev = runSelfTest(io);
+    assert.equal(ev.capabilities.AUTONOMY, "PASS");
+    assert.equal(ev.capabilities.DISCOVERY, "NOT_TESTED");
+    assert.equal(JSON.stringify(ev.human_actions_required || []).includes("Run workflow"), false);
+  });
 });
