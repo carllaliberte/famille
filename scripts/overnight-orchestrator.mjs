@@ -11,8 +11,8 @@ import { buildExecutionPlan, selectWork, nextCadenceDelayMs } from "./adaptive-e
 import { runWorker } from "./cognitive-worker.mjs";
 import { assertSystemMayProceed, controlState } from "../.github/swarm/system-breaker.mjs";
 
-const MAX_SLOT_MINUTES = 55;
-const DEFAULT_SLOT_MINUTES = 50;
+const MAX_SLOT_MINUTES = 60;
+const DEFAULT_SLOT_MINUTES = 60;
 const DEFAULT_BASE_DELAY_MS = 5 * 60_000;
 
 function listFronts(env, gh = execFileSync) {
@@ -67,7 +67,7 @@ export function runOvernightSlot({ env = process.env, gh = execFileSync, now = (
     }
 
     const result = {
-      version: "overnight-orchestrator.v1",
+      version: "overnight-orchestrator.v2",
       started_at: new Date(started).toISOString(),
       ended_at: new Date(now()).toISOString(),
       slot_minutes: boundedMinutes,

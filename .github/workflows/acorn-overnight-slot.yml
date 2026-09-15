@@ -13,7 +13,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 65
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,7 +31,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
-          OVERNIGHT_SLOT_MINUTES: "50"
+          OVERNIGHT_SLOT_MINUTES: "60"
           OVERNIGHT_BASE_DELAY_MS: "300000"
           OVERNIGHT_EVIDENCE: overnight-slot.json
         run: node scripts/overnight-orchestrator.mjs
