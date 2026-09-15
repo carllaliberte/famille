@@ -88,11 +88,10 @@ export function loadMeasurementRecord(run = execFileSync, env = process.env) {
 }
 
 export function assertRecordMatchesRanking(record = emptyMeasurementRecord(), ranking = {}) {
-  if (!record?.observed_at) return true;
+  if (!record?.observed_at || !record?.ranking_digest) return true;
   const digest = ranking?.seal?.digest || null;
-  if (record.ranking_digest && digest && record.ranking_digest !== digest) {
-    throw new Error("MEASUREMENT_RECORD_RANKING_MISMATCH");
-  }
+  if (!digest) throw new Error("MEASUREMENT_RECORD_RANKING_MISSING");
+  if (record.ranking_digest !== digest) throw new Error("MEASUREMENT_RECORD_RANKING_MISMATCH");
   return true;
 }
 
