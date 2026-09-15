@@ -18,6 +18,7 @@ import {
   fabricNode,
   hydrateMemory,
   humanRequired,
+  isOperativeCodexPr,
   loopPosition,
   parseTaskMetadata,
   prioritize,
@@ -223,6 +224,7 @@ describe("acorn autonomy kernel", () => {
     const memory = emptyMemory();
     memory.last_main_sha = "old";
     memory.prs = [{ number: 10, title: "x", head: "codex/x" }];
+    memory.skipped_tasks = [513];
     memory.tasks = [task({ id: "t", title: "next", dependsOnPr: 10, needsMerge: true })];
     const sync = afterMergeSync({
       memory,
@@ -235,7 +237,35 @@ describe("acorn autonomy kernel", () => {
     assert.equal(sync.memory.last_main_sha, "new");
     assert.equal(sync.memory.prs.length, 0);
     assert.equal(sync.memory.tasks[0].needsMerge, false);
+    assert.equal((sync.memory.skipped_tasks || []).length, 0);
     assert.ok(sync.actions.some((a) => /reprendre/.test(a)));
+  });
+  it("treats grok-build PRs as non-operative so Codex is not WAIT_HUMAN_MERGE'd", () => {
+    assert.equal(isOperativeCodexPr({
+      head: "codex/openrouter-live-free",
+      body: "patch_source: grok-build\nstatus: PR_READY",
+      taskNumbers: [513],
+    }), false);
+    assert.equal(isOperativeCodexPr({
+      head: "codex/continuous-1",
+      body: "patch_source: codex",
+    }), true);
+    assert.equal(classifyWorkAgainstPr(
+      { number: 513, title: "seed", kind: "code" },
+      [{ head: "codex/openrouter-live-free", body: "patch_source: grok-build", taskNumbers: [513] }]
+    ), "INDEPENDENT");
+  });
+  it("debounce reads at_ms when at is an ISO string", () => {
+    const memory = emptyMemory();
+    memory.measurements.push({
+      status: "CODEX_FAILED",
+      at: "2026-09-15T17:21:49.000Z",
+      at_ms: 1e3,
+      sha: "s",
+    });
+    const g = applyLoopGuards({ memory, sha: "s", now: 1e3 + 3e4 });
+    assert.equal(g.skip, true);
+    assert.match(g.reason, /debounce/);
   });
   it("stops cleanly rather than looping forever", () => {
     assert.equal(shouldStopCleanly({

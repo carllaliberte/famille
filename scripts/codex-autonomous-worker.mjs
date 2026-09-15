@@ -7,7 +7,8 @@
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 import {
   afterMergeSync,
@@ -19,6 +20,7 @@ import {
   extractTaskNumbers,
   hydrateMemory,
   humanRequired,
+  isOperativeCodexPr,
   parseTaskMetadata,
   recordErrorSignature,
   runTruthSuite,
@@ -213,6 +215,90 @@ export function saveMemory(io, path, memory) {
   return next;
 }
 
+export function memoryHasContinuity(memory) {
+  if (!memory || typeof memory !== "object") return false;
+  return Boolean(
+    (memory.measurements || []).length ||
+    (memory.error_signatures || []).length ||
+    (memory.completed || memory.completed_tasks || []).length ||
+    (memory.failed || memory.failed_tasks || []).length ||
+    memory.carl_request ||
+    memory.last_main_sha
+  );
+}
+
+export function continuityBrief(memory = {}) {
+  const measurements = (memory.measurements || []).slice(-5);
+  const errors = (memory.error_signatures || []).slice(-5);
+  const failed = (memory.failed || memory.failed_tasks || []).slice(-5);
+  const completed = (memory.completed || memory.completed_tasks || []).slice(-5);
+  const human = (memory.human_required || memory.human_actions_required || []).slice(-3);
+  const last = measurements[measurements.length - 1] || {};
+  const lines = [
+    "ACORN CONTINUITY (measured previous state — do not repeat completed work or known-failed approaches):",
+    `last_status: ${last.status || memory.state || "IDLE"}`,
+    `last_sha: ${memory.last_main_sha || last.sha || "unknown"}`,
+    `last_patch_source: ${last.patch_source || "none"}`,
+    `last_model: ${memory.last_model || "unknown"}`,
+  ];
+  if (memory.carl_request) lines.push(`carl_request: ${String(memory.carl_request).slice(0, 400)}`);
+  if (completed.length) {
+    lines.push(`completed: ${completed.map((t) => `#${t.number || t.id || "?"} ${t.title || ""}`.trim()).join("; ")}`);
+  }
+  if (failed.length) {
+    lines.push(`failed: ${failed.map((t) => `#${t.number || t.id || "?"} ${t.reason || t.status || ""}`.trim()).join("; ")}`);
+  }
+  if (errors.length) {
+    lines.push(`error_signatures: ${errors.map((e) => `${e.category || "CODEX"}:${String(e.message || e.signature || "").replace(/\s+/g, " ").slice(0, 80)} x${e.count || 1}`).join("; ")}`);
+  }
+  if (human.length) {
+    lines.push(`human_required: ${human.map((h) => h.exact_human_action || h.action || h.reason || "").join("; ")}`);
+  }
+  if (memory.next_candidate?.title) lines.push(`next_candidate: ${memory.next_candidate.title}`);
+  return lines.join("\n");
+}
+
+export function restorePriorMemory(io, cfg, current) {
+  if (memoryHasContinuity(current)) {
+    return { memory: current, restored_from: "workspace" };
+  }
+  const dir = join(tmpdir(), `acorn-prior-${cfg.runId || "local"}`);
+  try {
+    const runs = JSON.parse(String(io.gh([
+      "run", "list", "--repo", cfg.repo,
+      "--workflow", "codex-autonomous-worker.yml",
+      "--status", "success", "--limit", "8",
+      "--json", "databaseId,headSha,event",
+    ]) || "[]"));
+    for (const run of runs) {
+      if (!run?.databaseId || String(run.databaseId) === String(cfg.runId)) continue;
+      try {
+        io.gh([
+          "run", "download", String(run.databaseId),
+          "--repo", cfg.repo,
+          "--name", `codex-worker-${run.databaseId}`,
+          "--dir", dir,
+        ]);
+        const candidates = [
+          join(dir, "evidence/codex/worker-memory.json"),
+          join(dir, "worker-memory.json"),
+          join(dir, `codex-worker-${run.databaseId}`, "evidence/codex/worker-memory.json"),
+        ];
+        const file = candidates.find((p) => io.exists(p));
+        if (!file) continue;
+        const prior = loadMemory(io, file);
+        if (!memoryHasContinuity(prior)) continue;
+        return { memory: prior, restored_from: `artifact:${run.databaseId}` };
+      } catch {
+        continue;
+      }
+    }
+  } catch {
+    /* no prior artifact — start from workspace stub */
+  }
+  return { memory: current, restored_from: "empty" };
+}
+
 export function recordMemory(io, cfg, evidence, memory) {
   const compact = {
     run_id: evidence.run_id,
@@ -227,6 +313,10 @@ export function recordMemory(io, cfg, evidence, memory) {
   };
   memory.measurements = [...(memory.measurements || []), compact].slice(-32);
   memory.human_actions_required = evidence.human_actions_required || [];
+  memory.last_model = evidence.codex?.model || memory.last_model || null;
+  if (evidence.acorn?.carl_request) memory.carl_request = evidence.acorn.carl_request;
+  if (evidence.workspace?.head_sha) memory.last_main_sha = evidence.workspace.head_sha;
+  if (Array.isArray(evidence.skipped_tasks)) memory.skipped_tasks = evidence.skipped_tasks.slice(-64);
   if (evidence.status === "UNAVAILABLE" || evidence.status === "BLOCKED_BY_BREAKER" || evidence.status === "HUMAN_REQUIRED") {
     memory.blocked_items = [
       ...(memory.blocked_items || []),
@@ -660,10 +750,12 @@ function listOpenCodexPrs(io, cfg) {
           title: p.title,
           head: p.headRefName || p.head,
           url: p.url,
+          body,
           files,
           taskNumbers: [...new Set(taskNumbers)],
         };
-      });
+      })
+      .filter(isOperativeCodexPr);
   } catch {
     return [];
   }
@@ -732,15 +824,16 @@ function createTask(io, cfg, candidate) {
   ]));
 }
 
-export function taskPrompt(task, correction = "") {
-  return `You are Astra Codex, the Acorn coding worker. The entire repository is in scope.
+export function taskPrompt(task, correction = "", memory = null) {
+  const brief = memory && memoryHasContinuity(memory) ? continuityBrief(memory) : "";
+  return `You are Astra Codex, operating through Acorn. The entire repository is in scope.
 
 Task #${task.number}: ${task.title}
 URL: ${task.url || ""}
 
 TASK BODY:
 ${task.body || "(no body)"}
-
+${brief ? `\n${brief}\n` : ""}
 Rules:
 - Read the repository before changing anything.
 - You may read and edit any project path this task requires: source, tests, workflows, schema, docs, scripts.
@@ -756,10 +849,10 @@ Rules:
 ${correction ? `\nIMMEDIATE DEBUG/REPAIR:\n${correction}\n` : ""}`;
 }
 
-function runCodex(io, cfg, task, correction = "") {
+function runCodex(io, cfg, task, correction = "", memory = null) {
   const beforeSha = git(io, ["rev-parse", "HEAD"]).trim();
   const beforeDirty = git(io, ["status", "--porcelain"]);
-  const result = io.spawn("codex", [...CODEX_WRITE_ARGS, ...extraCodexConfigArgs(io), taskPrompt(task, correction)], {
+  const result = io.spawn("codex", [...CODEX_WRITE_ARGS, ...extraCodexConfigArgs(io), taskPrompt(task, correction, memory)], {
     cwd: io.root,
     encoding: "utf8",
     timeout: cfg.taskTimeout * 60 * 1000,
@@ -902,8 +995,20 @@ export function runWorker(io = createIo()) {
   const startedIso = new Date(started).toISOString();
   const timeLeft = () => (io.now() - started) < cfg.maxRunMinutes * 60 * 1000;
   const evidence = baseEvidence(io, cfg, { started_at: startedIso });
-  const memory = loadMemory(io, cfg.memoryPath);
+  const restored = restorePriorMemory(io, cfg, loadMemory(io, cfg.memoryPath));
+  const memory = restored.memory;
+  evidence.acorn = {
+    kernel: "acorn-autonomy.v1",
+    memory_restored_from: restored.restored_from,
+    continuity: memoryHasContinuity(memory),
+    last_status: (memory.measurements || []).at(-1)?.status || memory.state || null,
+    last_sha: memory.last_main_sha || (memory.measurements || []).at(-1)?.sha || null,
+    carl_request: cfg.taskNumber ? `task #${cfg.taskNumber}` : (memory.carl_request || null),
+  };
+  if (evidence.acorn.carl_request) memory.carl_request = evidence.acorn.carl_request;
+  const skippedTasks = new Set([...(memory.skipped_tasks || [])].map(Number).filter(Boolean));
   const write = () => {
+    evidence.skipped_tasks = [...skippedTasks];
     evidence.finished_at = new Date(io.now()).toISOString();
     evidence.workspace = {
       ...(evidence.workspace || {}),
@@ -954,6 +1059,12 @@ export function runWorker(io = createIo()) {
     evidence.trigger_gate = { ...triggerGate, autonomy: decision };
     if (!decision.run) {
       return stop(decision.status, { reason: decision.reason, loop_step: decision.step });
+    }
+    if (cfg.trigger === "schedule") {
+      const guards = applyLoopGuards({ memory, sha: shaHint || "unknown", now: io.now() });
+      if (guards.skip) {
+        return stop(guards.status, { reason: guards.reason, loop_step: "OBSERVE" });
+      }
     }
   }
 
@@ -1036,7 +1147,6 @@ export function runWorker(io = createIo()) {
   ensureBranch(io, branch);
   evidence.workspace = { branch, base_sha: baseSha, head_sha: baseSha, clean: true };
 
-  const skippedTasks = new Set();
   while (evidence.completed_tasks.length < cfg.maxTasks && timeLeft()) {
     let tasks;
     try { tasks = listTasks(io, cfg).filter((t) => !skippedTasks.has(t.number)); } catch (error) {
@@ -1092,6 +1202,7 @@ export function runWorker(io = createIo()) {
         : discovery,
       timeLeft: timeLeft(),
       taskBudget: cfg.maxTasks - evidence.completed_tasks.length,
+      lastStatus: evidence.status || null,
     });
     evidence.decisions = [...(evidence.decisions || []), { action: next.action, status: next.status || null, justification: next.justification }];
 
@@ -1141,7 +1252,7 @@ export function runWorker(io = createIo()) {
     const task = tasks.find((t) => t.number === selectedNumber) || tasks[0];
     memory.current_task = { number: task.number, title: task.title, url: task.url };
     const cycle = { task: { number: task.number, title: task.title, url: task.url }, codex: [], tests: [], debug: [] };
-    let run = runCodex(io, cfg, task);
+    let run = runCodex(io, cfg, task, "", memory);
     evidence.codex.executed = true;
     evidence.codex.status = run.status;
     evidence.codex.patch_source = run.patch_source;
@@ -1166,6 +1277,19 @@ export function runWorker(io = createIo()) {
         }));
         break;
       }
+      if (category === "ENVIRONMENT" && /\b404\b|unavailable for free|model is unavailable/i.test(String(run.stderr_tail || ""))) {
+        evidence.status = "UNAVAILABLE";
+        evidence.reason = "provider model or runtime environment rejected the request";
+        evidence.human_actions_required.push(humanRequired({
+          reason: evidence.reason,
+          evidence: [String(run.stderr_tail || "").slice(-400)],
+          attempts: attempt + 1,
+          what_was_done: ["classified 404/environment", "stopped retries on dead slug"],
+          what_remains: ["a live free model, or CODEX_AUTH_JSON"],
+          exact_human_action: "Lire l'evidence du worker et décider — pas un « go ».",
+        }));
+        break;
+      }
       if (repeated.status !== "CONTINUE") {
         evidence.status = repeated.status;
         evidence.reason = `même erreur Codex × ${repeated.count}`;
@@ -1184,7 +1308,7 @@ export function runWorker(io = createIo()) {
       evidence.debug.push(debug);
       evidence.repairs.push({ task: task.number, attempt: attempt + 1, kind: "codex", at: debug.at, level: level.level });
       memory.repairs.push({ task: task.number, attempt: attempt + 1, kind: "codex", level: level.level });
-      run = runCodex(io, cfg, task, `Previous execution failed. Debug evidence: ${JSON.stringify({ reason: debug.reason, exit_code: run.exit_code, stderr_tail: run.stderr_tail?.slice(-2000) })}. Debug immediately, repair the root cause, and rerun focused validation.`);
+      run = runCodex(io, cfg, task, `Previous execution failed. Debug evidence: ${JSON.stringify({ reason: debug.reason, exit_code: run.exit_code, stderr_tail: run.stderr_tail?.slice(-2000) })}. Debug immediately, repair the root cause, and rerun focused validation.`, memory);
       evidence.codex.status = run.status;
       evidence.codex.patch_source = run.patch_source;
       cycle.codex.push(run);
@@ -1214,7 +1338,7 @@ export function runWorker(io = createIo()) {
       cycle.debug.push(debug);
       evidence.debug.push(debug);
       evidence.repairs.push({ task: task.number, attempt: attempt + 1, kind: "test", at: debug.at });
-      run = runCodex(io, cfg, task, `Tests failed. Debug immediately and rerun focused tests. Command: ${tests.command}. Tail: ${tests.stderr_tail?.slice(-2000)}`);
+      run = runCodex(io, cfg, task, `Tests failed. Debug immediately and rerun focused tests. Command: ${tests.command}. Tail: ${tests.stderr_tail?.slice(-2000)}`, memory);
       cycle.codex.push(run);
       evidence.codex.status = run.status;
       evidence.codex.patch_source = run.patch_source;
