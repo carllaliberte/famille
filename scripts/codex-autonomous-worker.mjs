@@ -140,6 +140,7 @@ export function classifyError(err) {
   if (/unexpected argument|unknown (?:option|flag)|usage: codex exec/.test(msg)) return "CLI";
   if (/\b429\b|too many requests|rate[- ]?limit/.test(msg)) return "NETWORK";
   if (/\b401\b|\b402\b|unauthorized|payment required|insufficient credits/.test(msg)) return "AUTH";
+  if (/\b404\b|unavailable for free|model is unavailable/.test(msg)) return "ENVIRONMENT";
   if (/codex/.test(msg) && /not found|enoent|127/.test(msg)) return "CLI";
   if (code === "ENOENT" || /enoent/.test(msg)) return "ENVIRONMENT";
   if (/dirty|worktree|not clean/.test(msg)) return "WORKTREE";
@@ -357,11 +358,16 @@ export function tomlEscape(value) {
   return String(value || "").replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
 }
 
-export const OPENROUTER_FREE_MODEL = "openai/gpt-oss-20b:free";
+export const OPENROUTER_FREE_MODEL = "nvidia/nemotron-3.5-lightning:free";
+export const OPENROUTER_DEAD_FREE = Object.freeze([
+  "openai/gpt-oss-20b:free",
+  "openai/gpt-oss-120b:free",
+  "openrouter/free",
+]);
 
 export function resolveOpenRouterModel(io) {
   const requested = String(io.env.CODEX_MODEL || "").trim();
-  if (requested.endsWith(":free") && requested !== "openrouter/free") return requested;
+  if (requested.endsWith(":free") && !OPENROUTER_DEAD_FREE.includes(requested)) return requested;
   return OPENROUTER_FREE_MODEL;
 }
 
