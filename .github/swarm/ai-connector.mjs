@@ -2,17 +2,18 @@
 /**
  * ACORN AI / COGNITIVE CONNECTOR
  *
- * One common ingress boundary for external intelligences, models, tools and
- * future channels. The connector is deliberately channel-neutral: a future
- * quantum source is just another channel and does not get a privileged path.
- * Every ingress must cross the global breaker before reaching orchestration or
- * the protected source-of-record domain.
+ * Common ingress boundary for external intelligences, models, tools and
+ * future channels. System automation lives at this boundary: it can inspect
+ * credentials, plan routing and identify fallbacks, but protected execution
+ * still crosses the Global Breaker immediately after this layer.
  */
 import { assertSystemMayProceed, controlState } from "./system-breaker.mjs";
+import { inspectSystems, planSystems } from "./system-automation.mjs";
 
 export const CONNECTOR_VERSION = "ai-connector.v1";
 
-export function acceptIngress({ channel = "unknown", source = "unknown", payload = null, env = process.env } = {}) {
+export function acceptIngress({ channel = "unknown", source = "unknown", payload = null, capabilities = ["lu"], env = process.env } = {}) {
+  const systems = planSystems({ capabilities, env });
   const state = assertSystemMayProceed({ env, origin: source, action: `AI ingress channel=${channel}` });
   return {
     connector: CONNECTOR_VERSION,
@@ -21,6 +22,7 @@ export function acceptIngress({ channel = "unknown", source = "unknown", payload
     source,
     mode: state.mode,
     diagnostic: state.diagnostic,
+    systems,
     provenance: { source, channel },
     payload,
     production_write_allowed: false,
@@ -30,7 +32,7 @@ export function acceptIngress({ channel = "unknown", source = "unknown", payload
   };
 }
 
-export function inspectIngress({ channel = "unknown", source = "unknown", env = process.env } = {}) {
+export function inspectIngress({ channel = "unknown", source = "unknown", capabilities = ["lu"], env = process.env } = {}) {
   const state = controlState(env);
   return {
     connector: CONNECTOR_VERSION,
@@ -40,6 +42,8 @@ export function inspectIngress({ channel = "unknown", source = "unknown", env = 
     breaker_closed: state.breaker_closed,
     accepted: state.mode !== "OFF",
     diagnostic: state.diagnostic,
+    systems: planSystems({ capabilities, env }),
+    system_inventory: inspectSystems({ env }),
     production_write_allowed: false,
     auto_merge: false,
     live: false,

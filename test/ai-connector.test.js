@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { acceptIngress, inspectIngress } from "../.github/swarm/ai-connector.mjs";
 
-const env = (mode) => ({ ACORN_SYSTEM_MODE: mode });
+const env = (mode, extra = {}) => ({ ACORN_SYSTEM_MODE: mode, ...extra });
 
 test("AI connector accepts every channel through the same boundary", () => {
   for (const channel of ["model", "tool", "local", "cloud", "quantum", "future"]) {
@@ -11,14 +11,12 @@ test("AI connector accepts every channel through the same boundary", () => {
     assert.equal(result.channel, channel);
     assert.equal(result.auto_merge, false);
     assert.equal(result.live, false);
+    assert.equal(result.systems.execution_requires_breaker, true);
   }
 });
 
 test("AI connector is fully cut off by OFF regardless of channel", () => {
-  assert.throws(
-    () => acceptIngress({ channel: "quantum", source: "future", env: env("OFF") }),
-    (error) => error.code === "GLOBAL_BREAKER_OFF"
-  );
+  assert.throws(() => acceptIngress({ channel: "quantum", source: "future", env: env("OFF") }), (error) => error.code === "GLOBAL_BREAKER_OFF");
   assert.equal(inspectIngress({ channel: "model", source: "cloud", env: env("OFF") }).accepted, false);
 });
 
@@ -28,4 +26,10 @@ test("DEBUG crosses the connector only as diagnostic execution", () => {
   assert.equal(result.diagnostic, true);
   assert.equal(result.production_write_allowed, false);
   assert.equal(result.live, false);
+});
+
+test("connector reports configured systems without exposing credentials", () => {
+  const result = inspectIngress({ channel: "model", source: "test", env: env("RUN", { XAI_API_KEY: "secret" }) });
+  assert.equal(result.system_inventory.configured.includes("xai"), true);
+  assert.equal(result.system_inventory.systems.find((s) => s.id === "xai").credential.value_exposed, false);
 });
