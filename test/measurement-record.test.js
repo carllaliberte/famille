@@ -82,6 +82,31 @@ test("artifact readback verifies the previous dated state", () => {
   assert.equal(loaded.ranking_digest, record.ranking_digest);
 });
 
+test("artifact readback rejects a broken predecessor link", () => {
+  const first = sample().record;
+  const second = buildMeasurementRecord({
+    env: { ...env, GITHUB_SHA: "def456" },
+    observedAt: "2026-09-15T01:10:00.000Z",
+    ranking: sample().ranking,
+    feedback: sample().feedback,
+    memoryIndex: sample().memoryIndex,
+    previousRecord: first,
+  });
+  const dir = join(process.cwd(), ".measurement-record-readback");
+  mkdirSync(dir, { recursive: true });
+  const run = (command, args) => {
+    if (args[1] === "list") return JSON.stringify([{ databaseId: 200, headSha: "second" }, { databaseId: 100, headSha: "first" }]);
+    if (args[1] === "download") {
+      const id = String(args[2]);
+      writeFileSync(join(dir, "measurement-record.json"), `${JSON.stringify(id === "200" ? second : { ...first, seal: { ...first.seal, digest: "tampered" } })}\n`);
+      return "";
+    }
+    throw new Error(`unexpected command: ${command} ${args.join(" ")}`);
+  };
+  const loaded = loadMeasurementRecord(run, env);
+  assert.equal(loaded.integrity, "CONFLICT");
+});
+
 test("summary never mints verification or LIVE", () => {
   const { record } = sample();
   const summary = measurementRecordSummary(record);
