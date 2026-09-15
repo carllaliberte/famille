@@ -82,6 +82,23 @@ test("artifact readback verifies the previous dated state", () => {
   assert.equal(loaded.ranking_digest, record.ranking_digest);
 });
 
+test("readback skips successful runs that have no measurement artifact", () => {
+  const { record } = sample();
+  const dir = join(process.cwd(), ".measurement-record-readback");
+  mkdirSync(dir, { recursive: true });
+  const run = (command, args) => {
+    if (args[1] === "list") return JSON.stringify([{ databaseId: 999, headSha: "no-artifact" }, { databaseId: 123, headSha: "abc123" }]);
+    if (args[1] === "download") {
+      if (String(args[2]) === "999") throw new Error("artifact missing");
+      writeFileSync(join(dir, "measurement-record.json"), `${JSON.stringify(record)}\n`);
+      return "";
+    }
+    throw new Error(`unexpected command: ${command} ${args.join(" ")}`);
+  };
+  const loaded = loadMeasurementRecord(run, env);
+  assert.equal(loaded.integrity, "VERIFIED");
+});
+
 test("artifact readback rejects a broken predecessor link", () => {
   const first = sample().record;
   const second = buildMeasurementRecord({
