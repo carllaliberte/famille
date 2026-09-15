@@ -1,0 +1,36 @@
+{
+  "version": "xai-surface.v0",
+  "measured_on": "2026-09-15",
+  "horizon": "2026-12-31",
+  "provider": "xai",
+  "base_url": "https://api.x.ai/v1",
+  "secret": "XAI_API_KEY",
+  "auto_merge": false,
+  "live": false,
+  "human_authority": "carl",
+  "kernel": {
+    "mode": "SOVEREIGN_KERNEL",
+    "flux": "acorn.v0",
+    "inseparable": true,
+    "required_for_run": false
+  },
+  "surfaces": [
+    {"id":"grok","name":"Grok 4.6","layer":"api","status":"shipping","runtime":"chef","roster_id":"grok","slug":"grok-4.6","note":"Flagship. Expert mode = reasoning_effort xhigh on this slug."},
+    {"id":"heavy","name":"Grok Heavy","layer":"product","status":"shipping","runtime":"consult","roster_id":"heavy","slug":"grok-4.20-multi-agent-0309","note":"Plan/mode. Slug is nearest API multi-agent, not grok-heavy."},
+    {"id":"build","name":"Grok Build","layer":"product","status":"shipping","runtime":"consult","roster_id":"build","slug":"grok-4.6","note":"CLI/TUI agent. Dedicated SKU grok-build-0.1 still billed."},
+    {"id":"xai","name":"xAI provider","layer":"roster","status":"shipping","runtime":"consult","roster_id":"xai","slug":null,"note":"On-demand review seat. Same secret."},
+    {"id":"imagine","name":"Grok Imagine","layer":"api","status":"shipping","runtime":"adapter","roster_id":"imagine","slug":"grok-imagine-image-2.0","note":"Also grok-imagine-image, grok-imagine-video-1.5."},
+    {"id":"voice","name":"Grok Voice","layer":"api","status":"shipping","runtime":"adapter","roster_id":"voice","slug":"grok-voice-think-fast-2.0","note":"Agent/TTS/STT. Not required for RUN."},
+    {"id":"bot","name":"Grok Bot","layer":"product","status":"shipping","runtime":"guest","roster_id":"bot","slug":null,"note":"Persistent agents. No model slug. CHANNEL NOT PRESENT until API exists."},
+    {"id":"companions","name":"Grok Companions","layer":"product","status":"shipping","runtime":"guest","roster_id":"companions","slug":null,"note":"iOS product. No API slug."},
+    {"id":"grok45","name":"Grok 4.5","layer":"api","status":"shipping","runtime":"adapter","roster_id":null,"slug":"grok-4.5","note":"Previous flagship."},
+    {"id":"grok43","name":"Grok 4.3","layer":"api","status":"shipping","runtime":"adapter","roster_id":null,"slug":"grok-4.3","note":"Long context 1M."},
+    {"id":"grok420r","name":"Grok 4.20 reasoning","layer":"api","status":"shipping","runtime":"adapter","roster_id":null,"slug":"grok-4.20-0309-reasoning","note":null},
+    {"id":"build01","name":"Grok Build 0.1 SKU","layer":"api","status":"shipping","runtime":"adapter","roster_id":"build","slug":"grok-build-0.1","note":"Coding SKU 256k."},
+    {"id":"colossus","name":"Colossus","layer":"infra","status":"shipping","runtime":"forbidden","roster_id":null,"slug":null,"note":"Training cluster. Not a canal."},
+    {"id":"tesla","name":"Tesla physical AI","layer":"out-of-runtime","status":"not-canal","runtime":"forbidden","roster_id":null,"slug":null,"note":"FSD Optimus Dojo AI4/AI5. Other company."},
+    {"id":"neuralink","name":"Neuralink","layer":"out-of-runtime","status":"not-canal","runtime":"forbidden","roster_id":null,"slug":null,"note":"BCI. Not an LLM canal."},
+    {"id":"grok5","name":"Grok 5 / 4.7","layer":"product","status":"announced","runtime":"guest","roster_id":null,"slug":null,"note":"No official slug on docs.x.ai 2026-09-15. Do not invent."},
+    {"id":"studio","name":"Grok Studio","layer":"product","status":"retired","runtime":"forbidden","roster_id":null,"slug":null,"note":"Replaced by Build."}
+  ]
+}
