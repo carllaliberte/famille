@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 /**
  * Codex work loop — programming path, not HTTP review.
- * Transport adapters are optional. Missing API key ≠ Codex absent.
+ * API transports are optional. Local Codex CLI can execute through the user's
+ * ChatGPT/Codex session without requiring an OPENAI_API_KEY.
  * Never merges. live=false. authority=carl.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
+import { executeCodex } from "./codex-exec.mjs";
 
-export const LOOP_VERSION = "codex-loop.v0";
+export const LOOP_VERSION = "codex-loop.v1";
 
 export function loadTask(raw) {
   const task = typeof raw === "string" ? JSON.parse(raw) : { ...(raw || {}) };
@@ -80,6 +82,9 @@ export function runTests(task, exec = execFileSync) {
 }
 
 export function classifyTransport(env = process.env) {
+  if (String(env.CODEX_EXECUTE || "").toLowerCase() === "true") {
+    return { transport: "codex-cli", transport_status: "REQUESTED" };
+  }
   const openai = Boolean(String(env.OPENAI_API_KEY || "").trim());
   const or = Boolean(String(env.OPENROUTER_API_KEY || "").trim());
   if (openai) return { transport: "openai-optional", transport_status: "AVAILABLE" };
@@ -104,6 +109,7 @@ export function runCodexLoop(raw, opts = {}) {
       v: LOOP_VERSION,
       task_id: raw?.task_id || null,
       execution_mode: "blocked",
+      patch_source: "none",
       ...transport,
       files_read: [],
       files_changed: [],
@@ -122,8 +128,15 @@ export function runCodexLoop(raw, opts = {}) {
   let files_changed = [];
   let execution_status = "CONTEXT_ONLY";
   let execution_mode = "operator";
+  let patch_source = "operator";
 
-  if (!task.patches.length) {
+  if (String(env.CODEX_EXECUTE || "").toLowerCase() === "true") {
+    const codex = (opts.codexExecute || executeCodex)(task, opts.codexOptions || {});
+    execution_mode = codex.execution_mode || "codex";
+    patch_source = codex.patch_source || "unavailable";
+    files_changed = codex.files_changed || [];
+    execution_status = codex.execution_status || "UNAVAILABLE";
+  } else if (!task.patches.length) {
     execution_status = "NEED_PATCHES";
     execution_mode = "operator";
   } else {
@@ -133,13 +146,13 @@ export function runCodexLoop(raw, opts = {}) {
   }
 
   const testOut =
-    execution_status === "PATCHED" || task.tests.length
+    execution_status === "PATCHED" || execution_status === "PATCHED_UNTESTED" || execution_status === "PATCHED_BY_CODEX" || task.tests.length
       ? runTests(task, opts.exec)
       : { tests_run: [], tests_result: "NOT_REQUESTED" };
 
-  if (execution_status === "PATCHED" && testOut.tests_result === "FAIL") {
+  if ((execution_status === "PATCHED" || execution_status === "PATCHED_BY_CODEX") && testOut.tests_result === "FAIL") {
     execution_status = "TESTS_FAILED";
-  } else if (execution_status === "PATCHED" && testOut.tests_result === "PASS") {
+  } else if ((execution_status === "PATCHED" || execution_status === "PATCHED_BY_CODEX") && testOut.tests_result === "PASS") {
     execution_status = "VALIDATED";
   } else if (execution_status === "PATCHED" && testOut.tests_result === "NOT_REQUESTED") {
     execution_status = "PATCHED_UNTESTED";
@@ -150,6 +163,7 @@ export function runCodexLoop(raw, opts = {}) {
     task_id: task.task_id,
     intent: task.intent,
     execution_mode,
+    patch_source,
     ...transport,
     files_read,
     files_changed,
