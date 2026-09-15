@@ -116,7 +116,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ -f evidence/autopilot/runtime/checkpoint.json ]; then
-            STATE=$(node --input-type=module -e "const fs=require('node:fs'); console.log(JSON.parse(fs.readFileSync('evidence/autopilot/runtime/checkpoint.json','utf8')).state || 'UNKNOWN')")
+            STATE=$(node --input-type=module -e "import { readFileSync } from 'node:fs'; console.log(JSON.parse(readFileSync('evidence/autopilot/runtime/checkpoint.json','utf8')).state || 'UNKNOWN')")
           else
             STATE=UNKNOWN
           fi
