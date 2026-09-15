@@ -682,6 +682,11 @@ describe("codex autonomous worker", () => {
     const prompt = taskPrompt({ number: 513, title: "t", body: "b", url: "u" });
     assert.match(prompt, /entire repository is in scope/);
     assert.match(prompt, /Astra Codex/);
+    assert.match(prompt, /docs\/ASTRA-CODEX\.md/);
+    assert.match(prompt, /CODE ≠ TESTED ≠ EXECUTED ≠ MEASURED ≠ VERIFIED ≠ LIVE/);
+    assert.match(prompt, /BUILD_TOOL/);
+    assert.match(prompt, /HOLD_HUMAN/);
+    assert.match(prompt, /Never claim LIVE without live-proof LIVE_VERIFIED/);
     const cfg = buildCodexConfig(io, classifyAuth(io));
     assert.match(cfg, /sandbox_mode = "danger-full-access"/);
     assert.match(cfg, /approval_policy = "never"/);

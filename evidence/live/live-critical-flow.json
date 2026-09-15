@@ -1,0 +1,84 @@
+{
+  "v": "live-critical-flow.v1",
+  "tested_at": "2026-09-15T22:06:43.253Z",
+  "tested_sha": "83bdc6907fab35676017296e95c66024157fbbcc",
+  "critical": {
+    "url": "https://acorn-juge.laliberte22.workers.dev/juge?quelle=os&temoin=aucun&epsilon=0.1&horizon=2027-12-31",
+    "method": "GET",
+    "class": "OK",
+    "status": 200,
+    "content_type": "application/json; charset=utf-8",
+    "latency_ms": 13,
+    "headers": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "server": "cloudflare"
+    },
+    "json": {
+      "id": "preview-2026-09-15",
+      "status": "CLASSIQUE",
+      "preview": true,
+      "receipt": false,
+      "quelle": "os",
+      "temoin": "aucun",
+      "epsilon": 0.1,
+      "horizon": "2027-12-31",
+      "as_of": "2026-09-15",
+      "phrase": "Classical — phone entropy is not quantum"
+    },
+    "body_prefix": "{\"id\":\"preview-2026-09-15\",\"status\":\"CLASSIQUE\",\"preview\":true,\"receipt\":false,\"quelle\":\"os\",\"temoin\":\"aucun\",\"epsilon\":0.1,\"horizon\":\"2027-12-31\",\"as_of\":\"2026-09-15\",\"phrase\":\"Classical — phone entropy is not quantum\"}",
+    "sha": null
+  },
+  "epsilon_zero": {
+    "url": "https://acorn-juge.laliberte22.workers.dev/juge?quelle=os&temoin=aucun&epsilon=0&horizon=2027-12-31",
+    "method": "GET",
+    "class": "HTTP_FAILURE",
+    "status": 400,
+    "content_type": "application/json; charset=utf-8",
+    "latency_ms": 11,
+    "headers": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "server": "cloudflare"
+    },
+    "json": {
+      "error": "lie",
+      "phrase": "Error margin zero is a lie",
+      "preview": true
+    },
+    "body_prefix": "{\"error\":\"lie\",\"phrase\":\"Error margin zero is a lie\",\"preview\":true}",
+    "sha": null
+  },
+  "missing_epsilon": {
+    "url": "https://acorn-juge.laliberte22.workers.dev/juge?quelle=os&temoin=aucun&horizon=2027-12-31",
+    "method": "GET",
+    "class": "HTTP_FAILURE",
+    "status": 400,
+    "content_type": "application/json; charset=utf-8",
+    "latency_ms": 39,
+    "headers": {
+      "cache-control": "no-store",
+      "content-type": "application/json; charset=utf-8",
+      "server": "cloudflare"
+    },
+    "json": {
+      "error": "EPSILON_MISSING",
+      "preview": true,
+      "phrase": "Missing ε is not a zero margin. This canal returns 400. famille sdk (d55799e) treats missing ε as classique. GARDE fail-closes until they agree.",
+      "consumers": {
+        "acorn-juge": "400",
+        "famille-sdk": "classique",
+        "garde": "EPSILON_MISSING"
+      }
+    },
+    "body_prefix": "{\"error\":\"EPSILON_MISSING\",\"preview\":true,\"phrase\":\"Missing ε is not a zero margin. This canal returns 400. famille sdk (d55799e) treats missing ε as classique. GARDE fail-closes until they agree.\",\"consumers\":{\"acorn-juge\":\"400\",\"famille-sdk\":\"classique\",\"garde\":\"EPSILON_MISSING\"}}",
+    "sha": null
+  },
+  "auto_merge": false,
+  "live": false,
+  "seal": {
+    "v": "evidence-seal.v1",
+    "algorithm": "sha256",
+    "digest": "d71f495333fc5e5e0fb8cbb37c3728a3840d3a93a36d74d754b1ce9bc8692753"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "live_contract_version": "live-proof.v1",
+  "tested_sha": "83bdc6907fab35676017296e95c66024157fbbcc",
+  "tested_at": "2026-09-15T22:06:43.253Z",
+  "public_entrypoint": "https://acorn-royal-dune-blend.grok.me",
+  "critical_endpoint": "https://acorn-juge.laliberte22.workers.dev/juge?quelle=os&temoin=aucun&epsilon=0.1&horizon=2027-12-31",
+  "source": "external_probe",
+  "authority": "carl",
+  "auto_merge": false,
+  "live": false,
+  "fake_certified": false,
+  "fake_quantum": false,
+  "fake_qkd": false,
+  "overall_status": "LIVE_BLOCKED",
+  "blocking_reason": "PREVIEW_NOT_RECEIPT",
+  "observed_value": {
+    "preview": true,
+    "receipt": false
+  },
+  "expected_value": "preview=false with provenance sha",
+  "deployed_sha": null,
+  "http_status": 200,
+  "application_status": "PREVIEW",
+  "critical_flow_status": "VERIFIED",
+  "runtime_status": "VERIFIED",
+  "provenance_status": "BLOCKED",
+  "security_status": "VERIFIED",
+  "continuity_status": "VERIFIED",
+  "public_access_status": "VERIFIED",
+  "code_status": "VERIFIED",
+  "deployment_status": "VERIFIED",
+  "privacy_status": "BLOCKED",
+  "next_action": "HOLD_HUMAN: Carl wrangler deploy + bind grok.me /juge, stamp git sha, preview=false only after provenance exists",
+  "seal": {
+    "v": "evidence-seal.v1",
+    "algorithm": "sha256",
+    "digest": "ab984cb226c5b286c93ccb1e3695f0388fb7f1c47780267a6e2679cb781fa723"
+  }
+}

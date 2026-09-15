@@ -1,0 +1,21 @@
+{
+  "v": "live-runtime.v1",
+  "tested_at": "2026-09-15T22:06:43.253Z",
+  "tested_sha": "83bdc6907fab35676017296e95c66024157fbbcc",
+  "runtime_active": true,
+  "cycle_id": "35028847936",
+  "previous_cycle": "35028759979",
+  "next_cycle": "35028920070",
+  "worker_status": "success",
+  "evidence_artifact": "codex-autonomous-worker.yml",
+  "continuity": true,
+  "failure_recovery": "autopilot 35028240744 MEASUREMENT_RECORD_RANKING_MISMATCH; Codex loop continues",
+  "auto_merge": false,
+  "authority": "carl",
+  "live": false,
+  "seal": {
+    "v": "evidence-seal.v1",
+    "algorithm": "sha256",
+    "digest": "0a16da22900c26555698b5e49227b0dcad9dcf3d4847b3c58c160e684e911df5"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "v": "live-provenance.v1",
+  "tested_at": "2026-09-15T22:06:43.253Z",
+  "tested_sha": "83bdc6907fab35676017296e95c66024157fbbcc",
+  "deployed_sha": null,
+  "provenance_status": "BLOCKED",
+  "auto_merge": false,
+  "live": false,
+  "seal": {
+    "v": "evidence-seal.v1",
+    "algorithm": "sha256",
+    "digest": "b53661ccdf807cbfcf89a0c7ab627d63192da94284be0ed171cd21b9afb4fb13"
+  }
+}

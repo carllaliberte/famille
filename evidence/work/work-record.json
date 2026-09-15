@@ -1,0 +1,148 @@
+{
+  "v": "work-record.v1",
+  "objective": "Mesurer Acorn LIVE de bout en bout et garder l'outillage",
+  "observed": "Vitrine 200 aperçu. Canal /juge preview:true CLASSIQUE. Pas de SHA déployé. Codex loop active. Autopilot ranking mismatch.",
+  "evidence": [
+    "evidence/live/live-proof.json",
+    "https://github.com/carllaliberte/famille/actions/runs/35028847936"
+  ],
+  "hypotheses": [
+    "preview≠LIVE",
+    "un 200 n'est pas une quittance",
+    "outil manquant = le construire"
+  ],
+  "files": [
+    "scripts/live-proof.mjs",
+    "scripts/work-record.mjs",
+    "test/live-proof.test.js",
+    "test/work-record.test.js"
+  ],
+  "architecture": [
+    "MAIN=réalité",
+    "BREAKER=autorisation",
+    "ACORN=cognition",
+    "CODEX=agit",
+    "CARL=merge"
+  ],
+  "contracts": [
+    "CODE≠TESTED≠EXECUTED≠MEASURED≠VERIFIED≠LIVE",
+    "preview≠receipt",
+    "auto_merge=false",
+    "authority=carl"
+  ],
+  "inputs": [
+    "main SHA 83bdc69",
+    "URLs HOTE.md"
+  ],
+  "outputs": [
+    "evidence/live/",
+    "evidence/work/",
+    "PR #547"
+  ],
+  "expected": "LIVE_VERIFIED only after SHA-stamped worker bound on grok.me /juge",
+  "errors": [
+    "PREVIEW_NOT_RECEIPT",
+    "PROVENANCE_FAILURE",
+    "MEASUREMENT_RECORD_RANKING_MISMATCH on autopilot"
+  ],
+  "security": {
+    "secrets_in_logs": false,
+    "contents_write": false
+  },
+  "governance": {
+    "authority": "carl",
+    "auto_merge": false,
+    "merge": "human"
+  },
+  "tests": {
+    "added": [
+      "test/live-proof.test.js",
+      "test/work-record.test.js"
+    ],
+    "pass": 820,
+    "fail": 0,
+    "total": 820
+  },
+  "measurements": [
+    "GET / 200 HTML aperçu",
+    "GET canal /juge 200 preview CLASSIQUE",
+    "epsilon=0 → 400 lie"
+  ],
+  "regressions": [
+    "no LIVE_VERIFIED from fixture",
+    "epsilon=0 never 200",
+    "no QUANTUM theatre"
+  ],
+  "defined_vs_executed": [
+    {
+      "name": "external HTTP probe",
+      "defined": true,
+      "executed": true
+    },
+    {
+      "name": "wrangler deploy",
+      "defined": true,
+      "executed": false
+    },
+    {
+      "name": "grok.me /juge bind",
+      "defined": true,
+      "executed": false
+    }
+  ],
+  "live": {
+    "claimed": false,
+    "proof": "LIVE_BLOCKED",
+    "reason": "PREVIEW_NOT_RECEIPT"
+  },
+  "provenance": {
+    "sha": "83bdc6907fab35676017296e95c66024157fbbcc",
+    "artifacts": [
+      "evidence/live/",
+      "evidence/work/"
+    ]
+  },
+  "missing": [
+    {
+      "kind": "human",
+      "name": "wrangler bind grok.me /juge",
+      "why": "no Cloudflare credentials; CONNECT.md Carl only"
+    }
+  ],
+  "tools_built": [
+    {
+      "name": "live-proof",
+      "reuse": "npm run live:probe → evidence/live/"
+    },
+    {
+      "name": "work-record",
+      "reuse": "npm run work:record → evidence/work/"
+    }
+  ],
+  "tools_reuse": [
+    "evidence-seal",
+    "live-proof",
+    "work-record"
+  ],
+  "next": {
+    "decision": "HOLD_HUMAN",
+    "why": "no Cloudflare credentials; CONNECT.md Carl only",
+    "authority": "carl"
+  },
+  "stages": {
+    "code": true,
+    "tested": true,
+    "executed": true,
+    "measured": true,
+    "verified": false,
+    "live": false
+  },
+  "auto_merge": false,
+  "authority": "carl",
+  "observed_at": "2026-09-15T22:12:01.724Z",
+  "seal": {
+    "v": "evidence-seal.v1",
+    "algorithm": "sha256",
+    "digest": "ce6c82524ad33b71e75af542e388568fa3fc25d03b6f09aaee52cf9945b068a1"
+  }
+}

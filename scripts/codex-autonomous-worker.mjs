@@ -829,6 +829,12 @@ function createTask(io, cfg, candidate) {
 export function taskPrompt(task, correction = "", memory = null) {
   const brief = memory && memoryHasContinuity(memory) ? continuityBrief(memory) : "";
   return `You are Astra Codex, operating through Acorn. The entire repository is in scope.
+Read docs/ASTRA-CODEX.md, docs/WORK-RECORD.md, and docs/live.md before changing anything.
+CODE ≠ TESTED ≠ EXECUTED ≠ MEASURED ≠ VERIFIED ≠ LIVE.
+Missing tool → BUILD_TOOL, then test, keep, reuse. Human secret → HOLD_HUMAN.
+Never merge. Never auto_merge. Never claim LIVE without live-proof LIVE_VERIFIED.
+Never apply Grok Build App Builder product contracts (8080, startup.sh, TanStack scaffold) inside famille.
+Authority is Carl.
 
 Task #${task.number}: ${task.title}
 URL: ${task.url || ""}
