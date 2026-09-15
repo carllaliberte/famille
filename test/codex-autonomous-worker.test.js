@@ -377,6 +377,7 @@ describe("codex autonomous worker", () => {
 
   it("classifies errors into operational categories", () => {
     assert.equal(classifyError({ message: "401 unauthorized" }), "AUTH");
+    assert.equal(classifyError({ message: "ERROR: unexpected status 402 Payment Required: credits" }), "AUTH");
     assert.equal(classifyError({ message: "error: unexpected argument '--ask-for-approval' found" }), "CLI");
     assert.equal(classifyError({ message: "codex: not found", code: "ENOENT" }), "CLI");
     assert.equal(classifyError({ message: "Resource not accessible by integration" }), "PERMISSION");
@@ -677,6 +678,9 @@ describe("codex autonomous worker", () => {
     assert.match(cfg, /trust_level = "trusted"/);
     assert.match(cfg, /model_provider = "openrouter"/);
     assert.match(cfg, /wire_api = "responses"/);
+    assert.match(cfg, /model_max_output_tokens = 1024/);
+    assert.match(cfg, /model_reasoning_effort = "low"/);
+    assert.match(cfg, /model_providers\.openrouter\.auth/);
   });
 
   it("keeps workflow run blocks indented so GitHub registers workflow_dispatch", () => {
