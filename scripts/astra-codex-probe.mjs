@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 /**
- * Measure Astra / Codex OpenAI transport. Never prints secret values.
- * Does not change the Global Breaker. auto_merge=false live=false.
+ * Measure Astra / Codex transport without conflating providers.
+ * Never prints secret values. Does not change the Global Breaker.
+ * auto_merge=false live=false.
  */
 import { writeFileSync } from "node:fs";
 import { MODELS } from "../.github/swarm/review.mjs";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
 
-const ENDPOINT = "https://api.openai.com/v1/chat/completions";
+const ENDPOINTS = Object.freeze({
+  openai: "https://api.openai.com/v1/chat/completions",
+  openrouter: "https://openrouter.ai/api/v1/chat/completions",
+});
 const IDS = ["astra", "codex"];
 
 function redact(text) {
@@ -26,8 +30,8 @@ function classifyHttp(status, body) {
   return "API_ERROR";
 }
 
-export function detectKey(env = process.env) {
-  const raw = String(env.OPENAI_API_KEY || "");
+export function detectKey(env = process.env, secretName = "OPENAI_API_KEY") {
+  const raw = String(env[secretName] || "");
   return raw.trim().length > 8;
 }
 
@@ -36,14 +40,18 @@ export function prepareRequest(id, env = process.env) {
   if (!spec) {
     return { ok: false, result: "CONFIGURATION_ERROR", reason: `missing MODELS.${id}` };
   }
+  const endpoint = ENDPOINTS[spec.provider];
+  if (!endpoint) {
+    return { ok: false, result: "CONFIGURATION_ERROR", reason: `unsupported provider ${spec.provider}` };
+  }
   return {
     ok: true,
     id,
     provider: spec.provider,
     model: spec.model,
     secret_name: spec.secret,
-    endpoint: ENDPOINT,
-    key_detected: detectKey(env),
+    endpoint,
+    key_detected: detectKey(env, spec.secret),
     auto_merge: false,
     live: false,
   };
@@ -58,9 +66,11 @@ export async function probeOne(id, env = process.env, fetchFn = fetch) {
     sha: env.GITHUB_SHA || "",
     breaker_mode: state.mode,
     breaker_closed: state.breaker_closed,
-    key_detected: detectKey(env),
+    key_detected: prepared.key_detected || false,
     model: prepared.model || null,
-    endpoint: ENDPOINT,
+    provider: prepared.provider || null,
+    endpoint: prepared.endpoint || null,
+    secret_name: prepared.secret_name || null,
     api_call: "NOT_EXECUTED",
     latency_ms: null,
     http_status: null,
@@ -74,16 +84,22 @@ export async function probeOne(id, env = process.env, fetchFn = fetch) {
     return { ...base, result: "BLOCKED_BY_BREAKER", reason: "GLOBAL_BREAKER_OFF" };
   }
   if (!base.key_detected) {
-    return { ...base, result: "CONFIGURATION_ERROR", reason: "OPENAI_API_KEY absent or too short" };
+    return { ...base, result: "CONFIGURATION_ERROR", reason: `${prepared.secret_name} absent or too short` };
   }
+  const key = String(env[prepared.secret_name]).trim();
   const t0 = Date.now();
   try {
-    const res = await fetchFn(ENDPOINT, {
+    const headers = {
+      authorization: `Bearer ${key}`,
+      "content-type": "application/json",
+    };
+    if (prepared.provider === "openrouter") {
+      headers["HTTP-Referer"] = "https://github.com/carllaliberte/famille";
+      headers["X-Title"] = "Acorn swarm";
+    }
+    const res = await fetchFn(prepared.endpoint, {
       method: "POST",
-      headers: {
-        authorization: `Bearer ${String(env.OPENAI_API_KEY).trim()}`,
-        "content-type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         model: prepared.model,
         max_tokens: 16,
@@ -123,7 +139,7 @@ export async function probeAstraCodex({ env = process.env, fetchFn = fetch, outP
   const rows = [];
   for (const id of IDS) rows.push(await probeOne(id, env, fetchFn));
   const evidence = {
-    v: "astra-codex-probe.v0",
+    v: "astra-codex-probe.v1",
     generated_at: new Date().toISOString(),
     sha: env.GITHUB_SHA || "",
     policy: { merge: false, live: false, breaker_write: false },
@@ -135,7 +151,7 @@ export async function probeAstraCodex({ env = process.env, fetchFn = fetch, outP
 }
 
 const isMain = Boolean(process.argv[1]) && process.argv[1].endsWith("astra-codex-probe.mjs");
- if (isMain) {
+if (isMain) {
   probeAstraCodex({ outPath: process.env.ASTRA_CODEX_EVIDENCE || "astra-codex-evidence.json" }).then((ev) => {
     console.log(JSON.stringify(ev, null, 2));
   });
