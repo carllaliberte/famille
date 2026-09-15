@@ -25,7 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          # Scheduled runs use main; manual/branch runs must execute the selected ref.
+          # This prevents a PR validation from silently executing an older main checkout.
+          ref: ${{ github.ref }}
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -38,6 +41,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF: ${{ github.ref }}
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
           FAIL_ON_DISPATCH_ERROR: 'false'
           WORKER_EVIDENCE: worker-evidence.json
@@ -98,8 +102,9 @@ jobs:
       - name: Record bounded result
         if: always()
         run: |
-          echo "cognitive-worker.v13 — observe/discover/compose/route/dispatch/measure/memory-index/ranking/feedback/dated-record cycle completed."
+          echo "cognitive-worker.v14 — observe/discover/compose/route/dispatch/measure/memory-index/ranking/feedback/dated-record cycle completed."
           echo "DEFINED != EXECUTED != VERIFIED != LIVE."
+          echo "execution ref=${GITHUB_REF} sha=${GITHUB_SHA}"
           echo "ranking = measured execution/collaboration/routing evidence only."
           echo "feedback = bounded routing guidance, not authority; MEASURE_MORE receives confirmation priority."
           echo "measurement-record = dated state + chained integrity link, not authority or truth."
