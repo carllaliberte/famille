@@ -5,6 +5,8 @@ const AUTH_COOLDOWN_MS = 6 * 60 * 60 * 1e3;
 const MAX_IDENTICAL_ERRORS = 3;
 const MAX_IDENTICAL_REPAIRS = 3;
 const DEBOUNCE_MS = 10 * 60 * 1e3;
+const FRICTION_THRESHOLD = 3;
+const INTENT_STOP = new Set(["the","and","for","une","les","des","que","pas","with","from","this","that","dans","pour","avec","sans"]);
 const LOOP_STEPS = [
   "OBSERVE",
   "UNDERSTAND",
@@ -46,7 +48,27 @@ function emptyMemory() {
     error_signatures: [],
     cooldowns: [],
     locks: { run: null, task: null },
+    active_intent: null,
+    user_requests: [],
+    constraints: ["never merge to main"],
+    corrections: [],
+    friction: emptyFriction(),
     updated_at: null
+  };
+}
+function emptyFriction() {
+  return {
+    repetition_count: 0,
+    correction_count: 0,
+    context_loss_count: 0,
+    contradiction_count: 0,
+    unnecessary_confirmation_count: 0,
+    failed_retry_count: 0,
+    human_intervention_count: 0,
+    successful_recovery_count: 0,
+    score: 0,
+    threshold_reached: false,
+    events: []
   };
 }
 function hydrateMemory(raw) {
@@ -66,6 +88,10 @@ function hydrateMemory(raw) {
     human_required: Array.isArray(src.human_required) ? src.human_required : Array.isArray(src.human_actions_required) ? src.human_actions_required : base.human_required,
     error_signatures: Array.isArray(src.error_signatures) ? src.error_signatures : [],
     cooldowns: Array.isArray(src.cooldowns) ? src.cooldowns : [],
+    user_requests: Array.isArray(src.user_requests) ? src.user_requests : [],
+    constraints: Array.isArray(src.constraints) ? src.constraints : base.constraints,
+    corrections: Array.isArray(src.corrections) ? src.corrections : [],
+    friction: src.friction && typeof src.friction === "object" ? { ...emptyFriction(), ...src.friction } : emptyFriction(),
     locks: src.locks && typeof src.locks === "object" ? { run: null, task: null, ...src.locks } : base.locks
   };
 }
@@ -476,6 +502,201 @@ function shouldStopCleanly(input) {
     return { stop: true, status: "IDLE", reason: "aucune t\xE2che justifi\xE9e" };
   }
   return { stop: false, status: "RUN", reason: "travail justifi\xE9" };
+}
+function tokenizeIntent(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9#\s]+/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !INTENT_STOP.has(w));
+}
+function normalizeIntent(text) {
+  return tokenizeIntent(text).join(" ");
+}
+function intentSimilarity(a, b) {
+  const A = new Set(tokenizeIntent(a));
+  const B = new Set(tokenizeIntent(b));
+  if (!A.size || !B.size) return 0;
+  let inter = 0;
+  for (const w of A) if (B.has(w)) inter += 1;
+  return inter / Math.max(A.size, B.size);
+}
+function rememberUserRequest(memory, request, now = Date.now()) {
+  const text = String(request?.text ?? request ?? "").trim();
+  const rec = {
+    text: text.slice(0, 500),
+    normalized: normalizeIntent(text),
+    at: now,
+    source: request?.source || "user"
+  };
+  const recognized = recognizeIntent(memory, text);
+  memory.user_requests = [...(memory.user_requests || []), rec].slice(-16);
+  if (!memory.active_intent) memory.active_intent = rec;
+  if (recognized.same) recordFriction(memory, "same_request_repeated", now);
+  return { recorded: rec, recognized };
+}
+function recognizeIntent(memory, request) {
+  const incoming = normalizeIntent(request);
+  const active = memory?.active_intent?.normalized || "";
+  if (!incoming) return { same: false, kind: "empty", reset: false };
+  if (incoming === active) return { same: true, kind: "exact", reset: false, intent: memory.active_intent };
+  if (intentSimilarity(incoming, active) >= 0.5) {
+    return { same: true, kind: "semantic", reset: false, intent: memory.active_intent };
+  }
+  const prior = (memory?.user_requests || []).find(
+    (r) => r.normalized === incoming || intentSimilarity(incoming, r.normalized) >= 0.5
+  );
+  if (prior) return { same: true, kind: "historical", reset: false, intent: prior };
+  return { same: false, kind: "new", reset: true };
+}
+function recordCorrection(memory, correction, now = Date.now()) {
+  const text = String(correction || "").slice(0, 400);
+  const normalized = normalizeIntent(text);
+  const prev = (memory.corrections || []).at(-1);
+  memory.corrections = [...(memory.corrections || []), { text, normalized, at: now }].slice(-16);
+  if (memory.active_intent) memory.active_intent.corrected_by = text;
+  if (prev && prev.normalized && prev.normalized === normalized) {
+    recordFriction(memory, "same_correction_repeated", now);
+  }
+  return { recorded: true, realign: true };
+}
+function recordFriction(memory, signal, now = Date.now()) {
+  const f = memory.friction && typeof memory.friction === "object" ? memory.friction : emptyFriction();
+  f.events = [...(f.events || []), { signal, at: now }].slice(-32);
+  if (signal === "same_request_repeated") f.repetition_count += 1;
+  else if (signal === "same_correction_repeated") f.correction_count += 1;
+  else if (signal === "missing_continuity" || signal === "stale_state") f.context_loss_count += 1;
+  else if (signal === "contradictory_response" || signal === "intent_drift") f.contradiction_count += 1;
+  else if (signal === "unnecessary_confirmation_loop") f.unnecessary_confirmation_count += 1;
+  else if (signal === "known_failure_repeated") f.failed_retry_count += 1;
+  else if (signal === "unnecessary_human_intervention") f.human_intervention_count += 1;
+  else if (signal === "successful_recovery") f.successful_recovery_count += 1;
+  f.score = f.repetition_count + f.correction_count + f.context_loss_count + f.contradiction_count
+    + f.unnecessary_confirmation_count + f.failed_retry_count + f.human_intervention_count;
+  f.threshold_reached = f.score >= FRICTION_THRESHOLD;
+  memory.friction = f;
+  return f;
+}
+function measureFriction(memory) {
+  const f = memory?.friction && typeof memory.friction === "object" ? memory.friction : emptyFriction();
+  return { ...emptyFriction(), ...f, threshold: FRICTION_THRESHOLD };
+}
+function onUserFrictionThreshold(memory) {
+  const f = measureFriction(memory);
+  if (!f.threshold_reached) return { stop: false, status: "CONTINUE", friction: f };
+  return {
+    stop: true,
+    status: "SELF_CORRECT",
+    action: "STOP_DIAGNOSE_REPAIR_VERIFY_RESUME",
+    reason: "USER_FRICTION >= THRESHOLD",
+    friction: f
+  };
+}
+function detectDrift(input = {}) {
+  const memory = input.memory || emptyMemory();
+  const intent = input.activeIntent || memory.active_intent?.text || "";
+  const action = String(input.currentAction || "");
+  const constraints = input.constraints || memory.constraints || [];
+  const signals = [];
+  const intentSource = memory.active_intent?.source;
+  const intentMentionsTask = input.taskNumber && String(intent).includes(String(input.taskNumber));
+  if (
+    intent &&
+    action &&
+    intentSource !== "task" &&
+    !intentMentionsTask &&
+    intentSimilarity(intent, action) < 0.3 &&
+    !/continue|resume|repair|debug|mesure|measure/.test(action.toLowerCase())
+  ) {
+    signals.push("intent_drift");
+  }
+  const actLow = action.toLowerCase();
+  for (const c of constraints) {
+    const cl = String(c).toLowerCase();
+    if (/never merge|no merge|ne merge/.test(cl) && /merge to main|merge vers main|squash-merge main/.test(actLow)) {
+      signals.push("previous_constraint_ignored");
+    }
+  }
+  const completed = memory.completed || memory.completed_tasks || [];
+  if (input.taskNumber && completed.some((t) => Number(t.number) === Number(input.taskNumber))) {
+    signals.push("already_done_work_repeated");
+  }
+  if (input.astraState?.intent && input.codexState?.action
+    && intentSimilarity(input.astraState.intent, input.codexState.action) < 0.3) {
+    signals.push("agent_desynchronization");
+  }
+  if (input.claimedDone && input.patch_source !== "codex") signals.push("false_completion");
+  const aligned = signals.length === 0;
+  return {
+    aligned,
+    drift: !aligned,
+    signals,
+    status: aligned ? "ALIGNED" : "DRIFT_DETECTED",
+    action: aligned ? "CONTINUE" : "STOP_DIAGNOSE_REALIGN"
+  };
+}
+function detectLoopNoProgress(input = {}) {
+  const actions = input.recentActions || [];
+  if (actions.length < 3) return { loop: false, status: "CONTINUE" };
+  const last = actions.slice(-3);
+  const key = (a) => `${normalizeIntent(a.action || a)}::${a.result || a.status || ""}`;
+  const same = last.every((a) => key(a) === key(last[0]));
+  const noProgress = same && last[0].result !== "PATCHED" && last[0].status !== "PATCHED";
+  return {
+    loop: noProgress,
+    status: noProgress ? "LOOP_NO_PROGRESS" : "CONTINUE",
+    action: noProgress ? "CHANGE_STRATEGY_OR_DIAGNOSE" : "CONTINUE"
+  };
+}
+function wouldBlindRetry(memory, failure) {
+  const signature = errorSignature(failure);
+  const rec = (memory.error_signatures || []).find((e) => e.signature === signature);
+  if (rec && rec.count >= 1) {
+    return { blind: true, signal: "known_failure_repeated", action: "INVESTIGATE_ROOT_CAUSE", signature };
+  }
+  return { blind: false, signature };
+}
+function refuseUnprovenCompletion(input = {}) {
+  const claimed = input.claimed === true || input.status === "PATCHED" || input.status === "COMPLETED";
+  const proven = input.patch_source === "codex" && input.testsPassed === true;
+  if (claimed && !proven) {
+    return { accepted: false, status: "FALSE_COMPLETION", signal: "false_completion" };
+  }
+  if (!claimed) return { accepted: false, status: "NOT_CLAIMED" };
+  return { accepted: true, status: "VERIFIED" };
+}
+function reloadCurrentState(memory, observed = {}) {
+  const lastSha = memory.last_main_sha;
+  const newSha = observed.sha;
+  const stale = Boolean(lastSha && newSha && lastSha !== newSha);
+  if (stale) {
+    const sync = afterMergeSync({
+      memory,
+      previousSha: lastSha,
+      newSha,
+      mergedPr: observed.mergedPr || null,
+      now: observed.now || Date.now()
+    });
+    recordFriction(memory, "stale_state", observed.now || Date.now());
+    return { reloaded: true, signal: "stale_state", previous: lastSha, current: newSha, actions: sync.actions };
+  }
+  return { reloaded: false, current: newSha || lastSha };
+}
+function selfCorrect(input = {}) {
+  const memory = input.memory || emptyMemory();
+  const drift = detectDrift(input);
+  if (drift.drift) {
+    recordFriction(memory, drift.signals[0] || "intent_drift", input.now);
+    return { ...drift, repaired: true, next: "REALIGN_TO_ACTIVE_INTENT" };
+  }
+  const loop = detectLoopNoProgress(input);
+  if (loop.loop) {
+    recordFriction(memory, "no_progress", input.now);
+    return { ...loop, repaired: true, next: "CHANGE_STRATEGY" };
+  }
+  const friction = onUserFrictionThreshold(memory);
+  if (friction.stop) return { ...friction, repaired: true, next: "DIAGNOSE" };
+  return { repaired: false, status: "ALIGNED", next: "CONTINUE", action: "CONTINUE" };
 }
 function fabricNode(partial) {
   return {
@@ -902,6 +1123,7 @@ export {
   AUTH_COOLDOWN_MS,
   CODEX_NODE,
   DEBOUNCE_MS,
+  FRICTION_THRESHOLD,
   KERNEL_VERSION,
   LOOP_STEPS,
   MAX_IDENTICAL_ERRORS,
@@ -912,7 +1134,10 @@ export {
   candidateFromSurveillance,
   classifyRepetition,
   classifyWorkAgainstPr,
+  detectDrift,
+  detectLoopNoProgress,
   dedupeTasks,
+  emptyFriction,
   emptyMemory,
   errorSignature,
   escalateDebug,
@@ -921,18 +1146,30 @@ export {
   fabricNode,
   humanRequired,
   hydrateMemory,
+  intentSimilarity,
   isArchitecturalCategory,
   isOperativeCodexPr,
   loopPosition,
+  measureFriction,
+  normalizeIntent,
+  onUserFrictionThreshold,
   parseTaskMetadata,
   prioritize,
   provenanceRecord,
+  recognizeIntent,
+  recordCorrection,
   recordErrorSignature,
+  recordFriction,
+  refuseUnprovenCompletion,
+  reloadCurrentState,
+  rememberUserRequest,
   runTruthSuite,
   scoreTask,
   selectNextWork,
+  selfCorrect,
   setAuthCooldown,
   shouldStopCleanly,
   simulateAbsence,
-  sovereigntyIntact
+  sovereigntyIntact,
+  wouldBlindRetry
 };

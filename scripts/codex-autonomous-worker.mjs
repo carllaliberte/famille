@@ -15,17 +15,25 @@ import {
   applyLoopGuards,
   candidateFromSurveillance,
   classifyRepetition,
+  detectDrift,
+  detectLoopNoProgress,
   escalateDebug,
   evaluateTrigger,
   extractTaskNumbers,
   hydrateMemory,
   humanRequired,
   isOperativeCodexPr,
+  measureFriction,
   parseTaskMetadata,
   recordErrorSignature,
+  recordFriction,
+  refuseUnprovenCompletion,
+  rememberUserRequest,
   runTruthSuite,
   selectNextWork,
+  selfCorrect,
   setAuthCooldown,
+  wouldBlindRetry,
   emptyMemory as kernelEmpty,
 } from "./codex-autonomy.mjs";
 
@@ -223,6 +231,7 @@ export function memoryHasContinuity(memory) {
     (memory.completed || memory.completed_tasks || []).length ||
     (memory.failed || memory.failed_tasks || []).length ||
     memory.carl_request ||
+    memory.active_intent ||
     memory.last_main_sha
   );
 }
@@ -242,6 +251,9 @@ export function continuityBrief(memory = {}) {
     `last_model: ${memory.last_model || "unknown"}`,
   ];
   if (memory.carl_request) lines.push(`carl_request: ${String(memory.carl_request).slice(0, 400)}`);
+  if (memory.active_intent?.text) lines.push(`active_intent: ${String(memory.active_intent.text).slice(0, 240)}`);
+  const friction = measureFriction(memory);
+  lines.push(`user_friction: score=${friction.score} threshold=${friction.threshold} reached=${friction.threshold_reached}`);
   if (completed.length) {
     lines.push(`completed: ${completed.map((t) => `#${t.number || t.id || "?"} ${t.title || ""}`.trim()).join("; ")}`);
   }
@@ -1004,8 +1016,12 @@ export function runWorker(io = createIo()) {
     last_status: (memory.measurements || []).at(-1)?.status || memory.state || null,
     last_sha: memory.last_main_sha || (memory.measurements || []).at(-1)?.sha || null,
     carl_request: cfg.taskNumber ? `task #${cfg.taskNumber}` : (memory.carl_request || null),
+    friction: measureFriction(memory),
   };
-  if (evidence.acorn.carl_request) memory.carl_request = evidence.acorn.carl_request;
+  if (evidence.acorn.carl_request) {
+    memory.carl_request = evidence.acorn.carl_request;
+    rememberUserRequest(memory, { text: evidence.acorn.carl_request, source: "dispatch" }, io.now());
+  }
   const skippedTasks = new Set([...(memory.skipped_tasks || [])].map(Number).filter(Boolean));
   const write = () => {
     evidence.skipped_tasks = [...skippedTasks];
@@ -1015,6 +1031,7 @@ export function runWorker(io = createIo()) {
       head_sha: (() => { try { return git(io, ["rev-parse", "HEAD"]).trim(); } catch { return evidence.workspace?.head_sha || null; } })(),
     };
     recordMemory(io, cfg, evidence, memory);
+    evidence.acorn = { ...evidence.acorn, friction: measureFriction(memory), active_intent: memory.active_intent?.text || null };
     const redacted = redactSecrets(evidence);
     io.write(cfg.evidencePath, `${JSON.stringify(redacted, null, 2)}\n`);
     io.log(heartbeatLine(redacted));
@@ -1148,6 +1165,10 @@ export function runWorker(io = createIo()) {
   evidence.workspace = { branch, base_sha: baseSha, head_sha: baseSha, clean: true };
 
   while (evidence.completed_tasks.length < cfg.maxTasks && timeLeft()) {
+    if (skippedTasks.size >= Math.max(cfg.maxTasks * 3, 6) && evidence.completed_tasks.length === 0) {
+      evidence.reason = evidence.reason || "no remaining executable task after bounded skip";
+      break;
+    }
     let tasks;
     try { tasks = listTasks(io, cfg).filter((t) => !skippedTasks.has(t.number)); } catch (error) {
       const category = classifyError(error);
@@ -1250,6 +1271,27 @@ export function runWorker(io = createIo()) {
 
     const selectedNumber = next.task?.number;
     const task = tasks.find((t) => t.number === selectedNumber) || tasks[0];
+    rememberUserRequest(memory, { text: `#${task.number} ${task.title}\n${task.body || ""}`, source: "task" }, io.now());
+    const drift = detectDrift({
+      memory,
+      activeIntent: memory.active_intent?.text || evidence.acorn.carl_request,
+      currentAction: `${task.title} ${task.body || ""}`,
+      taskNumber: task.number,
+    });
+    evidence.acorn = { ...evidence.acorn, drift: drift.status, friction: measureFriction(memory) };
+    if (drift.signals.includes("already_done_work_repeated")) {
+      skippedTasks.add(task.number);
+      recordFriction(memory, "already_done_work_repeated", io.now());
+      evidence.reason = `task #${task.number} already completed — not repeating`;
+      continue;
+    }
+    if (drift.drift && drift.signals.includes("intent_drift")) {
+      const correction = selfCorrect({ memory, currentAction: `${task.title}`, now: io.now() });
+      evidence.acorn.self_correct = correction.status;
+      skippedTasks.add(task.number);
+      evidence.reason = `DRIFT_DETECTED vs active_intent — skipped #${task.number}`;
+      continue;
+    }
     memory.current_task = { number: task.number, title: task.title, url: task.url };
     const cycle = { task: { number: task.number, title: task.title, url: task.url }, codex: [], tests: [], debug: [] };
     let run = runCodex(io, cfg, task, "", memory);
@@ -1261,7 +1303,19 @@ export function runWorker(io = createIo()) {
     for (let attempt = 0; (run.status === "CODEX_FAILED" || run.status === "TIMEOUT") && attempt < cfg.maxRepairAttempts; attempt++) {
       const category = classifyError({ message: run.stderr_tail || run.status });
       recordErrorSignature(memory, { category, message: run.stderr_tail || run.status, sha: baseSha, now: io.now() });
+      const blind = wouldBlindRetry(memory, { category, message: run.stderr_tail || run.status });
+      if (blind.blind && attempt > 0) recordFriction(memory, "known_failure_repeated", io.now());
       const repeated = classifyRepetition({ memory, category, message: run.stderr_tail || run.status, sha: baseSha });
+      const loop = detectLoopNoProgress({
+        recentActions: cycle.codex.map((c) => ({ action: "codex exec", result: c.status })),
+      });
+      if (loop.loop) {
+        evidence.status = "LOOP_NO_PROGRESS";
+        evidence.reason = loop.action;
+        recordFriction(memory, "no_progress", io.now());
+        selfCorrect({ memory, recentActions: cycle.codex.map((c) => ({ action: "codex exec", result: c.status })), now: io.now() });
+        break;
+      }
       const level = escalateDebug({ attempt: attempt + 1, category });
       if (category === "AUTH") {
         setAuthCooldown(memory, baseSha, io.now());
@@ -1381,6 +1435,17 @@ export function runWorker(io = createIo()) {
   evidence.workspace.clean = !finalDirty;
 
   if (evidence.completed_tasks.length && (finalDirty || headSha !== evidence.workspace.base_sha) && evidence.codex?.patch_source === "codex") {
+    const proven = refuseUnprovenCompletion({
+      claimed: true,
+      status: evidence.codex.status,
+      patch_source: evidence.codex.patch_source,
+      testsPassed: evidence.tests?.some((t) => t.status === "PASSED"),
+    });
+    if (!proven.accepted) {
+      recordFriction(memory, "false_completion", io.now());
+      evidence.status = "FALSE_COMPLETION";
+      evidence.reason = "claimed PATCHED without verified Codex tests";
+    } else {
     try {
       const pr = publishPr(io, cfg, evidence);
       evidence.prs.push(pr);
@@ -1402,6 +1467,7 @@ export function runWorker(io = createIo()) {
         why: String(error.message || error),
       });
       evidence.status = category === "PERMISSION" ? "HUMAN_REQUIRED" : "FAILED";
+    }
     }
   } else if (!evidence.status) {
     evidence.status = evidence.completed_tasks.length ? "PR_NOT_PUBLISHED" : "IDLE";
