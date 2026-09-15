@@ -46,6 +46,49 @@ test("runtime performs bounded cycles and checkpoints them", async () => {
   assert.equal(calls[1].dispatch, false);
 });
 
+test("runtime starts a fresh time slice when resumed from a completed checkpoint", async () => {
+  const env = {
+    ACORN_SYSTEM_MODE: "RUN",
+    ACORN_RUNTIME_MINUTES: "1",
+    ACORN_RUNTIME_MAX_CYCLES: "1",
+  };
+  const first = await runAutonomousRuntime({
+    env,
+    worker: () => ({ verified: false, dispatches: [], measurement_record: { ok: true } }),
+    sleepFn: async () => {},
+  });
+  const second = await runAutonomousRuntime({
+    env,
+    worker: () => ({ verified: false, dispatches: [], measurement_record: { ok: true } }),
+    sleepFn: async () => {},
+  });
+  assert.equal(first.state, "TIME_SLICE_COMPLETE");
+  assert.equal(second.state, "TIME_SLICE_COMPLETE");
+  assert.equal(second.completed, 1);
+  assert.equal(second.cycle, first.cycle + 1);
+});
+
+test("runtime stops when the breaker changes to OFF between cycles", async () => {
+  const env = {
+    ACORN_SYSTEM_MODE: "RUN",
+    ACORN_RUNTIME_MINUTES: "1",
+    ACORN_RUNTIME_MAX_CYCLES: "3",
+  };
+  let calls = 0;
+  const result = await runAutonomousRuntime({
+    env,
+    worker: () => {
+      calls += 1;
+      env.ACORN_SYSTEM_MODE = "OFF";
+      return { verified: false, dispatches: [], measurement_record: { ok: true } };
+    },
+    sleepFn: async () => {},
+  });
+  assert.equal(result.state, "STOPPED_BREAKER");
+  assert.equal(calls, 1);
+  assert.equal(result.cycle, 1);
+});
+
 test("runtime stops immediately on OFF", async () => {
   const result = await runAutonomousRuntime({
     env: { ACORN_SYSTEM_MODE: "OFF", ACORN_RUNTIME_MAX_CYCLES: "2" },
