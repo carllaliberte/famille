@@ -1,0 +1,64 @@
+name: acorn-autopilot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/**'
+      - '.github/swarm/**'
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+  actions: read
+
+concurrency:
+  group: acorn-autopilot
+  cancel-in-progress: false
+
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Global Breaker gate
+        id: breaker
+        env:
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { assertSystemMayProceed } from './.github/swarm/system-breaker.mjs';
+          assertSystemMayProceed({ source: 'acorn-autopilot', operation: 'observe' });
+          console.log('GLOBAL_BREAKER=RUN');
+          NODE
+
+      - name: Run bounded cognitive worker
+        env:
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+        run: node scripts/cognitive-worker.mjs
+
+      - name: Emit control evidence
+        if: always()
+        run: |
+          mkdir -p evidence/autopilot
+          printf '%s\n' '{"workflow":"acorn-autopilot","human_authority":"carl","auto_merge":false,"production_write_allowed":false,"live":false,"global_breaker_required":true}' > evidence/autopilot/control.json
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acorn-autopilot-control
+          path: evidence/autopilot/control.json
