@@ -467,6 +467,19 @@ function afterMergeSync(input) {
   actions.push("reprendre automatiquement");
   return { memory: input.memory, changed: true, actions };
 }
+function skippedForSha(memory, sha) {
+  const raw = memory?.skipped_tasks || [];
+  const errorsHere = (memory?.error_signatures || []).some((e) => e.sha === sha);
+  const out = [];
+  for (const item of raw) {
+    if (item && typeof item === "object" && item.sha) {
+      if (item.sha === sha && Number(item.number)) out.push(Number(item.number));
+    } else if (errorsHere && Number(item)) {
+      out.push(Number(item));
+    }
+  }
+  return out;
+}
 function shouldStopCleanly(input) {
   if (input.danger) return { stop: true, status: "ARCHITECTURAL_BLOCK", reason: "danger \u2014 arr\xEAt propre" };
   if (input.humanGovernance) return { stop: true, status: "HUMAN_REQUIRED", reason: "gouvernance humaine n\xE9cessaire" };
@@ -934,5 +947,6 @@ export {
   setAuthCooldown,
   shouldStopCleanly,
   simulateAbsence,
+  skippedForSha,
   sovereigntyIntact
 };
