@@ -822,4 +822,67 @@ describe("codex autonomous worker", () => {
     assert.equal(ev.codex.executed, true);
     assert.notEqual(ev.status, "IDLE");
   });
+
+  it("push wakes #513 when last_main_sha was already synced but the skip is from another SHA", () => {
+    const root = tmpRoot();
+    writeFileSync(join(root, "evidence/codex/worker-memory.json"), JSON.stringify({
+      v: "codex-worker-memory.v2",
+      last_main_sha: "97d4934",
+      skipped_tasks: [513],
+      error_signatures: [{ category: "ENVIRONMENT", message: "404 unavailable for free", sha: "ece90c4", count: 3 }],
+      measurements: [{ status: "IDLE", sha: "97d4934" }],
+    }));
+    const io = ioFor({
+      root,
+      authFile: true,
+      env: {
+        GITHUB_EVENT_NAME: "push",
+        GITHUB_SHA: "97d4934",
+        CODEX_HEAD_SHA: "97d4934",
+      },
+      git: { sha: "97d4934", dirty: "", branch: "main" },
+      issues: [{ number: 513, title: "Codex continuous worker", body: "keep going", url: "https://example/513", state: "OPEN" }],
+    });
+    const ev = runWorker(io);
+    assert.equal(ev.wake.skip_invalidated, true);
+    assert.equal(ev.wake.task_number, 513);
+    assert.equal(ev.wake.task_state, "open");
+    assert.equal(ev.codex.executed, true);
+    assert.equal(ev.auto_merge, false);
+    assert.equal(ev.live, false);
+    assert.notEqual(ev.status, "IDLE");
+  });
+
+  it("keeps the skip when the error_signature is on the current SHA", () => {
+    const root = tmpRoot();
+    writeFileSync(join(root, "evidence/codex/worker-memory.json"), JSON.stringify({
+      v: "codex-worker-memory.v2",
+      last_main_sha: "same",
+      skipped_tasks: [513],
+      error_signatures: [{ category: "ENVIRONMENT", message: "404", sha: "same", count: 3 }],
+    }));
+    const io = ioFor({
+      root,
+      authFile: true,
+      env: { GITHUB_EVENT_NAME: "push", GITHUB_SHA: "same", CODEX_HEAD_SHA: "same" },
+      git: { sha: "same", dirty: "", branch: "main" },
+      issues: [{ number: 513, title: "seed", body: "x", url: "u", state: "OPEN" }],
+    });
+    const ev = runWorker(io);
+    assert.equal(ev.codex.executed, false);
+    assert.equal(ev.wake.task_number, 513);
+    assert.match(ev.wake.wake_reason, /SKIP_JUSTIFIÉ|idempotent/i);
+  });
+
+  it("does not execute a closed task", () => {
+    const io = ioFor({
+      authFile: true,
+      env: { CODEX_TASK_NUMBER: "513" },
+      issues: [{ number: 513, title: "seed", body: "x", url: "u", state: "CLOSED" }],
+    });
+    const ev = runWorker(io);
+    assert.equal(ev.codex.executed, false);
+    assert.equal(ev.status, "IDLE");
+    assert.match(ev.reason, /closed/i);
+  });
 });

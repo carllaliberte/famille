@@ -31,7 +31,8 @@ import {
   shouldStopCleanly,
   simulateAbsence,
   skippedForSha,
-  sovereigntyIntact
+  sovereigntyIntact,
+  wakeOpenCodexTask
 } from "../scripts/codex-autonomy.mjs";
 const task = (partial) => ({
   source: "issue",
@@ -250,6 +251,64 @@ describe("acorn autonomy kernel", () => {
     memory.skipped_tasks = [{ number: 513, sha: "new" }];
     assert.deepEqual(skippedForSha(memory, "new"), [513]);
     assert.deepEqual(skippedForSha(memory, "old"), []);
+  });
+  it("wakes an open codex-task when the skip belongs to another SHA", () => {
+    const wake = wakeOpenCodexTask({
+      currentSha: "new",
+      previousSha: "old",
+      skippedOnCurrentSha: [],
+      openTaskNumbers: [513],
+      skipInvalidated: true
+    });
+    assert.equal(wake.wake, true);
+    assert.equal(wake.skip_invalidated, true);
+    assert.deepEqual(wake.tasks, [513]);
+  });
+  it("keeps a skip on the same SHA with the same error", () => {
+    const wake = wakeOpenCodexTask({
+      currentSha: "same",
+      previousSha: "same",
+      skippedOnCurrentSha: [513],
+      openTaskNumbers: [513]
+    });
+    assert.equal(wake.wake, false);
+    assert.match(wake.reason, /SKIP_JUSTIFIÉ/);
+  });
+  it("does not wake a closed task", () => {
+    const wake = wakeOpenCodexTask({
+      currentSha: "new",
+      previousSha: "old",
+      openTaskNumbers: [],
+      closedTaskNumbers: [513]
+    });
+    assert.equal(wake.wake, false);
+    assert.match(wake.reason, /closed/);
+  });
+  it("does not force an unjustified task", () => {
+    const wake = wakeOpenCodexTask({
+      currentSha: "new",
+      previousSha: "old",
+      openTaskNumbers: [900],
+      unjustifiedTaskNumbers: [900]
+    });
+    assert.equal(wake.wake, false);
+  });
+  it("push forceWake overrides same-SHA idempotent when an open task is runnable", () => {
+    const memory = emptyMemory();
+    memory.last_main_sha = "same";
+    const d = evaluateTrigger({
+      event: "push",
+      now: 2,
+      currentSha: "same",
+      previousSha: "old",
+      forceWake: true,
+      wakeReason: "open justified codex-task",
+      memory,
+      authAvailable: true,
+      breakerOff: false
+    });
+    assert.equal(d.run, true);
+    assert.match(d.reason, /open justified/);
   });
   it("treats grok-build PRs as non-operative so Codex is not WAIT_HUMAN_MERGE'd", () => {
     assert.equal(isOperativeCodexPr({

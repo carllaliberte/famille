@@ -27,6 +27,8 @@ import {
   selectNextWork,
   setAuthCooldown,
   skippedForSha,
+  previousSkipSha,
+  wakeOpenCodexTask,
   emptyMemory as kernelEmpty,
 } from "./codex-autonomy.mjs";
 
@@ -1011,6 +1013,8 @@ export function runWorker(io = createIo()) {
   try { if (!shaHint) shaHint = git(io, ["rev-parse", "HEAD"]).trim(); } catch { /* workspace probed later */ }
 
   const previousSha = memory.last_main_sha || cfg.beforeSha || null;
+  const rememberedSkipSha = previousSkipSha(memory);
+  const skippedBefore = [...(memory.skipped_tasks || [])];
   if (shaHint && previousSha && previousSha !== shaHint) {
     const sync = afterMergeSync({
       memory,
@@ -1023,6 +1027,38 @@ export function runWorker(io = createIo()) {
   }
 
   const skippedTasks = new Set(skippedForSha(memory, shaHint || "unknown"));
+  const skipInvalidated = skippedBefore.length > 0 && skippedBefore.some((item) => {
+    const n = Number(item?.number ?? item);
+    return n && !skippedTasks.has(n);
+  });
+
+  let listedIssues = [];
+  try { listedIssues = listTasks(io, cfg); } catch { listedIssues = []; }
+  const openTaskNumbers = listedIssues
+    .filter((i) => String(i.state || "OPEN").toUpperCase() === "OPEN")
+    .map((i) => i.number);
+  const closedTaskNumbers = listedIssues
+    .filter((i) => String(i.state || "").toUpperCase() === "CLOSED")
+    .map((i) => i.number);
+  const wake = wakeOpenCodexTask({
+    currentSha: shaHint,
+    previousSha,
+    skippedOnCurrentSha: [...skippedTasks],
+    openTaskNumbers,
+    closedTaskNumbers,
+    skipInvalidated,
+  });
+  evidence.wake = {
+    main_sha: shaHint || null,
+    task_number: wake.tasks[0] || cfg.taskNumber || openTaskNumbers[0] || [...skippedTasks][0] || null,
+    task_state: closedTaskNumbers.length && !openTaskNumbers.length
+      ? "closed"
+      : (openTaskNumbers.length ? "open" : "none"),
+    previous_skip_sha: rememberedSkipSha,
+    current_main_sha: shaHint || null,
+    skip_invalidated: wake.skip_invalidated,
+    wake_reason: wake.reason,
+  };
   const write = () => {
     evidence.skipped_tasks = [...skippedTasks];
     evidence.finished_at = new Date(io.now()).toISOString();
@@ -1031,6 +1067,18 @@ export function runWorker(io = createIo()) {
       head_sha: (() => { try { return git(io, ["rev-parse", "HEAD"]).trim(); } catch { return evidence.workspace?.head_sha || null; } })(),
     };
     recordMemory(io, cfg, evidence, memory);
+    evidence.wake = {
+      ...(evidence.wake || {}),
+      codex_available: Boolean(evidence.codex?.available),
+      codex_authenticated: Boolean(evidence.codex?.authenticated),
+      codex_executed: Boolean(evidence.codex?.executed),
+      patch_source: evidence.codex?.patch_source || "none",
+      workspace_changed: Boolean(evidence.workspace?.head_sha && evidence.workspace.head_sha !== evidence.workspace.base_sha)
+        || Boolean(evidence.workspace && evidence.workspace.clean === false),
+      tests_executed: Array.isArray(evidence.tests) && evidence.tests.length > 0,
+      tests_passed: (evidence.tests || []).some((t) => t.status === "PASSED"),
+      final_status: evidence.status || null,
+    };
     const redacted = redactSecrets(evidence);
     io.write(cfg.evidencePath, `${JSON.stringify(redacted, null, 2)}\n`);
     io.log(heartbeatLine(redacted));
@@ -1040,6 +1088,20 @@ export function runWorker(io = createIo()) {
   const stop = (status, extra = {}) => {
     Object.assign(evidence, extra);
     evidence.status = status;
+    if (!evidence.codex) {
+      const cli = classifyCli(io);
+      const auth = classifyAuth(io);
+      evidence.codex = {
+        available: cli.available,
+        authenticated: auth.available,
+        executed: false,
+        status: "DEFINED",
+        patch_source: "none",
+        version: cli.version,
+        auth_method: auth.method,
+        paid_api_required: auth.paid_api_required,
+      };
+    }
     if (status === "UNAVAILABLE" && !evidence.human_actions_required?.length) {
       evidence.human_actions_required = [humanAuthAction()];
     }
@@ -1063,13 +1125,16 @@ export function runWorker(io = createIo()) {
       event: cfg.trigger === "direct" ? "schedule" : cfg.trigger === "workflow_run" ? "failure" : cfg.trigger,
       now: io.now(),
       currentSha: shaHint || "unknown",
+      previousSha,
+      forceWake: wake.wake,
+      wakeReason: wake.reason,
       issueLabels: cfg.issueLabels,
       memory,
       authAvailable: classifyAuth(io).available,
       breakerOff: cfg.breakerOff,
       taskLabel: cfg.taskLabel,
     });
-    evidence.trigger_gate = { ...triggerGate, autonomy: decision };
+    evidence.trigger_gate = { ...triggerGate, autonomy: decision, wake: wake.reason };
     if (!decision.run) {
       return stop(decision.status, { reason: decision.reason, loop_step: decision.step });
     }
