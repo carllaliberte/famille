@@ -40,17 +40,27 @@ export function composePlan(fronts, state = controlState()) {
   };
 }
 
-export function orderByMeasuredRank(ids, ranking = null) {
+export function orderByMeasuredRank(ids, ranking = null, feedback = null) {
   const rankById = new Map((ranking?.measured || []).map((row) => [String(row.id), row.rank]));
+  const actionById = new Map((feedback?.actions || []).map((row) => [String(row.id), row.action]));
+  const priority = (id) => {
+    const action = actionById.get(id);
+    if (action === "PROMOTE_PRIORITY") return 0;
+    if (action === "DEPRIORITIZE") return 2;
+    if (action === "MEASURE_MORE") return 1;
+    return 1;
+  };
   return [...new Set(ids.map(String))].sort((a, b) => {
+    const ap = priority(a), bp = priority(b);
+    if (ap !== bp) return ap - bp;
     const ar = rankById.get(a) ?? Number.POSITIVE_INFINITY;
     const br = rankById.get(b) ?? Number.POSITIVE_INFINITY;
     return (ar - br) || a.localeCompare(b);
   });
 }
 
-export function composeRouting(observation, fronts, env = process.env, memory = null, ranking = null) {
-  const ids = orderByMeasuredRank(observation.auto || [], ranking);
+export function composeRouting(observation, fronts, env = process.env, memory = null, ranking = null, feedback = null) {
+  const ids = orderByMeasuredRank(observation.auto || [], ranking, feedback);
   const sources = rankSources(ids.map((id) => ({ id, channel: "model", capability: "review" })), memory || undefined);
   return composeFabric({ fronts, sources, env });
 }
@@ -74,7 +84,7 @@ export function buildEvidence(observation, plan, routing, dispatches, state = co
   const succeeded = dispatches.filter((x) => x.state === "DISPATCHED").length;
   const blocked = dispatches.filter((x) => x.state === "BLOCKED_BREAKER").length;
   const failed = dispatches.filter((x) => x.state === "DISPATCH_FAILED").length;
-  return { v: "cognitive-worker.v9", executed: true, observed: true, verified: false, live: false, auto_merge: false, human_decision: "PENDING_HUMAN", authority: "carl", system_mode: state.mode, breaker_closed: state.breaker_closed, diagnostic: state.diagnostic, observation, discovered: plan.fronts.length, routed: routing?.route_count || 0, synapses: routing?.synapse_count || 0, collective: Boolean(routing?.collective), dispatched: succeeded, dispatch_failed: failed, breaker_blocked: blocked, dispatches, routing: routing || null, synaptic_memory: memory ? memorySummary(memory) : null, cognitive_memory_index: memoryIndex ? memoryIndexSummary(memoryIndex) : null, measured_ranking: ranking ? rankingSummary(ranking) : null, measurement_feedback: feedback ? feedbackSummary(feedback) : null, next: state.diagnostic ? "diagnostic-observe" : "observe" };
+  return { v: "cognitive-worker.v10", executed: true, observed: true, verified: false, live: false, auto_merge: false, human_decision: "PENDING_HUMAN", authority: "carl", system_mode: state.mode, breaker_closed: state.breaker_closed, diagnostic: state.diagnostic, observation, discovered: plan.fronts.length, routed: routing?.route_count || 0, synapses: routing?.synapse_count || 0, collective: Boolean(routing?.collective), dispatched: succeeded, dispatch_failed: failed, breaker_blocked: blocked, dispatches, routing: routing || null, synaptic_memory: memory ? memorySummary(memory) : null, cognitive_memory_index: memoryIndex ? memoryIndexSummary(memoryIndex) : null, measured_ranking: ranking ? rankingSummary(ranking) : null, measurement_feedback: feedback ? feedbackSummary(feedback) : null, next: state.diagnostic ? "diagnostic-observe" : "observe" };
 }
 
 function loadAgentRoster(gh, env) {
@@ -108,7 +118,7 @@ export function runWorker(opts = {}) {
   else raw = gh("gh", ["pr", "list", "--repo", env.GITHUB_REPOSITORY, "--state", "open", "--limit", String(LIMIT), "--json", "number,headRefOid,isDraft,updatedAt", "--jq", ".[] | [.number,.headRefOid,.isDraft,.updatedAt] | @tsv"], { encoding: "utf8", stdio: "pipe" });
   const fronts = parseFronts(raw);
   const plan = composePlan(fronts, state);
-  const routing = state.mode === "OFF" ? null : composeRouting(observation, fronts, env, memory, ranking);
+  const routing = state.mode === "OFF" ? null : composeRouting(observation, fronts, env, memory, ranking, feedback);
   const dispatches = opts.dispatch === false ? [] : state.mode === "OFF" ? fronts.map((front) => ({ number: front.number, sha: front.sha, state: "BLOCKED_BREAKER" })) : executeDispatch(fronts, gh, env);
   const nextMemory = updateMemory(memory, routing, dispatches);
   const evidence = buildEvidence(observation, plan, routing, dispatches, state, nextMemory, memoryIndex, ranking, feedback);
