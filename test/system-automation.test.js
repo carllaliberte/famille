@@ -13,7 +13,7 @@ test("system automation detects configured credentials without exposing values",
   assert.equal(result.live, false);
 });
 
-test("system automation routes to the first configured capable system and exposes fallback", () => {
+test("system automation routes to the first configured capable system", () => {
   const result = routeSystem({ capability: "build", env: env() });
   assert.equal(result.selected.id, "xai");
   assert.equal(result.fallback_available, false);
