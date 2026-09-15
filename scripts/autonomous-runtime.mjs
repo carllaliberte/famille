@@ -35,10 +35,13 @@ function sleep(ms) { return new Promise((resolveSleep) => setTimeout(resolveSlee
 export async function runAutonomousRuntime({ worker = runWorker, env = process.env, sleepFn = sleep } = {}) {
   ensure();
   const checkpoint = loadCheckpoint();
-  // Each process/workflow gets a fresh time slice. The checkpoint resumes the
-  // cycle counter/evidence lineage, not the previous process deadline.
+  // A workflow runner is ephemeral. The renewal step passes the last cycle
+  // explicitly so lineage survives the process/workflow boundary even though
+  // the runtime never writes source-of-record state.
+  const inheritedCycle = Number(env.ACORN_RUNTIME_RESUME_CYCLE ?? 0);
+  const inheritedParentRun = String(env.ACORN_RUNTIME_PARENT_RUN_ID || "");
   const startedAt = now();
-  const previousCycle = Number(checkpoint.cycle || 0);
+  const previousCycle = Math.max(Number(checkpoint.cycle || 0), inheritedCycle);
   let cycle = previousCycle;
   let completed = 0;
   const deadline = durationMinutes > 0 ? Date.parse(startedAt) + durationMinutes * 60_000 : Number.POSITIVE_INFINITY;
@@ -46,9 +49,9 @@ export async function runAutonomousRuntime({ worker = runWorker, env = process.e
   while (Date.now() < deadline && (maxCycles === 0 || completed < maxCycles)) {
     const state = controlState(env);
     if (state.mode !== "RUN" || !state.breaker_closed || state.diagnostic) {
-      const stopped = { state: "STOPPED_BREAKER", cycle, at: now(), mode: state.mode };
+      const stopped = { state: "STOPPED_BREAKER", cycle, at: now(), mode: state.mode, parent_run_id: inheritedParentRun || null };
       journal(stopped);
-      persistCheckpoint({ ...checkpoint, cycle, started_at: startedAt, last_completed_at: stopped.at, state: stopped.state });
+      persistCheckpoint({ ...checkpoint, cycle, started_at: startedAt, last_completed_at: stopped.at, state: stopped.state, parent_run_id: inheritedParentRun || null });
       return stopped;
     }
 
@@ -76,6 +79,7 @@ export async function runAutonomousRuntime({ worker = runWorker, env = process.e
         started_at: startedAt,
         observed_at: observedAt,
         completed_at: now(),
+        parent_run_id: inheritedParentRun || null,
         dispatch_requested: shouldDispatch,
         worker_executed: true,
         worker_verified: Boolean(evidence?.verified),
@@ -89,7 +93,7 @@ export async function runAutonomousRuntime({ worker = runWorker, env = process.e
       };
       writeFileSync(resolve(cycleDir, "runtime.json"), `${JSON.stringify(record, null, 2)}\n`);
       journal(record);
-      persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: record.completed_at, state: "RUNNING", last_cycle: cycleDir });
+      persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: record.completed_at, state: "RUNNING", last_cycle: cycleDir, parent_run_id: inheritedParentRun || null });
       completed += 1;
     } catch (error) {
       const failure = {
@@ -97,6 +101,7 @@ export async function runAutonomousRuntime({ worker = runWorker, env = process.e
         cycle,
         observed_at: observedAt,
         completed_at: now(),
+        parent_run_id: inheritedParentRun || null,
         state: "WORKER_FAILED",
         error: String(error?.stack || error),
         live: false,
@@ -105,7 +110,7 @@ export async function runAutonomousRuntime({ worker = runWorker, env = process.e
       };
       writeFileSync(resolve(cycleDir, "runtime-failure.json"), `${JSON.stringify(failure, null, 2)}\n`);
       journal(failure);
-      persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: failure.completed_at, state: failure.state, last_cycle: cycleDir });
+      persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: failure.completed_at, state: failure.state, last_cycle: cycleDir, parent_run_id: inheritedParentRun || null });
       completed += 1;
     }
 
@@ -114,9 +119,9 @@ export async function runAutonomousRuntime({ worker = runWorker, env = process.e
     }
   }
 
-  const finished = { runtime: "autonomous-runtime.v1", cycle, completed, state: "TIME_SLICE_COMPLETE", at: now(), duration_minutes: durationMinutes, live: false, auto_merge: false, authority: "carl" };
+  const finished = { runtime: "autonomous-runtime.v1", cycle, completed, state: "TIME_SLICE_COMPLETE", at: now(), duration_minutes: durationMinutes, parent_run_id: inheritedParentRun || null, live: false, auto_merge: false, authority: "carl" };
   journal(finished);
-  persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: finished.at, state: finished.state });
+  persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: finished.at, state: finished.state, parent_run_id: inheritedParentRun || null });
   return finished;
 }
 
