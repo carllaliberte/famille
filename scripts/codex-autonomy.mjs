@@ -105,8 +105,13 @@ function scoreTask(task) {
 function prioritize(tasks) {
   return tasks.map((task) => ({ task, score: scoreTask(task) })).sort((a, b) => b.score.score - a.score.score || a.task.title.localeCompare(b.task.title));
 }
+function isOperativeCodexPr(p) {
+  const blob = `${p.title || ""}\n${p.body || ""}\n${p.patch_source || ""}`.toLowerCase();
+  if (/patch_source\s*[:=]\s*grok/.test(blob)) return false;
+  return String(p.head || "").startsWith("codex/");
+}
 function classifyWorkAgainstPr(task, openPrs) {
-  const codexPrs = openPrs.filter((p) => String(p.head || "").startsWith("codex/"));
+  const codexPrs = (openPrs || []).filter(isOperativeCodexPr);
   if (!codexPrs.length) return "INDEPENDENT";
   if (task.kind === "diagnostic") return "DIAGNOSTIC";
   if (task.needsMerge) return "WAIT_HUMAN_MERGE";
@@ -272,12 +277,13 @@ function applyLoopGuards(input) {
   }
   const last = memory.measurements.at(-1);
   const debounceMs = input.debounceMs ?? DEBOUNCE_MS;
-  if (last && last.sha === sha && now - last.at < debounceMs) {
+  const lastAt = Number(last?.at_ms ?? last?.at);
+  if (last && last.sha === sha && Number.isFinite(lastAt) && now - lastAt < debounceMs) {
     return {
       skip: true,
       status: "WAIT",
       reason: "debounce: m\xEAme SHA trop r\xE9cent",
-      resume_at: last.at + debounceMs
+      resume_at: lastAt + debounceMs
     };
   }
   const cd = memory.cooldowns.find((c) => c.sha === sha && c.until > now);
@@ -453,6 +459,7 @@ function afterMergeSync(input) {
     if (related.length) actions.push(`${related.length} t\xE2che(s) d\xE9bloqu\xE9e(s)`);
   }
   input.memory.cooldowns = input.memory.cooldowns.filter((c) => c.sha === input.newSha);
+  input.memory.skipped_tasks = [];
   input.memory.locks = { run: null, task: null };
   input.memory.state = "RUN";
   input.memory.updated_at = new Date(input.now).toISOString();
@@ -915,6 +922,7 @@ export {
   humanRequired,
   hydrateMemory,
   isArchitecturalCategory,
+  isOperativeCodexPr,
   loopPosition,
   parseTaskMetadata,
   prioritize,

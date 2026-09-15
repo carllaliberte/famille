@@ -11,6 +11,8 @@ import {
   CODEX_WRITE_ARGS,
   extraCodexConfigArgs,
   resolveOpenRouterModel,
+  continuityBrief,
+  memoryHasContinuity,
   createIo,
   decideNext,
   detectPatch,
@@ -383,6 +385,7 @@ describe("codex autonomous worker", () => {
     assert.equal(classifyError({ message: "ERROR: exceeded retry limit, last status: 429 Too Many Requests" }), "NETWORK");
     assert.equal(classifyError({ message: "Human authority is Carl\nERROR: 429 Too Many Requests" }), "NETWORK");
     assert.notEqual(classifyError({ message: "Human authority is Carl\nboom" }), "AUTH");
+    assert.equal(classifyError({ message: "ERROR: unexpected status 404 Not Found: This model is unavailable for free." }), "ENVIRONMENT");
     assert.equal(classifyError({ message: "error: unexpected argument '--ask-for-approval' found" }), "CLI");
     assert.equal(classifyError({ message: "codex: not found", code: "ENOENT" }), "CLI");
     assert.equal(classifyError({ message: "Resource not accessible by integration" }), "PERMISSION");
@@ -689,14 +692,16 @@ describe("codex autonomous worker", () => {
     assert.match(cfg, /model_reasoning_effort = "low"/);
     assert.match(cfg, /model_providers\.openrouter\.auth/);
     assert.doesNotMatch(cfg, /env_key/);
-    assert.equal(writeCall.args.includes("model=openai/gpt-oss-20b:free"), true);
-    assert.match(cfg, /model = "openai\/gpt-oss-20b:free"/);
+    assert.equal(writeCall.args.includes("model=nvidia/nemotron-3.5-lightning:free"), true);
+    assert.match(cfg, /model = "nvidia\/nemotron-3.5-lightning:free"/);
     assert.doesNotMatch(cfg, /gemini-2\.5-flash/);
     assert.doesNotMatch(cfg, /openrouter\/free/);
-    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "google/gemini-2.5-flash" } }), "openai/gpt-oss-20b:free");
-    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openrouter/free" } }), "openai/gpt-oss-20b:free");
-    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openai/gpt-oss-20b:free" } }), "openai/gpt-oss-20b:free");
-    assert.equal(ev.codex.model, "openai/gpt-oss-20b:free");
+    assert.doesNotMatch(cfg, /gpt-oss-20b/);
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "google/gemini-2.5-flash" } }), "nvidia/nemotron-3.5-lightning:free");
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openrouter/free" } }), "nvidia/nemotron-3.5-lightning:free");
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openai/gpt-oss-20b:free" } }), "nvidia/nemotron-3.5-lightning:free");
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "cohere/north-mini-code:free" } }), "cohere/north-mini-code:free");
+    assert.equal(ev.codex.model, "nvidia/nemotron-3.5-lightning:free");
   });
 
   it("keeps workflow run blocks indented so GitHub registers workflow_dispatch", () => {
@@ -725,5 +730,75 @@ describe("codex autonomous worker", () => {
       }
       assert.notEqual(ind, 0, `unindented run body: ${line}`);
     }
+  });
+
+  it("injects Acorn continuity into the Codex prompt from restored artifact memory", () => {
+    const prior = {
+      v: "codex-worker-memory.v2",
+      measurements: [{ status: "CODEX_FAILED", run_id: "35000731032", sha: "ece90c4", patch_source: "none" }],
+      error_signatures: [{ category: "ENVIRONMENT", message: "404 unavailable for free", count: 3 }],
+      failed_tasks: [{ number: 513, status: "CODEX_FAILED" }],
+      carl_request: "task #513",
+      last_model: "openai/gpt-oss-20b:free",
+      last_main_sha: "ece90c4",
+    };
+    assert.equal(memoryHasContinuity(prior), true);
+    assert.match(continuityBrief(prior), /404 unavailable for free/);
+    const io = ioFor({
+      authFile: true,
+      env: { GITHUB_RUN_ID: "35009999999", OPENROUTER_API_KEY: "sk-or-testkey continuity" },
+      issues: [{ number: 513, title: "seed", body: "continue", url: "https://example/513", state: "OPEN" }],
+      gh: (args, ctx) => {
+        if (args[0] === "run" && args[1] === "list") {
+          return JSON.stringify([{ databaseId: 35000731032, headSha: "ece90c4" }]);
+        }
+        if (args[0] === "run" && args[1] === "download") {
+          const dir = args[args.indexOf("--dir") + 1];
+          mkdirSync(join(dir, "evidence/codex"), { recursive: true });
+          writeFileSync(join(dir, "evidence/codex/worker-memory.json"), JSON.stringify(prior));
+          return "";
+        }
+        if (args[0] === "issue" && args[1] === "list") return JSON.stringify(ctx.issues);
+        if (args[0] === "issue" && args[1] === "view") return JSON.stringify(ctx.issues[0]);
+        if (args[0] === "pr" && args[1] === "create") return "https://github.com/carllaliberte/famille/pull/42\n";
+        return "[]";
+      },
+    });
+    const ev = runWorker(io);
+    assert.equal(ev.acorn.kernel, "acorn-autonomy.v1");
+    assert.equal(ev.acorn.memory_restored_from, "artifact:35000731032");
+    assert.equal(ev.acorn.continuity, true);
+    const writeCall = io._spawnCalls.find((c) => c.cmd === "codex" && c.args.includes("danger-full-access"));
+    assert.ok(writeCall);
+    const prompt = writeCall.args.at(-1);
+    assert.match(prompt, /operating through Acorn/);
+    assert.match(prompt, /ACORN CONTINUITY/);
+    assert.match(prompt, /404 unavailable for free/);
+    assert.match(prompt, /carl_request: task #513/);
+  });
+
+  it("does not defer Codex for a grok-build PR that only mentions the task number", () => {
+    const io = ioFor({
+      authFile: true,
+      issues: [{ number: 513, title: "seed", body: "do the work", url: "https://example/513", state: "OPEN" }],
+      gh: (args, ctx) => {
+        if (args[0] === "pr" && args[1] === "list") {
+          return JSON.stringify([{
+            number: 534,
+            title: "fix: gpt-oss-20b:free is 404",
+            url: "https://github.com/carllaliberte/famille/pull/534",
+            headRefName: "codex/openrouter-live-free",
+            body: "patch_source: grok-build\nMeasured on MAIN after #532\n#513",
+          }]);
+        }
+        if (args[0] === "issue" && args[1] === "list") return JSON.stringify(ctx.issues);
+        if (args[0] === "issue" && args[1] === "view") return JSON.stringify(ctx.issues[0]);
+        if (args[0] === "pr" && args[1] === "create") return "https://github.com/carllaliberte/famille/pull/42\n";
+        return "[]";
+      },
+    });
+    const ev = runWorker(io);
+    assert.notEqual(ev.status, "WAIT_HUMAN_MERGE");
+    assert.equal(ev.codex.executed, true);
   });
 });
