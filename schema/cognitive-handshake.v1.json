@@ -1,0 +1,26 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"cognitive-handshake.v1",
+  "title":"Acorn Cognitive Handshake",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["version","identity","capabilities","limits","interfaces","constraints","provenance","state"],
+  "properties":{
+    "version":{"const":"cognitive-handshake.v1"},
+    "identity":{"type":"object","additionalProperties":false,"required":["id","name","kind"],"properties":{"id":{"type":"string","pattern":"^[a-z][a-z0-9-]{1,63}$"},"name":{"type":"string","minLength":1},"provider":{"type":"string"},"model":{"type":"string"},"version":{"type":"string"},"kind":{"type":"string","enum":["model","agent","service","tool","human","seat","guest","other"]}}},
+    "capabilities":{"type":"array","items":{"$ref":"#/$defs/capability"}},
+    "limits":{"type":"array","items":{"type":"string"}},
+    "interfaces":{"type":"array","items":{"type":"string"}},
+    "constraints":{"type":"array","items":{"type":"string"}},
+    "modalities":{"type":"array","items":{"type":"string"}},
+    "tools":{"type":"array","items":{"type":"string"}},
+    "formats":{"type":"array","items":{"type":"string"}},
+    "provenance":{"type":"object","additionalProperties":false,"required":["source","observed_at"],"properties":{"source":{"type":"string"},"observed_at":{"type":"string","format":"date-time"},"evidence_refs":{"type":"array","items":{"type":"string"}}}},
+    "state":{"type":"object","additionalProperties":false,"required":["status","claims_are_measured"],"properties":{"status":{"type":"string","enum":["declared","connected","observed","measured","verified","blocked"]},"claims_are_measured":{"const":false}}},
+    "measurements":{"type":"array","items":{"$ref":"#/$defs/measurement"}}
+  },
+  "$defs":{
+    "capability":{"type":"object","additionalProperties":false,"required":["name","status"],"properties":{"name":{"type":"string","minLength":1},"status":{"type":"string","enum":["declared","measured","verified","expired","blocked"]},"conditions":{"type":"array","items":{"type":"string"}},"evidence_refs":{"type":"array","items":{"type":"string"}},"valid_until":{"type":"string","format":"date"}}},
+    "measurement":{"type":"object","additionalProperties":false,"required":["capability","measured_at","result"],"properties":{"capability":{"type":"string"},"measured_at":{"type":"string","format":"date-time"},"result":{"type":"string","enum":["pass","fail","partial","skipped"]},"method":{"type":"string"},"evidence_ref":{"type":"string"}}}
+  }
+}
