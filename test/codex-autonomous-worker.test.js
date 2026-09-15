@@ -370,10 +370,14 @@ describe("codex autonomous worker", () => {
     assert.equal(red.nested.OPENAI_API_KEY, "[REDACTED]");
     assert.equal(red.ok, "hello");
     assert.equal(JSON.stringify(red).includes("sk-"), false);
+    const clap = redactSecrets("error: unexpected argument '--ask-for-approval' found");
+    assert.match(clap, /unexpected argument '--ask-for-approval'/);
+    assert.equal(redactSecrets("sk-or-abcdefghijklmnop"), "[REDACTED]");
   });
 
   it("classifies errors into operational categories", () => {
     assert.equal(classifyError({ message: "401 unauthorized" }), "AUTH");
+    assert.equal(classifyError({ message: "error: unexpected argument '--ask-for-approval' found" }), "CLI");
     assert.equal(classifyError({ message: "codex: not found", code: "ENOENT" }), "CLI");
     assert.equal(classifyError({ message: "Resource not accessible by integration" }), "PERMISSION");
     assert.equal(classifyError({ message: "npm test failed" }), "TEST");
@@ -492,8 +496,8 @@ describe("codex autonomous worker", () => {
     assert.doesNotMatch(JSON.stringify(mem), /sk-|access_token|"live": true/);
   });
 
-  it("pins worker v8 and does not ask Carl to dispatch after UNAVAILABLE", () => {
-    assert.equal(WORKER_VERSION, "codex-autonomous-worker.v8");
+  it("pins worker v9 and does not ask Carl to dispatch after UNAVAILABLE", () => {
+    assert.equal(WORKER_VERSION, "codex-autonomous-worker.v9");
     const io = ioFor({ authFile: false });
     const ev = runWorker(io);
     assert.equal(ev.status, "UNAVAILABLE");
@@ -649,7 +653,8 @@ describe("codex autonomous worker", () => {
       git: { sha: "aaa", dirty: "", branch: "main" },
       codex: (git, args) => {
         assert.equal(args.includes("danger-full-access"), true);
-        assert.equal(args.includes("never"), true);
+        assert.equal(args.includes("--dangerously-bypass-approvals-and-sandbox"), true);
+        assert.equal(args.includes("--ask-for-approval"), false);
         assert.equal(args.includes("--full-auto"), false);
         git.sha = "bbb";
         git.dirty = " M scripts/codex-autonomous-worker.mjs";
