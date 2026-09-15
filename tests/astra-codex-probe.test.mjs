@@ -11,13 +11,13 @@ describe("astra/codex probe", () => {
     assert.equal(detectKey({ OPENROUTER_API_KEY: "short" }, "OPENROUTER_API_KEY"), false);
   });
 
-  it("keeps Astra paid OpenAI and routes Codex to the free coding model", () => {
-    assert.equal(MODELS.astra.model, "gpt-5.6-terra");
+  it("keeps Astra and Codex as OpenAI core seats, not free catalog rows", () => {
+    assert.equal(MODELS.astra.model, "gpt-6-astra");
     assert.equal(MODELS.astra.provider, "openai");
     assert.equal(MODELS.astra.secret, "OPENAI_API_KEY");
-    assert.equal(MODELS.codex.model, "qwen/qwen3-coder:free");
-    assert.equal(MODELS.codex.provider, "openrouter");
-    assert.equal(MODELS.codex.secret, "OPENROUTER_API_KEY");
+    assert.equal(MODELS.codex.model, "gpt-6-astra");
+    assert.equal(MODELS.codex.provider, "openai");
+    assert.equal(MODELS.codex.secret, "OPENAI_API_KEY");
   });
 
   it("prepares each channel with its own provider and endpoint", () => {
@@ -28,11 +28,11 @@ describe("astra/codex probe", () => {
     assert.equal(astra.endpoint, "https://api.openai.com/v1/chat/completions");
     assert.equal(astra.key_detected, true);
 
-    const codex = prepareRequest("codex", { OPENROUTER_API_KEY: "or-test-12345678" });
+    const codex = prepareRequest("codex", { OPENAI_API_KEY: "sk-test-12345678" });
     assert.equal(codex.ok, true);
-    assert.equal(codex.provider, "openrouter");
-    assert.equal(codex.secret_name, "OPENROUTER_API_KEY");
-    assert.equal(codex.endpoint, "https://openrouter.ai/api/v1/chat/completions");
+    assert.equal(codex.provider, "openai");
+    assert.equal(codex.secret_name, "OPENAI_API_KEY");
+    assert.equal(codex.endpoint, "https://api.openai.com/v1/chat/completions");
     assert.equal(codex.key_detected, true);
     assert.equal(codex.auto_merge, false);
     assert.equal(codex.live, false);
@@ -60,19 +60,18 @@ describe("astra/codex probe", () => {
     assert.equal(result.auto_merge, false);
   });
 
-  it("executes a successful mocked free Codex transport", async () => {
+  it("executes a successful mocked Codex OpenAI transport", async () => {
     const fakeFetch = async (url, options) => {
-      assert.equal(url, "https://openrouter.ai/api/v1/chat/completions");
+      assert.equal(url, "https://api.openai.com/v1/chat/completions");
       assert.equal(options.method, "POST");
-      assert.match(options.headers.authorization, /^Bearer or-test/);
-      assert.equal(options.headers["X-Title"], "Acorn swarm");
+      assert.match(options.headers.authorization, /^Bearer sk-test/);
       return new Response(JSON.stringify({ choices: [{ message: { content: "pong" } }] }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
     };
     const result = await probeOne("codex", {
-      OPENROUTER_API_KEY: "or-test-12345678",
+      OPENAI_API_KEY: "sk-test-12345678",
       ACORN_SYSTEM_MODE: "RUN",
       GITHUB_SHA: "test-sha",
     }, fakeFetch);

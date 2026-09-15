@@ -209,11 +209,13 @@ describe("keyedModels fail-closed", () => {
     assert.deepEqual(parseTrigger("/codex", []), ["codex"]);
     assert.deepEqual(parseTrigger("/cline", []), ["cline"]);
     assert.deepEqual(parseTrigger("/goose", []), ["goose"]);
-    const { run, skip } = keyedModels(["codex", "cline", "goose"], {
-      GEMINI_API_KEY: "gem-test",
-    });
-    assert.equal(run.length, 0);
-    assert.equal(skip.length, 0);
+    const guests = keyedModels(["cline", "goose"], { GEMINI_API_KEY: "gem-test" });
+    assert.equal(guests.run.length, 0);
+    assert.equal(guests.skip.length, 0);
+    const codex = keyedModels(["codex"], {});
+    assert.equal(codex.run.length, 0);
+    assert.equal(codex.skip.length, 1);
+    assert.equal(codex.skip[0].id, "codex");
   });
 
   it("404 and 402 skip silently", () => {

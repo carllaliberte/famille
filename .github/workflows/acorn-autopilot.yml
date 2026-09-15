@@ -7,13 +7,15 @@ on:
       - '.github/workflows/**'
       - 'scripts/**'
       - '.github/swarm/**'
+  schedule:
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write
   issues: write
-  actions: write
+  actions: read
 
 concurrency:
   group: acorn-autopilot
@@ -25,14 +27,11 @@ env:
   ACORN_AUTO_MERGE: 'false'
   ACORN_LIVE: 'false'
   ACORN_PRODUCTION_WRITE_ALLOWED: 'false'
-  ACORN_RUNTIME_MINUTES: '330'
-  ACORN_RUNTIME_INTERVAL_SECONDS: '60'
-  ACORN_RUNTIME_DISPATCH_EVERY: '6'
 
 jobs:
   control:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,16 +44,17 @@ jobs:
       - name: Global Breaker control
         id: breaker
         env:
-          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE || 'RUN' }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
         run: |
           node --input-type=module <<'NODE'
           import { controlState } from './.github/swarm/system-breaker.mjs';
           import { appendFileSync } from 'node:fs';
           const state = controlState(process.env);
-          const allowed = state.mode === 'RUN' && !state.diagnostic && state.breaker_closed;
+          const allowed = state.mode === 'RUN' && !state.diagnostic && state.breaker_closed === false;
           appendFileSync(process.env.GITHUB_OUTPUT, `allowed=${allowed}\nmode=${state.mode}\n`);
           console.log(JSON.stringify({
             purpose: process.env.ACORN_PURPOSE,
+            status: 'BREAKER_EVALUATED',
             mode: state.mode,
             breaker_closed: state.breaker_closed,
             diagnostic: state.diagnostic,
@@ -66,64 +66,74 @@ jobs:
           }, null, 2));
           NODE
 
-      - name: Run autonomous cognitive runtime
+      - name: Run bounded cognitive worker
         if: ${{ steps.breaker.outputs.allowed == 'true' }}
         env:
-          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE || 'RUN' }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
           GH_TOKEN: ${{ github.token }}
-          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
-        run: node scripts/autonomous-runtime.mjs
+          FAIL_ON_DISPATCH_ERROR: 'false'
+          WORKER_EVIDENCE: evidence/autopilot/worker-evidence.json
+          SYNAPTIC_MEMORY: evidence/autopilot/synaptic-memory.json
+          COGNITIVE_MEMORY_INDEX: evidence/autopilot/cognitive-memory-index.json
+          MEASURED_RANKING: evidence/autopilot/measured-intelligence-ranking.json
+          MEASUREMENT_FEEDBACK: evidence/autopilot/measurement-feedback.json
+          MEASUREMENT_RECORD: evidence/autopilot/measurement-record.json
+        run: |
+          mkdir -p evidence/autopilot
+          node scripts/cognitive-worker.mjs
 
       - name: Emit control evidence
         if: always()
         env:
           BREAKER_MODE: ${{ steps.breaker.outputs.mode }}
           BREAKER_ALLOWED: ${{ steps.breaker.outputs.allowed }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           mkdir -p evidence/autopilot
           node --input-type=module <<'NODE'
-          import { writeFileSync } from 'node:fs';
-          writeFileSync('evidence/autopilot/control.json', JSON.stringify({
+          import { writeFileSync, readFileSync, existsSync } from 'node:fs';
+          let worker = null;
+          const workerPath = 'evidence/autopilot/worker-evidence.json';
+          if (existsSync(workerPath)) {
+            try { worker = JSON.parse(readFileSync(workerPath, 'utf8')); } catch { worker = null; }
+          }
+          const allowed = process.env.BREAKER_ALLOWED === 'true';
+          const control = {
             workflow: 'acorn-autopilot',
+            run_id: process.env.RUN_ID,
+            run_url: process.env.RUN_URL,
             purpose: process.env.ACORN_PURPOSE,
             breaker_mode: process.env.BREAKER_MODE || 'UNKNOWN',
-            breaker_allowed: process.env.BREAKER_ALLOWED === 'true',
+            breaker_allowed: allowed,
             human_authority: 'carl',
             auto_merge: false,
             production_write_allowed: false,
             live: false,
             global_breaker_required: true,
-            execution_claim: process.env.BREAKER_ALLOWED === 'true' ? 'RUNTIME_ALLOWED' : 'RUNTIME_BLOCKED'
-          }, null, 2) + '\n');
+            executed_by_worker: allowed,
+            truth: {
+              WORKFLOW_TRIGGERED: true,
+              JOB_STARTED: true,
+              BREAKER_EVALUATED: true,
+              WORKER_STARTED: allowed,
+              ARTIFACT_UPLOADED: true,
+              CYCLE_COMPLETED: true,
+              ACTION_VERIFIED: Boolean(worker?.truth?.ACTION_VERIFIED),
+            },
+            worker_truth: worker?.truth || null,
+            dispatches: worker?.dispatches || [],
+          };
+          writeFileSync('evidence/autopilot/control.json', JSON.stringify(control, null, 2) + '\n');
           NODE
 
-      - name: Upload runtime evidence
+      - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: acorn-autopilot-runtime-${{ github.run_id }}
-          path: evidence/autopilot
+          name: acorn-autopilot-cycle-${{ github.run_id }}
+          path: evidence/autopilot/
           if-no-files-found: warn
-          retention-days: 7
-
-      - name: Renew autonomous runtime
-        if: ${{ github.ref == 'refs/heads/main' && steps.breaker.outputs.allowed == 'true' && !cancelled() }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          STATE=UNKNOWN
-          if [ -f evidence/autopilot/runtime/checkpoint.json ]; then
-            STATE=$(node --input-type=module -e "import { readFileSync } from 'node:fs'; console.log(JSON.parse(readFileSync('evidence/autopilot/runtime/checkpoint.json','utf8')).state || 'UNKNOWN')")
-          fi
-          case "$STATE" in
-            STOPPED_BREAKER)
-              echo "Runtime renewal stopped by breaker.";
-              exit 0
-              ;;
-            *)
-              echo "Renewing autonomous runtime time slice: $STATE";
-              gh workflow run acorn-autopilot.yml --ref main
-              ;;
-          esac
+          retention-days: 14

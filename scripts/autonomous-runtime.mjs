@@ -15,24 +15,25 @@ import { runWorker } from "./cognitive-worker.mjs";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
 
 const root = resolve(process.env.ACORN_RUNTIME_ROOT || ".");
-const evidenceDir = resolve(root, process.env.ACORN_RUNTIME_EVIDENCE_DIR || "evidence/autopilot/runtime");
-const checkpointPath = resolve(root, process.env.ACORN_RUNTIME_CHECKPOINT || "evidence/autopilot/runtime/checkpoint.json");
-const journalPath = resolve(root, process.env.ACORN_RUNTIME_JOURNAL || "evidence/autopilot/runtime/journal.jsonl");
-const durationMinutes = Math.max(0, Number(process.env.ACORN_RUNTIME_MINUTES ?? 0));
-const intervalSeconds = Math.max(5, Number(process.env.ACORN_RUNTIME_INTERVAL_SECONDS ?? 60));
-const maxCycles = Math.max(0, Number(process.env.ACORN_RUNTIME_MAX_CYCLES ?? 0));
-const dispatchEvery = Math.max(1, Number(process.env.ACORN_RUNTIME_DISPATCH_EVERY ?? 6));
 
 function now() { return new Date().toISOString(); }
-function ensure() { mkdirSync(dirname(checkpointPath), { recursive: true }); mkdirSync(evidenceDir, { recursive: true }); }
-function loadCheckpoint() {
-  try { return JSON.parse(readFileSync(checkpointPath, "utf8")); } catch { return { cycle: 0, started_at: null, last_completed_at: null }; }
-}
-function persistCheckpoint(value) { writeFileSync(checkpointPath, `${JSON.stringify(value, null, 2)}\n`); }
-function journal(entry) { appendFileSync(journalPath, `${JSON.stringify(entry)}\n`); }
 function sleep(ms) { return new Promise((resolveSleep) => setTimeout(resolveSleep, ms)); }
 
 export async function runAutonomousRuntime({ worker = runWorker, env = process.env, sleepFn = sleep } = {}) {
+  const evidenceDir = resolve(root, env.ACORN_RUNTIME_EVIDENCE_DIR || "evidence/autopilot/runtime");
+  const checkpointPath = resolve(root, env.ACORN_RUNTIME_CHECKPOINT || "evidence/autopilot/runtime/checkpoint.json");
+  const journalPath = resolve(root, env.ACORN_RUNTIME_JOURNAL || "evidence/autopilot/runtime/journal.jsonl");
+  const durationMinutes = Math.max(0, Number(env.ACORN_RUNTIME_MINUTES ?? 0));
+  const intervalSeconds = Math.max(5, Number(env.ACORN_RUNTIME_INTERVAL_SECONDS ?? 60));
+  const maxCycles = Math.max(0, Number(env.ACORN_RUNTIME_MAX_CYCLES ?? 0));
+  const dispatchEvery = Math.max(1, Number(env.ACORN_RUNTIME_DISPATCH_EVERY ?? 6));
+  const ensure = () => { mkdirSync(dirname(checkpointPath), { recursive: true }); mkdirSync(evidenceDir, { recursive: true }); };
+  const loadCheckpoint = () => {
+    try { return JSON.parse(readFileSync(checkpointPath, "utf8")); } catch { return { cycle: 0, started_at: null, last_completed_at: null }; }
+  };
+  const persistCheckpoint = (value) => { writeFileSync(checkpointPath, `${JSON.stringify(value, null, 2)}\n`); };
+  const journal = (entry) => { appendFileSync(journalPath, `${JSON.stringify(entry)}\n`); };
+
   ensure();
   const checkpoint = loadCheckpoint();
   // Each process/workflow gets a fresh time slice. The checkpoint resumes the
@@ -45,7 +46,7 @@ export async function runAutonomousRuntime({ worker = runWorker, env = process.e
 
   while (Date.now() < deadline && (maxCycles === 0 || completed < maxCycles)) {
     const state = controlState(env);
-    if (state.mode !== "RUN" || !state.breaker_closed || state.diagnostic) {
+    if (state.mode !== "RUN" || state.breaker_closed || state.diagnostic) {
       const stopped = { state: "STOPPED_BREAKER", cycle, at: now(), mode: state.mode };
       journal(stopped);
       persistCheckpoint({ ...checkpoint, cycle, started_at: startedAt, last_completed_at: stopped.at, state: stopped.state });

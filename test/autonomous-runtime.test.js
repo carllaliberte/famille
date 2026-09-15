@@ -1,26 +1,39 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
 import { runAutonomousRuntime } from "../scripts/autonomous-runtime.mjs";
 
-const baseEnv = {
+function runtimeEnv(extra = {}) {
+  const dir = mkdtempSync(join(tmpdir(), "acorn-runtime-"));
+  return {
+    ACORN_RUNTIME_EVIDENCE_DIR: join(dir, "evidence"),
+    ACORN_RUNTIME_CHECKPOINT: join(dir, "checkpoint.json"),
+    ACORN_RUNTIME_JOURNAL: join(dir, "journal.jsonl"),
+    ...extra,
+  };
+}
+
+const baseEnv = runtimeEnv({
   ACORN_SYSTEM_MODE: "RUN",
   ACORN_RUNTIME_MINUTES: "1",
   ACORN_RUNTIME_MAX_CYCLES: "2",
-};
+});
 
-test("RUN closes the breaker path and permits controlled execution", () => {
+test("RUN keeps the breaker path open and permits controlled execution", () => {
   const state = controlState({ ACORN_SYSTEM_MODE: "RUN" });
-  assert.equal(state.breaker_closed, true);
+  assert.equal(state.breaker_closed, false);
   assert.equal(state.normal, true);
   assert.equal(state.production_write_allowed, false);
   assert.equal(state.auto_merge, false);
   assert.equal(state.live, false);
 });
 
-test("OFF opens the breaker and blocks execution", () => {
+test("OFF fail-closes the breaker and blocks execution", () => {
   const state = controlState({ ACORN_SYSTEM_MODE: "OFF" });
-  assert.equal(state.breaker_closed, false);
+  assert.equal(state.breaker_closed, true);
   assert.equal(state.normal, false);
 });
 
@@ -47,11 +60,11 @@ test("runtime performs bounded cycles and checkpoints them", async () => {
 });
 
 test("runtime starts a fresh time slice when resumed from a completed checkpoint", async () => {
-  const env = {
+  const env = runtimeEnv({
     ACORN_SYSTEM_MODE: "RUN",
     ACORN_RUNTIME_MINUTES: "1",
     ACORN_RUNTIME_MAX_CYCLES: "1",
-  };
+  });
   const first = await runAutonomousRuntime({
     env,
     worker: () => ({ verified: false, dispatches: [], measurement_record: { ok: true } }),
@@ -69,11 +82,11 @@ test("runtime starts a fresh time slice when resumed from a completed checkpoint
 });
 
 test("runtime stops when the breaker changes to OFF between cycles", async () => {
-  const env = {
+  const env = runtimeEnv({
     ACORN_SYSTEM_MODE: "RUN",
     ACORN_RUNTIME_MINUTES: "1",
     ACORN_RUNTIME_MAX_CYCLES: "3",
-  };
+  });
   let calls = 0;
   const result = await runAutonomousRuntime({
     env,
@@ -91,7 +104,7 @@ test("runtime stops when the breaker changes to OFF between cycles", async () =>
 
 test("runtime stops immediately on OFF", async () => {
   const result = await runAutonomousRuntime({
-    env: { ACORN_SYSTEM_MODE: "OFF", ACORN_RUNTIME_MAX_CYCLES: "2" },
+    env: runtimeEnv({ ACORN_SYSTEM_MODE: "OFF", ACORN_RUNTIME_MAX_CYCLES: "2" }),
     worker: () => { throw new Error("must not execute"); },
     sleepFn: async () => {},
   });

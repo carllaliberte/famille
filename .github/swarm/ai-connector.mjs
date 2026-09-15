@@ -33,6 +33,7 @@ export function acceptIngress({ channel = "unknown", source = "unknown", payload
     },
     provenance: { source, channel, ref },
     payload,
+    systems: { ...systems, execution_requires_breaker: true },
     production_write_allowed: false,
     auto_merge: false,
     live: false,

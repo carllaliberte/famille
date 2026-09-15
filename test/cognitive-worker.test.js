@@ -13,7 +13,9 @@ test("cognitive worker is scheduled and manually dispatchable", () => {
 
 test("cognitive worker never merges or writes repository contents", () => {
   assert.match(workflow, /contents: read/);
-  assert.match(workflow, /pull-requests: read/);
+  assert.doesNotMatch(workflow, /contents: write/);
+  assert.match(workflow, /pull-requests: write/);
+  assert.match(workflow, /issues: write/);
   assert.match(workflow, /auto_merge=false/);
   assert.match(workflow, /live=false/);
   assert.doesNotMatch(workflow, /gh pr merge/);

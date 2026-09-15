@@ -1,4 +1,5 @@
 # Complementary AI review. Not a judge. Does not replace npm test (carte.yml).
+# Reviews FILE.md + schema + docs. Never merge. Never wrangler.
 # Continuous: pull_request opened/synchronize/reopened + issue_comment /swarm.
 # Manual: workflow_dispatch (ref input, default main).
 # Missing secrets skip (fail-closed, exit 0). Never merge. Never wrangler.

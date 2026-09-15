@@ -1,28 +1,170 @@
 [
-  {"id": "orfree", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "openrouter/free", "maxTokens": 1024},
-  {"id": "gemma431", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "google/gemma-4-31b-it:free", "maxTokens": 2048},
-  {"id": "gemma426", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "google/gemma-4-26b-a4b-it:free", "maxTokens": 2048},
-  {"id": "nemotron35", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "nvidia/nemotron-3.5-lightning:free", "maxTokens": 2048},
-  {"id": "nemotronu", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "nvidia/nemotron-3-ultra-550b-a55b:free", "maxTokens": 2048},
-  {"id": "nemotrons", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "nvidia/nemotron-3-super-120b-a12b:free", "maxTokens": 2048},
-  {"id": "nemotronn", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", "maxTokens": 2048},
-  {"id": "nemotroncs", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "nvidia/nemotron-3.5-content-safety:free", "maxTokens": 2048},
-  {"id": "qwen3c", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "qwen/qwen3-coder:free", "maxTokens": 2048},
-  {"id": "gptoss20", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "openai/gpt-oss-20b:free", "maxTokens": 2048},
-  {"id": "gptoss120", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "openai/gpt-oss-120b:free", "maxTokens": 2048},
-  {"id": "northmini", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "cohere/north-mini-code:free", "maxTokens": 2048},
-  {"id": "lfm26", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "liquid/lfm-2.5-2.6b:free", "maxTokens": 2048},
-  {"id": "lagunas", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "poolside/laguna-s-2.1:free", "maxTokens": 2048},
-  {"id": "lagunaxs", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "poolside/laguna-xs-2.1:free", "maxTokens": 2048},
-  {"id": "inkling", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "thinkingmachines/inkling:free", "maxTokens": 2048},
-  {"id": "inklings", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "thinkingmachines/inkling-small:free", "maxTokens": 2048},
-  {"id": "lingvl", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "inclusionai/ling-3.0-flash-vl:free", "maxTokens": 2048},
-  {"id": "lingfin", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "inclusionai/ling-3.0-flash-fin:free", "maxTokens": 2048},
-  {"id": "lingsante", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "inclusionai/ling-3.0-flash-sante:free", "maxTokens": 2048},
-  {"id": "nexpro", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "nex-agi/nex-n2.5-pro:free", "maxTokens": 2048},
-  {"id": "nexmini", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "nex-agi/nex-n2.5-mini:free", "maxTokens": 2048},
-  {"id": "dots3", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "dots-studio/dots-3-note-preview:free", "maxTokens": 2048},
-  {"id": "llama32f", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "meta-llama/llama-3.2-3b-instruct:free", "maxTokens": 2048},
-  {"id": "astra", "provider": "openai", "secret": "OPENAI_API_KEY", "model": "gpt-5.6-terra", "maxTokens": 4096},
-  {"id": "codex", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "qwen/qwen3-coder:free", "maxTokens": 2048}
+  {
+    "id": "orfree",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "openrouter/free",
+    "maxTokens": 1024
+  },
+  {
+    "id": "gemma431",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "google/gemma-4-31b-it:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "gemma426",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "google/gemma-4-26b-a4b-it:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "nemotron35",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "nvidia/nemotron-3.5-lightning:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "nemotronu",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "nemotrons",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "nvidia/nemotron-3-super-120b-a12b:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "nemotronn",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "nemotroncs",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "nvidia/nemotron-3.5-content-safety:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "qwen3c",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "qwen/qwen3-coder:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "gptoss20",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "openai/gpt-oss-20b:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "gptoss120",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "openai/gpt-oss-120b:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "northmini",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "cohere/north-mini-code:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "lfm26",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "liquid/lfm-2.5-2.6b:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "lagunas",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "poolside/laguna-s-2.1:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "lagunaxs",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "poolside/laguna-xs-2.1:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "inkling",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "thinkingmachines/inkling:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "inklings",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "thinkingmachines/inkling-small:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "lingvl",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "inclusionai/ling-3.0-flash-vl:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "lingfin",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "inclusionai/ling-3.0-flash-fin:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "lingsante",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "inclusionai/ling-3.0-flash-sante:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "nexpro",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "nex-agi/nex-n2.5-pro:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "nexmini",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "nex-agi/nex-n2.5-mini:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "dots3",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "dots-studio/dots-3-note-preview:free",
+    "maxTokens": 2048
+  },
+  {
+    "id": "llama32f",
+    "provider": "openrouter",
+    "secret": "OPENROUTER_API_KEY",
+    "model": "meta-llama/llama-3.2-3b-instruct:free",
+    "maxTokens": 2048
+  }
 ]

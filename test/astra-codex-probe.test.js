@@ -11,7 +11,7 @@ describe("Astra Codex probe", () => {
     assert.equal(MODELS.codex.provider, "openai");
     assert.equal(MODELS.codex.secret, "OPENAI_API_KEY");
     assert.equal(MODELS.codex.model, "gpt-6-astra");
-    assert.equal(MODELS.astra.auto, true);
+    assert.equal(MODELS.astra.auto, false);
     assert.equal(MODELS.codex.auto, false);
   });
 

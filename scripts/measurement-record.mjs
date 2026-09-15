@@ -38,16 +38,18 @@ export function buildMeasurementRecord({ env = process.env, observedAt = new Dat
     observed_at: observedAt,
     source_sha: env.GITHUB_SHA || null,
     executed: true,
+    verified: dispatches.some((item) => item?.state === "VERIFIED"),
     previous_record_digest: previousRecord?.seal?.digest || null,
     ranking_digest: ranking?.seal?.digest || evidenceDigest(ranking || {}),
     feedback_digest: feedback?.seal?.digest || evidenceDigest(feedback || {}),
     memory_index_digest: evidenceDigest(memoryIndex || {}),
-    dispatch_count: dispatches.filter((item) => item?.state === "DISPATCHED").length,
+    dispatch_count: dispatches.filter((item) => item?.state === "DISPATCHED" || item?.state === "ACCEPTED" || item?.state === "VERIFIED").length,
     dispatch_failed: dispatches.filter((item) => item?.state === "DISPATCH_FAILED").length,
     observation: {
       observed: observation?.observed !== false,
       source: observation?.source || "cognitive-worker",
     },
+    integrity: "SEALED",
   };
   return sealEvidence(record);
 }
@@ -96,7 +98,7 @@ export function loadMeasurementRecord(run = execFileSync, env = process.env) {
   try {
     const raw = run("gh", ["run", "list", "--workflow", "cognitive-worker.yml", "--repo", env.GITHUB_REPOSITORY, "--status", "success", "--limit", "10", "--json", "databaseId,headSha"], { encoding: "utf8", stdio: "pipe" });
     const runs = JSON.parse(raw || "[]")
-      .filter((item) => item?.databaseId && item?.headSha && item.headSha !== env.GITHUB_SHA)
+      .filter((item) => item?.databaseId && item?.headSha)
       .map((item) => ({ ...item, repository: env.GITHUB_REPOSITORY }));
     if (!runs.length) return fallback;
 

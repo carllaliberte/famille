@@ -26,13 +26,14 @@ export function routeIngress({ channel = "generic-ai", source = "unknown", capab
 }
 
 export function makeSynapse({ route, task, front }) {
+  const identity = route?.route || {};
   return {
     v: "synapse.v1",
-    id: `${front.sha}:${route.source}:${route.capability}`.slice(0, 160),
+    id: `${front.sha}:${identity.source}:${identity.capability}`.slice(0, 160),
     state: "PROPOSED",
-    source: route.source,
-    channel: route.channel,
-    capability: route.capability,
+    source: identity.source,
+    channel: identity.channel,
+    capability: identity.capability,
     task,
     front: { number: front.number, sha: front.sha },
     provenance: route.provenance,

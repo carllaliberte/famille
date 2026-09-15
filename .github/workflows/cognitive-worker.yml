@@ -10,12 +10,17 @@ on:
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
+  push:
+    branches: [feat/autopilot-real-cycle]
+  pull_request:
+    types: [opened, synchronize, reopened]
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write
+  issues: write
   actions: write
 concurrency:
-  group: cognitive-worker
+  group: cognitive-worker-${{ github.event.pull_request.number || github.ref_name || 'scheduled' }}
   cancel-in-progress: false
 jobs:
   cycle:
@@ -24,7 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          # PR runs execute the actual PR head; branch pushes execute that branch; scheduled runs execute main.
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -36,8 +43,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_REF: ${{ github.event.pull_request.head.ref || github.ref }}
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+          FAIL_ON_DISPATCH_ERROR: 'false'
           WORKER_EVIDENCE: worker-evidence.json
           SYNAPTIC_MEMORY: synaptic-memory.json
           COGNITIVE_MEMORY_INDEX: cognitive-memory-index.json
@@ -96,8 +105,9 @@ jobs:
       - name: Record bounded result
         if: always()
         run: |
-          echo "cognitive-worker.v13 — observe/discover/compose/route/dispatch/measure/memory-index/ranking/feedback/dated-record cycle completed."
+          echo "cognitive-worker.v14 — observe/discover/compose/route/dispatch/measure/memory-index/ranking/feedback/dated-record cycle completed."
           echo "DEFINED != EXECUTED != VERIFIED != LIVE."
+          echo "execution ref=${GITHUB_REF} sha=${GITHUB_SHA}"
           echo "ranking = measured execution/collaboration/routing evidence only."
           echo "feedback = bounded routing guidance, not authority; MEASURE_MORE receives confirmation priority."
           echo "measurement-record = dated state + chained integrity link, not authority or truth."

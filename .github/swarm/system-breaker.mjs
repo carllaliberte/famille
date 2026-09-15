@@ -39,9 +39,7 @@ export function resolveMode(env = process.env) {
 }
 export function controlState(env = process.env) {
   const mode = resolveMode(env);
-  // "closed" follows the circuit-breaker convention: closed = path is open
-  // for controlled execution; OFF = breaker open and fail-closed.
-  return { mode, breaker_closed: mode !== MODES.OFF, diagnostic: mode === MODES.DEBUG, normal: mode === MODES.RUN, ai_ingress_allowed: mode !== MODES.OFF, production_write_allowed: false, auto_merge: false, live: false, human_authority: "carl" };
+  return { mode, breaker_closed: mode === MODES.OFF, diagnostic: mode === MODES.DEBUG, normal: mode === MODES.RUN, ai_ingress_allowed: mode !== MODES.OFF, production_write_allowed: false, auto_merge: false, live: false, human_authority: "carl" };
 }
 export function assertSystemMayProceed({ env = process.env, origin = "unknown", action = "execute" } = {}) {
   const state = controlState(env);

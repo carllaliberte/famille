@@ -61,6 +61,18 @@ const CANALS_CORE = Object.freeze({
     secret: "OPENAI_API_KEY",
     model: "gpt-5.6-terra",
   },
+  astra: {
+    provider: "openai",
+    secret: "OPENAI_API_KEY",
+    model: "gpt-6-astra",
+    maxTokens: 4096,
+  },
+  codex: {
+    provider: "openai",
+    secret: "OPENAI_API_KEY",
+    model: "gpt-6-astra",
+    maxTokens: 4096,
+  },
   deepseek: {
     provider: "deepseek",
     secret: "DEEPSEEK_API_KEY",

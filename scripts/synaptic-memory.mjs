@@ -55,7 +55,7 @@ export function updateMemory(memory, routing, dispatches, now = new Date().toISO
     const result = byFront.get(String(route.context?.front_sha));
     const state = result?.state || "PROPOSED";
     edge.attempts += 1;
-    if (state === "DISPATCHED") edge.successes += 1;
+    if (state === "DISPATCHED" || state === "ACCEPTED" || state === "VERIFIED") edge.successes += 1;
     else if (state === "DISPATCH_FAILED" || state === "BLOCKED_BREAKER") edge.failures += 1;
     edge.last_state = state;
     edge.last_seen = now;
