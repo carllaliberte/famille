@@ -10,15 +10,17 @@ on:
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
+  push:
+    branches: [feat/autopilot-real-cycle]
   pull_request:
     types: [opened, synchronize, reopened]
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write
   issues: write
   actions: write
 concurrency:
-  group: cognitive-worker-${{ github.event.pull_request.number || 'scheduled' }}
+  group: cognitive-worker-${{ github.event.pull_request.number || github.ref_name || 'scheduled' }}
   cancel-in-progress: false
 jobs:
   cycle:
@@ -27,7 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # PR runs execute the actual PR head; scheduled runs execute main.
+          # PR runs execute the actual PR head; branch pushes execute that branch; scheduled runs execute main.
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 1
       - uses: actions/setup-node@v4
