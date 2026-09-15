@@ -26,6 +26,8 @@ jobs:
         env:
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
         run: node .github/swarm/system-breaker.mjs
+      - name: Unit test Astra/Codex transport
+        run: node --test tests/astra-codex-probe.test.mjs
       - name: Measure Astra and Codex transport
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
