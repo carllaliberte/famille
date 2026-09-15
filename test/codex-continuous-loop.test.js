@@ -6,7 +6,7 @@ describe("Codex continuous work loop", () => {
   it("refuses a dirty workspace", () => {
     const result = runContinuousTask(
       { task_id: "dirty", root: "." },
-      { codexExecute: () => ({ patch_source: "codex", execution_status: "PATCHED", files_changed: [] }), exec: () => "uncommitted.js\n" },
+      { gitStatus: () => "uncommitted.js\n" },
     );
     assert.equal(result.execution_status, "WORKSPACE_NOT_CLEAN");
     assert.equal(result.patch_source, "none");
@@ -15,7 +15,10 @@ describe("Codex continuous work loop", () => {
   it("keeps unavailable Codex distinct from operator execution", () => {
     const result = runContinuousTask(
       { task_id: "unavailable", root: "." },
-      { codexExecute: () => ({ execution_mode: "codex", patch_source: "unavailable", execution_status: "UNAVAILABLE", files_changed: [] }), exec: () => "" },
+      {
+        gitStatus: () => "",
+        codexExecute: () => ({ execution_mode: "codex", patch_source: "unavailable", execution_status: "UNAVAILABLE", files_changed: [] }),
+      },
     );
     assert.equal(result.patch_source, "unavailable");
     assert.equal(result.next_action, "WAIT_FOR_CODEX");
