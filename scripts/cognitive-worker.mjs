@@ -48,8 +48,9 @@ export function orderByMeasuredRank(ids, ranking = null, feedback = null) {
   const priority = (id) => {
     const action = actionById.get(id);
     if (action === "PROMOTE_PRIORITY") return 0;
-    if (action === "DEPRIORITIZE") return 2;
-    return 1;
+    if (action === "MEASURE_MORE") return 1;
+    if (action === "DEPRIORITIZE") return 3;
+    return 2;
   };
   return [...new Set(ids.map(String))].sort((a, b) => {
     const ap = priority(a), bp = priority(b);
