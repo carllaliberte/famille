@@ -1,0 +1,71 @@
+name: codex-autonomous-worker
+
+on:
+  schedule:
+    - cron: "47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: codex-autonomous-worker
+  cancel-in-progress: false
+
+jobs:
+  codex:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Codex CLI
+        run: npm install --global @openai/codex
+
+      - name: Restore optional ChatGPT Codex authentication
+        env:
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+        run: |
+          if [ -z "$CODEX_AUTH_JSON" ]; then
+            echo "CODEX_AUTH_JSON not configured; worker will report UNAVAILABLE without making source changes."
+            exit 0
+          fi
+          mkdir -p "$HOME/.codex"
+          printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
+          chmod 600 "$HOME/.codex/auth.json"
+
+      - name: Global breaker gate
+        env:
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+        run: node .github/swarm/system-breaker.mjs
+
+      - name: Run one real Codex task
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+          CODEX_WORKER_EVIDENCE: codex-worker-evidence.json
+          CODEX_TASK_LABEL: codex-task
+          CODEX_TASK_TIMEOUT_MINUTES: "20"
+        run: node scripts/codex-autonomous-worker.mjs
+
+      - name: Preserve Codex worker evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-worker-${{ github.run_id }}
+          path: codex-worker-evidence.json
+          if-no-files-found: warn
+          retention-days: 30
