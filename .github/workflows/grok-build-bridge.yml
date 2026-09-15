@@ -1,0 +1,202 @@
+# ACORN — real Grok Build bridge.
+# Trigger: Carl only, by an issue/PR comment beginning with /grok-build.
+# Grok Build runs headlessly in an isolated GitHub Actions workspace.
+# It may edit the workspace, but never main, never merge, never auto-merge.
+# The workflow creates a branch + PR from the resulting diff; Carl remains the merge authority.
+# Required Actions secret: XAI_API_KEY.
+name: Grok Build Bridge
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "Grok Build task"
+        required: true
+        type: string
+      ref:
+        description: "Ref to work from"
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: grok-build-bridge
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.comment.user.login == 'carllaliberte' &&
+       github.event.comment.body != '' &&
+       startsWith(github.event.comment.body, '/grok-build'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Global breaker
+        env:
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+        run: node -e "const m=String(process.env.ACORN_SYSTEM_MODE||'RUN').toUpperCase(); if(m==='OFF') { console.error('GLOBAL_BREAKER_OFF'); process.exit(1) } console.log(JSON.stringify({mode:m,production_write_allowed:false,auto_merge:false,live:false,human_authority:'carl'}))"
+
+      - name: Resolve source ref and prompt
+        id: input
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          COMMENT: ${{ github.event.comment.body }}
+          DISPATCH_PROMPT: ${{ inputs.prompt }}
+          DISPATCH_REF: ${{ inputs.ref }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "issue_comment" ]; then
+            PROMPT="${COMMENT#/grok-build}"
+            PROMPT="${PROMPT# }"
+            if [ -z "$PROMPT" ]; then
+              echo "Grok Build: prompt vide" >&2
+              exit 1
+            fi
+            if gh api "repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.issue.number }}" >/tmp/pr.json 2>/dev/null; then
+              REF=$(jq -r .head.sha /tmp/pr.json)
+              TARGET_PR="${{ github.event.issue.number }}"
+            else
+              REF="main"
+              TARGET_PR=""
+            fi
+          else
+            PROMPT="$DISPATCH_PROMPT"
+            REF="${DISPATCH_REF:-main}"
+            TARGET_PR=""
+          fi
+          printf '%s' "$PROMPT" > /tmp/grok-prompt.txt
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "target_pr=$TARGET_PR" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.input.outputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Grok Build
+        run: |
+          set -euo pipefail
+          curl -fsSL https://x.ai/cli/install.sh | bash
+          command -v grok
+          grok --version
+
+      - name: Verify xAI credential exists
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$XAI_API_KEY" ]; then
+            echo "HOLD: XAI_API_KEY is not configured in GitHub Actions secrets."
+            exit 2
+          fi
+
+      - name: Run Grok Build
+        id: grok
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          PROMPT_FILE: /tmp/grok-prompt.txt
+        run: |
+          set +e
+          cat > /tmp/grok-system.txt <<'EOF'
+You are Grok Build operating as a cognitive/service node inside Acorn/FAMILLE.
+Work directly in the checked-out repository and solve the requested task.
+You may inspect and modify the working tree, but DO NOT commit, push, merge, or change main.
+Return a concise factual report of what you inspected, what you changed, tests run, and remaining blockers.
+Preserve Acorn governance: human authority is Carl; auto_merge=false; live=false.
+Do not create or expose secrets. Do not modify protected semantic/protocol paths unless the task explicitly requires it and explain such changes.
+Never claim execution you did not perform.
+EOF
+          PROMPT="$(cat /tmp/grok-prompt.txt)"
+          SYSTEM="$(cat /tmp/grok-system.txt)"
+          FULL_PROMPT="$SYSTEM
+
+TASK:
+$PROMPT"
+          grok -p "$FULL_PROMPT" --output-format streaming-json > /tmp/grok-output.jsonl 2>&1
+          RC=$?
+          echo "exit_code=$RC" >> "$GITHUB_OUTPUT"
+          set -e
+          tail -c 12000 /tmp/grok-output.jsonl > grok-build-output.txt || true
+          if [ "$RC" -ne 0 ]; then
+            echo "Grok Build failed with exit code $RC"
+            exit "$RC"
+          fi
+
+      - name: Measure resulting diff
+        id: diff
+        run: |
+          set -euo pipefail
+          git status --short | tee grok-build-diff.txt
+          git diff --stat | tee -a grok-build-diff.txt
+          if git diff --quiet && [ -z "$(git status --porcelain)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create isolated branch and PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_REF: ${{ steps.input.outputs.ref }}
+        run: |
+          set -euo pipefail
+          git config user.name "acorn-grok-build[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="ai/grok-build-$(date -u +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          git add -A
+          git commit -m "feat: Grok Build task"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "HEAD:${BRANCH}"
+          BODY=$(cat <<EOF
+          Real Grok Build execution from \`${SOURCE_REF}\`.
+
+          - Grok Build ran headlessly in GitHub Actions.
+          - Changes are isolated on \`${BRANCH}\`.
+          - No merge was performed.
+          - No auto-merge.
+          - Human merge authority: Carl.
+          - The workflow does not write \`main\` directly.
+
+          The execution report is attached to the workflow run.
+          EOF
+          )
+          gh pr create --base main --head "$BRANCH" --title "feat: Grok Build task" --body "$BODY"
+
+      - name: Comment execution result
+        if: always() && github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUMBER: ${{ github.event.issue.number }}
+          RC: ${{ steps.grok.outputs.exit_code || 'not-run' }}
+          CHANGED: ${{ steps.diff.outputs.changed || 'not-measured' }}
+        run: |
+          set -euo pipefail
+          STATUS="EXECUTED"
+          if [ "$RC" != "0" ]; then STATUS="ERROR"; fi
+          gh issue comment "$NUMBER" --body "Grok Build bridge: **$STATUS**. exit=$RC; changed=$CHANGED. No merge performed. See workflow artifacts for the measured execution report."
+
+      - name: Upload execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grok-build-execution
+          retention-days: 90
+          path: |
+            grok-build-output.txt
+            grok-build-diff.txt
+          if-no-files-found: ignore
