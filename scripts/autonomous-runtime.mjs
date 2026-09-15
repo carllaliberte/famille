@@ -35,18 +35,20 @@ function sleep(ms) { return new Promise((resolveSleep) => setTimeout(resolveSlee
 export async function runAutonomousRuntime({ worker = runWorker, env = process.env, sleepFn = sleep } = {}) {
   ensure();
   const checkpoint = loadCheckpoint();
-  const startedAt = checkpoint.started_at || now();
-  const startMs = Date.parse(startedAt);
-  let cycle = Number(checkpoint.cycle || 0);
+  // Each process/workflow gets a fresh time slice. The checkpoint resumes the
+  // cycle counter/evidence lineage, not the previous process deadline.
+  const startedAt = now();
+  const previousCycle = Number(checkpoint.cycle || 0);
+  let cycle = previousCycle;
   let completed = 0;
-  const deadline = durationMinutes > 0 ? startMs + durationMinutes * 60_000 : Number.POSITIVE_INFINITY;
+  const deadline = durationMinutes > 0 ? Date.parse(startedAt) + durationMinutes * 60_000 : Number.POSITIVE_INFINITY;
 
   while (Date.now() < deadline && (maxCycles === 0 || completed < maxCycles)) {
     const state = controlState(env);
-    if (state.mode === "OFF") {
+    if (state.mode !== "RUN" || !state.breaker_closed || state.diagnostic) {
       const stopped = { state: "STOPPED_BREAKER", cycle, at: now(), mode: state.mode };
       journal(stopped);
-      persistCheckpoint({ ...checkpoint, cycle, started_at: startedAt, last_completed_at: now(), state: stopped.state });
+      persistCheckpoint({ ...checkpoint, cycle, started_at: startedAt, last_completed_at: stopped.at, state: stopped.state });
       return stopped;
     }
 
