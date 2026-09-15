@@ -348,7 +348,16 @@ function evaluateTrigger(input) {
     };
   }
   if (event === "push") {
-    if (memory.last_main_sha && memory.last_main_sha === currentSha) {
+    const last = input.previousSha !== undefined ? input.previousSha : memory.last_main_sha;
+    if (input.forceWake) {
+      return {
+        run: true,
+        reason: input.wakeReason || "open justified codex-task",
+        status: "RUN",
+        step: "TASK"
+      };
+    }
+    if (last && last === currentSha) {
       return {
         run: false,
         reason: "m\xEAme SHA de main \u2014 idempotent",
@@ -479,6 +488,40 @@ function skippedForSha(memory, sha) {
     }
   }
   return out;
+}
+function previousSkipSha(memory) {
+  const sig = [...(memory?.error_signatures || [])].reverse().find((e) => e.sha)?.sha;
+  if (sig) return sig;
+  const skip = [...(memory?.skipped_tasks || [])].reverse().find((s) => s && typeof s === "object" && s.sha)?.sha;
+  return skip || memory?.last_main_sha || null;
+}
+function wakeOpenCodexTask(input = {}) {
+  const currentSha = input.currentSha || null;
+  const previousSha = input.previousSha || null;
+  const skipped = new Set((input.skippedOnCurrentSha || []).map(Number).filter(Boolean));
+  const closed = new Set((input.closedTaskNumbers || []).map(Number).filter(Boolean));
+  const unjustified = new Set((input.unjustifiedTaskNumbers || []).map(Number).filter(Boolean));
+  const skipInvalidated = Boolean(input.skipInvalidated)
+    || Boolean(previousSha && currentSha && previousSha !== currentSha);
+  const runnable = (input.openTaskNumbers || [])
+    .map(Number)
+    .filter((n) => n && !skipped.has(n) && !closed.has(n) && !unjustified.has(n));
+  if (!runnable.length) {
+    const reason = skipped.size
+      ? "SKIP_JUSTIFIÉ — same SHA + same error"
+      : closed.size && !(input.openTaskNumbers || []).length
+        ? "task closed"
+        : "no open justified codex-task";
+    return { wake: false, skip_invalidated: skipInvalidated, reason, tasks: [] };
+  }
+  return {
+    wake: true,
+    skip_invalidated: skipInvalidated,
+    reason: skipInvalidated
+      ? "main SHA changed; stale skip invalidated; open codex-task"
+      : "open justified codex-task",
+    tasks: runnable
+  };
 }
 function shouldStopCleanly(input) {
   if (input.danger) return { stop: true, status: "ARCHITECTURAL_BLOCK", reason: "danger \u2014 arr\xEAt propre" };
@@ -948,5 +991,7 @@ export {
   shouldStopCleanly,
   simulateAbsence,
   skippedForSha,
-  sovereigntyIntact
+  sovereigntyIntact,
+  previousSkipSha,
+  wakeOpenCodexTask
 };
