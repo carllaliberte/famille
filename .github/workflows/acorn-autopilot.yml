@@ -15,7 +15,7 @@ permissions:
   contents: read
   pull-requests: read
   issues: write
-  actions: read
+  actions: write
 
 concurrency:
   group: acorn-autopilot
@@ -27,11 +27,14 @@ env:
   ACORN_AUTO_MERGE: 'false'
   ACORN_LIVE: 'false'
   ACORN_PRODUCTION_WRITE_ALLOWED: 'false'
+  ACORN_RUNTIME_MINUTES: '330'
+  ACORN_RUNTIME_INTERVAL_SECONDS: '60'
+  ACORN_RUNTIME_DISPATCH_EVERY: '6'
 
 jobs:
   control:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 350
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,11 +68,15 @@ jobs:
           }, null, 2));
           NODE
 
-      - name: Run bounded cognitive worker
+      - name: Run autonomous cognitive runtime
         if: ${{ steps.breaker.outputs.allowed == 'true' }}
         env:
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
-        run: node scripts/cognitive-worker.mjs
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: node scripts/autonomous-runtime.mjs
 
       - name: Emit control evidence
         if: always()
@@ -90,13 +97,21 @@ jobs:
             production_write_allowed: false,
             live: false,
             global_breaker_required: true,
-            executed_by_worker: process.env.BREAKER_ALLOWED === 'true'
+            execution_claim: process.env.BREAKER_ALLOWED === 'true' ? 'RUNTIME_ALLOWED' : 'RUNTIME_BLOCKED'
           }, null, 2) + '\n');
           NODE
 
-      - name: Upload evidence
+      - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: acorn-autopilot-control
-          path: evidence/autopilot/control.json
+          name: acorn-autopilot-runtime-${{ github.run_id }}
+          path: evidence/autopilot
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Renew autonomous runtime
+        if: ${{ steps.breaker.outputs.allowed == 'true' && !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run acorn-autopilot.yml --ref main
