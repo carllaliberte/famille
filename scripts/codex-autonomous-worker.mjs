@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * ACORN CODEX AUTONOMOUS WORKER v8
+ * ACORN CODEX AUTONOMOUS WORKER v9
  * OBSERVE → UNDERSTAND → DISCOVER → PRIORITIZE → TASK → CODE → TEST → DEBUG
  * → REPAIR → MEASURE → EVIDENCE → PR → WAIT FOR HUMAN MERGE → DETECT MERGE → RESUME.
  * Carl is not an operational dependency. Merge remains human. Never auto-merge. Never LIVE.
@@ -50,7 +50,7 @@ export const SELF_TEST_KEYS = [
 ];
 
 const SECRET_KEY = /secret|token|password|authorization|api[_-]?key|auth\.json|codex_auth/i;
-const SECRET_VALUE = /(sk-[a-zA-Z0-9_-]{8,}|ghp_[a-zA-Z0-9]{8,}|github_pat_[a-zA-Z0-9_]{8,})/;
+const SECRET_VALUE = /(?:^|[^A-Za-z0-9])(sk-[a-zA-Z0-9_-]{8,}|ghp_[a-zA-Z0-9]{8,}|github_pat_[a-zA-Z0-9_]{8,})/;
 
 export function createIo(overrides = {}) {
   const env = { ...(overrides.env || process.env) };
@@ -137,6 +137,7 @@ export function redactSecrets(value, seen = new WeakMap()) {
 export function classifyError(err) {
   const msg = String(err?.message || err || "").toLowerCase();
   const code = err?.code || err?.status;
+  if (/unexpected argument|unknown (?:option|flag)|usage: codex exec/.test(msg)) return "CLI";
   if (/auth|login|unauthorized|401/.test(msg)) return "AUTH";
   if (/codex/.test(msg) && /not found|enoent|127/.test(msg)) return "CLI";
   if (code === "ENOENT" || /enoent/.test(msg)) return "ENVIRONMENT";
@@ -736,6 +737,10 @@ function runCodex(io, cfg, task, correction = "") {
   let status = "CODEX_FAILED";
   if (timedOut) status = "TIMEOUT";
   else if (result.status === 0) status = detect.changed ? "PATCHED" : "NO_CHANGE";
+  const stderrTail = String(result.stderr || "").slice(-12000);
+  if (status !== "PATCHED" && status !== "NO_CHANGE") {
+    io.log(`codex exec status=${status} exit=${result.status} stderr=${stderrTail.slice(0, 1500)}`);
+  }
   const provenance = provenanceFor({ executedBy: "codex", detect, workerWrote: false });
   return redactSecrets({
     before_sha: beforeSha,
@@ -743,7 +748,7 @@ function runCodex(io, cfg, task, correction = "") {
     exit_code: result.status,
     timed_out: Boolean(timedOut),
     stdout_tail: String(result.stdout || "").slice(-12000),
-    stderr_tail: String(result.stderr || "").slice(-12000),
+    stderr_tail: stderrTail,
     detect,
     status,
     patch_source: status === "PATCHED" ? provenance.patch_source : "none",

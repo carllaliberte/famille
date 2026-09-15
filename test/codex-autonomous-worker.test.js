@@ -370,10 +370,14 @@ describe("codex autonomous worker", () => {
     assert.equal(red.nested.OPENAI_API_KEY, "[REDACTED]");
     assert.equal(red.ok, "hello");
     assert.equal(JSON.stringify(red).includes("sk-"), false);
+    const clap = redactSecrets("error: unexpected argument '--ask-for-approval' found");
+    assert.match(clap, /unexpected argument '--ask-for-approval'/);
+    assert.equal(redactSecrets("sk-or-abcdefghijklmnop"), "[REDACTED]");
   });
 
   it("classifies errors into operational categories", () => {
     assert.equal(classifyError({ message: "401 unauthorized" }), "AUTH");
+    assert.equal(classifyError({ message: "error: unexpected argument '--ask-for-approval' found" }), "CLI");
     assert.equal(classifyError({ message: "codex: not found", code: "ENOENT" }), "CLI");
     assert.equal(classifyError({ message: "Resource not accessible by integration" }), "PERMISSION");
     assert.equal(classifyError({ message: "npm test failed" }), "TEST");
