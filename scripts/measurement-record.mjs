@@ -76,7 +76,9 @@ function readRunRecord(run, dir, runCommand) {
   const file = artifactFile(dir);
   if (!file) return null;
   try {
-    return JSON.parse(readFileSync(file, "utf8"));
+    const record = JSON.parse(readFileSync(file, "utf8"));
+    if (record?.source_sha && record.source_sha !== run.headSha) return null;
+    return record;
   } catch {
     return null;
   }
