@@ -1,0 +1,45 @@
+name: acorn-overnight-slot
+on:
+  workflow_call:
+    inputs:
+      slot:
+        required: true
+        type: string
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+  actions: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Global breaker gate
+        env:
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+        run: node .github/swarm/system-breaker.mjs
+      - name: Run bounded cognitive slot
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+          OVERNIGHT_SLOT_MINUTES: "50"
+          OVERNIGHT_BASE_DELAY_MS: "300000"
+          OVERNIGHT_EVIDENCE: overnight-slot.json
+        run: node scripts/overnight-orchestrator.mjs
+      - name: Preserve slot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acorn-overnight-slot-${{ inputs.slot }}-${{ github.run_id }}
+          path: overnight-slot.json
+          if-no-files-found: warn
+          retention-days: 30

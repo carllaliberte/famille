@@ -1,0 +1,59 @@
+name: acorn-overnight
+on:
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "Bounded continuous cognitive run (1-8 hours)"
+        required: true
+        default: "8"
+        type: choice
+        options: ["1", "2", "3", "4", "5", "6", "7", "8"]
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+  actions: read
+concurrency:
+  group: acorn-overnight
+  cancel-in-progress: false
+
+jobs:
+  slot1:
+    if: ${{ fromJSON(inputs.hours) >= 1 }}
+    uses: ./.github/workflows/acorn-overnight-slot.yml
+    with: { slot: "1" }
+  slot2:
+    if: ${{ always() && fromJSON(inputs.hours) >= 2 }}
+    needs: slot1
+    uses: ./.github/workflows/acorn-overnight-slot.yml
+    with: { slot: "2" }
+  slot3:
+    if: ${{ always() && fromJSON(inputs.hours) >= 3 }}
+    needs: slot2
+    uses: ./.github/workflows/acorn-overnight-slot.yml
+    with: { slot: "3" }
+  slot4:
+    if: ${{ always() && fromJSON(inputs.hours) >= 4 }}
+    needs: slot3
+    uses: ./.github/workflows/acorn-overnight-slot.yml
+    with: { slot: "4" }
+  slot5:
+    if: ${{ always() && fromJSON(inputs.hours) >= 5 }}
+    needs: slot4
+    uses: ./.github/workflows/acorn-overnight-slot.yml
+    with: { slot: "5" }
+  slot6:
+    if: ${{ always() && fromJSON(inputs.hours) >= 6 }}
+    needs: slot5
+    uses: ./.github/workflows/acorn-overnight-slot.yml
+    with: { slot: "6" }
+  slot7:
+    if: ${{ always() && fromJSON(inputs.hours) >= 7 }}
+    needs: slot6
+    uses: ./.github/workflows/acorn-overnight-slot.yml
+    with: { slot: "7" }
+  slot8:
+    if: ${{ always() && fromJSON(inputs.hours) >= 8 }}
+    needs: slot7
+    uses: ./.github/workflows/acorn-overnight-slot.yml
+    with: { slot: "8" }
