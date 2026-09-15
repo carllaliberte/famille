@@ -16,6 +16,7 @@ import { loadModelExecutionMemory } from "./model-execution-memory.mjs";
 import { assertMemoryIndexSafe, buildMemoryIndex, memoryIndexSummary } from "./cognitive-memory-index.mjs";
 import { assertRankingSafe, compareRankings, loadMeasuredRanking, rankAgents, rankingSummary } from "./measured-ranking.mjs";
 import { assertMeasurementFeedbackSafe, buildMeasurementFeedback, feedbackSummary } from "./measurement-feedback.mjs";
+import { assertMeasurementRecordSafe, assertRecordMatchesRanking, buildMeasurementRecord, loadMeasurementRecord, measurementRecordSummary } from "./measurement-record.mjs";
 import { sealEvidence } from "./evidence-seal.mjs";
 
 export const LIMIT = 20;
@@ -47,8 +48,9 @@ export function orderByMeasuredRank(ids, ranking = null, feedback = null) {
   const priority = (id) => {
     const action = actionById.get(id);
     if (action === "PROMOTE_PRIORITY") return 0;
-    if (action === "DEPRIORITIZE") return 2;
-    return 1;
+    if (action === "MEASURE_MORE") return 1;
+    if (action === "DEPRIORITIZE") return 3;
+    return 2;
   };
   return [...new Set(ids.map(String))].sort((a, b) => {
     const ap = priority(a), bp = priority(b);
@@ -80,11 +82,11 @@ export function executeDispatch(fronts, run = execFileSync, env = process.env) {
   return results;
 }
 
-export function buildEvidence(observation, plan, routing, dispatches, state = controlState(), memory = null, memoryIndex = null, ranking = null, feedback = null) {
+export function buildEvidence(observation, plan, routing, dispatches, state = controlState(), memory = null, memoryIndex = null, ranking = null, feedback = null, measurementRecord = null, previousMeasurementRecord = null) {
   const succeeded = dispatches.filter((x) => x.state === "DISPATCHED").length;
   const blocked = dispatches.filter((x) => x.state === "BLOCKED_BREAKER").length;
   const failed = dispatches.filter((x) => x.state === "DISPATCH_FAILED").length;
-  return { v: "cognitive-worker.v11", executed: true, observed: true, verified: false, live: false, auto_merge: false, human_decision: "PENDING_HUMAN", authority: "carl", system_mode: state.mode, breaker_closed: state.breaker_closed, diagnostic: state.diagnostic, observation, discovered: plan.fronts.length, routed: routing?.route_count || 0, synapses: routing?.synapse_count || 0, collective: Boolean(routing?.collective), dispatched: succeeded, dispatch_failed: failed, breaker_blocked: blocked, dispatches, routing: routing || null, synaptic_memory: memory ? memorySummary(memory) : null, cognitive_memory_index: memoryIndex ? memoryIndexSummary(memoryIndex) : null, measured_ranking: ranking ? rankingSummary(ranking) : null, measurement_feedback: feedback ? feedbackSummary(feedback) : null, next: state.diagnostic ? "diagnostic-observe" : "observe" };
+  return { v: "cognitive-worker.v13", executed: true, observed: true, verified: false, live: false, auto_merge: false, human_decision: "PENDING_HUMAN", authority: "carl", system_mode: state.mode, breaker_closed: state.breaker_closed, diagnostic: state.diagnostic, observation, discovered: plan.fronts.length, routed: routing?.route_count || 0, synapses: routing?.synapse_count || 0, collective: Boolean(routing?.collective), dispatched: succeeded, dispatch_failed: failed, breaker_blocked: blocked, dispatches, routing: routing || null, synaptic_memory: memory ? memorySummary(memory) : null, cognitive_memory_index: memoryIndex ? memoryIndexSummary(memoryIndex) : null, measured_ranking: ranking ? rankingSummary(ranking) : null, measurement_feedback: feedback ? feedbackSummary(feedback) : null, measurement_record: measurementRecord ? measurementRecordSummary(measurementRecord) : null, previous_measurement_record: previousMeasurementRecord ? measurementRecordSummary(previousMeasurementRecord) : null, next: state.diagnostic ? "diagnostic-observe" : "observe" };
 }
 
 function loadAgentRoster(gh, env) {
@@ -108,6 +110,9 @@ export function runWorker(opts = {}) {
   assertMemoryIndexSafe(memoryIndex);
   const agents = opts.agents || loadAgentRoster(gh, env);
   const previousRanking = opts.previousRanking || loadMeasuredRanking(gh, env);
+  const previousMeasurementRecord = opts.previousMeasurementRecord || loadMeasurementRecord(gh, env);
+  assertMeasurementRecordSafe(previousMeasurementRecord);
+  assertRecordMatchesRanking(previousMeasurementRecord, previousRanking);
   let ranking = rankAgents(agents, memoryIndex, memoryIndex.observed_at);
   ranking.changes = compareRankings(previousRanking, ranking);
   ranking = sealEvidence(ranking);
@@ -122,17 +127,20 @@ export function runWorker(opts = {}) {
   const routing = state.mode === "OFF" ? null : composeRouting(observation, fronts, env, memory, ranking, feedback);
   const dispatches = opts.dispatch === false ? [] : state.mode === "OFF" ? fronts.map((front) => ({ number: front.number, sha: front.sha, state: "BLOCKED_BREAKER" })) : executeDispatch(fronts, gh, env);
   const nextMemory = updateMemory(memory, routing, dispatches);
-  const evidence = buildEvidence(observation, plan, routing, dispatches, state, nextMemory, memoryIndex, ranking, feedback);
+  const measurementRecord = buildMeasurementRecord({ env, observedAt: ranking.observed_at, observation, ranking, feedback, memoryIndex, dispatches, previousRecord: previousMeasurementRecord });
+  assertMeasurementRecordSafe(measurementRecord);
+  const evidence = buildEvidence(observation, plan, routing, dispatches, state, nextMemory, memoryIndex, ranking, feedback, measurementRecord, previousMeasurementRecord);
   if (opts.memoryPath) writeFileSync(opts.memoryPath, `${JSON.stringify(nextMemory, null, 2)}\n`);
   if (opts.memoryIndexPath) writeFileSync(opts.memoryIndexPath, `${JSON.stringify(memoryIndex, null, 2)}\n`);
   if (opts.rankingPath) writeFileSync(opts.rankingPath, `${JSON.stringify(ranking, null, 2)}\n`);
   if (opts.feedbackPath) writeFileSync(opts.feedbackPath, `${JSON.stringify(feedback, null, 2)}\n`);
+  if (opts.measurementRecordPath) writeFileSync(opts.measurementRecordPath, `${JSON.stringify(measurementRecord, null, 2)}\n`);
   if (opts.evidencePath) writeFileSync(opts.evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
   if (evidence.dispatch_failed > 0 && opts.failOnDispatchError !== false) throw new Error(`cognitive worker dispatch failed for ${evidence.dispatch_failed} front(s)`);
   return evidence;
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const evidence = runWorker({ evidencePath: process.env.WORKER_EVIDENCE || "worker-evidence.json", memoryPath: process.env.SYNAPTIC_MEMORY || "synaptic-memory.json", memoryIndexPath: process.env.COGNITIVE_MEMORY_INDEX || "cognitive-memory-index.json", rankingPath: process.env.MEASURED_RANKING || "measured-intelligence-ranking.json", feedbackPath: process.env.MEASUREMENT_FEEDBACK || "measurement-feedback.json" });
+  const evidence = runWorker({ evidencePath: process.env.WORKER_EVIDENCE || "worker-evidence.json", memoryPath: process.env.SYNAPTIC_MEMORY || "synaptic-memory.json", memoryIndexPath: process.env.COGNITIVE_MEMORY_INDEX || "cognitive-memory-index.json", rankingPath: process.env.MEASURED_RANKING || "measured-intelligence-ranking.json", feedbackPath: process.env.MEASUREMENT_FEEDBACK || "measurement-feedback.json", measurementRecordPath: process.env.MEASUREMENT_RECORD || "measurement-record.json" });
   console.log(JSON.stringify(evidence, null, 2));
 }

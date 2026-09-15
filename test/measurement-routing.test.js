@@ -18,6 +18,23 @@ test("promotion feedback moves a measured source ahead of rank order", () => {
   assert.deepEqual(ids, ["grok", "astra", "gemini"]);
 });
 
+test("measure-more feedback gets confirmation priority", () => {
+  const ids = orderByMeasuredRank(["astra", "grok", "gemini"], {
+    measured: [
+      { id: "astra", rank: 1 },
+      { id: "grok", rank: 2 },
+      { id: "gemini", rank: 3 },
+    ],
+  }, {
+    actions: [
+      { id: "gemini", action: "MEASURE_MORE" },
+      { id: "astra", action: "PROMOTE_PRIORITY" },
+      { id: "grok", action: "DEPRIORITIZE" },
+    ],
+  });
+  assert.deepEqual(ids, ["astra", "gemini", "grok"]);
+});
+
 test("deprioritized sources remain usable but go last", () => {
   const ids = orderByMeasuredRank(["astra", "grok", "gemini"], {
     measured: [
