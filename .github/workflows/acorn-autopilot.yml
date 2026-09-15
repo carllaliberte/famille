@@ -7,8 +7,6 @@ on:
       - '.github/workflows/**'
       - 'scripts/**'
       - '.github/swarm/**'
-  schedule:
-    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -111,14 +109,13 @@ jobs:
           retention-days: 7
 
       - name: Renew autonomous runtime
-        if: ${{ steps.breaker.outputs.allowed == 'true' && !cancelled() }}
+        if: ${{ github.ref == 'refs/heads/main' && steps.breaker.outputs.allowed == 'true' && !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          STATE=UNKNOWN
           if [ -f evidence/autopilot/runtime/checkpoint.json ]; then
             STATE=$(node --input-type=module -e "import { readFileSync } from 'node:fs'; console.log(JSON.parse(readFileSync('evidence/autopilot/runtime/checkpoint.json','utf8')).state || 'UNKNOWN')")
-          else
-            STATE=UNKNOWN
           fi
           case "$STATE" in
             STOPPED_BREAKER)
