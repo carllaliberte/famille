@@ -72,12 +72,47 @@ test("failed correction readback remains unverified and becomes blocking", () =>
   const result = executeCorrection(adaptive.task, {
     worker: "corr",
     capability: "lu",
-    output: { expected: true },
+    output: { got: "A" },
+    expected: { got: "B" },
     at: AT,
   });
 
   assert.equal(result.ok, true);
-  assert.equal(result.verified, true);
-  assert.equal(result.readback.verification, "VERIFIED");
-  assert.equal(result.work.measurements.some((m) => m.metric === "adaptive_correction"), true);
+  assert.equal(result.verified, false);
+  assert.equal(result.readback.verification, "UNVERIFIED");
+  assert.equal(result.readback.state, "CONFLICT");
+  assert.equal(
+    result.work.objections.some((o) => o.reason === "CORRECTION_READBACK_CONFLICT" && o.severity === "BLOCKING"),
+    true,
+  );
+  assert.equal(result.work.state, "BLOCKED");
+  assert.equal(result.work.live, false);
+  assert.equal(result.work.auto_merge, false);
+  assert.equal(
+    result.work.measurements.some((m) => m.metric === "adaptive_correction" && m.method === "deterministic_test"),
+    true,
+  );
+});
+
+test("unverified adaptive cycle stays pending human", () => {
+  const result = runAdaptiveEngine({
+    at: AT,
+    objective: "compare two deterministic answers",
+    workers: [
+      { worker: "a", capability: "lu", output: { answer: "A" } },
+      { worker: "b", capability: "lu", output: { answer: "B" } },
+    ],
+    correction_worker: "corr",
+    correct_output: { resolved: true },
+    correct_expected: { resolved: false },
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.work.adaptive.triggered, true);
+  assert.equal(result.work.adaptive.child_verified, false);
+  assert.equal(result.work.synthesis.summary, "ADAPTIVE_UNVERIFIED");
+  assert.equal(result.metrics.adaptive_verified, false);
+  assert.equal(result.work.decision.status, "PENDING_HUMAN");
+  assert.equal(result.work.live, false);
+  assert.equal(result.work.auto_merge, false);
 });
