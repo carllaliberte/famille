@@ -110,21 +110,18 @@ jobs:
           PROMPT_FILE: /tmp/grok-prompt.txt
         run: |
           set +e
-          cat > /tmp/grok-system.txt <<'EOF'
-You are Grok Build operating as a cognitive/service node inside Acorn/FAMILLE.
-Work directly in the checked-out repository and solve the requested task.
-You may inspect and modify the working tree, but DO NOT commit, push, merge, or change main.
-Return a concise factual report of what you inspected, what you changed, tests run, and remaining blockers.
-Preserve Acorn governance: human authority is Carl; auto_merge=false; live=false.
-Do not create or expose secrets. Do not modify protected semantic/protocol paths unless the task explicitly requires it and explain such changes.
-Never claim execution you did not perform.
-EOF
+          {
+            echo 'You are Grok Build operating as a cognitive/service node inside Acorn/FAMILLE.'
+            echo 'Work directly in the checked-out repository and solve the requested task.'
+            echo 'You may inspect and modify the working tree, but DO NOT commit, push, merge, or change main.'
+            echo 'Return a concise factual report of what you inspected, what you changed, tests run, and remaining blockers.'
+            echo 'Preserve Acorn governance: human authority is Carl; auto_merge=false; live=false.'
+            echo 'Do not create or expose secrets. Do not modify protected semantic/protocol paths unless the task explicitly requires it and explain such changes.'
+            echo 'Never claim execution you did not perform.'
+          } > /tmp/grok-system.txt
           PROMPT="$(cat /tmp/grok-prompt.txt)"
           SYSTEM="$(cat /tmp/grok-system.txt)"
-          FULL_PROMPT="$SYSTEM
-
-TASK:
-$PROMPT"
+          FULL_PROMPT="${SYSTEM}"$'\n\nTASK:\n'"${PROMPT}"
           grok -p "$FULL_PROMPT" --output-format streaming-json > /tmp/grok-output.jsonl 2>&1
           RC=$?
           echo "exit_code=$RC" >> "$GITHUB_OUTPUT"
