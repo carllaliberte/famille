@@ -9,6 +9,7 @@ import {
   classifyCli,
   classifyError,
   CODEX_WRITE_ARGS,
+  extraCodexConfigArgs,
   createIo,
   decideNext,
   detectPatch,
@@ -669,6 +670,8 @@ describe("codex autonomous worker", () => {
     const writeCall = io._spawnCalls.find((c) => c.cmd === "codex" && c.args.includes("danger-full-access"));
     assert.ok(writeCall);
     assert.deepEqual(writeCall.args.slice(0, CODEX_WRITE_ARGS.length), [...CODEX_WRITE_ARGS]);
+    assert.equal(writeCall.args.includes("-c"), true);
+    assert.equal(writeCall.args.includes("model_max_output_tokens=1024"), true);
     const prompt = taskPrompt({ number: 513, title: "t", body: "b", url: "u" });
     assert.match(prompt, /entire repository is in scope/);
     assert.match(prompt, /Astra Codex/);
@@ -680,13 +683,15 @@ describe("codex autonomous worker", () => {
     assert.match(cfg, /wire_api = "responses"/);
     assert.match(cfg, /model_max_output_tokens = 1024/);
     assert.match(cfg, /model_reasoning_effort = "low"/);
-    assert.match(cfg, /model_providers\.openrouter\.auth/);
+    assert.doesNotMatch(cfg, /model_providers\.openrouter\.auth/);
+    assert.match(cfg, /env_key = "OPENROUTER_API_KEY"/);
   });
 
   it("keeps workflow run blocks indented so GitHub registers workflow_dispatch", () => {
     const yml = readFileSync(new URL("../.github/workflows/codex-autonomous-worker.yml", import.meta.url), "utf8");
     assert.match(yml, /^name: codex-autonomous-worker$/m);
     assert.match(yml, /workflow_dispatch:/);
+    assert.match(yml, /default: "12"/);
     assert.doesNotMatch(yml, /^JSON$/m);
     assert.doesNotMatch(yml, /^TOML$/m);
     assert.doesNotMatch(yml, /^\{/m);

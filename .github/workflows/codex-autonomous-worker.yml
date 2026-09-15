@@ -8,12 +8,12 @@ on:
       max_tasks:
         description: "Task budget for this run (diagnostic; not required for autonomy)"
         required: false
-        default: "1"
+        default: "12"
         type: string
       max_minutes:
         description: "Time budget in minutes"
         required: false
-        default: "20"
+        default: "60"
         type: string
       task_number:
         description: "Optional GitHub issue number to work on"
