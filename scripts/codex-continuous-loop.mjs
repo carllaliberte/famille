@@ -17,7 +17,8 @@ function git(args, root) {
 
 export function runContinuousTask(task, opts = {}) {
   const root = resolve(task.root || process.cwd());
-  if (git(["status", "--porcelain"], root).trim()) {
+  const status = opts.gitStatus ? opts.gitStatus(root) : git(["status", "--porcelain"], root);
+  if (status.trim()) {
     return { v: CONTINUOUS_VERSION, execution_status: "WORKSPACE_NOT_CLEAN", task_id: task.task_id, patch_source: "none" };
   }
   const evidence = runCodexLoop(task, {
