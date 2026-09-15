@@ -30,6 +30,7 @@ import {
   setAuthCooldown,
   shouldStopCleanly,
   simulateAbsence,
+  skippedForSha,
   sovereigntyIntact
 } from "../scripts/codex-autonomy.mjs";
 const task = (partial) => ({
@@ -239,6 +240,16 @@ describe("acorn autonomy kernel", () => {
     assert.equal(sync.memory.tasks[0].needsMerge, false);
     assert.equal((sync.memory.skipped_tasks || []).length, 0);
     assert.ok(sync.actions.some((a) => /reprendre/.test(a)));
+  });
+  it("does not honor skipped_tasks recorded against another SHA", () => {
+    const memory = emptyMemory();
+    memory.skipped_tasks = [513];
+    memory.error_signatures = [{ signature: "ENVIRONMENT::404", sha: "old", count: 3 }];
+    assert.deepEqual(skippedForSha(memory, "new"), []);
+    assert.deepEqual(skippedForSha(memory, "old"), [513]);
+    memory.skipped_tasks = [{ number: 513, sha: "new" }];
+    assert.deepEqual(skippedForSha(memory, "new"), [513]);
+    assert.deepEqual(skippedForSha(memory, "old"), []);
   });
   it("treats grok-build PRs as non-operative so Codex is not WAIT_HUMAN_MERGE'd", () => {
     assert.equal(isOperativeCodexPr({

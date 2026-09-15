@@ -26,6 +26,7 @@ import {
   runTruthSuite,
   selectNextWork,
   setAuthCooldown,
+  skippedForSha,
   emptyMemory as kernelEmpty,
 } from "./codex-autonomy.mjs";
 
@@ -315,7 +316,6 @@ export function recordMemory(io, cfg, evidence, memory) {
   memory.human_actions_required = evidence.human_actions_required || [];
   memory.last_model = evidence.codex?.model || memory.last_model || null;
   if (evidence.acorn?.carl_request) memory.carl_request = evidence.acorn.carl_request;
-  if (evidence.workspace?.head_sha) memory.last_main_sha = evidence.workspace.head_sha;
   if (Array.isArray(evidence.skipped_tasks)) memory.skipped_tasks = evidence.skipped_tasks.slice(-64);
   if (evidence.status === "UNAVAILABLE" || evidence.status === "BLOCKED_BY_BREAKER" || evidence.status === "HUMAN_REQUIRED") {
     memory.blocked_items = [
@@ -1006,7 +1006,23 @@ export function runWorker(io = createIo()) {
     carl_request: cfg.taskNumber ? `task #${cfg.taskNumber}` : (memory.carl_request || null),
   };
   if (evidence.acorn.carl_request) memory.carl_request = evidence.acorn.carl_request;
-  const skippedTasks = new Set([...(memory.skipped_tasks || [])].map(Number).filter(Boolean));
+
+  let shaHint = cfg.headSha || "";
+  try { if (!shaHint) shaHint = git(io, ["rev-parse", "HEAD"]).trim(); } catch { /* workspace probed later */ }
+
+  const previousSha = memory.last_main_sha || cfg.beforeSha || null;
+  if (shaHint && previousSha && previousSha !== shaHint) {
+    const sync = afterMergeSync({
+      memory,
+      previousSha,
+      newSha: shaHint,
+      mergedPr: cfg.mergedPrNumber,
+      now: io.now(),
+    });
+    evidence.merge_sync = { changed: sync.changed, actions: sync.actions };
+  }
+
+  const skippedTasks = new Set(skippedForSha(memory, shaHint || "unknown"));
   const write = () => {
     evidence.skipped_tasks = [...skippedTasks];
     evidence.finished_at = new Date(io.now()).toISOString();
@@ -1042,9 +1058,6 @@ export function runWorker(io = createIo()) {
     return stop("BLOCKED_BY_BREAKER");
   }
 
-  let shaHint = cfg.headSha || "";
-  try { if (!shaHint) shaHint = git(io, ["rev-parse", "HEAD"]).trim(); } catch { /* workspace probed later */ }
-
   if (cfg.trigger === "schedule" || cfg.trigger === "push" || cfg.trigger === "issues" || cfg.trigger === "direct" || cfg.trigger === "workflow_run" || cfg.trigger === "failure") {
     const decision = evaluateTrigger({
       event: cfg.trigger === "direct" ? "schedule" : cfg.trigger === "workflow_run" ? "failure" : cfg.trigger,
@@ -1066,17 +1079,6 @@ export function runWorker(io = createIo()) {
         return stop(guards.status, { reason: guards.reason, loop_step: "OBSERVE" });
       }
     }
-  }
-
-  if ((cfg.trigger === "pull_request" || cfg.trigger === "push") && shaHint) {
-    const sync = afterMergeSync({
-      memory,
-      previousSha: memory.last_main_sha || cfg.beforeSha || null,
-      newSha: shaHint,
-      mergedPr: cfg.mergedPrNumber,
-      now: io.now(),
-    });
-    evidence.merge_sync = { changed: sync.changed, actions: sync.actions };
   }
 
   const cli = classifyCli(io);

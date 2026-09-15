@@ -801,4 +801,25 @@ describe("codex autonomous worker", () => {
     assert.notEqual(ev.status, "WAIT_HUMAN_MERGE");
     assert.equal(ev.codex.executed, true);
   });
+
+  it("retries a task skipped on a previous SHA after MAIN moves", () => {
+    const root = tmpRoot();
+    writeFileSync(join(root, "evidence/codex/worker-memory.json"), JSON.stringify({
+      v: "codex-worker-memory.v2",
+      last_main_sha: "e55287c",
+      skipped_tasks: [513],
+      failed_tasks: [{ number: 513, status: "CODEX_FAILED" }],
+      error_signatures: [{ category: "ENVIRONMENT", message: "404 unavailable for free", sha: "ece90c4", count: 3 }],
+      measurements: [{ status: "IDLE", sha: "e55287c" }],
+    }));
+    const io = ioFor({
+      root,
+      authFile: true,
+      env: { CODEX_HEAD_SHA: "e55287c" },
+      issues: [{ number: 513, title: "seed", body: "continue", url: "https://example/513", state: "OPEN" }],
+    });
+    const ev = runWorker(io);
+    assert.equal(ev.codex.executed, true);
+    assert.notEqual(ev.status, "IDLE");
+  });
 });
