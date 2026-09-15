@@ -14,7 +14,7 @@ import { loadMemory, rankSources, updateMemory, memorySummary } from "./synaptic
 import { loadCollaborationMemory } from "./collaboration-memory.mjs";
 import { loadModelExecutionMemory } from "./model-execution-memory.mjs";
 import { assertMemoryIndexSafe, buildMemoryIndex, memoryIndexSummary } from "./cognitive-memory-index.mjs";
-import { assertRankingSafe, rankAgents, rankingSummary } from "./measured-ranking.mjs";
+import { assertRankingSafe, compareRankings, loadMeasuredRanking, rankAgents, rankingSummary } from "./measured-ranking.mjs";
 
 export const LIMIT = 20;
 
@@ -50,10 +50,7 @@ export function orderByMeasuredRank(ids, ranking = null) {
 
 export function composeRouting(observation, fronts, env = process.env, memory = null, ranking = null) {
   const ids = orderByMeasuredRank(observation.auto || [], ranking);
-  const sources = rankSources(
-    ids.map((id) => ({ id, channel: "model", capability: "review" })),
-    memory || undefined,
-  );
+  const sources = rankSources(ids.map((id) => ({ id, channel: "model", capability: "review" })), memory || undefined);
   return composeFabric({ fronts, sources, env });
 }
 
@@ -76,7 +73,7 @@ export function buildEvidence(observation, plan, routing, dispatches, state = co
   const succeeded = dispatches.filter((x) => x.state === "DISPATCHED").length;
   const blocked = dispatches.filter((x) => x.state === "BLOCKED_BREAKER").length;
   const failed = dispatches.filter((x) => x.state === "DISPATCH_FAILED").length;
-  return { v: "cognitive-worker.v7", executed: true, observed: true, verified: false, live: false, auto_merge: false, human_decision: "PENDING_HUMAN", authority: "carl", system_mode: state.mode, breaker_closed: state.breaker_closed, diagnostic: state.diagnostic, observation, discovered: plan.fronts.length, routed: routing?.route_count || 0, synapses: routing?.synapse_count || 0, collective: Boolean(routing?.collective), dispatched: succeeded, dispatch_failed: failed, breaker_blocked: blocked, dispatches, routing: routing || null, synaptic_memory: memory ? memorySummary(memory) : null, cognitive_memory_index: memoryIndex ? memoryIndexSummary(memoryIndex) : null, measured_ranking: ranking ? rankingSummary(ranking) : null, next: state.diagnostic ? "diagnostic-observe" : "observe" };
+  return { v: "cognitive-worker.v8", executed: true, observed: true, verified: false, live: false, auto_merge: false, human_decision: "PENDING_HUMAN", authority: "carl", system_mode: state.mode, breaker_closed: state.breaker_closed, diagnostic: state.diagnostic, observation, discovered: plan.fronts.length, routed: routing?.route_count || 0, synapses: routing?.synapse_count || 0, collective: Boolean(routing?.collective), dispatched: succeeded, dispatch_failed: failed, breaker_blocked: blocked, dispatches, routing: routing || null, synaptic_memory: memory ? memorySummary(memory) : null, cognitive_memory_index: memoryIndex ? memoryIndexSummary(memoryIndex) : null, measured_ranking: ranking ? rankingSummary(ranking) : null, next: state.diagnostic ? "diagnostic-observe" : "observe" };
 }
 
 function loadAgentRoster(gh, env) {
@@ -99,7 +96,9 @@ export function runWorker(opts = {}) {
   const memoryIndex = opts.memoryIndex || buildMemoryIndex({ synaptic: memory, collaboration: collaborationMemory, modelExecution: modelExecutionMemory, observedAt: new Date().toISOString() });
   assertMemoryIndexSafe(memoryIndex);
   const agents = opts.agents || loadAgentRoster(gh, env);
+  const previousRanking = opts.previousRanking || loadMeasuredRanking(gh, env);
   const ranking = rankAgents(agents, memoryIndex, memoryIndex.observed_at);
+  ranking.changes = compareRankings(previousRanking, ranking);
   assertRankingSafe(ranking);
   let raw = "";
   if (opts.frontsText != null) raw = opts.frontsText;
