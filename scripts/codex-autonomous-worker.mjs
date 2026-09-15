@@ -356,6 +356,12 @@ export function tomlEscape(value) {
   return String(value || "").replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
 }
 
+export function resolveOpenRouterModel(io) {
+  const requested = String(io.env.CODEX_MODEL || "").trim();
+  if (requested.endsWith(":free") || requested === "openrouter/free") return requested;
+  return "openrouter/free";
+}
+
 export function buildCodexConfig(io, auth = classifyAuth(io)) {
   const openrouterOnly = Boolean(auth.openrouter && !auth.path_exists);
   const lines = [
@@ -365,7 +371,7 @@ export function buildCodexConfig(io, auth = classifyAuth(io)) {
     "",
   ];
   if (openrouterOnly) {
-    const model = String(io.env.CODEX_MODEL || "google/gemini-2.5-flash").trim() || "google/gemini-2.5-flash";
+    const model = resolveOpenRouterModel(io);
     const maxOut = Number(io.env.CODEX_MAX_OUTPUT_TOKENS || 1024) || 1024;
     lines.push(
       "model_provider = \"openrouter\"",
@@ -409,7 +415,9 @@ export function extraCodexConfigArgs(io) {
   const auth = classifyAuth(io);
   if (!auth.openrouter || auth.path_exists) return [];
   const maxOut = Number(io.env.CODEX_MAX_OUTPUT_TOKENS || 1024) || 1024;
+  const model = resolveOpenRouterModel(io);
   return [
+    "-c", `model=${model}`,
     "-c", `model_max_output_tokens=${maxOut}`,
     "-c", "model_context_window=16384",
     "-c", "model_reasoning_effort=low",
@@ -961,6 +969,7 @@ export function runWorker(io = createIo()) {
     patch_source: "none",
     version: cli.version,
     auth_method: auth.method,
+    model: auth.openrouter && !auth.path_exists ? resolveOpenRouterModel(io) : (io.env.CODEX_MODEL || null),
     paid_api_required: false,
   };
   evidence.measurements.push({ name: "cli", ...cli }, { name: "auth", method: auth.method, available: auth.available });
