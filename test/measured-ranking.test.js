@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertRankingSafe, rankAgents, scoreEvidence } from "../scripts/measured-ranking.mjs";
+import { assertRankingSafe, orderByMeasuredRank, rankAgents, scoreEvidence } from "../scripts/measured-ranking.mjs";
 
 const agents = [
   { id: "astra", name: "Astra", kind: "model", specialty: "software-engineering", capabilities: ["review", "build"] },
@@ -53,6 +53,13 @@ test("collaboration and routing contribute without inventing evidence", () => {
   assert.equal(astra.components.collaboration.attempts, 2);
   assert.equal(grok.components.collaboration.attempts, 2);
   assert.equal(ranking.unmeasured.some((row) => row.id === "new-model"), true);
+});
+
+test("routing order follows measured rank and leaves unmeasured last", () => {
+  const ids = orderByMeasuredRank(["new-model", "astra", "grok", "astra"], {
+    measured: [{ id: "grok", rank: 1 }, { id: "astra", rank: 2 }],
+  });
+  assert.deepEqual(ids, ["grok", "astra", "new-model"]);
 });
 
 test("ranking remains non-authoritative and non-live", () => {
