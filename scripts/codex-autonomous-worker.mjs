@@ -381,10 +381,6 @@ export function buildCodexConfig(io, auth = classifyAuth(io)) {
       "wire_api = \"responses\"",
       "supports_websockets = false",
       "",
-      "[model_providers.openrouter.auth]",
-      "command = \"sh\"",
-      "args = [\"-c\", \"printf '%s' \\\"$OPENROUTER_API_KEY\\\"\"]",
-      "",
     );
   }
   lines.push(`[projects."${tomlEscape(io.root)}"]`, "trust_level = \"trusted\"", "");
