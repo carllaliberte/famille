@@ -1,0 +1,27 @@
+name: acorn-recovery-integrity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recovery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Recovery policy gate
+        run: node scripts/recovery-policy.mjs
+      - name: Recovery evidence
+        run: |
+          node -e 'const p=require("./.acorn/recovery-point.json"); console.log(JSON.stringify({status:"VERIFIED",recovery_point:p.recovery_sha,construction_rule:p.rule,human_authority:p.human_authority,auto_merge:p.auto_merge,live:p.live},null,2))'
