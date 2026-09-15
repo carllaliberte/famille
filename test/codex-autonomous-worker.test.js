@@ -683,8 +683,10 @@ describe("codex autonomous worker", () => {
     assert.match(cfg, /wire_api = "responses"/);
     assert.match(cfg, /model_max_output_tokens = 1024/);
     assert.match(cfg, /model_reasoning_effort = "low"/);
-    assert.doesNotMatch(cfg, /model_providers\.openrouter\.auth/);
-    assert.match(cfg, /env_key = "OPENROUTER_API_KEY"/);
+    assert.match(cfg, /model_providers\.openrouter\.auth/);
+    assert.doesNotMatch(cfg, /env_key/);
+    assert.equal(writeCall.args.includes("model_context_window=16384"), true);
+    assert.equal(writeCall.args.includes("model_reasoning_effort=low"), true);
   });
 
   it("keeps workflow run blocks indented so GitHub registers workflow_dispatch", () => {

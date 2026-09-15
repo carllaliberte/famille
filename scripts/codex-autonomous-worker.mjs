@@ -377,9 +377,12 @@ export function buildCodexConfig(io, auth = classifyAuth(io)) {
       "[model_providers.openrouter]",
       "name = \"openrouter\"",
       "base_url = \"https://openrouter.ai/api/v1\"",
-      "env_key = \"OPENROUTER_API_KEY\"",
       "wire_api = \"responses\"",
       "supports_websockets = false",
+      "",
+      "[model_providers.openrouter.auth]",
+      "command = \"sh\"",
+      "args = [\"-c\", \"printf '%s' \\\"$OPENROUTER_API_KEY\\\"\"]",
       "",
     );
   }
@@ -406,7 +409,11 @@ export function extraCodexConfigArgs(io) {
   const auth = classifyAuth(io);
   if (!auth.openrouter || auth.path_exists) return [];
   const maxOut = Number(io.env.CODEX_MAX_OUTPUT_TOKENS || 1024) || 1024;
-  return ["-c", `model_max_output_tokens=${maxOut}`, "-c", "model_reasoning_effort=\"low\""];
+  return [
+    "-c", `model_max_output_tokens=${maxOut}`,
+    "-c", "model_context_window=16384",
+    "-c", "model_reasoning_effort=low",
+  ];
 }
 
 export function classifyCli(io) {
