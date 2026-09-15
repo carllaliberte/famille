@@ -28,7 +28,26 @@ Objectif · observé · preuves · hypothèses · fichiers · architecture · co
 Outil manquant → `BUILD_TOOL` → tester → garder → réutiliser.
 Secret humain → `HOLD_HUMAN`. Jamais « je ne peux pas » sans l’un des deux.
 
+## Grok Build specs (quand Codex les tient)
+
+Les tenir ≠ les exécuter ici.
+
+Le contrat produit Grok Build (`AGENTS.md` App Builder : TanStack, `0.0.0.0:8080`, `startup.sh`, auth/db §0.5, PWA, preview grok.me) s’applique **seulement** à un acte App Builder.
+
+Dans `carllaliberte/famille` :
+
+| Garder | Laisser dehors |
+|---|---|
+| Mesurer avant de déclarer | Scaffold TanStack / Vite |
+| Vérifier soi-même | Bind `8080` / `startup.sh` |
+| 0 fail, pas de test affaibli | Auth/db grok.me par défaut |
+| Plus petit changement cohérent | Transformer une question en app |
+| Jamais de faux LIVE / READY | Imagine / OG / PWA pill |
+
+Deux mondes. Un cerveau (ACORN). Pas un dépôt hybride.
+
 ## LIVE
+
 
 Mesure externe : `npm run live:probe`. Preview ≠ quittance. Un 200 n’est pas LIVE.
 Hôte cité : `https://acorn-royal-dune-blend.grok.me`
