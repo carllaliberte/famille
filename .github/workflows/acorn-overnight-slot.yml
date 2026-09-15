@@ -5,11 +5,11 @@ on:
       slot:
         required: true
         type: string
-    permissions:
-      contents: read
-      pull-requests: read
-      issues: write
-      actions: read
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+  actions: read
 jobs:
   run:
     runs-on: ubuntu-latest
