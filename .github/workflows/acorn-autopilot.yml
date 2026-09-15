@@ -8,6 +8,15 @@ on:
       - 'scripts/**'
       - '.github/swarm/**'
   workflow_dispatch:
+    inputs:
+      resume_cycle:
+        description: 'Cycle number completed by the parent runtime'
+        required: false
+        default: '0'
+      parent_run_id:
+        description: 'GitHub Actions run id of the parent runtime'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -28,6 +37,8 @@ env:
   ACORN_RUNTIME_MINUTES: '330'
   ACORN_RUNTIME_INTERVAL_SECONDS: '60'
   ACORN_RUNTIME_DISPATCH_EVERY: '6'
+  ACORN_RUNTIME_RESUME_CYCLE: ${{ inputs.resume_cycle || '0' }}
+  ACORN_RUNTIME_PARENT_RUN_ID: ${{ inputs.parent_run_id || '' }}
 
 jobs:
   control:
@@ -114,8 +125,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           STATE=UNKNOWN
+          CYCLE=0
           if [ -f evidence/autopilot/runtime/checkpoint.json ]; then
-            STATE=$(node --input-type=module -e "import { readFileSync } from 'node:fs'; console.log(JSON.parse(readFileSync('evidence/autopilot/runtime/checkpoint.json','utf8')).state || 'UNKNOWN')")
+            STATE=$(node --input-type=module -e "import { readFileSync } from 'node:fs'; const c=JSON.parse(readFileSync('evidence/autopilot/runtime/checkpoint.json','utf8')); console.log(c.state || 'UNKNOWN')")
+            CYCLE=$(node --input-type=module -e "import { readFileSync } from 'node:fs'; const c=JSON.parse(readFileSync('evidence/autopilot/runtime/checkpoint.json','utf8')); console.log(Number(c.cycle || 0))")
           fi
           case "$STATE" in
             STOPPED_BREAKER)
@@ -123,7 +136,7 @@ jobs:
               exit 0
               ;;
             *)
-              echo "Renewing autonomous runtime time slice: $STATE";
-              gh workflow run acorn-autopilot.yml --ref main
+              echo "Renewing autonomous runtime time slice: $STATE at cycle $CYCLE";
+              gh workflow run acorn-autopilot.yml --ref main -f resume_cycle="$CYCLE" -f parent_run_id="$GITHUB_RUN_ID"
               ;;
           esac
