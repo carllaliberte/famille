@@ -1,15 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   assertMeasurementRecordSafe,
   assertRecordMatchesRanking,
   buildMeasurementRecord,
   emptyMeasurementRecord,
+  loadMeasurementRecord,
   measurementRecordSummary,
   verifyMeasurementRecord,
 } from "../scripts/measurement-record.mjs";
 
-const env = { GITHUB_SHA: "abc123" };
+const env = { GITHUB_SHA: "abc123", GITHUB_REPOSITORY: "carllaliberte/famille" };
 
 function sample() {
   const ranking = { v: "measured-ranking.v2", authority: "carl", auto_merge: false, live: false, measured: [{ id: "a", rank: 1 }] };
@@ -45,6 +48,23 @@ test("ranking readback is linked by digest", () => {
   assert.doesNotThrow(() => assertRecordMatchesRanking(record, { seal: { digest: record.ranking_digest } }));
   assert.throws(() => assertRecordMatchesRanking(record, { seal: { digest: "different" } }), /MEASUREMENT_RECORD_RANKING_MISMATCH/);
   assert.doesNotThrow(() => assertRecordMatchesRanking(emptyMeasurementRecord(), ranking));
+});
+
+test("artifact readback verifies the previous dated state", () => {
+  const { record } = sample();
+  const dir = join(process.cwd(), ".measurement-record-readback");
+  mkdirSync(dir, { recursive: true });
+  const run = (command, args) => {
+    if (args[1] === "list") return JSON.stringify([{ databaseId: 123, headSha: "previous-sha" }]);
+    if (args[1] === "download") {
+      writeFileSync(join(dir, "measurement-record.json"), `${JSON.stringify(record)}\n`);
+      return "";
+    }
+    throw new Error(`unexpected command: ${command} ${args.join(" ")}`);
+  };
+  const loaded = loadMeasurementRecord(run, env);
+  assert.equal(loaded.integrity, "VERIFIED");
+  assert.equal(loaded.ranking_digest, record.ranking_digest);
 });
 
 test("summary never mints verification or LIVE", () => {
