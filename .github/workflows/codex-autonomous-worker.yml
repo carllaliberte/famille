@@ -78,17 +78,34 @@ jobs:
           codex --version
           test "$(codex --version)" = "codex-cli 0.153.4"
 
-      - name: Restore optional ChatGPT Codex authentication
+      - name: Restore Codex authentication
         env:
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          if [ -z "$CODEX_AUTH_JSON" ]; then
-            echo "CODEX_AUTH_JSON not configured; worker will report UNAVAILABLE without making source changes."
-            exit 0
-          fi
           mkdir -p "$HOME/.codex"
-          printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
-          chmod 600 "$HOME/.codex/auth.json"
+          if [ -n "$CODEX_AUTH_JSON" ]; then
+            printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
+          elif [ -n "$OPENROUTER_API_KEY" ]; then
+            cat > "$HOME/.codex/auth.json" <<'JSON'
+{"auth_mode":"apikey","OPENAI_API_KEY":null}
+JSON
+            cat > "$HOME/.codex/config.toml" <<'TOML'
+model_provider = "openrouter"
+model = "qwen/qwen3-coder:free"
+model_reasoning_effort = "high"
+
+[model_providers.openrouter]
+name = "openrouter"
+base_url = "https://openrouter.ai/api/v1"
+env_key = "OPENROUTER_API_KEY"
+wire_api = "responses"
+TOML
+            echo "Using existing OPENROUTER_API_KEY for Codex CLI; no ChatGPT auth file required."
+          else
+            echo "No Codex authentication configured."
+          fi
+          chmod 600 "$HOME/.codex/auth.json" 2>/dev/null || true
           unset CODEX_AUTH_JSON
 
       - name: Global breaker gate
@@ -103,6 +120,7 @@ jobs:
           GITHUB_WORKSPACE: ${{ github.workspace }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           CODEX_WORKER_EVIDENCE: codex-worker-evidence.json
           CODEX_WORKER_MEMORY: evidence/codex/worker-memory.json
           CODEX_TASK_LABEL: codex-task
