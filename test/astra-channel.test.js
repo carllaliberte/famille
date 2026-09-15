@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { CANALS, MODELS } from "../.github/swarm/review.mjs";
 
 describe("Astra cognitive channel", () => {
   it("is registered as the GPT-6 Astra OpenAI channel", () => {
@@ -13,6 +14,8 @@ describe("Astra cognitive channel", () => {
       model: "gpt-6-astra",
       maxTokens: 4096,
     });
+    assert.equal(CANALS.astra.provider, "openai");
+    assert.equal(MODELS.astra.secret, "OPENAI_API_KEY");
   });
 
   it("is an automatic model in the roster without claiming LIVE", () => {
