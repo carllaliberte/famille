@@ -1,0 +1,9 @@
+{
+  "recovery_sha": "c03883f01df4f3fb2ab2a3ba71d650ea0216ae42",
+  "stage": "post-recovery-floor",
+  "recorded_by": "Carl Laliberte + Acorn cognitive tooling",
+  "rule": "Every verified construction step records a new recovery point. Bug work starts from the latest recovery point, never from the regressed state.",
+  "human_authority": "carl",
+  "auto_merge": false,
+  "live": false
+}
