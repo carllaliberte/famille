@@ -18,7 +18,7 @@ concurrency:
 jobs:
   codex:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,7 +50,7 @@ jobs:
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
         run: node .github/swarm/system-breaker.mjs
 
-      - name: Run one real Codex task
+      - name: Run continuous Codex coding loop
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -59,6 +59,9 @@ jobs:
           CODEX_WORKER_EVIDENCE: codex-worker-evidence.json
           CODEX_TASK_LABEL: codex-task
           CODEX_TASK_TIMEOUT_MINUTES: "20"
+          CODEX_REPAIR_ATTEMPTS: "1"
+          CODEX_MAX_TASKS: "12"
+          CODEX_MAX_RUN_MINUTES: "300"
         run: node scripts/codex-autonomous-worker.mjs
 
       - name: Preserve Codex worker evidence
