@@ -9,7 +9,7 @@
   {"id": "nemotroncs", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "nvidia/nemotron-3.5-content-safety:free", "maxTokens": 2048},
   {"id": "qwen3c", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "qwen/qwen3-coder:free", "maxTokens": 2048},
   {"id": "gptoss20", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "openai/gpt-oss-20b:free", "maxTokens": 2048},
-  {"id": "gptoss120", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "openai/gpt-oss-120b:free", "maxTokens": 2048},
+  {"id": "gptoss120", "provider": "openrouter", "secret": "OPENAI_API_KEY", "model": "openai/gpt-oss-120b:free", "maxTokens": 2048},
   {"id": "northmini", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "cohere/north-mini-code:free", "maxTokens": 2048},
   {"id": "lfm26", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "liquid/lfm-2.5-2.6b:free", "maxTokens": 2048},
   {"id": "lagunas", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "poolside/laguna-s-2.1:free", "maxTokens": 2048},
@@ -23,6 +23,6 @@
   {"id": "nexmini", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "nex-agi/nex-n2.5-mini:free", "maxTokens": 2048},
   {"id": "dots3", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "dots-studio/dots-3-note-preview:free", "maxTokens": 2048},
   {"id": "llama32f", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "meta-llama/llama-3.2-3b-instruct:free", "maxTokens": 2048},
-  {"id": "astra", "provider": "openai", "secret": "OPENAI_API_KEY", "model": "gpt-6-astra", "maxTokens": 4096},
-  {"id": "codex", "provider": "openai", "secret": "OPENAI_API_KEY", "model": "gpt-6-astra", "maxTokens": 4096}
+  {"id": "astra", "provider": "openai", "secret": "OPENAI_API_KEY", "model": "gpt-5.6-terra", "maxTokens": 4096},
+  {"id": "codex", "provider": "openai", "secret": "OPENAI_API_KEY", "model": "gpt-5.6-sol", "maxTokens": 4096}
 ]
