@@ -50,6 +50,20 @@ test("ranking readback is linked by digest", () => {
   assert.doesNotThrow(() => assertRecordMatchesRanking(emptyMeasurementRecord(), ranking));
 });
 
+test("measurement records form a dated integrity chain", () => {
+  const first = sample().record;
+  const second = buildMeasurementRecord({
+    env: { ...env, GITHUB_SHA: "def456" },
+    observedAt: "2026-09-15T01:10:00.000Z",
+    ranking: sample().ranking,
+    feedback: sample().feedback,
+    memoryIndex: sample().memoryIndex,
+    previousRecord: first,
+  });
+  assert.equal(second.previous_record_digest, first.seal.digest);
+  assert.equal(verifyMeasurementRecord(second), true);
+});
+
 test("artifact readback verifies the previous dated state", () => {
   const { record } = sample();
   const dir = join(process.cwd(), ".measurement-record-readback");
