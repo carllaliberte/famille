@@ -31,6 +31,7 @@ jobs:
       - name: Measure Astra and Codex transport
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
           GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
           ASTRA_CODEX_EVIDENCE: astra-codex-evidence.json
