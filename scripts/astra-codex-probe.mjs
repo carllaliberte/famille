@@ -13,6 +13,7 @@ const ENDPOINTS = Object.freeze({
   openrouter: "https://openrouter.ai/api/v1/chat/completions",
 });
 const IDS = ["astra", "codex"];
+const CODEX_FREE_FALLBACKS = Object.freeze(["openrouter/free"]);
 
 function redact(text) {
   return String(text || "")
@@ -35,7 +36,7 @@ export function detectKey(env = process.env, secretName = "OPENAI_API_KEY") {
   return raw.trim().length > 8;
 }
 
-export function prepareRequest(id, env = process.env) {
+export function prepareRequest(id, env = process.env, modelOverride = "") {
   const spec = MODELS[id];
   if (!spec) {
     return { ok: false, result: "CONFIGURATION_ERROR", reason: `missing MODELS.${id}` };
@@ -48,7 +49,7 @@ export function prepareRequest(id, env = process.env) {
     ok: true,
     id,
     provider: spec.provider,
-    model: spec.model,
+    model: modelOverride || spec.model,
     secret_name: spec.secret,
     endpoint,
     key_detected: detectKey(env, spec.secret),
@@ -57,9 +58,9 @@ export function prepareRequest(id, env = process.env) {
   };
 }
 
-export async function probeOne(id, env = process.env, fetchFn = fetch) {
+export async function probeOne(id, env = process.env, fetchFn = fetch, options = {}) {
   const state = controlState(env);
-  const prepared = prepareRequest(id, env);
+  const prepared = prepareRequest(id, env, options.modelOverride || "");
   const base = {
     id,
     generated_at: new Date().toISOString(),
@@ -137,9 +138,39 @@ export async function probeOne(id, env = process.env, fetchFn = fetch) {
 
 export async function probeAstraCodex({ env = process.env, fetchFn = fetch, outPath = "" } = {}) {
   const rows = [];
-  for (const id of IDS) rows.push(await probeOne(id, env, fetchFn));
+  rows.push(await probeOne("astra", env, fetchFn));
+
+  const primary = await probeOne("codex", env, fetchFn);
+  if (primary.result !== "MODEL_ERROR") {
+    rows.push(primary);
+  } else {
+    const fallbackAttempts = [primary];
+    let selected = primary;
+    for (const model of CODEX_FREE_FALLBACKS) {
+      const fallback = await probeOne("codex", env, fetchFn, { modelOverride: model });
+      fallbackAttempts.push(fallback);
+      if (fallback.result === "SUCCEEDED") {
+        selected = {
+          ...fallback,
+          fallback_from: primary.model,
+          fallback: true,
+          attempts: fallbackAttempts.map((a) => ({ model: a.model, result: a.result, http_status: a.http_status })),
+        };
+        break;
+      }
+    }
+    if (selected === primary) {
+      selected = {
+        ...primary,
+        fallback_attempted: true,
+        attempts: fallbackAttempts.map((a) => ({ model: a.model, result: a.result, http_status: a.http_status })),
+      };
+    }
+    rows.push(selected);
+  }
+
   const evidence = {
-    v: "astra-codex-probe.v1",
+    v: "astra-codex-probe.v2",
     generated_at: new Date().toISOString(),
     sha: env.GITHUB_SHA || "",
     policy: { merge: false, live: false, breaker_write: false },
