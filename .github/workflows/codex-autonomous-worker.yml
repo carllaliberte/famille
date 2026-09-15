@@ -34,10 +34,13 @@ jobs:
         run: npm install --global @openai/codex
 
       - name: Restore optional ChatGPT Codex authentication
-        if: ${{ secrets.CODEX_AUTH_JSON != '' }}
         env:
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
+          if [ -z "$CODEX_AUTH_JSON" ]; then
+            echo "CODEX_AUTH_JSON not configured; worker will report UNAVAILABLE without making source changes."
+            exit 0
+          fi
           mkdir -p "$HOME/.codex"
           printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
           chmod 600 "$HOME/.codex/auth.json"
