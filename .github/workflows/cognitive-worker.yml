@@ -96,9 +96,9 @@ jobs:
       - name: Record bounded result
         if: always()
         run: |
-          echo "cognitive-worker.v12 — observe/discover/compose/route/dispatch/measure/memory-index/ranking/feedback/dated-record cycle completed."
+          echo "cognitive-worker.v13 — observe/discover/compose/route/dispatch/measure/memory-index/ranking/feedback/dated-record cycle completed."
           echo "DEFINED != EXECUTED != VERIFIED != LIVE."
           echo "ranking = measured execution/collaboration/routing evidence only."
-          echo "feedback = bounded routing guidance, not authority."
-          echo "measurement-record = dated state + integrity link, not authority or truth."
+          echo "feedback = bounded routing guidance, not authority; MEASURE_MORE receives confirmation priority."
+          echo "measurement-record = dated state + chained integrity link, not authority or truth."
           echo "auto_merge=false; live=false; human authority=carl"
