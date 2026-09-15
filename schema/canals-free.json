@@ -23,6 +23,6 @@
   {"id": "nexmini", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "nex-agi/nex-n2.5-mini:free", "maxTokens": 2048},
   {"id": "dots3", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "dots-studio/dots-3-note-preview:free", "maxTokens": 2048},
   {"id": "llama32f", "provider": "openrouter", "secret": "OPENROUTER_API_KEY", "model": "meta-llama/llama-3.2-3b-instruct:free", "maxTokens": 2048},
-  {"id": "astra", "provider": "openai", "secret": "OPENAI_API_KEY", "model": "gpt-6-astra", "maxTokens": 4096},
-  {"id": "codex", "provider": "openai", "secret": "OPENAI_API_KEY", "model": "gpt-6-astra", "maxTokens": 4096}
+  {"id": "astra", "provider": "openai", "secret": "OPENAI_API_KEY", "model": "gpt-5.6-terra", "maxTokens": 4096},
+  {"id": "codex", "provider": "openai", "secret": "OPENAI_API_KEY", "model": "gpt-5.6-sol", "maxTokens": 4096}
 ]
