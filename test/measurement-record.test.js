@@ -70,7 +70,7 @@ test("artifact readback verifies the previous dated state", () => {
   const dir = join(process.cwd(), ".measurement-record-readback");
   mkdirSync(dir, { recursive: true });
   const run = (command, args) => {
-    if (args[1] === "list") return JSON.stringify([{ databaseId: 123, headSha: "previous-sha" }]);
+    if (args[1] === "list") return JSON.stringify([{ databaseId: 123, headSha: "abc123" }]);
     if (args[1] === "download") {
       writeFileSync(join(dir, "measurement-record.json"), `${JSON.stringify(record)}\n`);
       return "";
@@ -95,7 +95,7 @@ test("artifact readback rejects a broken predecessor link", () => {
   const dir = join(process.cwd(), ".measurement-record-readback");
   mkdirSync(dir, { recursive: true });
   const run = (command, args) => {
-    if (args[1] === "list") return JSON.stringify([{ databaseId: 200, headSha: "second" }, { databaseId: 100, headSha: "first" }]);
+    if (args[1] === "list") return JSON.stringify([{ databaseId: 200, headSha: "def456" }, { databaseId: 100, headSha: "abc123" }]);
     if (args[1] === "download") {
       const id = String(args[2]);
       writeFileSync(join(dir, "measurement-record.json"), `${JSON.stringify(id === "200" ? second : { ...first, seal: { ...first.seal, digest: "tampered" } })}\n`);
