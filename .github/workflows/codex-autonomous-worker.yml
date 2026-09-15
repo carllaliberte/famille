@@ -87,20 +87,18 @@ jobs:
           if [ -n "$CODEX_AUTH_JSON" ]; then
             printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
           elif [ -n "$OPENROUTER_API_KEY" ]; then
-            cat > "$HOME/.codex/auth.json" <<'JSON'
-{"auth_mode":"apikey","OPENAI_API_KEY":null}
-JSON
-            cat > "$HOME/.codex/config.toml" <<'TOML'
-model_provider = "openrouter"
-model = "qwen/qwen3-coder:free"
-model_reasoning_effort = "high"
-
-[model_providers.openrouter]
-name = "openrouter"
-base_url = "https://openrouter.ai/api/v1"
-env_key = "OPENROUTER_API_KEY"
-wire_api = "responses"
-TOML
+            printf '%s\n' '{"auth_mode":"apikey"}' > "$HOME/.codex/auth.json"
+            printf '%s\n' \
+              'model_provider = "openrouter"' \
+              'model = "openrouter/free"' \
+              'model_reasoning_effort = "high"' \
+              '' \
+              '[model_providers.openrouter]' \
+              'name = "openrouter"' \
+              'base_url = "https://openrouter.ai/api/v1"' \
+              'env_key = "OPENROUTER_API_KEY"' \
+              'wire_api = "chat"' \
+              > "$HOME/.codex/config.toml"
             echo "Using existing OPENROUTER_API_KEY for Codex CLI; no ChatGPT auth file required."
           else
             echo "No Codex authentication configured."
