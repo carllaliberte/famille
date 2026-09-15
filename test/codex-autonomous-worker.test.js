@@ -461,4 +461,27 @@ describe("codex autonomous worker", () => {
     assert.doesNotMatch(raw, /"live": true/);
     assert.equal(ev.version, WORKER_VERSION);
   });
+
+  it("persists operational memory on UNAVAILABLE instead of leaving the seed untouched", () => {
+    const io = ioFor({ authFile: false, env: { GITHUB_RUN_ID: "34982782985" } });
+    const ev = runWorker(io);
+    const memPath = join(io._root, "evidence/codex/worker-memory.json");
+    assert.equal(existsSync(memPath), true);
+    const mem = JSON.parse(readFileSync(memPath, "utf8"));
+    assert.equal(ev.status, "UNAVAILABLE");
+    assert.ok(mem.updated_at);
+    assert.equal(mem.authority, "carl");
+    assert.equal(mem.auto_merge, false);
+    assert.equal(mem.live, false);
+    assert.ok(mem.human_actions_required.length >= 1);
+    assert.match(JSON.stringify(mem.human_actions_required), /CODEX_AUTH_JSON/);
+    assert.ok(mem.measurements.some((m) => m.status === "UNAVAILABLE" && m.run_id === "34982782985"));
+    assert.ok(mem.blocked_items.some((b) => b.status === "UNAVAILABLE"));
+    assert.equal(ev.memory.last_status, "UNAVAILABLE");
+    assert.equal(ev.capabilities.AUTH, "UNAVAILABLE");
+    assert.equal(ev.capabilities.CODEX_CLI, "PASS");
+    assert.equal(ev.capabilities.EXECUTION, "NOT_TESTED");
+    assert.equal(ev.capabilities.PATCH, "NOT_TESTED");
+    assert.doesNotMatch(JSON.stringify(mem), /sk-|access_token|"live": true/);
+  });
 });

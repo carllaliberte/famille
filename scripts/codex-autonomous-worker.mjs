@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-export const WORKER_VERSION = "codex-autonomous-worker.v4";
+export const WORKER_VERSION = "codex-autonomous-worker.v5";
 export const MEMORY_PATH = "evidence/codex/worker-memory.json";
 export const WORKER_FILES = new Set([
   "codex-worker-evidence.json",
@@ -182,6 +182,53 @@ export function saveMemory(io, path, memory) {
   });
   io.write(path, `${JSON.stringify(next, null, 2)}\n`);
   return next;
+}
+
+export function recordMemory(io, cfg, evidence, memory) {
+  const compact = {
+    run_id: evidence.run_id,
+    status: evidence.status || null,
+    reason: evidence.reason || null,
+    trigger: evidence.trigger || null,
+    at: new Date(io.now()).toISOString(),
+    patch_source: evidence.codex?.patch_source || "none",
+    authenticated: Boolean(evidence.codex?.authenticated),
+  };
+  memory.measurements = [...(memory.measurements || []), compact].slice(-32);
+  memory.human_actions_required = evidence.human_actions_required || [];
+  if (evidence.status === "UNAVAILABLE" || evidence.status === "BLOCKED_BY_BREAKER" || evidence.status === "HUMAN_REQUIRED") {
+    memory.blocked_items = [
+      ...(memory.blocked_items || []),
+      { status: evidence.status, reason: evidence.reason || null, run_id: evidence.run_id },
+    ].slice(-16);
+  }
+  const saved = saveMemory(io, cfg.memoryPath, memory);
+  evidence.memory = {
+    current_task: saved.current_task,
+    completed_count: (saved.completed_tasks || []).length,
+    failed_count: (saved.failed_tasks || []).length,
+    open_prs: (saved.open_prs || []).length,
+    last_status: evidence.status,
+    updated_at: saved.updated_at,
+  };
+  return saved;
+}
+
+export function capabilitySnapshot({ cli, auth, workspace, executed, patched, tested, pr, debuged, looped } = {}) {
+  const cap = {};
+  for (const key of SELF_TEST_KEYS) cap[key] = "NOT_TESTED";
+  cap.WORKER = "PASS";
+  if (cli) cap.CODEX_CLI = cli.available ? "PASS" : "UNAVAILABLE";
+  if (auth) cap.AUTH = auth.available ? "PASS" : "UNAVAILABLE";
+  if (workspace === "clean") cap.WORKSPACE = "PASS";
+  else if (workspace === "dirty") cap.WORKSPACE = "FAIL";
+  if (debuged) cap.DEBUG = "PASS";
+  if (executed) cap.EXECUTION = "PASS";
+  if (patched) cap.PATCH = "PASS";
+  if (tested) cap.TEST = "PASS";
+  if (pr) cap.PR = "PASS";
+  if (looped) cap.LOOP = "PASS";
+  return cap;
 }
 
 export function parsePorcelain(text) {
@@ -450,6 +497,7 @@ export function runSelfTest(io = createIo()) {
     measurements: [{ name: "self-test", at: new Date(io.now()).toISOString(), capabilities }],
   });
   io.write(cfg.evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
+  recordMemory(io, cfg, evidence, loadMemory(io, cfg.memoryPath));
   return evidence;
 }
 
@@ -645,12 +693,14 @@ export function runWorker(io = createIo()) {
   const startedIso = new Date(started).toISOString();
   const timeLeft = () => (io.now() - started) < cfg.maxRunMinutes * 60 * 1000;
   const evidence = baseEvidence(io, cfg, { started_at: startedIso });
+  const memory = loadMemory(io, cfg.memoryPath);
   const write = () => {
     evidence.finished_at = new Date(io.now()).toISOString();
     evidence.workspace = {
       ...(evidence.workspace || {}),
       head_sha: (() => { try { return git(io, ["rev-parse", "HEAD"]).trim(); } catch { return evidence.workspace?.head_sha || null; } })(),
     };
+    recordMemory(io, cfg, evidence, memory);
     const redacted = redactSecrets(evidence);
     io.write(cfg.evidencePath, `${JSON.stringify(redacted, null, 2)}\n`);
     io.log(heartbeatLine(redacted));
@@ -674,6 +724,7 @@ export function runWorker(io = createIo()) {
     evidence.blocked.push({ category: "GOVERNANCE", status: "BLOCKED_BY_BREAKER" });
     evidence.human_actions_required.push(humanBreakerAction());
     evidence.debug.push(debugBlock(io, "BLOCKED_BY_BREAKER", { category: "GOVERNANCE" }));
+    evidence.capabilities = capabilitySnapshot({ debuged: true });
     return stop("BLOCKED_BY_BREAKER");
   }
 
@@ -698,11 +749,13 @@ export function runWorker(io = createIo()) {
       why: "npm install --global @openai/codex did not produce a working `codex --version`.",
     });
     evidence.debug.push(debugBlock(io, "UNAVAILABLE", { category: "CLI", cli }));
+    evidence.capabilities = capabilitySnapshot({ cli, auth, debuged: true });
     return stop("UNAVAILABLE", { reason: "codex CLI absent" });
   }
   if (!auth.available) {
     evidence.human_actions_required.push(humanAuthAction());
     evidence.debug.push(debugBlock(io, "UNAVAILABLE", { category: "AUTH", auth }));
+    evidence.capabilities = capabilitySnapshot({ cli, auth, debuged: true });
     return stop("UNAVAILABLE", { reason: "Codex CLI present but ChatGPT authentication is not available to this runner" });
   }
 
@@ -719,7 +772,6 @@ export function runWorker(io = createIo()) {
   const branch = `codex/continuous-${cfg.runId}`;
   ensureBranch(io, branch);
   evidence.workspace = { branch, base_sha: baseSha, head_sha: baseSha, clean: true };
-  const memory = loadMemory(io, cfg.memoryPath);
 
   while (evidence.completed_tasks.length < cfg.maxTasks && timeLeft()) {
     let tasks;
@@ -870,13 +922,17 @@ export function runWorker(io = createIo()) {
   }
 
   memory.next_candidates = evidence.status === "IDLE" ? [] : memory.next_candidates;
-  saveMemory(io, cfg.memoryPath, memory);
-  evidence.memory = {
-    current_task: memory.current_task,
-    completed_count: memory.completed_tasks.length,
-    failed_count: memory.failed_tasks.length,
-    open_prs: memory.open_prs.length,
-  };
+  evidence.capabilities = capabilitySnapshot({
+    cli,
+    auth,
+    workspace: finalDirty ? "dirty" : "clean",
+    executed: Boolean(evidence.codex?.executed),
+    patched: evidence.codex?.patch_source === "codex",
+    tested: (evidence.tests || []).some((t) => t.status === "PASSED"),
+    pr: (evidence.prs || []).length > 0,
+    debuged: (evidence.debug || []).length > 0,
+    looped: true,
+  });
   return write();
 }
 
