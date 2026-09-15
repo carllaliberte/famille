@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       max_tasks:
-        description: "Task budget for this run (diagnostic; not required for autonomy)"
+        description: "Task budget for this run"
         required: false
         default: "12"
         type: string
       max_minutes:
         description: "Time budget in minutes"
         required: false
-        default: "60"
+        default: "300"
         type: string
       task_number:
         description: "Optional GitHub issue number to work on"
@@ -41,7 +41,7 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
-  actions: read
+  actions: write
 
 concurrency:
   group: codex-autonomous-worker
@@ -133,7 +133,6 @@ jobs:
             node -e 'const e=require("./codex-worker-evidence.json"); const h=`HEARTBEAT status=${e.status} patch_source=${e.codex?.patch_source||"none"} codex.available=${Boolean(e.codex?.available)} codex.executed=${Boolean(e.codex?.executed)} tasks=${(e.completed_tasks||[]).length} pr=${e.prs?.[0]?.url||"none"}`; console.log(h); console.log(JSON.stringify({status:e.status,codex:e.codex,human:e.human_actions_required,capabilities:e.capabilities||null,autonomy:e.trigger_gate||null},null,2));'
           else
             echo "HEARTBEAT status=FAILED reason=no-evidence-file"
-            exit 0
           fi
 
       - name: Preserve Codex worker evidence
@@ -146,3 +145,28 @@ jobs:
             evidence/codex/worker-memory.json
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Continue autonomous runtime
+        if: ${{ always() && vars.ACORN_SYSTEM_MODE == 'Run' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          STATUS=""
+          if [ -f codex-worker-evidence.json ]; then
+            STATUS="$(node -e 'const e=require("./codex-worker-evidence.json"); process.stdout.write(String(e.status || ""))')"
+          fi
+          case "$STATUS" in
+            HUMAN_REQUIRED|WAIT_HUMAN_MERGE)
+              echo "CONTINUITY paused for human authority: $STATUS"
+              exit 0
+              ;;
+          esac
+          echo "CONTINUITY scheduling next bounded cycle after $STATUS"
+          sleep 30
+          gh workflow run codex-autonomous-worker.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            -f max_tasks=12 \
+            -f max_minutes=300 \
+            -f debug=true \
+            -f self_test=false
