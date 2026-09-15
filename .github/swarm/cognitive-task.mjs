@@ -8,6 +8,8 @@
  * Every intelligence consumes the same task without the human translating
  * it between systems.
  */
+import { planAdaptiveCadence } from "./adaptive-cadence.mjs";
+
 export const COGNITIVE_TASK_VERSION = "cognitive-task.v1";
 
 const clean = (value, fallback = "") => {
@@ -22,11 +24,16 @@ export function createCognitiveTask({
   ref = "main",
   capabilities = ["lu"],
   context = null,
+  demand = {},
+  safety = {},
+  currentCadence = 0.25,
   env = process.env,
 } = {}) {
   const requested = [...new Set((Array.isArray(capabilities) ? capabilities : [capabilities])
     .map((x) => clean(x).toLowerCase())
     .filter(Boolean))];
+  const breaker = clean(env?.ACORN_SYSTEM_MODE, "RUN").toUpperCase();
+  const cadence = planAdaptiveCadence({ demand, safety, currentCadence, breaker });
 
   return {
     task: COGNITIVE_TASK_VERSION,
@@ -39,6 +46,7 @@ export function createCognitiveTask({
     },
     capabilities: requested,
     context,
+    cadence,
     governance: {
       human_authority: "carl",
       production_write_allowed: false,
@@ -47,7 +55,7 @@ export function createCognitiveTask({
       execution_requires_breaker: true,
     },
     environment: {
-      system_mode: clean(env?.ACORN_SYSTEM_MODE, "RUN").toUpperCase(),
+      system_mode: breaker,
     },
     state: "RECEIVED",
   };
@@ -63,6 +71,7 @@ export function taskPrompt(task) {
     `Channel: ${clean(value.provenance?.channel, "unknown")}`,
     `Ref: ${clean(value.provenance?.ref, "main")}`,
     `Capabilities: ${(value.capabilities || []).join(", ") || "none"}`,
+    `Cadence: ${value.cadence?.next_cadence ?? 0.25}`,
     "Governance: human_authority=carl; production_write_allowed=false; auto_merge=false; live=false.",
     "Execution must remain behind the Global Breaker.",
     "Do not reinterpret the task into a different objective. Report what was actually done, tested, blocked, or left unchanged.",
