@@ -10,6 +10,7 @@ import {
   classifyError,
   CODEX_WRITE_ARGS,
   extraCodexConfigArgs,
+  resolveOpenRouterModel,
   createIo,
   decideNext,
   detectPatch,
@@ -685,8 +686,12 @@ describe("codex autonomous worker", () => {
     assert.match(cfg, /model_reasoning_effort = "low"/);
     assert.match(cfg, /model_providers\.openrouter\.auth/);
     assert.doesNotMatch(cfg, /env_key/);
-    assert.equal(writeCall.args.includes("model_context_window=16384"), true);
-    assert.equal(writeCall.args.includes("model_reasoning_effort=low"), true);
+    assert.equal(writeCall.args.includes("model=openrouter/free"), true);
+    assert.match(cfg, /model = "openrouter\/free"/);
+    assert.doesNotMatch(cfg, /gemini-2\.5-flash/);
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "google/gemini-2.5-flash" } }), "openrouter/free");
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openai/gpt-oss-20b:free" } }), "openai/gpt-oss-20b:free");
+    assert.equal(ev.codex.model, "openrouter/free");
   });
 
   it("keeps workflow run blocks indented so GitHub registers workflow_dispatch", () => {
