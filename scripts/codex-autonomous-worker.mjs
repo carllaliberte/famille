@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * ACORN CODEX AUTONOMOUS WORKER v6
+ * ACORN CODEX AUTONOMOUS WORKER v8
  * OBSERVE → UNDERSTAND → DISCOVER → PRIORITIZE → TASK → CODE → TEST → DEBUG
  * → REPAIR → MEASURE → EVIDENCE → PR → WAIT FOR HUMAN MERGE → DETECT MERGE → RESUME.
  * Carl is not an operational dependency. Merge remains human. Never auto-merge. Never LIVE.
@@ -27,7 +27,7 @@ import {
   emptyMemory as kernelEmpty,
 } from "./codex-autonomy.mjs";
 
-export const WORKER_VERSION = "codex-autonomous-worker.v7";
+export const WORKER_VERSION = "codex-autonomous-worker.v8";
 export const MEMORY_PATH = "evidence/codex/worker-memory.json";
 export const WORKER_FILES = new Set([
   "codex-worker-evidence.json",
@@ -328,17 +328,74 @@ export function parseDiscovery(stdout) {
   };
 }
 
+function secretPresent(value) {
+  return String(value || "").trim().length > 8;
+}
+
 export function classifyAuth(io) {
   const home = io.env.CODEX_HOME || `${io.env.HOME || ""}/.codex`;
   const authFile = `${home}/auth.json`;
-  const present = io.exists(authFile);
+  const present = Boolean(io.exists(authFile));
+  const openrouter = secretPresent(io.env.OPENROUTER_API_KEY);
+  const available = present || openrouter;
+  let method = "none";
+  if (present && openrouter) method = "chatgpt-codex-session+openrouter";
+  else if (present) method = "chatgpt-codex-session";
+  else if (openrouter) method = "openrouter-api-key";
   return {
-    available: present,
-    method: present ? "chatgpt-codex-session" : "none",
+    available,
+    method,
     path_exists: present,
+    openrouter,
     paid_api_required: false,
   };
 }
+
+export function tomlEscape(value) {
+  return String(value || "").replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
+}
+
+export function buildCodexConfig(io, auth = classifyAuth(io)) {
+  const lines = [
+    "approval_policy = \"never\"",
+    "sandbox_mode = \"danger-full-access\"",
+    "model_reasoning_effort = \"high\"",
+    "",
+  ];
+  if (auth.openrouter && !auth.path_exists) {
+    const model = String(io.env.CODEX_MODEL || "google/gemini-2.5-flash").trim() || "google/gemini-2.5-flash";
+    lines.push(
+      "model_provider = \"openrouter\"",
+      `model = "${tomlEscape(model)}"`,
+      "",
+      "[model_providers.openrouter]",
+      "name = \"openrouter\"",
+      "base_url = \"https://openrouter.ai/api/v1\"",
+      "env_key = \"OPENROUTER_API_KEY\"",
+      "wire_api = \"responses\"",
+      "supports_websockets = false",
+      "",
+    );
+  }
+  lines.push(`[projects."${tomlEscape(io.root)}"]`, "trust_level = \"trusted\"", "");
+  return `${lines.join("\n")}\n`;
+}
+
+export function ensureCodexRuntime(io) {
+  const auth = classifyAuth(io);
+  const home = io.env.CODEX_HOME || `${io.env.HOME || ""}/.codex`;
+  const configPath = `${home}/config.toml`;
+  io.write(configPath, buildCodexConfig(io, auth));
+  return { configPath, auth };
+}
+
+export const CODEX_WRITE_ARGS = Object.freeze([
+  "exec",
+  "--ask-for-approval",
+  "never",
+  "--sandbox",
+  "danger-full-access",
+]);
 
 export function classifyCli(io) {
   const probe = io.spawn("codex", ["--version"], { cwd: io.root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -418,19 +475,21 @@ export function decideNext({ tasks, discovery, timeLeft, taskBudget, lastStatus 
   return { action: "DISCOVER" };
 }
 
-function humanAuthAction() {
+function humanAuthAction(auth = {}) {
+  const chatgpt = auth.path_exists ? "auth.json present" : "auth.json missing";
+  const router = auth.openrouter ? "OPENROUTER_API_KEY present" : "OPENROUTER_API_KEY missing";
   return {
     ...humanRequired({
-      reason: "ChatGPT Codex session is not available on this runner",
-      evidence: ["auth.json missing", "CLI present", "worker refused to simulate Codex"],
+      reason: "No Codex authentication on this runner",
+      evidence: [chatgpt, router, "CLI present", "worker refused to simulate Codex"],
       attempts: 1,
-      what_was_done: ["installed Codex CLI", "probed ~/.codex/auth.json", "persisted UNAVAILABLE memory"],
-      what_remains: ["create repository secret CODEX_AUTH_JSON"],
-      exact_human_action: "Ajouter le secret CODEX_AUTH_JSON (contenu de ~/.codex/auth.json). Une fois. Carl only.",
+      what_was_done: ["installed Codex CLI", "probed auth.json and OPENROUTER_API_KEY", "persisted UNAVAILABLE memory"],
+      what_remains: ["create CODEX_AUTH_JSON (Astra session) or OPENROUTER_API_KEY"],
+      exact_human_action: "Ajouter CODEX_AUTH_JSON (session ChatGPT Astra) ou OPENROUTER_API_KEY. Une fois. Carl only.",
       url: "https://github.com/carllaliberte/famille/settings/secrets/actions",
     }),
-    action: "Add repository secret CODEX_AUTH_JSON with a ChatGPT Codex session (~/.codex/auth.json)",
-    why: "The worker will not simulate Codex. ChatGPT/Codex free-session auth is the supported path; a paid OpenAI API key is not required. Cron plus merge triggers resume without Carl typing Go.",
+    action: "Add CODEX_AUTH_JSON (Astra ChatGPT session) or OPENROUTER_API_KEY",
+    why: "The worker will not simulate Codex. Native Astra uses CODEX_AUTH_JSON; OpenRouter is the existing project key. Cron plus merge triggers resume without Carl typing Go.",
   };
 }
 
@@ -637,8 +696,8 @@ function createTask(io, cfg, candidate) {
   ]));
 }
 
-function taskPrompt(task, correction = "") {
-  return `You are the Acorn coding worker. Work ONLY on this one GitHub task.
+export function taskPrompt(task, correction = "") {
+  return `You are Astra Codex, the Acorn coding worker. The entire repository is in scope.
 
 Task #${task.number}: ${task.title}
 URL: ${task.url || ""}
@@ -648,10 +707,12 @@ ${task.body || "(no body)"}
 
 Rules:
 - Read the repository before changing anything.
+- You may read and edit any project path this task requires: source, tests, workflows, schema, docs, scripts.
+- Do not restrict yourself to a subdirectory unless the task itself is bounded.
 - Preserve existing architecture and vocabulary.
 - Make the smallest coherent production-quality change justified by evidence.
 - Run focused tests for every changed area.
-- Do not merge, change branch protection, modify secrets, or claim LIVE.
+- Do not merge, change branch protection, modify secrets, write credentials, or claim LIVE.
 - Do not invent unrelated architecture.
 - Human authority is Carl; this worker prepares one final PR for Carl.
 - If unsafe, ambiguous, or requiring a human secret, stop without source changes.
@@ -662,7 +723,7 @@ ${correction ? `\nIMMEDIATE DEBUG/REPAIR:\n${correction}\n` : ""}`;
 function runCodex(io, cfg, task, correction = "") {
   const beforeSha = git(io, ["rev-parse", "HEAD"]).trim();
   const beforeDirty = git(io, ["status", "--porcelain"]);
-  const result = io.spawn("codex", ["exec", "--full-auto", taskPrompt(task, correction)], {
+  const result = io.spawn("codex", [...CODEX_WRITE_ARGS, taskPrompt(task, correction)], {
     cwd: io.root,
     encoding: "utf8",
     timeout: cfg.taskTimeout * 60 * 1000,
@@ -894,7 +955,7 @@ export function runWorker(io = createIo()) {
   if (!auth.available) {
     recordErrorSignature(memory, {
       category: "AUTH",
-      message: "chatgpt authentication missing",
+      message: "codex authentication missing",
       sha: shaHint || "unknown",
       now: io.now(),
     });
@@ -907,10 +968,17 @@ export function runWorker(io = createIo()) {
       blocked_prs: obs.blockedPrs.length,
       candidates: obs.candidates.map((c) => ({ id: c.id, title: c.title, source: c.source })),
     };
-    evidence.human_actions_required.push(humanAuthAction());
+    evidence.human_actions_required.push(humanAuthAction(auth));
     evidence.debug.push(debugBlock(io, "UNAVAILABLE", { category: "AUTH", auth }));
     evidence.capabilities = capabilitySnapshot({ cli, auth, debuged: true });
-    return stop("UNAVAILABLE", { reason: "Codex CLI present but ChatGPT authentication is not available to this runner" });
+    return stop("UNAVAILABLE", { reason: "Codex CLI present but no authentication is available to this runner" });
+  }
+
+  try {
+    evidence.codex.runtime = ensureCodexRuntime(io);
+  } catch (error) {
+    evidence.debug.push(debugBlock(io, "ENVIRONMENT", { category: "ENVIRONMENT", error: String(error.message || error) }));
+    return stop("FAILED", { reason: "failed to write Codex runtime config" });
   }
 
   let dirty;
