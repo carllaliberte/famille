@@ -47,6 +47,7 @@ test("ranking readback is linked by digest", () => {
   const { record, ranking } = sample();
   assert.doesNotThrow(() => assertRecordMatchesRanking(record, { seal: { digest: record.ranking_digest } }));
   assert.throws(() => assertRecordMatchesRanking(record, { seal: { digest: "different" } }), /MEASUREMENT_RECORD_RANKING_MISMATCH/);
+  assert.throws(() => assertRecordMatchesRanking(record, {}), /MEASUREMENT_RECORD_RANKING_MISSING/);
   assert.doesNotThrow(() => assertRecordMatchesRanking(emptyMeasurementRecord(), ranking));
 });
 
