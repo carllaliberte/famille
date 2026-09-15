@@ -1,0 +1,102 @@
+name: acorn-autopilot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/**'
+      - '.github/swarm/**'
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+  actions: read
+
+concurrency:
+  group: acorn-autopilot
+  cancel-in-progress: false
+
+env:
+  ACORN_PURPOSE: 'Pas pour détruire l’humanité. Pour contribuer à en bâtir une meilleure.'
+  ACORN_HUMAN_AUTHORITY: 'carl'
+  ACORN_AUTO_MERGE: 'false'
+  ACORN_LIVE: 'false'
+  ACORN_PRODUCTION_WRITE_ALLOWED: 'false'
+
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Global Breaker control
+        id: breaker
+        env:
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { controlState } from './.github/swarm/system-breaker.mjs';
+          import { appendFileSync } from 'node:fs';
+          const state = controlState(process.env);
+          const allowed = state.mode === 'RUN' && !state.diagnostic && state.breaker_closed;
+          appendFileSync(process.env.GITHUB_OUTPUT, `allowed=${allowed}\nmode=${state.mode}\n`);
+          console.log(JSON.stringify({
+            purpose: process.env.ACORN_PURPOSE,
+            mode: state.mode,
+            breaker_closed: state.breaker_closed,
+            diagnostic: state.diagnostic,
+            allowed,
+            human_authority: 'carl',
+            auto_merge: false,
+            production_write_allowed: false,
+            live: false
+          }, null, 2));
+          NODE
+
+      - name: Run bounded cognitive worker
+        if: ${{ steps.breaker.outputs.allowed == 'true' }}
+        env:
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+        run: node scripts/cognitive-worker.mjs
+
+      - name: Emit control evidence
+        if: always()
+        env:
+          BREAKER_MODE: ${{ steps.breaker.outputs.mode }}
+          BREAKER_ALLOWED: ${{ steps.breaker.outputs.allowed }}
+        run: |
+          mkdir -p evidence/autopilot
+          node --input-type=module <<'NODE'
+          import { writeFileSync } from 'node:fs';
+          writeFileSync('evidence/autopilot/control.json', JSON.stringify({
+            workflow: 'acorn-autopilot',
+            purpose: process.env.ACORN_PURPOSE,
+            breaker_mode: process.env.BREAKER_MODE || 'UNKNOWN',
+            breaker_allowed: process.env.BREAKER_ALLOWED === 'true',
+            human_authority: 'carl',
+            auto_merge: false,
+            production_write_allowed: false,
+            live: false,
+            global_breaker_required: true,
+            executed_by_worker: process.env.BREAKER_ALLOWED === 'true'
+          }, null, 2) + '\n');
+          NODE
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acorn-autopilot-control
+          path: evidence/autopilot/control.json
