@@ -33,6 +33,7 @@ export function runOvernightSlot({ env = process.env, gh = execFileSync, now = (
     const cycles = [];
     let currentCadence = 0.25;
     let cycleNumber = 0;
+    let previous = {};
 
     while (now() < deadline) {
       cycleNumber += 1;
@@ -56,11 +57,28 @@ export function runOvernightSlot({ env = process.env, gh = execFileSync, now = (
       const frontsText = selected.map((front) => [front.number, front.sha, front.draft, front.updatedAt].join("\t")).join("\n");
       let evidence;
       try {
-        evidence = run({ env, gh, frontsText, failOnDispatchError: false });
+        evidence = run({
+          env,
+          gh,
+          frontsText,
+          failOnDispatchError: false,
+          memory: previous.memory,
+          previousRanking: previous.ranking,
+          previousMeasurementRecord: previous.record,
+        });
       } catch (error) {
         evidence = { executed: false, verified: false, live: false, error: String(error?.message || error), dispatch_failed: 1 };
       }
-      cycles.push({ cycle: cycleNumber, at: new Date(now()).toISOString(), cadence: plan, selected: selected.length, evidence });
+      const predecessorDigest = previous.record?.seal?.digest || null;
+      if (evidence?.cycle_state) previous = evidence.cycle_state;
+      cycles.push({
+        cycle: cycleNumber,
+        at: new Date(now()).toISOString(),
+        cadence: plan,
+        selected: selected.length,
+        predecessor_digest: predecessorDigest,
+        evidence,
+      });
       if (now() >= deadline) break;
       const delay = Math.min(nextCadenceDelayMs(currentCadence, Number(env.OVERNIGHT_BASE_DELAY_MS || DEFAULT_BASE_DELAY_MS)), Math.max(1_000, deadline - now()));
       await sleep(delay);

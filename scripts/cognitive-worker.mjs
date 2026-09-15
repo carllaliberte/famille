@@ -251,8 +251,8 @@ export function runWorker(opts = {}) {
   if (opts.feedbackPath) writeFileSync(opts.feedbackPath, `${JSON.stringify(feedback, null, 2)}\n`);
   if (opts.measurementRecordPath) writeFileSync(opts.measurementRecordPath, `${JSON.stringify(measurementRecord, null, 2)}\n`);
   if (opts.evidencePath) writeFileSync(opts.evidencePath, `${JSON.stringify(evidence, null, 2)}\n`);
-  if (evidence.dispatch_failed > 0 && opts.failOnDispatchError !== false) throw new Error(`cognitive worker dispatch failed for ${evidence.dispatch_failed} front(s)`);
-  return evidence;
+  if (evidence.dispatch_failed > 0 && opts.failOnDispatchError === true) throw new Error(`cognitive worker dispatch failed for ${evidence.dispatch_failed} front(s)`);
+  return { ...evidence, cycle_state: { memory: nextMemory, ranking, record: measurementRecord, feedback } };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -263,7 +263,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     rankingPath: process.env.MEASURED_RANKING || "measured-intelligence-ranking.json",
     feedbackPath: process.env.MEASUREMENT_FEEDBACK || "measurement-feedback.json",
     measurementRecordPath: process.env.MEASUREMENT_RECORD || "measurement-record.json",
-    failOnDispatchError: process.env.FAIL_ON_DISPATCH_ERROR !== "false",
+    failOnDispatchError: process.env.FAIL_ON_DISPATCH_ERROR === "true",
   });
   console.log(JSON.stringify(evidence, null, 2));
 }

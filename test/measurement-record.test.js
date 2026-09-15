@@ -33,6 +33,7 @@ test("measurement record is dated, sealed and non-authoritative", () => {
   assert.equal(record.verified, false);
   assert.equal(record.dispatch_count, 1);
   assert.equal(record.dispatch_failed, 1);
+  assert.equal(record.integrity, "SEALED");
   assert.equal(verifyMeasurementRecord(record), true);
   assertMeasurementRecordSafe(record);
 });
@@ -130,4 +131,16 @@ test("summary never mints verification or LIVE", () => {
   assert.equal(summary.verified, false);
   assert.equal(summary.live, false);
   assert.equal(summary.auto_merge, false);
+});
+
+test("accepted and verified dispatches are counted as executed, not as absent", () => {
+  const record = buildMeasurementRecord({
+    env,
+    observedAt: "2026-09-15T00:20:00.000Z",
+    dispatches: [{ state: "VERIFIED" }, { state: "ACCEPTED" }, { state: "DISPATCH_FAILED" }],
+  });
+  assert.equal(record.dispatch_count, 2);
+  assert.equal(record.dispatch_failed, 1);
+  assert.equal(record.verified, true);
+  assert.equal(record.integrity, "SEALED");
 });

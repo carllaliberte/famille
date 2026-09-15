@@ -38,16 +38,18 @@ export function buildMeasurementRecord({ env = process.env, observedAt = new Dat
     observed_at: observedAt,
     source_sha: env.GITHUB_SHA || null,
     executed: true,
+    verified: dispatches.some((item) => item?.state === "VERIFIED"),
     previous_record_digest: previousRecord?.seal?.digest || null,
     ranking_digest: ranking?.seal?.digest || evidenceDigest(ranking || {}),
     feedback_digest: feedback?.seal?.digest || evidenceDigest(feedback || {}),
     memory_index_digest: evidenceDigest(memoryIndex || {}),
-    dispatch_count: dispatches.filter((item) => item?.state === "DISPATCHED").length,
+    dispatch_count: dispatches.filter((item) => item?.state === "DISPATCHED" || item?.state === "ACCEPTED" || item?.state === "VERIFIED").length,
     dispatch_failed: dispatches.filter((item) => item?.state === "DISPATCH_FAILED").length,
     observation: {
       observed: observation?.observed !== false,
       source: observation?.source || "cognitive-worker",
     },
+    integrity: "SEALED",
   };
   return sealEvidence(record);
 }
