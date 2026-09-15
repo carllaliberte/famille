@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * ACORN GLOBAL SYSTEM BREAKER
  *

@@ -6,6 +6,7 @@ cursor/<piece>
 docs/<piece>
 schema/<piece>
 ai/<piece>
+codex/<piece>
 grok/auto-YYYYMMDD-HHMMSS
 grok/optimize-YYYYMMDD-HHMMSS
 ```
@@ -17,6 +18,8 @@ Titre PR : `Ville <quartier> — <pièce>`
 Cursor Cloud agents use `cursor/<piece>`. Carl still squashes. One PR per repo.
 
 `ai/<piece>` : roster / swarm identity. Une entrée dans `schema/agents.json`, pas un fork de `mesh.v0`. Carl squash-merge seulement — jamais fast-forward. Jamais auto-merge. Jamais main par une IA.
+
+`codex/<piece>` : worker Codex autonome (`.github/workflows/codex-autonomous-worker.yml`). Jamais auto-merge. Jamais LIVE. Carl squash-merge seulement. Une PR Codex ouverte n'immobilise pas le worker : le travail indépendant continue ; le travail dépendant attend le merge humain.
 
 `grok/auto-*` : commits SSH signés via `.github/workflows/grok-signed-commit.yml`. Carl squash-merge seulement — jamais fast-forward. Jamais auto-merge. Jamais main par Grok.
 

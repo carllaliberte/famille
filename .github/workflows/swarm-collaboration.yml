@@ -26,10 +26,33 @@ jobs:
         env:
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
         run: node .github/swarm/system-breaker.mjs
-      - name: Run measured collaboration pass
+      - name: Unit test Astra/Codex transport
+        run: node --test tests/astra-codex-probe.test.mjs
+      - name: Measure Astra and Codex transport
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+          GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
+          ASTRA_CODEX_EVIDENCE: astra-codex-evidence.json
+        run: |
+          set -eu
+          node scripts/astra-codex-probe.mjs | tee astra-codex-probe.log
+      - name: Upload Astra/Codex evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: astra-codex-evidence
+          path: |
+            astra-codex-evidence.json
+            astra-codex-probe.log
+          if-no-files-found: error
+          retention-days: 14
+      - name: Measured collaboration pass
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
