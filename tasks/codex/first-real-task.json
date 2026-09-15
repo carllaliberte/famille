@@ -1,0 +1,5 @@
+{
+  "task_id": "codex-first-real-task-001",
+  "intent": "Add one focused regression assertion proving that the Codex execution adapter reports an unavailable CLI explicitly rather than fabricating success. Do not modify production runtime behavior.",
+  "root": "."
+}
