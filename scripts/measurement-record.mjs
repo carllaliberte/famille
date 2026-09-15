@@ -96,7 +96,7 @@ export function loadMeasurementRecord(run = execFileSync, env = process.env) {
   try {
     const raw = run("gh", ["run", "list", "--workflow", "cognitive-worker.yml", "--repo", env.GITHUB_REPOSITORY, "--status", "success", "--limit", "10", "--json", "databaseId,headSha"], { encoding: "utf8", stdio: "pipe" });
     const runs = JSON.parse(raw || "[]")
-      .filter((item) => item?.databaseId && item?.headSha && item.headSha !== env.GITHUB_SHA)
+      .filter((item) => item?.databaseId && item?.headSha)
       .map((item) => ({ ...item, repository: env.GITHUB_REPOSITORY }));
     if (!runs.length) return fallback;
 

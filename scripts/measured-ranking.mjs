@@ -150,6 +150,22 @@ export function rankAgents(agents = [], memoryIndex = {}, observedAt = null) {
   return sealEvidence(ranking);
 }
 
+export function orderByMeasuredRank(ids = [], ranking = {}) {
+  const rankById = new Map((ranking?.measured || []).map((row) => [String(row.id), Number(row.rank)]));
+  const seen = new Set();
+  const measured = [];
+  const unmeasured = [];
+  for (const raw of ids) {
+    const id = String(raw || "");
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    if (rankById.has(id)) measured.push(id);
+    else unmeasured.push(id);
+  }
+  measured.sort((a, b) => (rankById.get(a) - rankById.get(b)) || a.localeCompare(b));
+  return [...measured, ...unmeasured];
+}
+
 export function compareRankings(previous = emptyRanking(), current = emptyRanking()) {
   const prior = new Map((previous.measured || []).map((row) => [String(row.id), row.rank]));
   const next = new Map((current.measured || []).map((row) => [String(row.id), row.rank]));

@@ -7,7 +7,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
-import { buildExecutionPlan, selectWork, nextCadenceDelayMs } from "./adaptive-execution.mjs";
+import { buildExecutionPlan, nextCadenceDelayMs } from "./adaptive-execution.mjs";
 import { runWorker } from "./cognitive-worker.mjs";
 import { assertSystemMayProceed, controlState } from "../.github/swarm/system-breaker.mjs";
 
@@ -51,7 +51,7 @@ export function runOvernightSlot({ env = process.env, gh = execFileSync, now = (
       });
       currentCadence = plan.cadence;
       const candidates = fronts.filter((front) => !dispatched.has(`${front.number}:${front.sha}`));
-      const selected = plan.cadence_allows_work ? selectWork(candidates, plan.cadence) : [];
+      const selected = plan.cadence_allows_work ? candidates : [];
       selected.forEach((front) => dispatched.add(`${front.number}:${front.sha}`));
       const frontsText = selected.map((front) => [front.number, front.sha, front.draft, front.updatedAt].join("\t")).join("\n");
       let evidence;

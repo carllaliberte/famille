@@ -8,6 +8,7 @@
 export const MEASUREMENT_FEEDBACK_VERSION = "measurement-feedback.v1";
 
 const ACTIONS = new Set(["PROMOTE_PRIORITY", "DEPRIORITIZE", "MEASURE_MORE", "UNCHANGED"]);
+const ACTION_ORDER = Object.freeze({ DEPRIORITIZE: 0, PROMOTE_PRIORITY: 1, MEASURE_MORE: 2 });
 
 export function emptyFeedback() {
   return {
@@ -33,7 +34,7 @@ export function buildMeasurementFeedback(ranking = {}, observedAt = null) {
     const id = String(change?.id || "").trim();
     if (!id) continue;
     const action = actionFor(change);
-    if (!ACTIONS.has(action)) continue;
+    if (!ACTIONS.has(action) || action === "UNCHANGED") continue;
     actions.push({
       id,
       action,
@@ -43,7 +44,7 @@ export function buildMeasurementFeedback(ranking = {}, observedAt = null) {
       basis: "measured-ranking",
     });
   }
-  actions.sort((a, b) => (a.action.localeCompare(b.action)) || a.id.localeCompare(b.id));
+  actions.sort((a, b) => ((ACTION_ORDER[a.action] ?? 9) - (ACTION_ORDER[b.action] ?? 9)) || a.id.localeCompare(b.id));
   return {
     v: MEASUREMENT_FEEDBACK_VERSION,
     observed_at: observedAt || ranking.observed_at || new Date().toISOString(),
