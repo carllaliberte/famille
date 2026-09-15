@@ -8,6 +8,7 @@ import {
   classifyAuth,
   classifyCli,
   classifyError,
+  CODEX_WRITE_ARGS,
   createIo,
   decideNext,
   detectPatch,
@@ -21,6 +22,8 @@ import {
   runSelfTest,
   runWorker,
   shouldRunForTrigger,
+  taskPrompt,
+  buildCodexConfig,
 } from "../scripts/codex-autonomous-worker.mjs";
 
 function tmpRoot() {
@@ -67,7 +70,7 @@ function ioFor(t) {
         return t.cli === false ? { status: 127, stdout: "", stderr: "not found" } : { status: 0, stdout: "codex-cli 0.1.0\n" };
       }
       if (cmd === "node" && args.includes("--help")) return { status: 0, stdout: "help\n" };
-      if (cmd === "codex" && args.includes("--sandbox")) {
+      if (cmd === "codex" && args.includes("--sandbox") && args.includes("read-only")) {
         return t.discovery || { status: 0, stdout: JSON.stringify({ idle: true }) };
       }
       if (cmd === "codex" && args[0] === "exec") {
@@ -489,8 +492,8 @@ describe("codex autonomous worker", () => {
     assert.doesNotMatch(JSON.stringify(mem), /sk-|access_token|"live": true/);
   });
 
-  it("pins worker v7 and does not ask Carl to dispatch after UNAVAILABLE", () => {
-    assert.equal(WORKER_VERSION, "codex-autonomous-worker.v7");
+  it("pins worker v8 and does not ask Carl to dispatch after UNAVAILABLE", () => {
+    assert.equal(WORKER_VERSION, "codex-autonomous-worker.v8");
     const io = ioFor({ authFile: false });
     const ev = runWorker(io);
     assert.equal(ev.status, "UNAVAILABLE");
@@ -623,5 +626,78 @@ describe("codex autonomous worker", () => {
   it("allows the codex/ branch prefix required by the worker", () => {
     const branche = readFileSync(new URL("../.github/workflows/branche.yml", import.meta.url), "utf8");
     assert.match(branche, /codex\/\[a-z0-9-\]\+/);
+  });
+
+  it("treats OPENROUTER_API_KEY as sufficient auth without ChatGPT session", () => {
+    const missing = createIo({ env: { HOME: "/tmp/no-codex-home" }, exists: () => false, spawn: () => ({ status: 127 }) });
+    assert.equal(classifyAuth(missing).available, false);
+    const routed = createIo({
+      env: { HOME: "/tmp/no-codex-home", OPENROUTER_API_KEY: "sk-or-test-key-123456" },
+      exists: () => false,
+      spawn: () => ({ status: 127 }),
+    });
+    assert.equal(classifyAuth(routed).available, true);
+    assert.equal(classifyAuth(routed).method, "openrouter-api-key");
+    assert.equal(classifyAuth(routed).paid_api_required, false);
+  });
+
+  it("writes a full-repo sandbox and runs Astra Codex with danger-full-access", () => {
+    const io = ioFor({
+      authFile: false,
+      env: { OPENROUTER_API_KEY: "sk-or-test-key-123456" },
+      issues: [{ number: 513, title: "keep the loop moving", body: "bounded improvement", url: "https://github.com/carllaliberte/famille/issues/513" }],
+      git: { sha: "aaa", dirty: "", branch: "main" },
+      codex: (git, args) => {
+        assert.equal(args.includes("danger-full-access"), true);
+        assert.equal(args.includes("never"), true);
+        assert.equal(args.includes("--full-auto"), false);
+        git.sha = "bbb";
+        git.dirty = " M scripts/codex-autonomous-worker.mjs";
+        return { status: 0, stdout: "ok" };
+      },
+    });
+    const ev = runWorker(io);
+    assert.notEqual(ev.status, "UNAVAILABLE");
+    assert.equal(ev.codex.authenticated, true);
+    assert.equal(ev.codex.auth_method, "openrouter-api-key");
+    const writeCall = io._spawnCalls.find((c) => c.cmd === "codex" && c.args.includes("danger-full-access"));
+    assert.ok(writeCall);
+    assert.deepEqual(writeCall.args.slice(0, CODEX_WRITE_ARGS.length), [...CODEX_WRITE_ARGS]);
+    const prompt = taskPrompt({ number: 513, title: "t", body: "b", url: "u" });
+    assert.match(prompt, /entire repository is in scope/);
+    assert.match(prompt, /Astra Codex/);
+    const cfg = buildCodexConfig(io, classifyAuth(io));
+    assert.match(cfg, /sandbox_mode = "danger-full-access"/);
+    assert.match(cfg, /approval_policy = "never"/);
+    assert.match(cfg, /trust_level = "trusted"/);
+    assert.match(cfg, /model_provider = "openrouter"/);
+    assert.match(cfg, /wire_api = "responses"/);
+  });
+
+  it("keeps workflow run blocks indented so GitHub registers workflow_dispatch", () => {
+    const yml = readFileSync(new URL("../.github/workflows/codex-autonomous-worker.yml", import.meta.url), "utf8");
+    assert.match(yml, /^name: codex-autonomous-worker$/m);
+    assert.match(yml, /workflow_dispatch:/);
+    assert.doesNotMatch(yml, /^JSON$/m);
+    assert.doesNotMatch(yml, /^TOML$/m);
+    assert.doesNotMatch(yml, /^\{/m);
+    const lines = yml.split("\n");
+    let inRun = false;
+    let runIndent = 0;
+    for (const line of lines) {
+      if (/run:\s+\|\s*$/.test(line)) {
+        inRun = true;
+        runIndent = line.match(/^(\s*)/)[1].length;
+        continue;
+      }
+      if (!inRun) continue;
+      if (line.trim() === "") continue;
+      const ind = line.match(/^(\s*)/)[1].length;
+      if (ind <= runIndent) {
+        inRun = false;
+        continue;
+      }
+      assert.notEqual(ind, 0, `unindented run body: ${line}`);
+    }
   });
 });
