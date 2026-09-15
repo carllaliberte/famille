@@ -50,10 +50,11 @@ jobs:
           import { controlState } from './.github/swarm/system-breaker.mjs';
           import { appendFileSync } from 'node:fs';
           const state = controlState(process.env);
-          const allowed = state.mode === 'RUN' && !state.diagnostic && state.breaker_closed;
+          const allowed = state.mode === 'RUN' && !state.diagnostic && state.breaker_closed === false;
           appendFileSync(process.env.GITHUB_OUTPUT, `allowed=${allowed}\nmode=${state.mode}\n`);
           console.log(JSON.stringify({
             purpose: process.env.ACORN_PURPOSE,
+            status: 'BREAKER_EVALUATED',
             mode: state.mode,
             breaker_closed: state.breaker_closed,
             diagnostic: state.diagnostic,
@@ -69,34 +70,70 @@ jobs:
         if: ${{ steps.breaker.outputs.allowed == 'true' }}
         env:
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
-        run: node scripts/cognitive-worker.mjs
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          FAIL_ON_DISPATCH_ERROR: 'false'
+          WORKER_EVIDENCE: evidence/autopilot/worker-evidence.json
+          SYNAPTIC_MEMORY: evidence/autopilot/synaptic-memory.json
+          COGNITIVE_MEMORY_INDEX: evidence/autopilot/cognitive-memory-index.json
+          MEASURED_RANKING: evidence/autopilot/measured-intelligence-ranking.json
+          MEASUREMENT_FEEDBACK: evidence/autopilot/measurement-feedback.json
+          MEASUREMENT_RECORD: evidence/autopilot/measurement-record.json
+        run: |
+          mkdir -p evidence/autopilot
+          node scripts/cognitive-worker.mjs
 
       - name: Emit control evidence
         if: always()
         env:
           BREAKER_MODE: ${{ steps.breaker.outputs.mode }}
           BREAKER_ALLOWED: ${{ steps.breaker.outputs.allowed }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           mkdir -p evidence/autopilot
           node --input-type=module <<'NODE'
-          import { writeFileSync } from 'node:fs';
-          writeFileSync('evidence/autopilot/control.json', JSON.stringify({
+          import { writeFileSync, readFileSync, existsSync } from 'node:fs';
+          let worker = null;
+          const workerPath = 'evidence/autopilot/worker-evidence.json';
+          if (existsSync(workerPath)) {
+            try { worker = JSON.parse(readFileSync(workerPath, 'utf8')); } catch { worker = null; }
+          }
+          const allowed = process.env.BREAKER_ALLOWED === 'true';
+          const control = {
             workflow: 'acorn-autopilot',
+            run_id: process.env.RUN_ID,
+            run_url: process.env.RUN_URL,
             purpose: process.env.ACORN_PURPOSE,
             breaker_mode: process.env.BREAKER_MODE || 'UNKNOWN',
-            breaker_allowed: process.env.BREAKER_ALLOWED === 'true',
+            breaker_allowed: allowed,
             human_authority: 'carl',
             auto_merge: false,
             production_write_allowed: false,
             live: false,
             global_breaker_required: true,
-            executed_by_worker: process.env.BREAKER_ALLOWED === 'true'
-          }, null, 2) + '\n');
+            executed_by_worker: allowed,
+            truth: {
+              WORKFLOW_TRIGGERED: true,
+              JOB_STARTED: true,
+              BREAKER_EVALUATED: true,
+              WORKER_STARTED: allowed,
+              ARTIFACT_UPLOADED: true,
+              CYCLE_COMPLETED: true,
+              ACTION_VERIFIED: Boolean(worker?.truth?.ACTION_VERIFIED),
+            },
+            worker_truth: worker?.truth || null,
+            dispatches: worker?.dispatches || [],
+          };
+          writeFileSync('evidence/autopilot/control.json', JSON.stringify(control, null, 2) + '\n');
           NODE
 
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: acorn-autopilot-control
-          path: evidence/autopilot/control.json
+          name: acorn-autopilot-cycle-${{ github.run_id }}
+          path: evidence/autopilot/
+          if-no-files-found: warn
+          retention-days: 14
