@@ -8,8 +8,9 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
 
-export const MEASURED_RANKING_VERSION = "measured-ranking.v1";
+export const MEASURED_RANKING_VERSION = "measured-ranking.v2";
 export const MEASURED_RANKING_ARTIFACT = "measured-intelligence-ranking";
 
 const COMPONENT_WEIGHTS = { execution: 0.5, routing: 0.3, collaboration: 0.2 };
@@ -38,7 +39,7 @@ function modelBucket() {
 }
 
 export function emptyRanking() {
-  return { v: MEASURED_RANKING_VERSION, observed_at: null, authority: "carl", auto_merge: false, live: false, measured: [], unmeasured: [], changes: [] };
+  return { v: MEASURED_RANKING_VERSION, observed_at: null, authority: "carl", auto_merge: false, live: false, measured: [], unmeasured: [], changes: [], integrity: "UNSEALED" };
 }
 
 export function loadMeasuredRanking(run = execFileSync, env = process.env) {
@@ -51,7 +52,9 @@ export function loadMeasuredRanking(run = execFileSync, env = process.env) {
     run("gh", ["run", "download", String(prior), "--repo", env.GITHUB_REPOSITORY, "--name", MEASURED_RANKING_ARTIFACT, "--dir", dir], { encoding: "utf8", stdio: "pipe" });
     const candidates = [join(dir, "measured-intelligence-ranking.json"), join(dir, MEASURED_RANKING_ARTIFACT, "measured-intelligence-ranking.json")];
     const file = candidates.find((path) => existsSync(path));
-    return file ? JSON.parse(readFileSync(file, "utf8")) : emptyRanking();
+    if (!file) return emptyRanking();
+    const parsed = JSON.parse(readFileSync(file, "utf8"));
+    return verifyEvidenceSeal(parsed) ? { ...parsed, integrity: "VERIFIED" } : { ...emptyRanking(), integrity: "CONFLICT" };
   } catch {
     return emptyRanking();
   } finally {
@@ -132,7 +135,7 @@ export function rankAgents(agents = [], memoryIndex = {}, observedAt = null) {
   measured.sort((a, b) => (b.score - a.score) || (b.confidence - a.confidence) || a.id.localeCompare(b.id));
   measured.forEach((row, index) => { row.rank = index + 1; });
   unmeasured.sort((a, b) => a.id.localeCompare(b.id));
-  return {
+  const ranking = {
     v: MEASURED_RANKING_VERSION,
     observed_at: observedAt || new Date().toISOString(),
     authority: "carl",
@@ -142,7 +145,9 @@ export function rankAgents(agents = [], memoryIndex = {}, observedAt = null) {
     measured,
     unmeasured,
     changes: [],
+    integrity: "SEALED",
   };
+  return sealEvidence(ranking);
 }
 
 export function compareRankings(previous = emptyRanking(), current = emptyRanking()) {
@@ -167,6 +172,7 @@ export function rankingSummary(ranking = {}) {
     unmeasured: (ranking.unmeasured || []).length,
     changes: (ranking.changes || []).length,
     top: (ranking.measured || []).slice(0, 10).map(({ id, rank, score, confidence, attempts }) => ({ id, rank, score, confidence, attempts })),
+    integrity: ranking.integrity || "UNKNOWN",
     authority: ranking.authority || "carl",
     auto_merge: false,
     live: false,
@@ -177,5 +183,6 @@ export function assertRankingSafe(ranking) {
   if (ranking?.live !== false) throw new Error("MEASURED_RANKING_LIVE_FORBIDDEN");
   if (ranking?.auto_merge !== false) throw new Error("MEASURED_RANKING_AUTO_MERGE_FORBIDDEN");
   if (ranking?.authority !== "carl") throw new Error("MEASURED_RANKING_AUTHORITY_INVALID");
+  if (ranking?.integrity === "CONFLICT") throw new Error("MEASURED_RANKING_INTEGRITY_CONFLICT");
   return true;
 }
