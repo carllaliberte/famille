@@ -16,10 +16,7 @@ test("AI connector accepts every channel through the same boundary", () => {
 });
 
 test("AI connector is fully cut off by OFF regardless of channel", () => {
-  assert.throws(
-    () => acceptIngress({ channel: "quantum", source: "future", env: env("OFF") }),
-    (error) => error.code === "GLOBAL_BREAKER_OFF"
-  );
+  assert.throws(() => acceptIngress({ channel: "quantum", source: "future", env: env("OFF") }), (error) => error.code === "GLOBAL_BREAKER_OFF");
   assert.equal(inspectIngress({ channel: "model", source: "cloud", env: env("OFF") }).accepted, false);
 });
 
