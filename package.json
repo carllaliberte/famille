@@ -9,6 +9,7 @@
     "codex:self-test": "node scripts/codex-autonomous-worker.mjs --self-test",
     "system:official-seal": "node scripts/official-seal.mjs",
     "live:probe": "node scripts/live-proof.mjs",
+    "work:record": "node scripts/work-record.mjs",
     "peut-dire": "node sdk/cli.js",
     "prepare": "husky"
   },
