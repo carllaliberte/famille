@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { MODELS } from "../.github/swarm/review.mjs";
 import { detectKey, prepareRequest, probeOne } from "../scripts/astra-codex-probe.mjs";
 
 describe("astra/codex probe", () => {
@@ -7,6 +8,13 @@ describe("astra/codex probe", () => {
     assert.equal(detectKey({ OPENAI_API_KEY: "sk-test-12345678" }), true);
     assert.equal(detectKey({ OPENAI_API_KEY: "" }), false);
     assert.equal(detectKey({ OPENAI_API_KEY: "short" }), false);
+  });
+
+  it("uses verified OpenAI model IDs for both channels", () => {
+    assert.equal(MODELS.astra.model, "gpt-5.6-terra");
+    assert.equal(MODELS.codex.model, "gpt-5.6-sol");
+    assert.equal(MODELS.astra.provider, "openai");
+    assert.equal(MODELS.codex.provider, "openai");
   });
 
   it("prepares both channels from the shared OpenAI transport", () => {
