@@ -380,6 +380,9 @@ describe("codex autonomous worker", () => {
   it("classifies errors into operational categories", () => {
     assert.equal(classifyError({ message: "401 unauthorized" }), "AUTH");
     assert.equal(classifyError({ message: "ERROR: unexpected status 402 Payment Required: credits" }), "AUTH");
+    assert.equal(classifyError({ message: "ERROR: exceeded retry limit, last status: 429 Too Many Requests" }), "NETWORK");
+    assert.equal(classifyError({ message: "Human authority is Carl\nERROR: 429 Too Many Requests" }), "NETWORK");
+    assert.notEqual(classifyError({ message: "Human authority is Carl\nboom" }), "AUTH");
     assert.equal(classifyError({ message: "error: unexpected argument '--ask-for-approval' found" }), "CLI");
     assert.equal(classifyError({ message: "codex: not found", code: "ENOENT" }), "CLI");
     assert.equal(classifyError({ message: "Resource not accessible by integration" }), "PERMISSION");
@@ -686,12 +689,14 @@ describe("codex autonomous worker", () => {
     assert.match(cfg, /model_reasoning_effort = "low"/);
     assert.match(cfg, /model_providers\.openrouter\.auth/);
     assert.doesNotMatch(cfg, /env_key/);
-    assert.equal(writeCall.args.includes("model=openrouter/free"), true);
-    assert.match(cfg, /model = "openrouter\/free"/);
+    assert.equal(writeCall.args.includes("model=openai/gpt-oss-20b:free"), true);
+    assert.match(cfg, /model = "openai\/gpt-oss-20b:free"/);
     assert.doesNotMatch(cfg, /gemini-2\.5-flash/);
-    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "google/gemini-2.5-flash" } }), "openrouter/free");
+    assert.doesNotMatch(cfg, /openrouter\/free/);
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "google/gemini-2.5-flash" } }), "openai/gpt-oss-20b:free");
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openrouter/free" } }), "openai/gpt-oss-20b:free");
     assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openai/gpt-oss-20b:free" } }), "openai/gpt-oss-20b:free");
-    assert.equal(ev.codex.model, "openrouter/free");
+    assert.equal(ev.codex.model, "openai/gpt-oss-20b:free");
   });
 
   it("keeps workflow run blocks indented so GitHub registers workflow_dispatch", () => {

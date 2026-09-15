@@ -138,7 +138,8 @@ export function classifyError(err) {
   const msg = String(err?.message || err || "").toLowerCase();
   const code = err?.code || err?.status;
   if (/unexpected argument|unknown (?:option|flag)|usage: codex exec/.test(msg)) return "CLI";
-  if (/auth|login|unauthorized|401|402|payment required|credits/.test(msg)) return "AUTH";
+  if (/\b429\b|too many requests|rate[- ]?limit/.test(msg)) return "NETWORK";
+  if (/\b401\b|\b402\b|unauthorized|payment required|insufficient credits/.test(msg)) return "AUTH";
   if (/codex/.test(msg) && /not found|enoent|127/.test(msg)) return "CLI";
   if (code === "ENOENT" || /enoent/.test(msg)) return "ENVIRONMENT";
   if (/dirty|worktree|not clean/.test(msg)) return "WORKTREE";
@@ -356,10 +357,12 @@ export function tomlEscape(value) {
   return String(value || "").replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
 }
 
+export const OPENROUTER_FREE_MODEL = "openai/gpt-oss-20b:free";
+
 export function resolveOpenRouterModel(io) {
   const requested = String(io.env.CODEX_MODEL || "").trim();
-  if (requested.endsWith(":free") || requested === "openrouter/free") return requested;
-  return "openrouter/free";
+  if (requested.endsWith(":free") && requested !== "openrouter/free") return requested;
+  return OPENROUTER_FREE_MODEL;
 }
 
 export function buildCodexConfig(io, auth = classifyAuth(io)) {
