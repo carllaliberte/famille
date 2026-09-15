@@ -10,13 +10,15 @@ on:
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
 permissions:
   contents: read
   pull-requests: read
   issues: write
   actions: write
 concurrency:
-  group: cognitive-worker
+  group: cognitive-worker-${{ github.event.pull_request.number || 'scheduled' }}
   cancel-in-progress: false
 jobs:
   cycle:
@@ -25,9 +27,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Scheduled runs use main; manual/branch runs must execute the selected ref.
-          # This prevents a PR validation from silently executing an older main checkout.
-          ref: ${{ github.ref }}
+          # PR runs execute the actual PR head; scheduled runs execute main.
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
@@ -40,8 +41,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_SHA: ${{ github.sha }}
-          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_REF: ${{ github.event.pull_request.head.ref || github.ref }}
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
           FAIL_ON_DISPATCH_ERROR: 'false'
           WORKER_EVIDENCE: worker-evidence.json
