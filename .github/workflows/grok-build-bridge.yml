@@ -1,9 +1,9 @@
 # ACORN — real Grok Build bridge.
 # Trigger: Carl only, by an issue/PR comment beginning with /grok-build.
+# The human intent is packaged once as an Acorn cognitive task before Grok runs.
+# Architecture: AI Connector / Flux -> Global Breaker -> Acorn -> downstream intelligence.
 # Grok Build runs headlessly in an isolated GitHub Actions workspace.
 # It may edit the workspace, but never main, never merge, never auto-merge.
-# The workflow creates a branch + PR from the resulting diff; Carl remains the merge authority.
-# Required Actions secret: XAI_API_KEY.
 name: Grok Build Bridge
 
 on:
@@ -75,7 +75,7 @@ jobs:
             REF="${DISPATCH_REF:-main}"
             TARGET_PR=""
           fi
-          printf '%s' "$PROMPT" > /tmp/grok-prompt.txt
+          printf '%s' "$PROMPT" > /tmp/grok-original-intent.txt
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
           echo "target_pr=$TARGET_PR" >> "$GITHUB_OUTPUT"
 
@@ -85,6 +85,34 @@ jobs:
           ref: ${{ steps.input.outputs.ref }}
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Create Acorn cognitive task
+        id: task
+        env:
+          PROMPT_FILE: /tmp/grok-original-intent.txt
+          SOURCE_REF: ${{ steps.input.outputs.ref }}
+          TARGET_PR: ${{ steps.input.outputs.target_pr }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { createCognitiveTask, taskPrompt } from './.github/swarm/cognitive-task.mjs';
+          const intent = readFileSync(process.env.PROMPT_FILE, 'utf8');
+          const task = createCognitiveTask({
+            intent,
+            source: 'carl',
+            channel: 'grok-build',
+            ref: process.env.SOURCE_REF,
+            capabilities: ['build', 'review'],
+            context: process.env.TARGET_PR ? { pr: Number(process.env.TARGET_PR) } : null,
+            env: process.env,
+          });
+          writeFileSync('/tmp/acorn-task.json', `${JSON.stringify(task, null, 2)}\n`);
+          writeFileSync('/tmp/grok-prompt.txt', `${taskPrompt(task)}\n\nOriginal human intent:\n${intent}`);
+          console.log(`task=${task.task} state=${task.state} ref=${task.provenance.ref}`);
+          NODE
+          echo "task_version=cognitive-task.v1" >> "$GITHUB_OUTPUT"
 
       - name: Install Grok Build
         run: |
@@ -112,6 +140,7 @@ jobs:
           set +e
           {
             echo 'You are Grok Build operating as a cognitive/service node inside Acorn/FAMILLE.'
+            echo 'The ACORN TASK below is the canonical task. Preserve its original human intent; do not translate it into a different objective.'
             echo 'Work directly in the checked-out repository and solve the requested task.'
             echo 'You may inspect and modify the working tree, but DO NOT commit, push, merge, or change main.'
             echo 'Return a concise factual report of what you inspected, what you changed, tests run, and remaining blockers.'
@@ -119,7 +148,7 @@ jobs:
             echo 'Do not create or expose secrets. Do not modify protected semantic/protocol paths unless the task explicitly requires it and explain such changes.'
             echo 'Never claim execution you did not perform.'
           } > /tmp/grok-system.txt
-          PROMPT="$(cat /tmp/grok-prompt.txt)"
+          PROMPT="$(cat "$PROMPT_FILE")"
           SYSTEM="$(cat /tmp/grok-system.txt)"
           FULL_PROMPT="${SYSTEM}"$'\n\nTASK:\n'"${PROMPT}"
           grok -p "$FULL_PROMPT" --output-format streaming-json > /tmp/grok-output.jsonl 2>&1
@@ -162,14 +191,13 @@ jobs:
           BODY=$(cat <<EOF
           Real Grok Build execution from \`${SOURCE_REF}\`.
 
+          - The original human intent was preserved in an Acorn cognitive task.
           - Grok Build ran headlessly in GitHub Actions.
           - Changes are isolated on \`${BRANCH}\`.
           - No merge was performed.
           - No auto-merge.
           - Human merge authority: Carl.
           - The workflow does not write \`main\` directly.
-
-          The execution report is attached to the workflow run.
           EOF
           )
           gh pr create --base main --head "$BRANCH" --title "feat: Grok Build task" --body "$BODY"
@@ -181,11 +209,12 @@ jobs:
           NUMBER: ${{ github.event.issue.number }}
           RC: ${{ steps.grok.outputs.exit_code || 'not-run' }}
           CHANGED: ${{ steps.diff.outputs.changed || 'not-measured' }}
+          TASK: ${{ steps.task.outputs.task_version || 'not-created' }}
         run: |
           set -euo pipefail
           STATUS="EXECUTED"
           if [ "$RC" != "0" ]; then STATUS="ERROR"; fi
-          gh issue comment "$NUMBER" --body "Grok Build bridge: **$STATUS**. exit=$RC; changed=$CHANGED. No merge performed. See workflow artifacts for the measured execution report."
+          gh issue comment "$NUMBER" --body "Grok Build bridge: **$STATUS**. task=$TASK; exit=$RC; changed=$CHANGED. No merge performed. See workflow artifacts for the measured execution report."
 
       - name: Upload execution evidence
         if: always()
@@ -194,6 +223,8 @@ jobs:
           name: grok-build-execution
           retention-days: 90
           path: |
+            /tmp/acorn-task.json
+            /tmp/grok-original-intent.txt
             grok-build-output.txt
             grok-build-diff.txt
           if-no-files-found: ignore
