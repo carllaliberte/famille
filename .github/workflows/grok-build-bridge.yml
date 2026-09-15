@@ -121,10 +121,7 @@ jobs:
           } > /tmp/grok-system.txt
           PROMPT="$(cat /tmp/grok-prompt.txt)"
           SYSTEM="$(cat /tmp/grok-system.txt)"
-          FULL_PROMPT="$SYSTEM
-
-TASK:
-$PROMPT"
+          FULL_PROMPT="${SYSTEM}"$'\n\nTASK:\n'"${PROMPT}"
           grok -p "$FULL_PROMPT" --output-format streaming-json > /tmp/grok-output.jsonl 2>&1
           RC=$?
           echo "exit_code=$RC" >> "$GITHUB_OUTPUT"
