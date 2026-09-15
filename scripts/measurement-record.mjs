@@ -64,6 +64,24 @@ export function verifyMeasurementRecord(record = {}) {
   return verifyEvidenceSeal(record) && record.v === MEASUREMENT_RECORD_VERSION;
 }
 
+function artifactFile(dir) {
+  const candidates = [join(dir, "measurement-record.json"), join(dir, MEASUREMENT_RECORD_ARTIFACT, "measurement-record.json")];
+  return candidates.find((path) => existsSync(path)) || null;
+}
+
+function readRunRecord(run, dir, runCommand) {
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  runCommand("gh", ["run", "download", String(run.databaseId), "--repo", run.repository, "--name", MEASUREMENT_RECORD_ARTIFACT, "--dir", dir], { encoding: "utf8", stdio: "pipe" });
+  const file = artifactFile(dir);
+  if (!file) return null;
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 export function loadMeasurementRecord(run = execFileSync, env = process.env) {
   const fallback = emptyMeasurementRecord();
   if (!env.GITHUB_REPOSITORY) return fallback;
@@ -71,15 +89,36 @@ export function loadMeasurementRecord(run = execFileSync, env = process.env) {
   mkdirSync(dir, { recursive: true });
   try {
     const raw = run("gh", ["run", "list", "--workflow", "cognitive-worker.yml", "--repo", env.GITHUB_REPOSITORY, "--status", "success", "--limit", "10", "--json", "databaseId,headSha"], { encoding: "utf8", stdio: "pipe" });
-    const runs = JSON.parse(raw || "[]");
-    const prior = runs.find((item) => item?.headSha && item.headSha !== env.GITHUB_SHA);
-    if (!prior?.databaseId) return fallback;
-    run("gh", ["run", "download", String(prior.databaseId), "--repo", env.GITHUB_REPOSITORY, "--name", MEASUREMENT_RECORD_ARTIFACT, "--dir", dir], { encoding: "utf8", stdio: "pipe" });
-    const candidates = [join(dir, "measurement-record.json"), join(dir, MEASUREMENT_RECORD_ARTIFACT, "measurement-record.json")];
-    const file = candidates.find((path) => existsSync(path));
-    if (!file) return fallback;
-    const parsed = JSON.parse(readFileSync(file, "utf8"));
-    return verifyMeasurementRecord(parsed) ? { ...parsed, integrity: "VERIFIED" } : { ...fallback, integrity: "CONFLICT" };
+    const runs = JSON.parse(raw || "[]")
+      .filter((item) => item?.databaseId && item?.headSha && item.headSha !== env.GITHUB_SHA)
+      .map((item) => ({ ...item, repository: env.GITHUB_REPOSITORY }));
+    if (!runs.length) return fallback;
+
+    let prior = null;
+    let priorRunIndex = -1;
+    for (let index = 0; index < runs.length; index += 1) {
+      const candidate = readRunRecord(runs[index], dir, run);
+      if (!candidate) continue;
+      if (!verifyMeasurementRecord(candidate)) return { ...fallback, integrity: "CONFLICT" };
+      prior = candidate;
+      priorRunIndex = index;
+      break;
+    }
+    if (!prior) return fallback;
+
+    if (prior.previous_record_digest) {
+      let predecessor = null;
+      for (let index = priorRunIndex + 1; index < runs.length; index += 1) {
+        const candidate = readRunRecord(runs[index], dir, run);
+        if (!candidate) continue;
+        predecessor = candidate;
+        break;
+      }
+      if (!predecessor || !verifyMeasurementRecord(predecessor) || predecessor.seal?.digest !== prior.previous_record_digest) {
+        return { ...fallback, integrity: "CONFLICT" };
+      }
+    }
+    return { ...prior, integrity: "VERIFIED" };
   } catch {
     return fallback;
   } finally {
