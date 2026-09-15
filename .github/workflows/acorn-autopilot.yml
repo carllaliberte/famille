@@ -114,16 +114,19 @@ jobs:
         if: ${{ steps.breaker.outputs.allowed == 'true' && !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
-          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
         run: |
-          node --input-type=module <<'NODE'
-          import { controlState } from './.github/swarm/system-breaker.mjs';
-          const state = controlState(process.env);
-          if (state.mode === 'RUN' && !state.diagnostic && state.breaker_closed) {
-            console.log('Renewing autonomous runtime time slice.');
-            process.exit(0);
-          }
-          console.log(`Renewal stopped by breaker mode=${state.mode}.`);
-          process.exit(0);
-          NODE
-          if [ "${ACORN_SYSTEM_MODE:-RUN}" = "RUN" ]; then gh workflow run acorn-autopilot.yml --ref main; fi
+          if [ -f evidence/autopilot/runtime/checkpoint.json ]; then
+            STATE=$(node --input-type=module -e "const fs=require('node:fs'); console.log(JSON.parse(fs.readFileSync('evidence/autopilot/runtime/checkpoint.json','utf8')).state || 'UNKNOWN')")
+          else
+            STATE=UNKNOWN
+          fi
+          case "$STATE" in
+            STOPPED_BREAKER)
+              echo "Runtime renewal stopped by breaker.";
+              exit 0
+              ;;
+            *)
+              echo "Renewing autonomous runtime time slice: $STATE";
+              gh workflow run acorn-autopilot.yml --ref main
+              ;;
+          esac
