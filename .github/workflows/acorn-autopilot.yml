@@ -45,7 +45,7 @@ jobs:
       - name: Global Breaker control
         id: breaker
         env:
-          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE || 'RUN' }}
         run: |
           node --input-type=module <<'NODE'
           import { controlState } from './.github/swarm/system-breaker.mjs';
@@ -69,7 +69,7 @@ jobs:
       - name: Run autonomous cognitive runtime
         if: ${{ steps.breaker.outputs.allowed == 'true' }}
         env:
-          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE || 'RUN' }}
           GH_TOKEN: ${{ github.token }}
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
