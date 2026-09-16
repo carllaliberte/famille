@@ -5,6 +5,7 @@
  * This local proxy therefore clamps the actual JSON request before it reaches OpenRouter.
  * No credentials are stored or logged.
  */
+import http from "node:http";
 import https from "node:https";
 import { URL } from "node:url";
 
@@ -24,7 +25,7 @@ function requestPath(req) {
   return new URL(req.url || "/", upstream).pathname + new URL(req.url || "/", upstream).search;
 }
 
-const server = require("node:http").createServer((req, res) => {
+const server = http.createServer((req, res) => {
   let body = "";
   req.setEncoding("utf8");
   req.on("data", (chunk) => { body += chunk; });
