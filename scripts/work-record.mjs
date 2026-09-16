@@ -8,6 +8,7 @@
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { sealEvidence } from "./evidence-seal.mjs";
+import { resolveTool } from "./tool-resolve.mjs";
 
 export const WORK_RECORD_VERSION = "work-record.v1";
 export const STAGES = Object.freeze(["code", "tested", "executed", "measured", "verified", "live"]);
@@ -177,18 +178,13 @@ export function buildWorkRecord(input = {}) {
   return sealEvidence(record);
 }
 
-export function nextFromMissing(missing = [], toolsBuilt = []) {
+export function nextFromMissing(missing = [], toolsBuilt = [], opts = {}) {
   const gap = (missing || []).find((row) => row?.kind === "tool" && row?.name);
   if (gap && !(toolsBuilt || []).some((tool) => tool?.name === gap.name)) {
-    return {
-      decision: "BUILD_TOOL",
-      tool: gap.name,
-      why: gap.why || "capability unmeasured",
-      then: "test → keep → reuse on the next cycle",
-    };
+    return resolveTool(gap, opts);
   }
   if ((missing || []).length) {
-    return { decision: "HOLD_HUMAN", why: missing[0]?.why || missing[0], authority: "carl" };
+    return { decision: "HOLD_HUMAN", why: missing[0]?.why || missing[0], authority: "carl", auto_merge: false, live: false };
   }
   return { decision: "WAIT_HUMAN_MERGE", authority: "carl", auto_merge: false };
 }

@@ -13,6 +13,7 @@ import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, resolve } from "node:path";
 import { runWorker } from "./cognitive-worker.mjs";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
+import { selfHealDecision } from "./self-heal.mjs";
 
 const root = resolve(process.env.ACORN_RUNTIME_ROOT || ".");
 
@@ -93,20 +94,39 @@ export async function runAutonomousRuntime({ worker = runWorker, env = process.e
       persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: record.completed_at, state: "RUNNING", last_cycle: cycleDir });
       completed += 1;
     } catch (error) {
+      const heal = selfHealDecision({ reason: String(error?.message || error), attempt: 0, breaker: state.mode });
       const failure = {
         runtime: "autonomous-runtime.v1",
         cycle,
         observed_at: observedAt,
         completed_at: now(),
-        state: "WORKER_FAILED",
-        error: String(error?.stack || error),
+        state: heal.action === "HOLD_HUMAN" ? "HOLD_HUMAN" : "WORKER_FAILED",
+        error: String(error?.message || error),
+        heal,
         live: false,
         auto_merge: false,
         authority: "carl",
       };
+      if (heal.action === "RETRY" && heal.retry) {
+        try {
+          worker({
+            env,
+            dispatch: shouldDispatch,
+            evidencePath: resolve(cycleDir, "worker-evidence.json"),
+            failOnDispatchError: false,
+          });
+          failure.state = "RECOVERED";
+          failure.heal = { ...heal, recovered: true };
+        } catch (retryError) {
+          failure.error = String(retryError?.message || retryError);
+        }
+      }
       writeFileSync(resolve(cycleDir, "runtime-failure.json"), `${JSON.stringify(failure, null, 2)}\n`);
       journal(failure);
       persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: failure.completed_at, state: failure.state, last_cycle: cycleDir });
+      if (heal.action === "HOLD_HUMAN" || heal.action === "STOP") {
+        return failure;
+      }
       completed += 1;
     }
 

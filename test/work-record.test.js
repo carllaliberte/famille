@@ -38,11 +38,17 @@ test("executed without defined is refused", () => {
   );
 });
 
-test("missing tool becomes BUILD_TOOL, not I cannot", () => {
-  const next = nextFromMissing([{ kind: "tool", name: "live-proof", why: "no external LIVE probe" }], []);
+test("missing unknown tool becomes BUILD_TOOL, not I cannot", () => {
+  const next = nextFromMissing([{ kind: "tool", name: "missing-external-probe", why: "no external LIVE probe" }], []);
   assert.equal(next.decision, "BUILD_TOOL");
-  assert.equal(next.tool, "live-proof");
+  assert.equal(next.tool, "missing-external-probe");
   assert.match(next.then, /reuse/);
+});
+
+test("existing tool is reused instead of rebuilt", () => {
+  const next = nextFromMissing([{ kind: "tool", name: "live-proof", why: "no external LIVE probe" }], []);
+  assert.equal(next.decision, "REUSE");
+  assert.equal(next.tool, "live-proof");
 });
 
 test("built tool is kept as reusable, live stays false without proof", () => {
