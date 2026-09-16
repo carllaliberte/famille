@@ -19,6 +19,7 @@ permissions:
   pull-requests: write
   issues: write
   actions: write
+  models: read
 concurrency:
   group: cognitive-worker-${{ github.event.pull_request.number || github.ref_name || 'scheduled' }}
   cancel-in-progress: false
@@ -210,4 +211,5 @@ jobs:
           echo "fluidity = runtime property FLOWING|FRICTION|STALLED|HOLD_HUMAN; silent skip is STALLED."
           echo "economic evidence = identity + connection + verified usage + explicit pricing state."
           echo "no hidden tracking; no identity guessing; no automatic charge; payment remains a human/billing boundary."
+          echo "GitHub Models requires explicit models: read permission; GH_TOKEN is never an OpenRouter credential."
           echo "auto_merge=false; live=false; human authority=carl"
