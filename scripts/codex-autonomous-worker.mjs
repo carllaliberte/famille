@@ -1066,7 +1066,11 @@ export function runWorker(io = createIo()) {
     wake_reason: wake.reason,
   };
   const write = () => {
-    evidence.skipped_tasks = [...skippedTasks];
+    evidence.skipped_tasks = [...skippedTasks].map((n) => (
+      n && typeof n === "object"
+        ? n
+        : { number: Number(n), sha: shaHint || "unknown", reason: evidence.status || "in-run-skip" }
+    ));
     evidence.finished_at = new Date(io.now()).toISOString();
     evidence.workspace = {
       ...(evidence.workspace || {}),
