@@ -18,7 +18,8 @@
     "./juger": "./sdk/juger.js",
     "./schema": "./schema/juge.v0.json",
     "./interop": "./map/interop.v0.json",
-    "./agents": "./schema/agents.json"
+    "./agents": "./schema/agents.json",
+    "./cortex": "./.github/swarm/cortex.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
