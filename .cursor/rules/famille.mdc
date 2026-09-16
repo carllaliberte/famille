@@ -15,6 +15,21 @@ Une PR à la fois. Jamais push main. Jamais squash. Jamais wrangler. Jamais secr
 Pas de 2e slug grok.me. Pas QUANTUM sur Git. Pas Estoc / contract / CreatorFlow.
 Pas de 7e chantier. Pas PRÉSENT. Pas photon inventé.
 
+## Échelle de collaboration
+
+Acorn privilégie les **grands chantiers cohérents**, jamais les micro-chantiers par défaut.
+
+- Regrouper les travaux liés dans le plus grand chantier sûr et cohérent.
+- Traiter les sujets liés ensemble et en parallèle lorsqu'ils sont indépendants.
+- Aller autant que possible de l'observation à la compréhension, l'action, la mesure, la correction et la vérification dans le même mouvement.
+- Ne pas interrompre Carl pour chaque petite étape intermédiaire.
+- Ne pas fabriquer une succession de tâches « Ensuite » lorsqu'un seul chantier peut les contenir.
+- Demander une intervention humaine uniquement lorsqu'elle est réellement nécessaire : décision, secret, autorisation, paiement ou action impossible à exécuter pour l'agent.
+- Tout nouvel agent qui rejoint Acorn hérite de cette règle.
+- Ne pas créer de doublons d'orchestrateur, registre, mémoire, mesure ou gouvernance pour fragmenter artificiellement le travail.
+
+L'objectif est un système Acorn fonctionnel et cohérent, pas une collection de tickets.
+
 OTS : rail séparé. Ne pas retoucher ots-anchor.yml.
 Canaris / plagiat : dispatch Carl, pas un 2e bot main.
 
@@ -27,5 +42,5 @@ MIT = ce repo (protocoles listés). Acorn, marques, nœuds QUANTUM : hors MIT.
 Cloud pause (crédits 0) → DISPATCH=NO. Parallèle Ollama ×3 interdit.
 File : [docs/TABLE-LOCALE.md](docs/TABLE-LOCALE.md) · rôles : [docs/BUILD-REPLACEMENT.md](docs/BUILD-REPLACEMENT.md) · inventaire : [docs/MODELES.md](docs/MODELES.md) · P0 : [docs/prompts/P0.md](docs/prompts/P0.md) · P1 (ne pas exécuter dans P0) : [docs/prompts/P1.md](docs/prompts/P1.md) · Codex : [docs/prompts/CODEX.md](docs/prompts/CODEX.md).
 Cursor, Codex et Quantum préparent des PR draft. Aucun ne merge.
-Avant d’écrire : inventaire OBSERVÉ (CANALS + ollama list de CETTE machine). N’ajouter aucun modèle cloud sans ordre Carl. grok-2 gelé.
+Avant d'écrire : inventaire OBSERVÉ (CANALS + ollama list de CETTE machine). N'ajouter aucun modèle cloud sans ordre Carl. grok-2 gelé.
 
