@@ -51,6 +51,8 @@ test("GH_TOKEN is accepted as the Actions GitHub Models credential", () => {
   const ids = idsForDispatch({ GH_TOKEN: "ghs_actions" });
   assert.ok(ids.includes("ghmodels"));
   assert.equal(laneInventory({ GH_TOKEN: "ghs_actions" }).keyless.github_models, true);
+  assert.equal(secretAvailable(CANALS.orfree, { GH_TOKEN: "ghs_actions" }), false);
+  assert.equal(ids.includes("orfree"), false);
 });
 
 test("Cortex local remains available without any model key", () => {

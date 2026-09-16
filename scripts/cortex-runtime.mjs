@@ -213,5 +213,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (output.organism?.genome?.genome) {
     writeFileSync("cortex-genome.json", `${JSON.stringify(output.organism.genome, null, 2)}\n`);
   }
+  const selected = output.intelligence?.routed?.selected || {};
+  const selectedState = (output.intelligence?.discovered?.entries || [])
+    .find((row) => row.identity === selected.identity)?.state || "DEFINED";
+  console.log(`intelligence.selected=${selected.identity || "none"} lane=${selected.lane || "none"} state=${selectedState} policy=${output.intelligence?.routed?.policy || "none"} live=false`);
   console.log(JSON.stringify(output, null, 2));
 }

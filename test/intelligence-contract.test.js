@@ -6,6 +6,7 @@ import {
   COST_POLICIES,
   applyCostPolicy,
   describeIntelligence,
+  discoverAvailability,
   discoverCatalog,
   discoverIntelligences,
   learnFromProviderFailure,
@@ -131,4 +132,60 @@ test("runtime wires discovery, routing and reality learning without LIVE", () =>
   assert.equal(result.learning.status, "LEARNED");
   assert.equal(result.live, false);
   assert.equal(result.intelligence.live, false);
+});
+
+test("GH_TOKEN does not make OpenRouter free seats CALLABLE", () => {
+  const found = discoverIntelligences({
+    env: { GH_TOKEN: "ghs_actions" },
+    agents: [{ id: "orfree", capabilities: ["review"] }, { id: "ghmodels", capabilities: ["review"] }],
+    canals: { orfree: MODELS.orfree, ghmodels: MODELS.ghmodels },
+  });
+  assert.equal(found.entries.find((row) => row.identity === "orfree").state, "DEFINED");
+  assert.equal(found.entries.find((row) => row.identity === "ghmodels").state, "CALLABLE");
+  const available = discoverAvailability({
+    env: { GH_TOKEN: "ghs_actions" },
+    agents: [{ id: "orfree", capabilities: ["review"] }, { id: "ghmodels", capabilities: ["review"] }],
+    canals: { orfree: MODELS.orfree, ghmodels: MODELS.ghmodels },
+  });
+  assert.equal(available.callable.includes("orfree"), false);
+  assert.equal(available.callable.includes("ghmodels"), true);
+  const routed = routeTask({
+    need: "review",
+    discovered: found,
+    env: { GH_TOKEN: "ghs_actions" },
+    policy: "FREE_FIRST",
+  });
+  assert.notEqual(routed.selected?.identity, "orfree");
+  assert.notEqual(routed.selected?.lane, "paid");
+  assert.ok(["ghmodels", "cortex-local"].includes(routed.selected?.identity));
+});
+
+test("worker evidence is keyless EXECUTED, never a paid seat", () => {
+  const found = discoverIntelligences({
+    env: {},
+    agents: [{ id: "worker", capabilities: ["review"] }],
+    canals: {},
+    workerEvidence: { v: "cognitive-worker.v14" },
+  });
+  const worker = found.entries.find((row) => row.identity === "worker");
+  assert.equal(worker.lane, "keyless");
+  assert.equal(worker.state, "EXECUTED");
+  const routed = routeTask({ need: "review", discovered: found, env: {}, policy: "FREE_FIRST" });
+  assert.notEqual(routed.selected?.lane, "paid");
+});
+
+test("OPENROUTER_API_KEY is required before orfree is CALLABLE", () => {
+  const without = discoverIntelligences({
+    env: {},
+    agents: [{ id: "orfree", capabilities: ["review"] }],
+    canals: { orfree: MODELS.orfree },
+  });
+  assert.equal(without.entries.find((row) => row.identity === "orfree").state, "DEFINED");
+  const withKey = discoverIntelligences({
+    env: { OPENROUTER_API_KEY: "or" },
+    agents: [{ id: "orfree", capabilities: ["review"] }],
+    canals: { orfree: MODELS.orfree },
+  });
+  assert.equal(withKey.entries.find((row) => row.identity === "orfree").state, "CALLABLE");
+  assert.equal(withKey.entries.find((row) => row.identity === "orfree").lane, "free");
 });

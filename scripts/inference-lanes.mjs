@@ -34,7 +34,15 @@ export function classifyLane(spec = {}) {
   if (spec.lane && LANES.includes(spec.lane)) return spec.lane;
   const provider = String(spec.provider || "");
   const secret = String(spec.secret || "");
-  if (provider === "ollama" || provider === "github-models" || secret === "OLLAMA_HOST" || secret === "GITHUB_TOKEN") {
+  if (
+    provider === "ollama"
+    || provider === "github-models"
+    || provider === "acorn"
+    || secret === "OLLAMA_HOST"
+    || secret === "GITHUB_TOKEN"
+    || spec.id === "worker"
+    || spec.id === "cortex-local"
+  ) {
     return "keyless";
   }
   if (isFreeModel(spec)) return "free";

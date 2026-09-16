@@ -8,7 +8,7 @@
  */
 import { intelligenceAdapter, routeByCapability, declareIntelligence } from "../sdk/open-intelligence.js";
 import { considerUnknownChannel, classifyProbe } from "../sdk/open-channel.js";
-import { classifyLane, isFreeModel, laneInventory, preferUnpaid, secretAvailable } from "./inference-lanes.mjs";
+import { classifyLane, laneInventory, preferUnpaid, secretAvailable } from "./inference-lanes.mjs";
 import { loadDeclaredAgents } from "./cognitive-handshake.mjs";
 import { rememberExperience as rememberReality } from "./reality-learning-engine.mjs";
 
@@ -66,10 +66,15 @@ export function discoverIntelligences({
   const discovered = [];
   for (const agent of roster) {
     const canal = canals[agent.id] || {};
-    const spec = { ...canal, id: agent.id, capabilities: agent.capabilities };
-    const configured = secretAvailable(spec, env) || Boolean(canal.secret && String(env[canal.secret] || env.GH_TOKEN || "").trim());
+    const spec = {
+      ...canal,
+      id: agent.id,
+      capabilities: agent.capabilities,
+      lane: canal.lane || (agent.id === "worker" ? "keyless" : canal.lane),
+    };
+    const configured = secretAvailable(spec, env);
     const local = agent.id === "worker" && workerEvidence?.v;
-    const callable = local || (configured && (classifyLane(spec) === "keyless" || classifyLane(spec) === "free"));
+    const callable = local || configured;
     discovered.push({
       ...describeIntelligence({ ...spec, presence: local ? "ACTIVE" : configured ? "CONNECTED" : "DECLARED" }),
       state: intelligenceState({ configured, callable, executed: local }),
@@ -83,7 +88,7 @@ export function discoverIntelligences({
     const configured = secretAvailable(spec, env);
     discovered.push({
       ...describeIntelligence({ ...spec, presence: configured ? "CONNECTED" : "DECLARED" }),
-      state: intelligenceState({ configured, callable: configured && classifyLane(spec) !== "paid" }),
+      state: intelligenceState({ configured, callable: configured }),
       source: "canal-cache",
       live: false,
     });
@@ -110,6 +115,21 @@ export function discoverIntelligences({
     entries: discovered,
     lanes: laneInventory(env),
     closed_list: false,
+    live: false,
+  };
+}
+
+export function discoverAvailability(input = {}) {
+  const found = discoverIntelligences(input);
+  const callable = found.entries.filter((row) => row.state === "CALLABLE" || row.state === "EXECUTED");
+  return {
+    status: "EXECUTED",
+    callable: callable.map((row) => row.identity),
+    configured: found.entries
+      .filter((row) => ["CONFIGURED", "CALLABLE", "EXECUTED"].includes(row.state))
+      .map((row) => row.identity),
+    defined: found.entries.filter((row) => row.state === "DEFINED").map((row) => row.identity),
+    lanes: found.lanes,
     live: false,
   };
 }

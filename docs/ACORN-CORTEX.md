@@ -79,7 +79,7 @@ PERCEIVE → INGEST → UNDERSTAND → HYPOTHESIZE → COMPOSE → EXPERIMENT
 
 Roster status is not presence. `chatgpt` remains DECLARED until a channel is present. The cognitive-worker is ACTIVE only when worker evidence exists. Future intelligences enter through `intelligenceAdapter`; missing channels stay `CHANNEL_NOT_PRESENT`.
 
-Inference lanes are unpaid-first: **keyless** (local Cortex, Ollama, GitHub Models via `GITHUB_TOKEN`) → **free** (OpenRouter `:free`) → **paid**. A missing paid key is `CHANNEL_NOT_PRESENT`, not a stall. The organism continues without any model key. `paid_api_required=false`.
+Inference lanes are unpaid-first: **keyless** (local Cortex, Ollama, GitHub Models via `GITHUB_TOKEN`; `GH_TOKEN` is an Actions alias for that secret only) → **free** (OpenRouter `:free`, which requires `OPENROUTER_API_KEY`) → **paid**. `GH_TOKEN` never unlocks OpenRouter. A missing paid key is `CHANNEL_NOT_PRESENT`, not a stall. The organism continues without any model key. `paid_api_required=false`.
 
 The intelligence contract is Cortex-owned. Roster and CANALS are caches, not the brain. Routing is capability-first (`need` → candidates → cost policy → evidence). A new compatible intelligence enters by `describe` / `discover` / `adapt` / `probe` / `register` without modifying Cortex. `PAID_FORBIDDEN` never silently retries paid. Catalog fetches without a key stay `INCONCLUSIVE`, not LIVE.
 
