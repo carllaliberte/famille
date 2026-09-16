@@ -13,6 +13,7 @@ import { intelligenceAdapter } from "../sdk/open-intelligence.js";
 import { runEcosystemCycle } from "./cortex-ecosystem.mjs";
 import { runAdaptiveCognition } from "./cortex-adaptive.mjs";
 import { runMetaEvolution } from "./cortex-meta.mjs";
+import { runContinuityFabric } from "./cortex-continuity.mjs";
 import {
   authorizeCapability,
   runEvolutionLoop,
@@ -443,7 +444,7 @@ export function runOrganismCycle(input = {}) {
     claims: knowledge,
   });
   const adaptive = runAdaptiveCognition({
-    languageInput: input.languageInput || { text: "⊞⊸λ", declared: "FUTURE-LANG-X" },
+    languageInput: input.languageInput || { text: "⊸⊸λ", declared: "FUTURE-LANG-X" },
     workerEvidence: input.workerEvidence || {},
     architecture: ecosystem.architecture,
     nodes: agents,
@@ -460,6 +461,11 @@ export function runOrganismCycle(input = {}) {
     memory: memory.kept,
     prediction_error: error,
     nodes: agents,
+    at,
+  });
+  const continuity = runContinuityFabric({
+    workerEvidence: input.workerEvidence || {},
+    memory: memory.kept,
     at,
   });
   const record = {
@@ -490,6 +496,7 @@ export function runOrganismCycle(input = {}) {
     language,
     adaptive,
     meta: metaEvolution,
+    continuity,
     adapter: { reason: adapterInvoke.reason, live: false },
     constitution,
     live: false,
