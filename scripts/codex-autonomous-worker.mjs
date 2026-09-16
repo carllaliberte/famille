@@ -36,6 +36,14 @@ import {
   OPENROUTER_FREE_MODEL,
   resolveOpenRouterModel as resolveOpenRouterModelFromEnv,
 } from "./codex-openrouter-defaults.mjs";
+import {
+  continuityBrief,
+  estimateTokens,
+  excerptTaskBody,
+  taskPrompt,
+} from "./codex-task-prompt.mjs";
+
+export { continuityBrief, taskPrompt };
 
 export const WORKER_VERSION = "codex-autonomous-worker.v9";
 export const MEMORY_PATH = "evidence/codex/worker-memory.json";
@@ -233,37 +241,6 @@ export function memoryHasContinuity(memory) {
     memory.carl_request ||
     memory.last_main_sha
   );
-}
-
-export function continuityBrief(memory = {}) {
-  const measurements = (memory.measurements || []).slice(-5);
-  const errors = (memory.error_signatures || []).slice(-5);
-  const failed = (memory.failed || memory.failed_tasks || []).slice(-5);
-  const completed = (memory.completed || memory.completed_tasks || []).slice(-5);
-  const human = (memory.human_required || memory.human_actions_required || []).slice(-3);
-  const last = measurements[measurements.length - 1] || {};
-  const lines = [
-    "ACORN CONTINUITY (measured previous state — do not repeat completed work or known-failed approaches):",
-    `last_status: ${last.status || memory.state || "IDLE"}`,
-    `last_sha: ${memory.last_main_sha || last.sha || "unknown"}`,
-    `last_patch_source: ${last.patch_source || "none"}`,
-    `last_model: ${memory.last_model || "unknown"}`,
-  ];
-  if (memory.carl_request) lines.push(`carl_request: ${String(memory.carl_request).slice(0, 400)}`);
-  if (completed.length) {
-    lines.push(`completed: ${completed.map((t) => `#${t.number || t.id || "?"} ${t.title || ""}`.trim()).join("; ")}`);
-  }
-  if (failed.length) {
-    lines.push(`failed: ${failed.map((t) => `#${t.number || t.id || "?"} ${t.reason || t.status || ""}`.trim()).join("; ")}`);
-  }
-  if (errors.length) {
-    lines.push(`error_signatures: ${errors.map((e) => `${e.category || "CODEX"}:${String(e.message || e.signature || "").replace(/\s+/g, " ").slice(0, 80)} x${e.count || 1}`).join("; ")}`);
-  }
-  if (human.length) {
-    lines.push(`human_required: ${human.map((h) => h.exact_human_action || h.action || h.reason || "").join("; ")}`);
-  }
-  if (memory.next_candidate?.title) lines.push(`next_candidate: ${memory.next_candidate.title}`);
-  return lines.join("\n");
 }
 
 export function restorePriorMemory(io, cfg, current) {
@@ -824,41 +801,12 @@ function createTask(io, cfg, candidate) {
   ]));
 }
 
-export function taskPrompt(task, correction = "", memory = null) {
-  const brief = memory && memoryHasContinuity(memory) ? continuityBrief(memory) : "";
-  return `You are Astra Codex, operating through Acorn. The entire repository is in scope.
-Read docs/ASTRA-CODEX.md, docs/WORK-RECORD.md, and docs/live.md before changing anything.
-CODE ≠ TESTED ≠ EXECUTED ≠ MEASURED ≠ VERIFIED ≠ LIVE.
-Missing tool → BUILD_TOOL, then test, keep, reuse. Human secret → HOLD_HUMAN.
-Never merge. Never auto_merge. Never claim LIVE without live-proof LIVE_VERIFIED.
-Never apply Grok Build App Builder product contracts (8080, startup.sh, TanStack scaffold) inside famille.
-Authority is Carl.
-
-Task #${task.number}: ${task.title}
-URL: ${task.url || ""}
-
-TASK BODY:
-${task.body || "(no body)"}
-${brief ? `\n${brief}\n` : ""}
-Rules:
-- Read the repository before changing anything.
-- You may read and edit any project path this task requires: source, tests, workflows, schema, docs, scripts.
-- Do not restrict yourself to a subdirectory unless the task itself is bounded.
-- Preserve existing architecture and vocabulary.
-- Make the smallest coherent production-quality change justified by evidence.
-- Run focused tests for every changed area.
-- Do not merge, change branch protection, modify secrets, write credentials, or claim LIVE.
-- Do not invent unrelated architecture.
-- Human authority is Carl; this worker prepares one final PR for Carl.
-- If unsafe, ambiguous, or requiring a human secret, stop without source changes.
-- Leave only intended implementation and tests in the workspace.
-${correction ? `\nIMMEDIATE DEBUG/REPAIR:\n${correction}\n` : ""}`;
-}
-
 function runCodex(io, cfg, task, correction = "", memory = null) {
   const beforeSha = git(io, ["rev-parse", "HEAD"]).trim();
   const beforeDirty = git(io, ["status", "--porcelain"]);
-  const result = io.spawn("codex", [...CODEX_WRITE_ARGS, ...extraCodexConfigArgs(io), taskPrompt(task, correction, memory)], {
+  const prompt = taskPrompt(task, correction, memory);
+  const brief = memory && memoryHasContinuity(memory) ? continuityBrief(memory) : "";
+  const result = io.spawn("codex", [...CODEX_WRITE_ARGS, ...extraCodexConfigArgs(io), prompt], {
     cwd: io.root,
     encoding: "utf8",
     timeout: cfg.taskTimeout * 60 * 1000,
@@ -888,6 +836,10 @@ function runCodex(io, cfg, task, correction = "", memory = null) {
     status,
     patch_source: status === "PATCHED" ? provenance.patch_source : "none",
     executed_by: "codex",
+    prompt_chars: prompt.length,
+    estimated_prompt_tokens: estimateTokens(prompt),
+    task_body_chars: excerptTaskBody(task.body, task.url).length,
+    continuity_chars: brief.length,
   });
 }
 
