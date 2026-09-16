@@ -60,6 +60,22 @@ Acorn works in **large coherent workstreams, not micro-chantiers**.
 
 The objective is not a collection of tickets. The objective is a functioning Acorn system.
 
+## Self-healing — ordinary bugs repair themselves
+
+Acorn must not depend on Carl to notice or repair ordinary runtime failures.
+
+- Continuously detect measured failures from workers, CI, cadence and autonomous execution.
+- Classify before acting: transient → retry; environment → restart; code/test → dispatch the repair worker; unknown → diagnose.
+- Execute the recovery loop as one coherent operation: detect → understand → repair → test → measure → continue.
+- The self-healing rail may automatically retry/restart execution and dispatch Codex repair work without waiting for Carl.
+- Code repairs remain provenance-visible and use the normal PR path; Carl remains the merge authority.
+- Never bypass the global breaker, governance, secrets boundary, protected branch, or LIVE rules.
+- Never expose, create, rotate, or pay with secrets automatically.
+- If human authority is genuinely required, record HOLD_HUMAN rather than pretending success.
+- Bound repair attempts; repeated failure becomes measured escalation, not a destructive infinite loop.
+
+**Principle:** Carl should not have to repair ordinary system bugs. Acorn repairs what it can safely repair itself and calls Carl only at the genuinely human boundary.
+
 ## Security flux — all AIs, now and later
 
 Same canal. Same locks. A new AI joins by id (`schema/agents.json`), not by forking this prompt.
