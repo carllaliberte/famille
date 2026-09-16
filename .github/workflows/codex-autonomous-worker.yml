@@ -57,10 +57,10 @@ permissions:
   actions: write
 
 concurrency:
-  group: >-
-    codex-autonomous-worker-${{
-      github.event_name == 'workflow_dispatch' && 'dispatch' || 'source'
-    }}
+  # Keep independent refs isolated. GitHub keeps only one running and one
+  # pending run per group; the previous static "dispatch" group allowed a
+  # dispatch on another branch to replace a still-pending main dispatch.
+  group: codex-autonomous-worker-${{ github.ref_name || github.event_name }}
   cancel-in-progress: false
 
 jobs:
