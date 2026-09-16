@@ -13,6 +13,7 @@ import { createAdapter, discoverProtocol, negotiateProtocol, proposeProtocol } f
 import { intelligencePassport, replaceComponent, discoverFutureIntelligence } from "./cortex-eternal.mjs";
 import { commonModeFailure, degradedMode } from "./cortex-continuity.mjs";
 import { learnFromExperience } from "./reality-learning-engine.mjs";
+import { observeBreaker, attemptNvidia, refuseBreakerBypass, runSovereigntyGuard } from "./cortex-sovereignty.mjs";
 
 export const ACCEL_VERSION = "cortex-acceleration.v1";
 export const ACCELERATOR_KINDS = Object.freeze([
@@ -425,15 +426,33 @@ export function ultimateAccelerationExperiment(input = {}) {
 
 export function runAccelerationFabric(input = {}) {
   const at = input.at || new Date().toISOString();
+  const env = input.env || process.env;
+  const sovereignty = runSovereigntyGuard({ env, allowExec: input.allowExec !== false, source: "acceleration" });
+  if (sovereignty.breaker.status === "HOLD_HUMAN") {
+    return {
+      version: ACCEL_VERSION,
+      status: "HOLD_HUMAN",
+      reason: sovereignty.breaker.reason,
+      nvidia: { state: "HOLD_HUMAN", probe: { live: false }, attempt: sovereignty.nvidia },
+      sovereignty,
+      secrets_used: false,
+      nvidia_called: false,
+      fake_success: false,
+      live: false,
+      auto_merge: false,
+      authority: "carl",
+    };
+  }
   const discovered = discoverAccelerators({
-    env: input.env || process.env,
+    env,
     workerEvidence: input.workerEvidence || {},
     declared: input.declared || [{ id: "FUTURE_ACCELERATOR_X", kind: "UNKNOWN", vendor: "UNKNOWN" }],
   });
   const nvidia = discovered.entries.find((row) => row.identity === "nvidia-gpu") || {};
   const cpu = discovered.entries.find((row) => row.identity === "cpu-local") || {};
   const unknown = discovered.entries.find((row) => row.kind === "UNKNOWN") || describeAccelerator({ id: "FUTURE_ACCELERATOR_X", kind: "UNKNOWN" });
-  const nvidiaProbe = probeAccelerator({ identity: "nvidia-gpu", vendor: "NVIDIA", env: input.env || process.env, evidence: input.nvidiaEvidence || {} });
+  const nvidiaProbe = probeAccelerator({ identity: "nvidia-gpu", vendor: "NVIDIA", env, evidence: input.nvidiaEvidence || {} });
+  const nvidiaAttempt = attemptNvidia({ env, allowExec: input.allowExec !== false });
   const failover = nvidia.state === "CHANNEL_NOT_PRESENT"
     ? nvidiaUnavailable({ remaining: cpu.identity ? [cpu.identity] : [] })
     : { status: "EXECUTED", fake_success: false, live: false };
@@ -464,7 +483,7 @@ export function runAccelerationFabric(input = {}) {
     version: ACCEL_VERSION,
     status: "EXECUTED",
     discovered,
-    nvidia: { ...nvidia, probe: nvidiaProbe },
+    nvidia: { ...nvidia, probe: nvidiaProbe, attempt: nvidiaAttempt },
     cpu,
     unknown,
     failover,
@@ -478,12 +497,14 @@ export function runAccelerationFabric(input = {}) {
     observed,
     lockin,
     unknown_bundle: unknownBundle,
+    sovereignty,
     gates: {
       merge: merge.ok,
       nvidia_is_architecture: false,
       hardware_is_not_intelligence: true,
       passport_is_not_presence: true,
       discovery_is_not_trust: true,
+      breaker_bypass: false,
       second_cortex: false,
       second_fabric: false,
     },

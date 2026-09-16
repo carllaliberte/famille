@@ -233,7 +233,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   const acc = output.organism?.acceleration;
   if (acc) {
-    console.log(`acceleration.nvidia=${acc.nvidia?.state || "none"} unknown=${acc.unknown?.identity || "none"} nvidia_is_architecture=${acc.gates?.nvidia_is_architecture === true} failover=${acc.failover?.status || "none"} lockin_survives=${(acc.lockin || []).every((row) => row.cortex_survives === true)} live=false`);
+    console.log(`acceleration.nvidia=${acc.nvidia?.state || "none"} attempt=${acc.nvidia?.attempt?.status || "none"} unknown=${acc.unknown?.identity || "none"} nvidia_is_architecture=${acc.gates?.nvidia_is_architecture === true} failover=${acc.failover?.status || "none"} lockin_survives=${(acc.lockin || []).every((row) => row.cortex_survives === true)} live=false`);
+  }
+  const br = output.organism?.acceleration?.sovereignty?.breaker;
+  if (br) {
+    console.log(`breaker.reason=${br.reason || "none"} owner=carl nvidia_live=${output.organism?.acceleration?.nvidia?.attempt?.nvidia_live === true} live=false`);
   }
   const fut = output.organism?.futures;
   if (fut) {

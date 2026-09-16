@@ -11,6 +11,7 @@ import { classifyFailure, selfHealDecision } from "./self-heal.mjs";
 import { learnFromExperience } from "./reality-learning-engine.mjs";
 import { homeostasisOf, independenceGraph, searchArchitectures } from "./cortex-ecosystem.mjs";
 import { checkpointCortex } from "./cortex-adaptive.mjs";
+import { observeBreaker } from "./cortex-sovereignty.mjs";
 
 export const CONTINUITY_VERSION = "cortex-continuity.v1";
 export const NODE_ROLES = Object.freeze([
@@ -215,8 +216,20 @@ export function failoverModeFor(failure = {}) {
 }
 
 export function runFailover({
-  failure, lease, primary, standbys = [], fenced = false, workerEvidence = {}, at,
+  failure, lease, primary, standbys = [], fenced = false, workerEvidence = {}, at, env = process.env,
 } = {}) {
+  const breaker = observeBreaker({ env });
+  if (breaker.status === "HOLD_HUMAN") {
+    return {
+      status: "HOLD_HUMAN",
+      mode: "HOLD_HUMAN",
+      promoted: false,
+      reason: breaker.reason,
+      authority_transferred: false,
+      bypass: false,
+      live: false,
+    };
+  }
   const mode = failoverModeFor(failure || {});
   if (mode === "HOLD_HUMAN") {
     return { status: "HOLD_HUMAN", mode, promoted: false, reason: failure?.kind || "ambiguous", authority_transferred: false, live: false };
