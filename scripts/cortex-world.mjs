@@ -11,8 +11,8 @@ import {
   detectContradiction,
   simulateOrganism,
 } from "./cortex-organism.mjs";
-import { unknownSpace, valueOfInformation } from "./cortex-ecosystem.mjs";
-import { whatIf, timeMachine, cognitiveSelfModel } from "./cortex-meta.mjs";
+import { unknownSpace, valueOfInformation, timeMachine } from "./cortex-ecosystem.mjs";
+import { whatIf, cognitiveSelfModel } from "./cortex-meta.mjs";
 import { appendEvent } from "./cortex-continuity.mjs";
 import { staleKnowledge, runEternalArchitecture } from "./cortex-eternal.mjs";
 import { learnFromExperience } from "./reality-learning-engine.mjs";
