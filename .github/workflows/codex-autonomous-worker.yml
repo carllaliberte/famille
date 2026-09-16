@@ -30,6 +30,11 @@ on:
         required: false
         default: false
         type: boolean
+      provider:
+        description: "Codex provider: openrouter (default) or openai"
+        required: false
+        default: "openrouter"
+        type: string
   push:
     branches: [main]
   issues:
@@ -104,16 +109,22 @@ jobs:
         env:
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CODEX_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || vars.CODEX_PROVIDER || 'openrouter' }}
         run: |
           mkdir -p "$HOME/.codex"
-          if [ -n "$OPENROUTER_API_KEY" ]; then
-            echo "OpenRouter key present; skipping ChatGPT Codex session so the OpenRouter budget guard is authoritative."
-          elif [ -n "$CODEX_AUTH_JSON" ]; then
+          AUTH_PRESENT=0
+          if [ -n "$CODEX_AUTH_JSON" ]; then
             printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
             chmod 600 "$HOME/.codex/auth.json"
-            echo "ChatGPT Astra Codex session restored."
+            AUTH_PRESENT=1
+            echo "auth_present=true provider_requested=${CODEX_PROVIDER:-} auth_mode=chatgpt-codex-session-file"
           else
-            echo "No CODEX_AUTH_JSON; worker uses OPENROUTER_API_KEY if present."
+            echo "auth_present=false provider_requested=${CODEX_PROVIDER:-} auth_mode=no-codex-auth-json"
+          fi
+          if [ -n "$OPENROUTER_API_KEY" ]; then
+            echo "openrouter_key_present=true"
+          else
+            echo "openrouter_key_present=false"
           fi
           unset CODEX_AUTH_JSON OPENROUTER_API_KEY
 
@@ -130,7 +141,7 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          CODEX_PROVIDER: openrouter
+          CODEX_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || vars.CODEX_PROVIDER || 'openrouter' }}
           CODEX_MODEL: ${{ vars.CODEX_MODEL }}
           CODEX_MAX_OUTPUT_TOKENS: "1024"
           CODEX_OPENROUTER_PROXY_PORT: "17891"
