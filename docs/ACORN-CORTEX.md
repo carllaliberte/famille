@@ -81,6 +81,9 @@ Roster status is not presence. `chatgpt` remains DECLARED until a channel is pre
 
 Inference lanes are unpaid-first: **keyless** (local Cortex, Ollama, GitHub Models via `GITHUB_TOKEN`) → **free** (OpenRouter `:free`) → **paid**. A missing paid key is `CHANNEL_NOT_PRESENT`, not a stall. The organism continues without any model key. `paid_api_required=false`.
 
+The intelligence contract is Cortex-owned. Roster and CANALS are caches, not the brain. Routing is capability-first (`need` → candidates → cost policy → evidence). A new compatible intelligence enters by `describe` / `discover` / `adapt` / `probe` / `register` without modifying Cortex. `PAID_FORBIDDEN` never silently retries paid. Catalog fetches without a key stay `INCONCLUSIVE`, not LIVE.
+
+
 
 Knowledge fabric preserves disagreement. Consensus is not truth. Predictions are stored before execution and never rewritten. Causal claims stay `INCONCLUSIVE` without intervention evidence. Genome snapshots are versioned. Mutations are candidates. Simulation is not proof of reality. `CAPABILITY ≠ AUTHORITY`. `SELF-EVOLUTION ≠ SELF-AUTHORIZATION`.
 
