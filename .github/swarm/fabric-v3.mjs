@@ -89,15 +89,17 @@ export function executeCorrection(task, spec = {}) {
   if (!working.ok) return working;
   work = working.work;
 
+  const output = spec.output ?? { corrected: true };
   const executed = executeBranch(work, branch.branch_id, {
     worker: spec.worker || "adaptive-correction",
     capability: spec.capability || work.required_capabilities[0] || "lu",
-    output: spec.output ?? { corrected: true },
+    output,
     at: spec.at,
   });
   if (!executed.ok) return executed;
   work = executed.work;
 
+  // In-process counter only. Not consulter / mesure-protocol. Not a juge card.
   const measurement = addMeasurement(work, {
     metric: "adaptive_correction",
     value: 1,
@@ -111,7 +113,7 @@ export function executeCorrection(task, spec = {}) {
   work = measurement.work;
 
   const branchResult = work.branches.find((b) => b.branch_id === branch.branch_id)?.result;
-  const expected = spec.output ?? { corrected: true };
+  const expected = spec.expected !== undefined ? spec.expected : output;
   const readback = verifyReadback({ executed: true, expected, readback: branchResult ? JSON.parse(branchResult.body) : null });
   if (readback.state !== "VERIFIED") {
     const objection = addObjection(work, {
@@ -202,6 +204,7 @@ export function runAdaptiveEngine(input = {}) {
       worker: input.correction_worker || "adaptive-correction",
       capability: input.correction_capability || "lu",
       output: input.correct_output ?? { resolved: true },
+      expected: input.correct_expected,
       at,
     });
     if (!correction.ok) return { ...correction, trace, live: false };
