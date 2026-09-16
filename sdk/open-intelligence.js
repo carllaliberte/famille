@@ -134,6 +134,20 @@ export function intelligenceAdapter(partial = {}) {
     capabilities: unknown ? ["CAPABILITY_UNKNOWN"] : caps, protocol: partial.protocol || "open-intelligence.v0",
     presence: "DECLARED", authority: false, live: false,
     discover() { return { id: this.id, presence: this.presence, trusted: false }; },
+    describe() {
+      return {
+        identity: this.id,
+        provider: this.provider,
+        model: this.model || null,
+        channel: this.channel || this.protocol,
+        protocol: this.protocol,
+        capabilities: [...this.capabilities],
+        presence: this.presence,
+        authority: false,
+        live: false,
+        identity_is_not_model: this.id !== (this.model || this.id),
+      };
+    },
     handshake() {
       const ok = !partial.protocol || partial.protocol === "open-intelligence.v0";
       return { compatible: ok, trusted: false, verified: false };
@@ -143,6 +157,10 @@ export function intelligenceAdapter(partial = {}) {
         return { invoked: false, reason: this.presence, live: false };
       }
       if (breakerBlocks(req && req.capability)) return { invoked: false, reason: "SAFE_STOP", live: false };
+      if (typeof this.transport === "function") {
+        const out = this.transport(req);
+        return { invoked: out?.invoked !== false, reason: out?.reason || null, live: false, authority: false, ...out, live: false };
+      }
       return { invoked: false, reason: "CHANNEL_NOT_PRESENT", live: false };
     },
     observe(x) { return { kind: "OBSERVATION", x, established: false }; },

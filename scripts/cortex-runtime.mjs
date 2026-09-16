@@ -19,6 +19,8 @@ import {
   runEvolutionLoop,
 } from "../.github/swarm/cortex.mjs";
 import { presenceFromRuntime, runOrganismCycle } from "./cortex-organism.mjs";
+import { runIntelligenceContract } from "./intelligence-contract.mjs";
+import { learnCortexExperience } from "./cortex-learning-cycle.mjs";
 
 function readJson(path, fallback) {
   try {
@@ -162,7 +164,22 @@ export function runCortexRuntime({
     env,
     at,
   });
-  session = stage(session, "DONE", "Cortex observation + evolution + organism cycle completed");
+  const intelligence = runIntelligenceContract({
+    env,
+    agents: stamped,
+    canals: {},
+    workerEvidence,
+    need: "review",
+    policy: env.ACORN_COST_POLICY || "FREE_FIRST",
+    memory,
+  });
+  const learning = learnCortexExperience({
+    prediction: organism.prediction?.prediction || { hypothesis: "cognitive-cycle", expected: { capability: "cognitive-cycle", available: true } },
+    observation: { actual: organism.observe?.actual, context: { route: intelligence.routed?.selected?.identity || "cortex-local" }, observed_at: at },
+    model: { version: 1 },
+    verification: { verified: evolution.verification?.verdict === "VERIFIED_SUCCESS" },
+  });
+  session = stage(session, "DONE", "Cortex observation + evolution + organism + intelligence contract completed");
 
   return {
     version: "cortex-runtime.v0",
@@ -177,6 +194,8 @@ export function runCortexRuntime({
     lesson,
     evolution,
     organism,
+    intelligence,
+    learning,
     worker_evidence_ref: workerEvidence.v || null,
   };
 }
