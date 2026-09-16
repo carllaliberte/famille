@@ -10,6 +10,11 @@
 import { diagnoseWorkerEvidence, selfHealDecision } from "./self-heal.mjs";
 import { laneInventory } from "./inference-lanes.mjs";
 import { intelligenceAdapter } from "../sdk/open-intelligence.js";
+import { runEcosystemCycle } from "./cortex-ecosystem.mjs";
+import { runAdaptiveCognition } from "./cortex-adaptive.mjs";
+import { runMetaEvolution } from "./cortex-meta.mjs";
+import { runContinuityFabric } from "./cortex-continuity.mjs";
+import { runAccelerationFabric } from "./cortex-acceleration.mjs";
 import {
   authorizeCapability,
   runEvolutionLoop,
@@ -426,6 +431,49 @@ export function runOrganismCycle(input = {}) {
     authority: "carl",
     self_authorization: false,
   });
+  const ecosystem = runEcosystemCycle({
+    agents,
+    workerEvidence: input.workerEvidence || {},
+    need: "review",
+    required: ["review"],
+    knowledge,
+    metabolism,
+    immune,
+    memory: memory.kept,
+    topology: evolution.reconfiguration.topology || input.topology || {},
+    fluidity: input.fluidity || {},
+    claims: knowledge,
+  });
+  const adaptive = runAdaptiveCognition({
+    languageInput: input.languageInput || { text: "⊸⊸λ", declared: "FUTURE-LANG-X" },
+    workerEvidence: input.workerEvidence || {},
+    architecture: ecosystem.architecture,
+    nodes: agents,
+    policy: "FREE_FIRST",
+    at,
+  });
+  const language = adaptive.language;
+  const metaEvolution = runMetaEvolution({
+    adaptive,
+    ecosystem,
+    workerEvidence: input.workerEvidence || {},
+    genome,
+    immune,
+    memory: memory.kept,
+    prediction_error: error,
+    nodes: agents,
+    at,
+  });
+  const continuity = runContinuityFabric({
+    workerEvidence: input.workerEvidence || {},
+    memory: memory.kept,
+    at,
+  });
+  const acceleration = runAccelerationFabric({
+    workerEvidence: input.workerEvidence || {},
+    env: input.env || process.env,
+    at,
+  });
   const record = {
     version: ORGANISM_VERSION,
     loop: ORGANISM_LOOP,
@@ -450,6 +498,12 @@ export function runOrganismCycle(input = {}) {
     genome,
     mutation,
     metacognition: meta,
+    ecosystem,
+    language,
+    adaptive,
+    meta: metaEvolution,
+    continuity,
+    acceleration,
     adapter: { reason: adapterInvoke.reason, live: false },
     constitution,
     live: false,

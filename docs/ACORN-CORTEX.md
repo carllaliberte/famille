@@ -83,6 +83,19 @@ Inference lanes are unpaid-first: **keyless** (local Cortex, Ollama, GitHub Mode
 
 The intelligence contract is Cortex-owned. Roster and CANALS are caches, not the brain. Routing is capability-first (`need` → candidates → cost policy → evidence). A new compatible intelligence enters by `describe` / `discover` / `adapt` / `probe` / `register` without modifying Cortex. `PAID_FORBIDDEN` never silently retries paid. Catalog fetches without a key stay `INCONCLUSIVE`, not LIVE.
 
+The organism also runs a cognitive ecosystem pass: nodes (model, tool, memory, human), measurable synapses with plasticity, temporary assemblies, unknown space, curiosity, replay, architecture search, homeostasis and resilient reroute. Capability graph and authority graph stay separate. `PROPOSED ≠ ADOPTED`. `UNKNOWN ≠ FAILURE`. `HOLD_HUMAN ≠ ERROR`. Human attention is a scarce node, not a validate-everything button. `live=false`.
+
+The same pass now builds a **cognitive architecture** per task: classify → generate A/B/C → select → assemble → execute → compare → remember pattern. Architectures are dated, contextual, measured and reversible. Never “better in general”. Zero-cost mode recomposes locally. Collusion, regression and unverified evolution stay `PROPOSED` / `INCONCLUSIVE`. `auto_merge=false`.
+
+Language adaptation lives in the same Cortex. CIR (`cir.v0`) separates form from meaning. Unknown forms are `LANGUAGE_UNKNOWN`, not errors. `pack-lieu` remains a surface cache, not a cognitive ceiling. There is no `SUPPORTED_LANGUAGES` allowlist. A → CIR → B, never N×M translators. Understanding a language is not execution, not write, not merge. Zero-cost. `live=false`.
+
+Adaptive cognition is the single engine: language, protocol and evolution are three manifestations, not three Cortexes. Unknown protocol → discover → negotiate → propose adapter (`PROPOSED`, not trusted). Architectures are compared as measured differences, never “B is better”. Checkpoints isolate experiments. Mutations do not deploy. Unknown intelligence is routed by capability, not provider name. Immune treats unknowns as untrusted. Genome describes evolution and is not authority. `CAPABILITY ≠ AUTHORITY`. `live=false`.
+
+Meta-evolution is the same Cortex observing its own cognition. Self-model fields stay KNOWN / MEASURED / INFERRED / HYPOTHESIZED / UNKNOWN — never auto-promoted. Architecture search produces candidates, not winners. Experiments can be rejected. Counterfactuals are not observations. SELF-PROPOSE ≠ SELF-AUTHORIZE. `live=false`.
+
+Acceleration is a capability, not a vendor. NVIDIA is a candidate adapter (`CHANNEL_NOT_PRESENT` unless a real channel responds). CPU/GPU/NPU/unknown silicon share one discovery path. `HARDWARE ≠ INTELLIGENCE ≠ PROVIDER ≠ CHANNEL`. `PASSPORT ≠ PRESENCE`. A missing accelerator degrades or holds — never fake success. `live=false`.
+
+
 
 
 Knowledge fabric preserves disagreement. Consensus is not truth. Predictions are stored before execution and never rewritten. Causal claims stay `INCONCLUSIVE` without intervention evidence. Genome snapshots are versioned. Mutations are candidates. Simulation is not proof of reality. `CAPABILITY ≠ AUTHORITY`. `SELF-EVOLUTION ≠ SELF-AUTHORIZATION`.

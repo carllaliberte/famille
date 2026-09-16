@@ -35,12 +35,18 @@ export function describeIntelligence(input = {}) {
     modalities: list(input.modalities),
     tools: list(input.tools),
     presence: input.presence || "DECLARED",
+    type: input.type || "UNKNOWN",
+    family: input.family || "UNKNOWN",
+    hardware: input.hardware || null,
+    accelerator: input.accelerator || null,
     lane,
     cost: input.cost ?? (lane === "paid" ? "paid" : lane === "free" ? "free" : "zero"),
     authority: false,
     live: false,
     identity_is_not_model: true,
     provider_is_not_channel: true,
+    hardware_is_not_intelligence: true,
+    model_is_not_hardware: true,
   };
 }
 

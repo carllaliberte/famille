@@ -67,6 +67,7 @@ export function runCortexRuntime({
   timing = readJson("cognitive-fluidity-timing.json", {}),
   env = process.env,
   at = new Date().toISOString(),
+  languageInput = { text: "⊞⊸λ", declared: "FUTURE-LANG-X" },
 } = {}) {
   if (!fluidity.state) {
     fluidity = { ...readJson(process.env.FLUIDITY_PRIOR || "cognitive-fluidity-prior.json", {}), ...fluidity };
@@ -163,6 +164,7 @@ export function runCortexRuntime({
     evolution,
     env,
     at,
+    languageInput,
   });
   const intelligence = runIntelligenceContract({
     env,
@@ -211,6 +213,27 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   if (output.organism?.genome?.genome) {
     writeFileSync("cortex-genome.json", `${JSON.stringify(output.organism.genome, null, 2)}\n`);
+  }
+  const eco = output.organism?.ecosystem;
+  if (eco) {
+    const arch = eco.architecture;
+    console.log(`ecosystem.executor=${eco.graph?.assembly?.roles?.executor || "none"} homeostasis=${eco.homeostasis?.state || "none"} unknown_is_not_failure=${eco.unknown?.unknown_is_not_failure === true} architecture.class=${arch?.classified?.class || "none"} architecture.selected=${arch?.selected?.architecture?.architecture_id || "none"} architecture.better_in_general=${arch?.better_in_general === true} live=false`);
+  }
+  const lang = output.organism?.language;
+  if (lang) {
+    console.log(`language.state=${lang.discovery?.state || "none"} form.kind=${lang.discovery?.form?.kind || "none"} understood=${lang.discovery?.understood === true} zero_cost=${lang.zero_cost === true} authority_merge=${lang.gates?.merge === true} live=false`);
+  }
+  const ad = output.organism?.adaptive;
+  if (ad) {
+    console.log(`adaptive.protocol=${ad.protocol?.state || "none"} negotiated=${(ad.negotiated?.common || []).join(",") || "none"} intel=${ad.future_intelligence?.identity || "none"} immune.untrusted=${ad.immune?.untrusted === true} diff.better=${ad.diff?.better === true} mutation.adopted=${ad.evolved?.adopted === true} second_cortex=${ad.second_cortex === true} live=false`);
+  }
+  const meta = output.organism?.meta;
+  if (meta) {
+    console.log(`meta.self_authorize=${meta.improved?.self_authorize === true} rejected=${meta.improved?.rejected === true} winner=${meta.winner || "none"} unknown=${meta.unknown?.kind || "none"} counterfactual=${meta.counterfactual?.counterfactual === true} live=false`);
+  }
+  const acc = output.organism?.acceleration;
+  if (acc) {
+    console.log(`acceleration.nvidia=${acc.nvidia?.state || "none"} unknown=${acc.unknown?.identity || "none"} nvidia_is_architecture=${acc.gates?.nvidia_is_architecture === true} failover=${acc.failover?.status || "none"} live=false`);
   }
   console.log(JSON.stringify(output, null, 2));
 }
