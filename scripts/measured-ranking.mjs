@@ -68,12 +68,14 @@ export function loadMeasuredRanking(run = execFileSync, env = process.env) {
   const dir = ".acorn-measured-ranking";
   try {
     mkdirSync(dir, { recursive: true });
-    const runs = run("gh", ["run", "list", "--repo", env.GITHUB_REPOSITORY, "--workflow", "cognitive-worker.yml", "--status", "success", "--limit", "5", "--json", "databaseId"], { encoding: "utf8", stdio: "pipe" });
-    const prior = JSON.parse(runs || "[]")[0]?.databaseId;
-    if (!prior) return emptyRanking();
-    const parsed = readRunRanking({ databaseId: prior, repository: env.GITHUB_REPOSITORY }, dir, run);
-    if (!parsed) return emptyRanking();
-    return verifyEvidenceSeal(parsed) ? { ...parsed, integrity: "VERIFIED" } : { ...emptyRanking(), integrity: "CONFLICT" };
+    const raw = run("gh", ["run", "list", "--repo", env.GITHUB_REPOSITORY, "--workflow", "cognitive-worker.yml", "--status", "success", "--limit", "10", "--json", "databaseId,headSha"], { encoding: "utf8", stdio: "pipe" });
+    const runs = JSON.parse(raw || "[]").filter((item) => item?.databaseId);
+    for (const item of runs) {
+      const parsed = readRunRanking({ databaseId: item.databaseId, repository: env.GITHUB_REPOSITORY }, dir, run);
+      if (!parsed) continue;
+      return verifyEvidenceSeal(parsed) ? { ...parsed, integrity: "VERIFIED" } : { ...emptyRanking(), integrity: "CONFLICT" };
+    }
+    return emptyRanking();
   } catch {
     return emptyRanking();
   } finally {
