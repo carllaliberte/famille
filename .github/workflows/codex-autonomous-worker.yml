@@ -35,6 +35,16 @@ on:
         required: false
         default: "openrouter"
         type: string
+      continue_runtime:
+        description: "Allow one bounded continuation after this explicit wake"
+        required: false
+        default: false
+        type: boolean
+      continuation_depth:
+        description: "Bounded continuation depth"
+        required: false
+        default: "0"
+        type: string
   push:
     branches: [main]
   issues:
@@ -190,11 +200,20 @@ jobs:
           retention-days: 30
 
       - name: Continue autonomous runtime
-        if: ${{ always() && vars.ACORN_SYSTEM_MODE == 'Run' && github.event_name != 'workflow_dispatch' }}
+        if: >-
+          ${{
+            always() &&
+            vars.ACORN_SYSTEM_MODE == 'Run' &&
+            (
+              github.event_name != 'workflow_dispatch' ||
+              (inputs.continue_runtime == true && fromJSON(inputs.continuation_depth || '0') == 0)
+            )
+          }}
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
+          CONTINUATION_DEPTH: ${{ inputs.continuation_depth || '0' }}
         run: |
           STATUS=""
           if [ -f codex-worker-evidence.json ]; then
@@ -206,11 +225,13 @@ jobs:
               exit 0
               ;;
           esac
-          echo "CONTINUITY one follow-up after source event $EVENT_NAME status=$STATUS"
+          echo "CONTINUITY one bounded follow-up after source event $EVENT_NAME status=$STATUS depth=${CONTINUATION_DEPTH}"
           sleep 30
           gh workflow run codex-autonomous-worker.yml \
             --repo "$GITHUB_REPOSITORY" \
             -f max_tasks=12 \
             -f max_minutes=300 \
             -f debug=true \
-            -f self_test=false
+            -f self_test=false \
+            -f continue_runtime=true \
+            -f continuation_depth=1
