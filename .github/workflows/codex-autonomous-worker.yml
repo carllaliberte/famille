@@ -30,8 +30,6 @@ on:
         required: false
         default: false
         type: boolean
-  pull_request:
-    types: [closed]
   push:
     branches: [main]
   issues:
@@ -43,10 +41,12 @@ permissions:
   pull-requests: write
   actions: write
 
-# Source events (push/issues/schedule/PR) must not share a queue with
+# Source events (push/issues/schedule) must not share a queue with
 # continuity workflow_dispatch. GitHub cancels *pending* runs in the same
 # group when a newer run is queued — even if cancel-in-progress is false.
 # Measured: push 35080934780 cancelled, 0 jobs, 0 artifacts.
+# Measured: after #564, pull_request closed 35087693247 ran first on the
+# merge SHA and the following push 35087693550 went IDLE/idempotent.
 concurrency:
   group: >-
     codex-autonomous-worker-${{
@@ -57,10 +57,6 @@ concurrency:
 jobs:
   codex:
     if: >
-      (github.event_name != 'pull_request' ||
-       (github.event.pull_request.merged == true &&
-        github.event.pull_request.base.ref == 'main' &&
-        startsWith(github.event.pull_request.head.ref, 'codex/'))) &&
       (github.event_name != 'issues' ||
        contains(join(github.event.issue.labels.*.name, ','), 'codex-task')) &&
       (github.event_name != 'push' || github.ref == 'refs/heads/main')
@@ -69,7 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'pull_request' && 'main' || github.ref_name }}
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
           persist-credentials: true
 
@@ -124,13 +120,9 @@ jobs:
           CODEX_DEBUG: ${{ (github.event_name == 'workflow_dispatch' && inputs.debug == false) && 'false' || 'true' }}
           CODEX_SELF_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.self_test && 'true' || 'false' }}
           CODEX_TRIGGER: ${{ github.event_name }}
-          CODEX_PR_HEAD: ${{ github.event.pull_request.head.ref || '' }}
-          CODEX_PR_BASE: ${{ github.event.pull_request.base.ref || 'main' }}
-          CODEX_PR_MERGED: ${{ github.event.pull_request.merged || false }}
           CODEX_HEAD_SHA: ${{ github.sha }}
           CODEX_BEFORE_SHA: ${{ github.event.before || '' }}
           CODEX_ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
-          CODEX_MERGED_PR_NUMBER: ${{ github.event.pull_request.number || '' }}
         run: node scripts/codex-autonomous-worker.mjs
 
       - name: Heartbeat summary
