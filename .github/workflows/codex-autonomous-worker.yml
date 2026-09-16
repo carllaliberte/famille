@@ -38,7 +38,7 @@ on:
       continue_runtime:
         description: "Allow one bounded continuation after this explicit wake"
         required: false
-        default: false
+        default: true
         type: boolean
       continuation_depth:
         description: "Bounded continuation depth"
@@ -199,39 +199,54 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: Diagnose continuation
+        id: cont
+        if: always()
+        env:
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+          EVENT_NAME: ${{ github.event_name }}
+          CONTINUATION_DEPTH: ${{ inputs.continuation_depth || '0' }}
+          CONTINUE_RUNTIME: ${{ github.event_name != 'workflow_dispatch' && 'true' || inputs.continue_runtime }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          CODEX_WORKER_EVIDENCE: codex-worker-evidence.json
+          RUNTIME_DIAGNOSIS: runtime-diagnosis.json
+        run: node scripts/runtime-continue.mjs
+
+      - name: Preserve runtime diagnosis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-diagnosis-${{ github.run_id }}
+          path: runtime-diagnosis.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Continue autonomous runtime
-        if: >-
-          ${{
-            always() &&
-            vars.ACORN_SYSTEM_MODE == 'Run' &&
-            (
-              github.event_name != 'workflow_dispatch' ||
-              (inputs.continue_runtime == true && fromJSON(inputs.continuation_depth || '0') == 0)
-            )
-          }}
+        if: always() && steps.cont.outputs.continue == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
-          CONTINUATION_DEPTH: ${{ inputs.continuation_depth || '0' }}
+          NEXT: ${{ steps.cont.outputs.next }}
+          NEXT_DEPTH: ${{ steps.cont.outputs.next_depth }}
+          SELF_TEST: ${{ steps.cont.outputs.self_test }}
+          REASON: ${{ steps.cont.outputs.reason }}
         run: |
-          STATUS=""
-          if [ -f codex-worker-evidence.json ]; then
-            STATUS="$(node -e 'const e=require("./codex-worker-evidence.json"); process.stdout.write(String(e.status || ""))')"
+          echo "CONTINUITY next=$NEXT depth=$NEXT_DEPTH event=$EVENT_NAME reason=$REASON"
+          sleep 15
+          if [ "$NEXT" = "SELF_HEAL" ]; then
+            gh workflow run self-heal.yml \
+              --repo "$GITHUB_REPOSITORY" \
+              --ref "${{ github.ref_name }}" \
+              -f reason="$REASON"
+            exit 0
           fi
-          case "$STATUS" in
-            HUMAN_REQUIRED|WAIT_HUMAN_MERGE)
-              echo "CONTINUITY paused for human authority: $STATUS"
-              exit 0
-              ;;
-          esac
-          echo "CONTINUITY one bounded follow-up after source event $EVENT_NAME status=$STATUS depth=${CONTINUATION_DEPTH}"
-          sleep 30
           gh workflow run codex-autonomous-worker.yml \
             --repo "$GITHUB_REPOSITORY" \
+            --ref "${{ github.ref_name }}" \
             -f max_tasks=12 \
             -f max_minutes=300 \
             -f debug=true \
-            -f self_test=false \
+            -f self_test="$SELF_TEST" \
             -f continue_runtime=true \
-            -f continuation_depth=1
+            -f continuation_depth="$NEXT_DEPTH"

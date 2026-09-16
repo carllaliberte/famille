@@ -1,6 +1,7 @@
 name: acorn-self-heal
 
-# Autonomous recovery rail: detect measured failure, recover or dispatch repair.
+# Autonomous recovery rail: diagnose worker evidence, recover or hold.
+# Job conclusion is not proof. Evidence status is.
 # Never merges, never exposes secrets, never bypasses the global breaker.
 on:
   workflow_run:
@@ -15,6 +16,11 @@ on:
         required: false
         default: "manual diagnostic"
         type: string
+      run_id:
+        description: "Optional parent run to diagnose from artifacts"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -28,41 +34,58 @@ concurrency:
 
 jobs:
   recover:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'failure'
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event.workflow_run.head_branch || github.ref_name }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
 
+      - name: Load parent worker evidence when present
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PARENT_RUN: ${{ inputs.run_id || github.event.workflow_run.id }}
+        run: |
+          if [ -n "$PARENT_RUN" ]; then
+            gh run download "$PARENT_RUN" --name "codex-worker-$PARENT_RUN" --dir evidence-parent || true
+            find evidence-parent -name 'codex-worker-evidence.json' -exec cp {} codex-worker-evidence.json \; || true
+          fi
+          test -f codex-worker-evidence.json && echo "evidence_present=true" || echo "evidence_present=false"
+
       - name: Measure failure and choose bounded recovery
         id: heal
         env:
-          FAILURE_STATUS: ${{ github.event.workflow_run.conclusion || 'failure' }}
+          FAILURE_STATUS: ${{ github.event.workflow_run.conclusion || 'dispatch' }}
           FAILURE_REASON: ${{ github.event.workflow_run.name || inputs.reason }}
-          FAILURE_RUN_ID: ${{ github.event.workflow_run.id || github.run_id }}
+          FAILURE_RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id || github.run_id }}
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
         run: |
           node --input-type=module <<'EOF'
-          import { selfHealDecision } from './scripts/self-heal.mjs';
-          const d = selfHealDecision({
-            status: process.env.FAILURE_STATUS,
-            reason: process.env.FAILURE_REASON,
-            attempt: 0,
-            breaker: process.env.ACORN_SYSTEM_MODE || 'RUN',
-          });
-          console.log(JSON.stringify({ ...d, failed_run_id: process.env.FAILURE_RUN_ID }, null, 2));
-          const fs = await import('node:fs');
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `action=${d.action}\nreason=${d.reason}\n`);
+          import { existsSync, readFileSync, appendFileSync } from 'node:fs';
+          import { diagnoseWorkerEvidence, selfHealDecision } from './scripts/self-heal.mjs';
+          const evidence = existsSync('codex-worker-evidence.json')
+            ? JSON.parse(readFileSync('codex-worker-evidence.json', 'utf8'))
+            : {};
+          const d = Object.keys(evidence).length
+            ? diagnoseWorkerEvidence(evidence, process.env)
+            : selfHealDecision({
+                status: process.env.FAILURE_STATUS,
+                reason: process.env.FAILURE_REASON,
+                attempt: 0,
+                breaker: process.env.ACORN_SYSTEM_MODE || 'RUN',
+              });
+          const row = { ...d, failed_run_id: process.env.FAILURE_RUN_ID, auto_merge: false, live: false };
+          console.log(JSON.stringify(row, null, 2));
+          appendFileSync(process.env.GITHUB_OUTPUT, `action=${d.action}\nreason=${String(d.reason || '').replace(/\n/g, ' ').slice(0, 200)}\n`);
           EOF
 
       - name: Restart or dispatch repair worker
-        if: steps.heal.outputs.action == 'RETRY' || steps.heal.outputs.action == 'RESTART_WORKER' || steps.heal.outputs.action == 'DISPATCH_REPAIR' || steps.heal.outputs.action == 'DIAGNOSE'
+        if: steps.heal.outputs.action == 'RETRY' || steps.heal.outputs.action == 'RESTART_WORKER' || steps.heal.outputs.action == 'DISPATCH_REPAIR' || steps.heal.outputs.action == 'DIAGNOSE' || steps.heal.outputs.action == 'BUILD_TOOL'
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -72,10 +95,13 @@ jobs:
           echo "SELF_HEAL action=$ACTION reason=$REASON"
           gh workflow run codex-autonomous-worker.yml \
             --repo "$GITHUB_REPOSITORY" \
+            --ref "${{ github.event.workflow_run.head_branch || github.ref_name }}" \
             -f max_tasks=12 \
             -f max_minutes=300 \
             -f debug=true \
-            -f self_test=false
+            -f self_test=false \
+            -f continue_runtime=true \
+            -f continuation_depth=0
 
       - name: Record human boundary without pretending success
         if: steps.heal.outputs.action == 'HOLD_HUMAN' || steps.heal.outputs.action == 'ESCALATE' || steps.heal.outputs.action == 'STOP'
@@ -85,4 +111,8 @@ jobs:
           REASON: ${{ steps.heal.outputs.reason }}
         run: |
           echo "SELF_HEAL boundary action=$ACTION reason=$REASON"
-          gh issue create --title "Acorn self-heal boundary: $ACTION" --body "Measured recovery boundary. action=$ACTION reason=$REASON. No secret or merge action was attempted."
+          gh issue create --title "Acorn self-heal boundary: $ACTION" --body "Measured recovery boundary. action=$ACTION reason=$REASON. No secret or merge action was attempted." || true
+
+      - name: Healthy cycle needs no repair
+        if: steps.heal.outputs.action == 'NOT_APPLICABLE' || steps.heal.outputs.action == 'CONTINUE_OR_STOP'
+        run: echo "SELF_HEAL not applicable; worker evidence is healthy or already handed off."

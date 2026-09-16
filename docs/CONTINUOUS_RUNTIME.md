@@ -21,4 +21,5 @@ BUILD is a replaceable resource (`scripts/build-presence.mjs`). When `ACORN_BUIL
 Worker failures enter `scripts/self-heal.mjs` from the autonomous runtime: transient → retry; environment → restart; code/test → repair; secret/payment/merge → HOLD_HUMAN. Never auto-merge. LIVE VERIFIED = Carl only.
 
 
-This is intentionally a continuous chain of bounded executions rather than a fake claim of an infinite single process.
+Continuation is decided from worker evidence (`scripts/runtime-continue.mjs`), not from `vars.ACORN_SYSTEM_MODE == 'Run'` and not from a green GitHub job. A job that exits 0 with `CODEX_FAILED` is still a failure. Self-heal reads the evidence artifact on success and failure. Depth >= 1 stops the chain. `HUMAN_REQUIRED` and `WAIT_HUMAN_MERGE` pause. One bounded follow-up is a handoff, not a skip.
+
