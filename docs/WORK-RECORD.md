@@ -6,7 +6,7 @@ Un cycle de code/correction produit un record daté.
 
 LIVE exige `scripts/live-proof.mjs` → `LIVE_VERIFIED`. Un drapeau ne suffit pas.
 
-Outil manquant → le nommer → le construire → le tester → le garder → le réutiliser.
+Outil manquant → le nommer → `scripts/tool-resolve.mjs` (réutiliser s'il existe) → sinon BUILD_TOOL → tester → garder → réutiliser.
 Jamais « je ne peux pas » sans `BUILD_TOOL` ou `HOLD_HUMAN`.
 
 ```bash
