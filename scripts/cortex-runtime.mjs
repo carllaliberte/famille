@@ -40,6 +40,9 @@ export function runCortexRuntime({
   topology = readJson("cortex-topology.json", { version: 0, paths: [], synapses: [] }),
   at = new Date().toISOString(),
 } = {}) {
+  if (!fluidity.state) {
+    fluidity = { ...readJson(process.env.FLUIDITY_PRIOR || "cognitive-fluidity-prior.json", {}), ...fluidity };
+  }
   const objective = `cognitive worker cycle ${workerEvidence.v || "unknown"}`;
   const required = ["review"];
   const created = createCortexSession({ objective, required_capabilities: required, at });
