@@ -18,7 +18,6 @@ if [ -z "$REAL_CODEX" ]; then
   exit 127
 fi
 
-# Version/auth probes must remain untouched.
 case "${1:-}" in
   --version|-V|version|login|logout)
     exec "$REAL_CODEX" "$@"
@@ -36,6 +35,7 @@ BUDGET="${CODEX_MAX_OUTPUT_TOKENS:-1024}"
 PROXY_LOG="$(mktemp)"
 TMP_HOME="$(mktemp -d)"
 PROXY_PID=""
+DIAGNOSTIC="${CODEX_PROXY_DIAGNOSTIC:-0}"
 cleanup() {
   if [ -n "$PROXY_PID" ]; then kill "$PROXY_PID" 2>/dev/null || true; fi
   rm -f "$PROXY_LOG"
@@ -44,11 +44,9 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 cp "$CONFIG_FILE" "$TMP_HOME/config.toml"
-# The worker's Codex config remains the source of truth. Only the transport endpoint
-# is redirected; the proxy then forces max_output_tokens on the actual wire request.
 sed -i 's#base_url = "https://openrouter.ai/api/v1"#base_url = "http://127.0.0.1:'"$PORT"'/v1"#' "$TMP_HOME/config.toml"
 
-node "$SELF_DIR/codex-openrouter-budget-proxy.mjs" --port "$PORT" --max-output-tokens "$BUDGET" >"$PROXY_LOG" 2>&1 &
+CODEX_PROXY_DIAGNOSTIC="$DIAGNOSTIC" node "$SELF_DIR/codex-openrouter-budget-proxy.mjs" --port "$PORT" --max-output-tokens "$BUDGET" >"$PROXY_LOG" 2>&1 &
 PROXY_PID=$!
 
 for _ in $(seq 1 50); do
@@ -58,6 +56,16 @@ done
 if ! kill -0 "$PROXY_PID" 2>/dev/null; then
   cat "$PROXY_LOG" >&2 || true
   exit 1
+fi
+
+if [ "$DIAGNOSTIC" = "1" ]; then
+  set +e
+  CODEX_HOME="$TMP_HOME" "$REAL_CODEX" "$@"
+  STATUS=$?
+  set -e
+  echo "CODEX_PROXY_DIAGNOSTIC_EXIT status=$STATUS" >&2
+  cat "$PROXY_LOG" >&2 || true
+  exit "$STATUS"
 fi
 
 CODEX_HOME="$TMP_HOME" exec "$REAL_CODEX" "$@"
