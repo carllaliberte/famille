@@ -1,0 +1,12 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"economic-network.v2",
+  "type":"object",
+  "required":["version","observed_at","actors","truth"],
+  "properties":{
+    "version":{"const":"economic-network.v2"},
+    "observed_at":{"type":"string","format":"date-time"},
+    "actors":{"type":"array"},
+    "truth":{"type":"object","required":["verified_usage_only","automatic_charge","human_authority"],"properties":{"verified_usage_only":{"const":true},"automatic_charge":{"const":false},"human_authority":{"const":"carl"}}}
+  }
+}
