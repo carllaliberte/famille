@@ -189,3 +189,19 @@ test("OPENROUTER_API_KEY is required before orfree is CALLABLE", () => {
   assert.equal(withKey.entries.find((row) => row.identity === "orfree").state, "CALLABLE");
   assert.equal(withKey.entries.find((row) => row.identity === "orfree").lane, "free");
 });
+
+test("canal-only GitHub Models is review-capable without a roster row", () => {
+  const found = discoverIntelligences({
+    env: { GH_TOKEN: "ghs_actions" },
+    agents: [{ id: "worker", capabilities: ["review"] }],
+    canals: { ghmodels: MODELS.ghmodels },
+    workerEvidence: { v: "cognitive-worker.v14" },
+  });
+  const gh = found.entries.find((row) => row.identity === "ghmodels");
+  assert.equal(gh.state, "CALLABLE");
+  assert.equal(gh.lane, "keyless");
+  assert.ok(gh.capabilities.includes("review"));
+  const routed = routeTask({ need: "review", discovered: found, env: { GH_TOKEN: "ghs_actions" }, policy: "FREE_FIRST" });
+  assert.ok(["ghmodels", "worker", "cortex-local"].includes(routed.selected?.identity));
+  assert.ok(routed.candidates.includes("ghmodels"));
+});

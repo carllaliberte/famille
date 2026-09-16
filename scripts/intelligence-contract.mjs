@@ -22,6 +22,13 @@ export const STRATEGIES = Object.freeze([
 function text(v) { return String(v ?? "").trim(); }
 function list(v) { return Array.isArray(v) ? v.map(text).filter(Boolean) : []; }
 
+function canalCapabilities(spec = {}) {
+  const caps = list(spec.capabilities);
+  if (caps.length) return caps;
+  if (spec.model || spec.endpoint || spec.secret) return ["review"];
+  return caps;
+}
+
 export function describeIntelligence(input = {}) {
   const lane = classifyLane(input);
   return {
@@ -69,7 +76,7 @@ export function discoverIntelligences({
     const spec = {
       ...canal,
       id: agent.id,
-      capabilities: agent.capabilities,
+      capabilities: canalCapabilities({ ...canal, capabilities: agent.capabilities }),
       lane: canal.lane || (agent.id === "worker" ? "keyless" : canal.lane),
     };
     const configured = secretAvailable(spec, env);
@@ -84,7 +91,7 @@ export function discoverIntelligences({
   }
   for (const [id, canal] of Object.entries(canals)) {
     if (discovered.some((row) => row.identity === id)) continue;
-    const spec = { ...canal, id };
+    const spec = { ...canal, id, capabilities: canalCapabilities({ ...canal, id }) };
     const configured = secretAvailable(spec, env);
     discovered.push({
       ...describeIntelligence({ ...spec, presence: configured ? "CONNECTED" : "DECLARED" }),
