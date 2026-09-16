@@ -93,6 +93,8 @@ Adaptive cognition is the single engine: language, protocol and evolution are th
 
 Meta-evolution is the same Cortex observing its own cognition. Self-model fields stay KNOWN / MEASURED / INFERRED / HYPOTHESIZED / UNKNOWN — never auto-promoted. Architecture search produces candidates, not winners. Experiments can be rejected. Counterfactuals are not observations. SELF-PROPOSE ≠ SELF-AUTHORIZE. `live=false`.
 
+Acceleration is a capability, not a vendor. NVIDIA is a candidate adapter (`CHANNEL_NOT_PRESENT` unless a real channel responds). CPU/GPU/NPU/unknown silicon share one discovery path. `HARDWARE ≠ INTELLIGENCE ≠ PROVIDER ≠ CHANNEL`. `PASSPORT ≠ PRESENCE`. A missing accelerator degrades or holds — never fake success. `live=false`.
+
 
 
 

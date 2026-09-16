@@ -31,11 +31,13 @@ import {
 export const ADAPTIVE_VERSION = "adaptive-cognition.v1";
 export const ADAPTER_KINDS = Object.freeze([
   "language", "protocol", "model", "tool", "data", "execution",
+  "intelligence", "hardware", "accelerator", "inference", "reasoning",
 ]);
 export const AUTOPSY_KINDS = Object.freeze([
   "LANGUAGE_ERROR", "SEMANTIC_ERROR", "PROTOCOL_ERROR", "ADAPTER_ERROR",
   "ROUTING_ERROR", "MODEL_ERROR", "CONTEXT_ERROR", "CAUSALITY_UNKNOWN",
   "EXECUTION_ERROR", "SECURITY_REJECTION", "RESOURCE_LIMIT",
+  "HARDWARE_ERROR", "PROVIDER_ERROR", "VERIFICATION_ERROR", "UNKNOWN_ERROR",
 ]);
 
 function digest(value) {

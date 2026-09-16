@@ -231,5 +231,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (meta) {
     console.log(`meta.self_authorize=${meta.improved?.self_authorize === true} rejected=${meta.improved?.rejected === true} winner=${meta.winner || "none"} unknown=${meta.unknown?.kind || "none"} counterfactual=${meta.counterfactual?.counterfactual === true} live=false`);
   }
+  const acc = output.organism?.acceleration;
+  if (acc) {
+    console.log(`acceleration.nvidia=${acc.nvidia?.state || "none"} unknown=${acc.unknown?.identity || "none"} nvidia_is_architecture=${acc.gates?.nvidia_is_architecture === true} failover=${acc.failover?.status || "none"} live=false`);
+  }
   console.log(JSON.stringify(output, null, 2));
 }

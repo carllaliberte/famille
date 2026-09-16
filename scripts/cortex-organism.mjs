@@ -14,6 +14,7 @@ import { runEcosystemCycle } from "./cortex-ecosystem.mjs";
 import { runAdaptiveCognition } from "./cortex-adaptive.mjs";
 import { runMetaEvolution } from "./cortex-meta.mjs";
 import { runContinuityFabric } from "./cortex-continuity.mjs";
+import { runAccelerationFabric } from "./cortex-acceleration.mjs";
 import {
   authorizeCapability,
   runEvolutionLoop,
@@ -468,6 +469,11 @@ export function runOrganismCycle(input = {}) {
     memory: memory.kept,
     at,
   });
+  const acceleration = runAccelerationFabric({
+    workerEvidence: input.workerEvidence || {},
+    env: input.env || process.env,
+    at,
+  });
   const record = {
     version: ORGANISM_VERSION,
     loop: ORGANISM_LOOP,
@@ -497,6 +503,7 @@ export function runOrganismCycle(input = {}) {
     adaptive,
     meta: metaEvolution,
     continuity,
+    acceleration,
     adapter: { reason: adapterInvoke.reason, live: false },
     constitution,
     live: false,
