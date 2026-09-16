@@ -134,6 +134,7 @@ jobs:
           CODEX_MODEL: ${{ vars.CODEX_MODEL }}
           CODEX_MAX_OUTPUT_TOKENS: "1024"
           CODEX_OPENROUTER_PROXY_PORT: "17891"
+          CODEX_PROXY_DIAGNOSTIC: "1"
           CODEX_WORKER_EVIDENCE: codex-worker-evidence.json
           CODEX_WORKER_MEMORY: ${{ runner.temp }}/codex-worker-memory.json
           CODEX_TASK_LABEL: codex-task
