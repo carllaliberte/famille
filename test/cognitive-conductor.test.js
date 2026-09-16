@@ -13,3 +13,10 @@ test("conductor keeps dependencies ordered while parallelizing independent cogni
   assert.equal(plan.rules.no_auto_merge, true);
   assert.equal(plan.rules.live, false);
 });
+
+test("conductor consumes a prior fluidity hint instead of ignoring it", () => {
+  const plan = planConductor({ next_cycle: { mode: "PARALLEL_DISPATCH" }, mode: "PARALLEL_DISPATCH" });
+  assert.equal(plan.fluidity.hint_consumed, true);
+  assert.equal(plan.fluidity.hint, "PARALLEL_DISPATCH");
+  assert.equal(plan.fluidity.parallelize, true);
+});

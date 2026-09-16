@@ -21,5 +21,6 @@ BUILD is a replaceable resource (`scripts/build-presence.mjs`). When `ACORN_BUIL
 Worker failures enter `scripts/self-heal.mjs` from the autonomous runtime: transient → retry; environment → restart; code/test → repair; secret/payment/merge → HOLD_HUMAN. Never auto-merge. LIVE VERIFIED = Carl only.
 
 
-Continuation is decided from worker evidence (`scripts/runtime-continue.mjs`), not from `vars.ACORN_SYSTEM_MODE == 'Run'` and not from a green GitHub job. A job that exits 0 with `CODEX_FAILED` is still a failure. Self-heal reads the evidence artifact on success and failure. Depth >= 1 stops the chain. `HUMAN_REQUIRED` and `WAIT_HUMAN_MERGE` pause. One bounded follow-up is a handoff, not a skip.
+Fluidity is a **runtime property**, not a function to add. States: `FLOWING | FRICTION | STALLED | HOLD_HUMAN`. A silent skip without diagnosis is `STALLED`. `HOLD_HUMAN` is a valid pause. The next-cycle hint is loaded (`loadPriorFluidity`) and consumed by the conductor and continuation; an unread hint is `FRICTION`. Measured, executed, verified. Never LIVE from a JSON file.
+
 

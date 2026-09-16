@@ -63,6 +63,7 @@ Exécuter, mesurer, tester, corriger, vérifier avant le merge final. Jamais pro
 HOLD_HUMAN si secret, autorisation, paiement, merge. Pas d'auto-merge.
 
 Outil manquant : chercher, réutiliser, sinon BUILD_TOOL. Jamais arrêter le chantier parce qu'un outil n'existe pas encore. BUILD n'est pas une autorité : le runtime cognitif continue sans lui.
+Fluidité = propriété mesurée du runtime, pas une fonction. Skip silencieux = STALLED. HOLD_HUMAN = pause valide.
 
 Un humain apporte un problème réel. Acorn mobilise les intelligences pertinentes. Le client n'a pas à connaître l'architecture. Isolation par client. Routage selon la tâche, pas un classement global.
 
