@@ -31,6 +31,11 @@ import {
   wakeOpenCodexTask,
   emptyMemory as kernelEmpty,
 } from "./codex-autonomy.mjs";
+import {
+  OPENROUTER_DEAD_FREE,
+  OPENROUTER_FREE_MODEL,
+  resolveOpenRouterModel as resolveOpenRouterModelFromEnv,
+} from "./codex-openrouter-defaults.mjs";
 
 export const WORKER_VERSION = "codex-autonomous-worker.v9";
 export const MEMORY_PATH = "evidence/codex/worker-memory.json";
@@ -450,17 +455,10 @@ export function tomlEscape(value) {
   return String(value || "").replaceAll("\\", "\\\\").replaceAll("\"", "\\\"");
 }
 
-export const OPENROUTER_FREE_MODEL = "nvidia/nemotron-3.5-lightning:free";
-export const OPENROUTER_DEAD_FREE = Object.freeze([
-  "openai/gpt-oss-20b:free",
-  "openai/gpt-oss-120b:free",
-  "openrouter/free",
-]);
+export { OPENROUTER_DEAD_FREE, OPENROUTER_FREE_MODEL };
 
 export function resolveOpenRouterModel(io) {
-  const requested = String(io.env.CODEX_MODEL || "").trim();
-  if (requested.endsWith(":free") && !OPENROUTER_DEAD_FREE.includes(requested)) return requested;
-  return OPENROUTER_FREE_MODEL;
+  return resolveOpenRouterModelFromEnv(io?.env || io || {});
 }
 
 export function buildCodexConfig(io, auth = classifyAuth(io)) {

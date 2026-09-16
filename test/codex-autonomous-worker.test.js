@@ -697,16 +697,17 @@ describe("codex autonomous worker", () => {
     assert.match(cfg, /model_reasoning_effort = "low"/);
     assert.match(cfg, /model_providers\.openrouter\.auth/);
     assert.doesNotMatch(cfg, /env_key/);
-    assert.equal(writeCall.args.includes("model=nvidia/nemotron-3.5-lightning:free"), true);
-    assert.match(cfg, /model = "nvidia\/nemotron-3.5-lightning:free"/);
-    assert.doesNotMatch(cfg, /gemini-2\.5-flash/);
+    assert.equal(writeCall.args.includes("model=cohere/north-mini-code:free"), true);
+    assert.match(cfg, /model = "cohere\/north-mini-code:free"/);
+    assert.doesNotMatch(cfg, /nemotron-3\.5-lightning/);
     assert.doesNotMatch(cfg, /openrouter\/free/);
     assert.doesNotMatch(cfg, /gpt-oss-20b/);
-    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "google/gemini-2.5-flash" } }), "nvidia/nemotron-3.5-lightning:free");
-    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openrouter/free" } }), "nvidia/nemotron-3.5-lightning:free");
-    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openai/gpt-oss-20b:free" } }), "nvidia/nemotron-3.5-lightning:free");
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "google/gemini-2.5-flash" } }), "google/gemini-2.5-flash");
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openrouter/free" } }), "cohere/north-mini-code:free");
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "openai/gpt-oss-20b:free" } }), "cohere/north-mini-code:free");
+    assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "nvidia/nemotron-3.5-lightning:free" } }), "cohere/north-mini-code:free");
     assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "cohere/north-mini-code:free" } }), "cohere/north-mini-code:free");
-    assert.equal(ev.codex.model, "nvidia/nemotron-3.5-lightning:free");
+    assert.equal(ev.codex.model, "cohere/north-mini-code:free");
   });
 
   it("keeps workflow run blocks indented so GitHub registers workflow_dispatch", () => {
