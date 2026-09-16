@@ -69,22 +69,7 @@ jobs:
           CODEX_TASK_NUMBER: ${{ inputs.task_number }}
         run: |
           if [ -f evidence/codex/worker-memory.json ]; then
-            node <<'NODE'
-            const fs = require('node:fs');
-            const path = 'evidence/codex/worker-memory.json';
-            const taskNumber = String(process.env.CODEX_TASK_NUMBER || '').trim();
-            const memory = JSON.parse(fs.readFileSync(path, 'utf8'));
-            const before = Array.isArray(memory.skipped_tasks) ? memory.skipped_tasks : [];
-            if (taskNumber) {
-              const target = Number(taskNumber);
-              memory.skipped_tasks = before.filter((item) => Number(item?.number ?? item) !== target);
-            } else {
-              memory.skipped_tasks = [];
-            }
-            memory.updated_at = new Date().toISOString();
-            fs.writeFileSync(path, `${JSON.stringify(memory, null, 2)}\n`);
-            console.log(`EXPLICIT_WAKE stale_skip_invalidated=${before.length - memory.skipped_tasks.length} task=${taskNumber || 'all'}`);
-            NODE
+            node -e 'const fs=require("node:fs"); const path="evidence/codex/worker-memory.json"; const taskNumber=String(process.env.CODEX_TASK_NUMBER||"").trim(); const memory=JSON.parse(fs.readFileSync(path,"utf8")); const before=Array.isArray(memory.skipped_tasks)?memory.skipped_tasks:[]; if(taskNumber){const target=Number(taskNumber); memory.skipped_tasks=before.filter(item=>Number(item?.number ?? item)!==target);}else{memory.skipped_tasks=[];} memory.updated_at=new Date().toISOString(); fs.writeFileSync(path,`${JSON.stringify(memory,null,2)}\n`); console.log(`EXPLICIT_WAKE stale_skip_invalidated=${before.length-memory.skipped_tasks.length} task=${taskNumber||"all"}`);'
           else
             echo "EXPLICIT_WAKE no workspace memory file; worker artifact continuity remains authoritative."
           fi
