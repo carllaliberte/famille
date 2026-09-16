@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * ACORN — OpenRouter request budget guard.
- * Codex 0.153.4 can ignore model_max_output_tokens in the emitted Responses request.
+ * Codex 0.153.4 can emit a larger wire budget than the configured model limit.
  * This local proxy therefore clamps the actual JSON request before it reaches OpenRouter.
  * No credentials are stored or logged.
  */
@@ -34,9 +34,14 @@ const server = http.createServer((req, res) => {
     try {
       const parsed = JSON.parse(body);
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        const original = parsed.max_output_tokens;
-        parsed.max_output_tokens = maxOutputTokens;
-        clamped = original !== maxOutputTokens;
+        if (Object.prototype.hasOwnProperty.call(parsed, "max_output_tokens")) {
+          clamped = parsed.max_output_tokens !== maxOutputTokens;
+          parsed.max_output_tokens = maxOutputTokens;
+        }
+        if (Object.prototype.hasOwnProperty.call(parsed, "max_tokens")) {
+          clamped = clamped || parsed.max_tokens !== maxOutputTokens;
+          parsed.max_tokens = maxOutputTokens;
+        }
         outgoing = JSON.stringify(parsed);
       }
     } catch {
