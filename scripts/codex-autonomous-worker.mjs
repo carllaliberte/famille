@@ -67,8 +67,16 @@ export const SELF_TEST_KEYS = [
   "AUTONOMY",
 ];
 
-const SECRET_KEY = /secret|token|password|authorization|api[_-]?key|auth\.json|codex_auth/i;
+const SECRET_KEY = /secret|password|authorization|api[_-]?key|auth\.json|codex_auth/i;
+const SECRET_TOKEN_KEY = /^(access_token|refresh_token|token)$|_token$/i;
 const SECRET_VALUE = /(?:^|[^A-Za-z0-9])(sk-[a-zA-Z0-9_-]{8,}|ghp_[a-zA-Z0-9]{8,}|github_pat_[a-zA-Z0-9_]{8,})/;
+
+function isSecretKey(key) {
+  const k = String(key);
+  if (SECRET_KEY.test(k)) return true;
+  if (/_tokens$/i.test(k)) return false;
+  return SECRET_TOKEN_KEY.test(k);
+}
 
 export function createIo(overrides = {}) {
   const env = { ...(overrides.env || process.env) };
@@ -147,7 +155,7 @@ export function redactSecrets(value, seen = new WeakMap()) {
   const out = {};
   seen.set(value, out);
   for (const [k, v] of Object.entries(value)) {
-    out[k] = SECRET_KEY.test(k) ? "[REDACTED]" : redactSecrets(v, seen);
+    out[k] = isSecretKey(k) ? "[REDACTED]" : redactSecrets(v, seen);
   }
   return out;
 }
@@ -498,6 +506,16 @@ export function extraCodexConfigArgs(io) {
     "-c", "model_context_window=16384",
     "-c", "model_reasoning_effort=low",
   ];
+}
+
+export function tryCheaperOpenRouterModel(io, current = resolveOpenRouterModel(io)) {
+  const cheaper = OPENROUTER_FREE_MODEL;
+  if (!cheaper || current === cheaper) return null;
+  if (String(io.env.CODEX_CHEAPER_TRIED || "") === "1") return null;
+  io.env.CODEX_CHEAPER_TRIED = "1";
+  io.env.CODEX_MODEL = cheaper;
+  ensureCodexRuntime(io);
+  return cheaper;
 }
 
 export function classifyCli(io) {
@@ -1291,6 +1309,26 @@ export function runWorker(io = createIo()) {
       const repeated = classifyRepetition({ memory, category, message: run.stderr_tail || run.status, sha: baseSha });
       const level = escalateDebug({ attempt: attempt + 1, category });
       if (category === "AUTH") {
+        const fromModel = resolveOpenRouterModel(io);
+        const cheaper = tryCheaperOpenRouterModel(io, fromModel);
+        if (cheaper) {
+          const debug = debugBlock(io, "MODEL_FALLBACK", {
+            attempt: attempt + 1,
+            category: "AUTH",
+            from: fromModel,
+            to: cheaper,
+            because: "402",
+          });
+          cycle.debug.push(debug);
+          evidence.debug.push(debug);
+          run = runCodex(io, cfg, task, "", memory);
+          evidence.codex.model = cheaper;
+          evidence.codex.status = run.status;
+          evidence.codex.patch_source = run.patch_source;
+          cycle.codex.push(run);
+          if (run.status === "PATCHED" || run.status === "NO_CHANGE") break;
+          continue;
+        }
         setAuthCooldown(memory, baseSha, io.now());
         evidence.status = "UNAVAILABLE";
         evidence.reason = "provider quota or auth rejected the request";
