@@ -87,6 +87,8 @@ The organism also runs a cognitive ecosystem pass: nodes (model, tool, memory, h
 
 The same pass now builds a **cognitive architecture** per task: classify → generate A/B/C → select → assemble → execute → compare → remember pattern. Architectures are dated, contextual, measured and reversible. Never “better in general”. Zero-cost mode recomposes locally. Collusion, regression and unverified evolution stay `PROPOSED` / `INCONCLUSIVE`. `auto_merge=false`.
 
+Language adaptation lives in the same Cortex. CIR (`cir.v0`) separates form from meaning. Unknown forms are `LANGUAGE_UNKNOWN`, not errors. `pack-lieu` remains a surface cache, not a cognitive ceiling. There is no `SUPPORTED_LANGUAGES` allowlist. A → CIR → B, never N×M translators. Understanding a language is not execution, not write, not merge. Zero-cost. `live=false`.
+
 
 
 

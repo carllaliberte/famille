@@ -67,6 +67,7 @@ export function runCortexRuntime({
   timing = readJson("cognitive-fluidity-timing.json", {}),
   env = process.env,
   at = new Date().toISOString(),
+  languageInput = { text: "⊞⊸λ", declared: "FUTURE-LANG-X" },
 } = {}) {
   if (!fluidity.state) {
     fluidity = { ...readJson(process.env.FLUIDITY_PRIOR || "cognitive-fluidity-prior.json", {}), ...fluidity };
@@ -163,6 +164,7 @@ export function runCortexRuntime({
     evolution,
     env,
     at,
+    languageInput,
   });
   const intelligence = runIntelligenceContract({
     env,
@@ -216,6 +218,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (eco) {
     const arch = eco.architecture;
     console.log(`ecosystem.executor=${eco.graph?.assembly?.roles?.executor || "none"} homeostasis=${eco.homeostasis?.state || "none"} unknown_is_not_failure=${eco.unknown?.unknown_is_not_failure === true} architecture.class=${arch?.classified?.class || "none"} architecture.selected=${arch?.selected?.architecture?.architecture_id || "none"} architecture.better_in_general=${arch?.better_in_general === true} live=false`);
+  }
+  const lang = output.organism?.language;
+  if (lang) {
+    console.log(`language.state=${lang.discovery?.state || "none"} form.kind=${lang.discovery?.form?.kind || "none"} understood=${lang.discovery?.understood === true} zero_cost=${lang.zero_cost === true} authority_merge=${lang.gates?.merge === true} live=false`);
   }
   console.log(JSON.stringify(output, null, 2));
 }
