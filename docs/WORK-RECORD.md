@@ -14,3 +14,9 @@ node scripts/work-record.mjs
 ```
 
 Carl merge. `auto_merge=false`.
+
+## 2026-09-16 — wake skip
+
+SHA `49b723b36d0bd309909dc6236fcade03230e84c8` : #560 en `skipped_tasks` raison `IDLE` sans `codex_executed`.
+Dispatch ciblé 35080741477 : cancelled, 0 artifact.
+Ce commit change le SHA de main pour invalider le skip. Breaker intact. LIVE=false.
