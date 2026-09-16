@@ -67,9 +67,12 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           CODEX_TASK_NUMBER: ${{ inputs.task_number }}
+          CODEX_WORKER_MEMORY: ${{ runner.temp }}/codex-worker-memory.json
         run: |
+          mkdir -p "$(dirname "$CODEX_WORKER_MEMORY")"
           if [ -f evidence/codex/worker-memory.json ]; then
-            node -e 'const fs=require("node:fs"); const path="evidence/codex/worker-memory.json"; const taskNumber=String(process.env.CODEX_TASK_NUMBER||"").trim(); const memory=JSON.parse(fs.readFileSync(path,"utf8")); const before=Array.isArray(memory.skipped_tasks)?memory.skipped_tasks:[]; if(taskNumber){const target=Number(taskNumber); memory.skipped_tasks=before.filter(item=>Number(item?.number ?? item)!==target);}else{memory.skipped_tasks=[];} memory.updated_at=new Date().toISOString(); fs.writeFileSync(path,`${JSON.stringify(memory,null,2)}\n`); console.log(`EXPLICIT_WAKE stale_skip_invalidated=${before.length-memory.skipped_tasks.length} task=${taskNumber||"all"}`);'
+            cp evidence/codex/worker-memory.json "$CODEX_WORKER_MEMORY"
+            node -e 'const fs=require("node:fs"); const path=process.env.CODEX_WORKER_MEMORY; const taskNumber=String(process.env.CODEX_TASK_NUMBER||"").trim(); const memory=JSON.parse(fs.readFileSync(path,"utf8")); const before=Array.isArray(memory.skipped_tasks)?memory.skipped_tasks:[]; if(taskNumber){const target=Number(taskNumber); memory.skipped_tasks=before.filter(item=>Number(item?.number ?? item)!==target);}else{memory.skipped_tasks=[];} memory.updated_at=new Date().toISOString(); fs.writeFileSync(path,`${JSON.stringify(memory,null,2)}\n`); console.log(`EXPLICIT_WAKE stale_skip_invalidated=${before.length-memory.skipped_tasks.length} task=${taskNumber||"all"}`);'
           else
             echo "EXPLICIT_WAKE no workspace memory file; worker artifact continuity remains authoritative."
           fi
@@ -130,7 +133,7 @@ jobs:
           CODEX_MAX_OUTPUT_TOKENS: "1024"
           CODEX_OPENROUTER_PROXY_PORT: "17891"
           CODEX_WORKER_EVIDENCE: codex-worker-evidence.json
-          CODEX_WORKER_MEMORY: evidence/codex/worker-memory.json
+          CODEX_WORKER_MEMORY: ${{ runner.temp }}/codex-worker-memory.json
           CODEX_TASK_LABEL: codex-task
           CODEX_TASK_TIMEOUT_MINUTES: "20"
           CODEX_REPAIR_ATTEMPTS: "3"
@@ -161,7 +164,7 @@ jobs:
           name: codex-worker-${{ github.run_id }}
           path: |
             codex-worker-evidence.json
-            evidence/codex/worker-memory.json
+            ${{ runner.temp }}/codex-worker-memory.json
           if-no-files-found: warn
           retention-days: 30
 
