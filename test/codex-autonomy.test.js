@@ -247,10 +247,18 @@ describe("acorn autonomy kernel", () => {
     memory.skipped_tasks = [513];
     memory.error_signatures = [{ signature: "ENVIRONMENT::404", sha: "old", count: 3 }];
     assert.deepEqual(skippedForSha(memory, "new"), []);
-    assert.deepEqual(skippedForSha(memory, "old"), [513]);
+    assert.deepEqual(skippedForSha(memory, "old"), []);
     memory.skipped_tasks = [{ number: 513, sha: "new" }];
     assert.deepEqual(skippedForSha(memory, "new"), [513]);
     assert.deepEqual(skippedForSha(memory, "old"), []);
+  });
+  it("treats legacy bare numeric skipped_tasks as expired", () => {
+    const memory = emptyMemory();
+    memory.skipped_tasks = [513, 555, 548];
+    memory.error_signatures = [{ signature: "NETWORK::stdin", sha: "same", count: 8 }];
+    assert.deepEqual(skippedForSha(memory, "same"), []);
+    memory.skipped_tasks = [{ number: 513, sha: "same", reason: "CODEX_FAILED" }];
+    assert.deepEqual(skippedForSha(memory, "same"), [513]);
   });
   it("wakes an open codex-task when the skip belongs to another SHA", () => {
     const wake = wakeOpenCodexTask({

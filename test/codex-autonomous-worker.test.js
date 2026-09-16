@@ -858,12 +858,32 @@ describe("codex autonomous worker", () => {
     assert.notEqual(ev.status, "IDLE");
   });
 
-  it("keeps the skip when the error_signature is on the current SHA", () => {
+  it("does not let a legacy numeric skip suppress an open task on the current SHA", () => {
     const root = tmpRoot();
     writeFileSync(join(root, "evidence/codex/worker-memory.json"), JSON.stringify({
       v: "codex-worker-memory.v2",
       last_main_sha: "same",
       skipped_tasks: [513],
+      error_signatures: [{ category: "NETWORK", message: "stdin", sha: "same", count: 8 }],
+    }));
+    const io = ioFor({
+      root,
+      authFile: true,
+      env: { GITHUB_EVENT_NAME: "push", GITHUB_SHA: "same", CODEX_HEAD_SHA: "same" },
+      git: { sha: "same", dirty: "", branch: "main" },
+      issues: [{ number: 513, title: "seed", body: "x", url: "u", state: "OPEN" }],
+    });
+    const ev = runWorker(io);
+    assert.equal(ev.codex.executed, true);
+    assert.notEqual(ev.status, "IDLE");
+  });
+
+  it("keeps a structured same-SHA skip", () => {
+    const root = tmpRoot();
+    writeFileSync(join(root, "evidence/codex/worker-memory.json"), JSON.stringify({
+      v: "codex-worker-memory.v2",
+      last_main_sha: "same",
+      skipped_tasks: [{ number: 513, sha: "same", reason: "CODEX_FAILED" }],
       error_signatures: [{ category: "ENVIRONMENT", message: "404", sha: "same", count: 3 }],
     }));
     const io = ioFor({

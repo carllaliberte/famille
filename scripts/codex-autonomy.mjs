@@ -478,13 +478,10 @@ function afterMergeSync(input) {
 }
 function skippedForSha(memory, sha) {
   const raw = memory?.skipped_tasks || [];
-  const errorsHere = (memory?.error_signatures || []).some((e) => e.sha === sha);
   const out = [];
   for (const item of raw) {
-    if (item && typeof item === "object" && item.sha) {
-      if (item.sha === sha && Number(item.number)) out.push(Number(item.number));
-    } else if (errorsHere && Number(item)) {
-      out.push(Number(item));
+    if (item && typeof item === "object" && item.sha && Number(item.number)) {
+      if (item.sha === sha) out.push(Number(item.number));
     }
   }
   return out;
