@@ -43,8 +43,15 @@ permissions:
   pull-requests: write
   actions: write
 
+# Source events (push/issues/schedule/PR) must not share a queue with
+# continuity workflow_dispatch. GitHub cancels *pending* runs in the same
+# group when a newer run is queued — even if cancel-in-progress is false.
+# Measured: push 35080934780 cancelled, 0 jobs, 0 artifacts.
 concurrency:
-  group: codex-autonomous-worker
+  group: >-
+    codex-autonomous-worker-${{
+      github.event_name == 'workflow_dispatch' && 'dispatch' || 'source'
+    }}
   cancel-in-progress: false
 
 jobs:
@@ -147,10 +154,11 @@ jobs:
           retention-days: 30
 
       - name: Continue autonomous runtime
-        if: ${{ always() && vars.ACORN_SYSTEM_MODE == 'Run' }}
+        if: ${{ always() && vars.ACORN_SYSTEM_MODE == 'Run' && github.event_name != 'workflow_dispatch' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           STATUS=""
           if [ -f codex-worker-evidence.json ]; then
@@ -162,7 +170,7 @@ jobs:
               exit 0
               ;;
           esac
-          echo "CONTINUITY scheduling next bounded cycle after $STATUS"
+          echo "CONTINUITY one follow-up after source event $EVENT_NAME status=$STATUS"
           sleep 30
           gh workflow run codex-autonomous-worker.yml \
             --repo "$GITHUB_REPOSITORY" \
