@@ -8,6 +8,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { evidenceDigest, sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
+import { emptyRanking, readRunRanking } from "./measured-ranking.mjs";
 
 export const MEASUREMENT_RECORD_VERSION = "measurement-record.v1";
 export const MEASUREMENT_RECORD_ARTIFACT = "measurement-record";
@@ -83,7 +84,6 @@ function readRunRecord(run, dir, runCommand) {
   if (!file) return null;
   try {
     const record = JSON.parse(readFileSync(file, "utf8"));
-    if (record?.source_sha && record.source_sha !== run.headSha) return null;
     return record;
   } catch {
     return null;
@@ -131,6 +131,73 @@ export function loadMeasurementRecord(run = execFileSync, env = process.env) {
     return fallback;
   } finally {
     try { rmSync(dir, { recursive: true, force: true }); } catch {}
+  }
+}
+
+function conflictCycle(runId = null) {
+  return {
+    record: { ...emptyMeasurementRecord(), integrity: "CONFLICT" },
+    ranking: { ...emptyRanking(), integrity: "CONFLICT" },
+    runId,
+  };
+}
+
+export function loadPriorMeasuredCycle(run = execFileSync, env = process.env) {
+  const empty = {
+    record: emptyMeasurementRecord(),
+    ranking: emptyRanking(),
+    runId: null,
+  };
+  if (!env.GITHUB_REPOSITORY) return empty;
+  const recordDir = join(process.cwd(), ".measurement-record-readback");
+  const rankingDir = join(process.cwd(), ".acorn-measured-ranking");
+  mkdirSync(recordDir, { recursive: true });
+  mkdirSync(rankingDir, { recursive: true });
+  try {
+    const raw = run("gh", ["run", "list", "--workflow", "cognitive-worker.yml", "--repo", env.GITHUB_REPOSITORY, "--status", "success", "--limit", "10", "--json", "databaseId,headSha"], { encoding: "utf8", stdio: "pipe" });
+    const runs = JSON.parse(raw || "[]")
+      .filter((item) => item?.databaseId && item?.headSha)
+      .map((item) => ({ ...item, repository: env.GITHUB_REPOSITORY }));
+    if (!runs.length) return empty;
+
+    let prior = null;
+    let priorRanking = null;
+    let priorRunIndex = -1;
+    for (let index = 0; index < runs.length; index += 1) {
+      const candidate = readRunRecord(runs[index], recordDir, run);
+      if (!candidate) continue;
+      if (!verifyMeasurementRecord(candidate)) return conflictCycle(runs[index].databaseId);
+      const ranking = readRunRanking(runs[index], rankingDir, run);
+      if (!ranking || !verifyEvidenceSeal(ranking)) return conflictCycle(runs[index].databaseId);
+      prior = candidate;
+      priorRanking = ranking;
+      priorRunIndex = index;
+      break;
+    }
+    if (!prior) return empty;
+
+    if (prior.previous_record_digest) {
+      let predecessor = null;
+      for (let index = priorRunIndex + 1; index < runs.length; index += 1) {
+        const candidate = readRunRecord(runs[index], recordDir, run);
+        if (!candidate) continue;
+        predecessor = candidate;
+        break;
+      }
+      if (!predecessor || !verifyMeasurementRecord(predecessor) || predecessor.seal?.digest !== prior.previous_record_digest) {
+        return conflictCycle(runs[priorRunIndex].databaseId);
+      }
+    }
+    return {
+      record: { ...prior, integrity: "VERIFIED" },
+      ranking: { ...priorRanking, integrity: "VERIFIED" },
+      runId: runs[priorRunIndex].databaseId,
+    };
+  } catch {
+    return empty;
+  } finally {
+    try { rmSync(recordDir, { recursive: true, force: true }); } catch {}
+    try { rmSync(rankingDir, { recursive: true, force: true }); } catch {}
   }
 }
 
