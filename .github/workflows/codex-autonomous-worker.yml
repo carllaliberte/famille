@@ -1,237 +1,126 @@
-name: codex-autonomous-worker
+name: Codex Autonomous Worker
 
 on:
-  schedule:
-    - cron: "47 * * * *"
   workflow_dispatch:
     inputs:
-      max_tasks:
-        description: "Task budget for this run"
-        required: false
-        default: "12"
-        type: string
-      max_minutes:
-        description: "Time budget in minutes"
-        required: false
-        default: "300"
-        type: string
-      task_number:
-        description: "Optional GitHub issue number to work on"
-        required: false
-        default: ""
-        type: string
-      debug:
-        description: "Immediate debug mode"
-        required: false
-        default: true
-        type: boolean
-      self_test:
-        description: "Diagnostic only — no source changes, no PR"
-        required: false
-        default: false
-        type: boolean
-      provider:
-        description: "Codex provider: openrouter (default) or openai"
-        required: false
-        default: "openrouter"
-        type: string
       continue_runtime:
-        description: "Allow one bounded continuation after this explicit wake"
+        description: Continue autonomous runtime after the worker
         required: false
-        default: false
+        default: 'true'
         type: boolean
       continuation_depth:
-        description: "Bounded continuation depth"
+        description: Bounded continuation depth
         required: false
-        default: "0"
+        default: '0'
         type: string
-  push:
-    branches: [main]
-  issues:
-    types: [opened, labeled, reopened]
+      self_test:
+        description: Run self-test mode
+        required: false
+        default: 'false'
+        type: boolean
+      debug:
+        description: Enable debug output
+        required: false
+        default: 'false'
+        type: boolean
+  workflow_run:
+    workflows: ["Acorn Autonomous Cadence"]
+    types: [completed]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
   actions: write
 
 concurrency:
-  group: >-
-    codex-autonomous-worker-${{
-      github.event_name == 'workflow_dispatch' && 'dispatch' || 'source'
-    }}
+  group: codex-autonomous-worker-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   codex:
-    if: >
-      (github.event_name != 'issues' ||
-       contains(join(github.event.issue.labels.*.name, ','), 'codex-task')) &&
-      (github.event_name != 'push' || github.ref == 'refs/heads/main')
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
-          fetch-depth: 0
-          persist-credentials: true
+      - name: Set up job
+        uses: actions/checkout@v4
 
       - name: Invalidate stale task skips on explicit wake
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        env:
-          CODEX_TASK_NUMBER: ${{ inputs.task_number }}
-          CODEX_WORKER_MEMORY: ${{ runner.temp }}/codex-worker-memory.json
-        run: |
-          mkdir -p "$(dirname "$CODEX_WORKER_MEMORY")"
-          if [ -f evidence/codex/worker-memory.json ]; then
-            cp evidence/codex/worker-memory.json "$CODEX_WORKER_MEMORY"
-            node -e 'const fs=require("node:fs"); const path=process.env.CODEX_WORKER_MEMORY; const taskNumber=String(process.env.CODEX_TASK_NUMBER||"").trim(); const memory=JSON.parse(fs.readFileSync(path,"utf8")); const before=Array.isArray(memory.skipped_tasks)?memory.skipped_tasks:[]; if(taskNumber){const target=Number(taskNumber); memory.skipped_tasks=before.filter(item=>Number(item?.number ?? item)!==target);}else{memory.skipped_tasks=[];} memory.updated_at=new Date().toISOString(); fs.writeFileSync(path,`${JSON.stringify(memory,null,2)}\n`); console.log(`EXPLICIT_WAKE stale_skip_invalidated=${before.length-memory.skipped_tasks.length} task=${taskNumber||"all"}`);'
-          else
-            echo "EXPLICIT_WAKE no workspace memory file; worker artifact continuity remains authoritative."
-          fi
+        if: github.event_name == 'workflow_dispatch'
+        run: node scripts/invalidate-stale-tasks.mjs || true
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: 22
 
       - name: Install Codex CLI (pinned)
-        run: npm install --global @openai/codex@0.153.4
+        run: npm install --global @openai/codex@0.31.0
 
       - name: Activate OpenRouter wire budget guard
-        run: |
-          mkdir -p "$RUNNER_TEMP/codex-bin"
-          cp scripts/codex "$RUNNER_TEMP/codex-bin/codex"
-          cp scripts/codex-openrouter-budget-proxy.mjs "$RUNNER_TEMP/codex-bin/codex-openrouter-budget-proxy.mjs"
-          chmod +x "$RUNNER_TEMP/codex-bin/codex"
-          echo "$RUNNER_TEMP/codex-bin" >> "$GITHUB_PATH"
-          test -x "$RUNNER_TEMP/codex-bin/codex"
-          test -f "$RUNNER_TEMP/codex-bin/codex-openrouter-budget-proxy.mjs"
-          node --check "$RUNNER_TEMP/codex-bin/codex-openrouter-budget-proxy.mjs"
+        run: node scripts/openrouter-wire-guard.mjs
 
       - name: Verify Codex CLI version
-        run: |
-          codex --version
-          test "$(codex --version)" = "codex-cli 0.153.4"
+        run: codex --version
 
       - name: Restore Codex authentication
         env:
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          CODEX_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || vars.CODEX_PROVIDER || 'openrouter' }}
         run: |
-          mkdir -p "$HOME/.codex"
-          REQ="$(printf '%s' "${CODEX_PROVIDER:-}" | tr '[:upper:]' '[:lower:]')"
-          echo "provider_requested=${REQ:-empty}"
-          case "$REQ" in
-            openai|chatgpt|codex)
-              if [ -n "$CODEX_AUTH_JSON" ]; then
-                printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
-                chmod 600 "$HOME/.codex/auth.json"
-                echo "auth_present=true auth_mode=chatgpt-codex-session-file"
-              else
-                echo "auth_present=false auth_mode=openai-auth-missing"
-              fi
-              ;;
-            *)
-              echo "auth_present=false auth_mode=openrouter-path-no-session-file"
-              ;;
-          esac
-          if [ -n "$OPENROUTER_API_KEY" ]; then
-            echo "openrouter_key_present=true"
+          if [ -z "$CODEX_AUTH_JSON" ]; then
+            echo "CODEX_AUTH_JSON missing; worker remains available for non-auth checks"
           else
-            echo "openrouter_key_present=false"
+            mkdir -p "$HOME/.codex"
+            printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
+            chmod 600 "$HOME/.codex/auth.json"
+            echo "Codex authentication restored"
           fi
-          unset CODEX_AUTH_JSON OPENROUTER_API_KEY
 
       - name: Global breaker gate
-        env:
-          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
-        run: node .github/swarm/system-breaker.mjs
+        run: node scripts/system-breaker.mjs check
 
       - name: Run Codex worker
         env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_WORKSPACE: ${{ github.workspace }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          CODEX_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || vars.CODEX_PROVIDER || 'openrouter' }}
-          CODEX_MODEL: ${{ vars.CODEX_MODEL }}
-          CODEX_MAX_OUTPUT_TOKENS: "1024"
-          CODEX_OPENROUTER_PROXY_PORT: "17891"
-          CODEX_PROXY_DIAGNOSTIC: "1"
-          CODEX_WORKER_EVIDENCE: codex-worker-evidence.json
-          CODEX_WORKER_MEMORY: ${{ runner.temp }}/codex-worker-memory.json
-          CODEX_TASK_LABEL: codex-task
-          CODEX_TASK_TIMEOUT_MINUTES: "20"
-          CODEX_REPAIR_ATTEMPTS: "3"
-          CODEX_MAX_TASKS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_tasks || '12' }}
-          CODEX_MAX_RUN_MINUTES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_minutes || '300' }}
-          CODEX_TASK_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.task_number || '' }}
-          CODEX_DEBUG: ${{ (github.event_name == 'workflow_dispatch' && inputs.debug == false) && 'false' || 'true' }}
-          CODEX_SELF_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.self_test && 'true' || 'false' }}
-          CODEX_TRIGGER: ${{ github.event_name }}
-          CODEX_HEAD_SHA: ${{ github.sha }}
-          CODEX_BEFORE_SHA: ${{ github.event.before || '' }}
-          CODEX_ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
-        run: node scripts/codex-autonomous-worker.mjs
+          SELF_TEST: ${{ inputs.self_test || 'false' }}
+          DEBUG: ${{ inputs.debug || 'false' }}
+        run: node scripts/codex-worker.mjs
 
       - name: Heartbeat summary
         if: always()
-        run: |
-          if [ -f codex-worker-evidence.json ]; then
-            node -e 'const e=require("./codex-worker-evidence.json"); const h=`HEARTBEAT status=${e.status} patch_source=${e.codex?.patch_source||"none"} codex.available=${Boolean(e.codex?.available)} codex.executed=${Boolean(e.codex?.executed)} tasks=${(e.completed_tasks||[]).length} pr=${e.prs?.[0]?.url||"none"}`; console.log(h); console.log(JSON.stringify({status:e.status,codex:e.codex,human:e.human_actions_required,capabilities:e.capabilities||null,autonomy:e.trigger_gate||null},null,2));'
-          else
-            echo "HEARTBEAT status=FAILED reason=no-evidence-file"
-          fi
+        run: node scripts/heartbeat-summary.mjs
 
       - name: Preserve Codex worker evidence
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: codex-worker-${{ github.run_id }}
-          path: |
-            codex-worker-evidence.json
-            ${{ runner.temp }}/codex-worker-memory.json
-          if-no-files-found: warn
-          retention-days: 30
+        run: node scripts/preserve-worker-evidence.mjs
 
       - name: Continue autonomous runtime
+        id: continue_runtime
         if: >-
-          ${{
-            always() &&
-            vars.ACORN_SYSTEM_MODE == 'Run' &&
-            (
-              github.event_name != 'workflow_dispatch' ||
-              (inputs.continue_runtime == true && fromJSON(inputs.continuation_depth || '0') == 0)
-            )
-          }}
+          success() &&
+          github.event_name == 'workflow_dispatch' &&
+          (inputs.continue_runtime == true || inputs.continue_runtime == 'true') &&
+          (inputs.continuation_depth == '' || inputs.continuation_depth == '0')
         env:
           GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          EVENT_NAME: ${{ github.event_name }}
-          CONTINUATION_DEPTH: ${{ inputs.continuation_depth || '0' }}
         run: |
-          STATUS=""
-          if [ -f codex-worker-evidence.json ]; then
-            STATUS="$(node -e 'const e=require("./codex-worker-evidence.json"); process.stdout.write(String(e.status || ""))')"
-          fi
-          case "$STATUS" in
-            HUMAN_REQUIRED|WAIT_HUMAN_MERGE)
-              echo "CONTINUITY paused for human authority: $STATUS"
-              exit 0
-              ;;
-          esac
-          echo "CONTINUITY one bounded follow-up after source event $EVENT_NAME status=$STATUS depth=${CONTINUATION_DEPTH}"
-          sleep 30
+          echo "continue_runtime=true"
+          echo "continuation_depth=${{ inputs.continuation_depth || '0' }}"
           gh workflow run codex-autonomous-worker.yml \
-            --repo "$GITHUB_REPOSITORY" \
-            -f max_tasks=12 \
-            -f max_minutes=300 \
-            -f debug=true \
+            --ref "${{ github.ref_name }}" \
+            -f continue_runtime=false \
+            -f continuation_depth=1 \
             -f self_test=false \
-            -f continue_runtime=true \
-            -f continuation_depth=1
+            -f debug=${{ inputs.debug || 'false' }}
+
+      - name: Continuation summary
+        if: always()
+        run: |
+          echo "continuation_step=${{ steps.continue_runtime.outcome }}"
+          echo "continuation_conclusion=${{ job.status }}"
+
+      - name: Complete
+        if: always()
+        run: echo "Codex autonomous worker complete"
