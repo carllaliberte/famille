@@ -87,7 +87,7 @@ export function laneInventory(env = {}) {
       ? "keyless"
       : present(env, "OPENROUTER_API_KEY")
         ? "free"
-        : "paid",
+        : "keyless",
     paid_required: false,
     live: false,
   };

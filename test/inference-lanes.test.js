@@ -50,6 +50,7 @@ test("GITHUB_TOKEN selects GitHub Models without a paid API key", () => {
 test("Cortex local remains available without any model key", () => {
   const inventory = laneInventory({});
   assert.equal(inventory.keyless.cortex_local, true);
+  assert.equal(inventory.default, "keyless");
   assert.equal(inventory.paid_required, false);
   assert.equal(inventory.live, false);
 });
