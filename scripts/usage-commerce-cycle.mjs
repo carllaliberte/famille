@@ -41,6 +41,7 @@ const output = {
   source: inputPath,
   evidence_verified: evidence.verified === true,
   identified_verified_usage_events: rows.length,
+  usage_events: rows.map((r) => r.event),
   accounts,
   commercial_review: accounts.map((account) => ({
     actor: account.actor,
