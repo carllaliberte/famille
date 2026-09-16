@@ -15,6 +15,7 @@
  */
 import { planAdaptiveCadence } from "./adaptive-cadence.mjs";
 import { createCortexSession, recordStage } from "./cortex.mjs";
+import { createCognitiveContract } from "./cognitive-contract.mjs";
 
 export const COGNITIVE_TASK_VERSION = "cognitive-task.v1";
 
@@ -53,6 +54,17 @@ export function createCognitiveTask({
       }).session
     : null;
 
+  const cognitiveContract = createCognitiveContract({
+    identity: "acorn-cortex",
+    model: "cognitive-task",
+    channel: clean(channel, "unknown"),
+    intent: clean(intent),
+    capabilities: requested,
+    context,
+    provenance: { source, ref },
+    authority: { breaker: "HUMAN_CONTROLLED" },
+  });
+
   return {
     task: COGNITIVE_TASK_VERSION,
     owner: "acorn",
@@ -70,12 +82,14 @@ export function createCognitiveTask({
       invoked: cortexCreated.ok,
       session: cortexSession,
     },
+    cognitive_contract: cognitiveContract,
     governance: {
       human_authority: "carl",
       production_write_allowed: false,
       auto_merge: false,
       live: false,
       execution_requires_breaker: true,
+      breaker_authority: "human_only",
     },
     environment: {
       system_mode: breaker,
@@ -96,7 +110,8 @@ export function taskPrompt(task) {
     `Capabilities: ${(value.capabilities || []).join(", ") || "none"}`,
     `Cadence: ${value.cadence?.next_cadence ?? 0.25}`,
     `Cortex: ${value.cortex?.invoked ? "invoked" : "not invoked"}`,
-    "Governance: human_authority=carl; production_write_allowed=false; auto_merge=false; live=false.",
+    `Cognitive contract: ${value.cognitive_contract?.contract || "missing"} / ${value.cognitive_contract?.state || "unknown"}`,
+    "Governance: human_authority=carl; production_write_allowed=false; auto_merge=false; live=false; breaker_authority=human_only.",
     "Execution must remain behind the Global Breaker.",
     "Do not reinterpret the task into a different objective. Report what was actually done, tested, blocked, or left unchanged.",
   ].join("\n");
