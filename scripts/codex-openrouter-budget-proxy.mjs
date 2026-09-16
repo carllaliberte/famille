@@ -6,6 +6,7 @@
  * No credentials are stored or logged.
  */
 import http from "node:http";
+import https from "node:https";
 import { URL } from "node:url";
 
 function arg(name, fallback) {
@@ -54,7 +55,7 @@ const server = http.createServer((req, res) => {
     headers["content-length"] = String(Buffer.byteLength(outgoing));
     headers["connection"] = "close";
 
-    const upstreamReq = http.request({
+    const upstreamReq = https.request({
       protocol: upstream.protocol,
       hostname: upstream.hostname,
       port: 443,
