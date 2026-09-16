@@ -363,7 +363,8 @@ export function keyedModels(ids, env = process.env) {
   for (const id of ids) {
     const spec = MODELS[id];
     if (!spec) continue;
-    const native = String(env[spec.secret] || "").trim();
+    const native = String(env[spec.secret] || "").trim()
+      || (spec.secret === "GITHUB_TOKEN" ? String(env.GH_TOKEN || "").trim() : "");
     if (native) {
       run.push(spec);
       continue;
@@ -724,7 +725,8 @@ const CALLERS = {
 };
 
 export async function reviewOne(spec, system, user, env = process.env) {
-  const native = String(env[spec.secret] || "").trim();
+  const native = String(env[spec.secret] || "").trim()
+    || (spec.secret === "GITHUB_TOKEN" ? String(env.GH_TOKEN || "").trim() : "");
   const orKey = String(env.OPENROUTER_API_KEY || "").trim();
   const viaOpenRouter = spec.via === "openrouter";
   if (viaOpenRouter && !orKey) {
