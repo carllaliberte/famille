@@ -24,6 +24,13 @@ case "${1:-}" in
     ;;
 esac
 
+PROVIDER="$(printf '%s' "${CODEX_PROVIDER:-}" | tr '[:upper:]' '[:lower:]')"
+case "$PROVIDER" in
+  openai|chatgpt|codex)
+    exec "$REAL_CODEX" "$@"
+    ;;
+esac
+
 CONFIG_HOME="${CODEX_HOME:-${HOME:-}/.codex}"
 CONFIG_FILE="$CONFIG_HOME/config.toml"
 if [ ! -f "$CONFIG_FILE" ] || ! grep -q 'model_provider = "openrouter"' "$CONFIG_FILE" || [ -z "${OPENROUTER_API_KEY:-}" ]; then

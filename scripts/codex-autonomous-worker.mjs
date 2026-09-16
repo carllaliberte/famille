@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * ACORN CODEX AUTONOMOUS WORKER v9
+ * ACORN CODEX AUTONOMOUS WORKER v10
  * OBSERVE → UNDERSTAND → DISCOVER → PRIORITIZE → TASK → CODE → TEST → DEBUG
  * → REPAIR → MEASURE → EVIDENCE → PR → WAIT FOR HUMAN MERGE → DETECT MERGE → RESUME.
  * Carl is not an operational dependency. Merge remains human. Never auto-merge. Never LIVE.
+ * v10: explicit CODEX_PROVIDER (openai | openrouter). Requested provider wins.
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -42,10 +43,14 @@ import {
   excerptTaskBody,
   taskPrompt,
 } from "./codex-task-prompt.mjs";
+import {
+  secretPresent,
+  selectCodexProvider,
+} from "./codex-provider.mjs";
 
 export { continuityBrief, taskPrompt };
 
-export const WORKER_VERSION = "codex-autonomous-worker.v9";
+export const WORKER_VERSION = "codex-autonomous-worker.v10";
 export const MEMORY_PATH = "evidence/codex/worker-memory.json";
 export const WORKER_FILES = new Set([
   "codex-worker-evidence.json",
@@ -413,26 +418,22 @@ export function parseDiscovery(stdout) {
   };
 }
 
-function secretPresent(value) {
-  return String(value || "").trim().length > 8;
-}
-
 export function classifyAuth(io) {
   const home = io.env.CODEX_HOME || `${io.env.HOME || ""}/.codex`;
   const authFile = `${home}/auth.json`;
   const present = Boolean(io.exists(authFile));
   const openrouter = secretPresent(io.env.OPENROUTER_API_KEY);
-  const available = present || openrouter;
-  let method = "none";
-  if (present && openrouter) method = "chatgpt-codex-session+openrouter";
-  else if (present) method = "chatgpt-codex-session";
-  else if (openrouter) method = "openrouter-api-key";
+  const sel = selectCodexProvider(io.env, { authPathExists: present });
   return {
-    available,
-    method,
+    available: sel.available,
+    method: sel.auth_mode,
     path_exists: present,
     openrouter,
     paid_api_required: false,
+    provider_requested: sel.requested,
+    provider_selected: sel.selected,
+    use_openrouter_proxy: Boolean(sel.use_openrouter_proxy),
+    implicit: Boolean(sel.implicit),
   };
 }
 
@@ -447,7 +448,7 @@ export function resolveOpenRouterModel(io) {
 }
 
 export function buildCodexConfig(io, auth = classifyAuth(io)) {
-  const openrouterOnly = Boolean(auth.openrouter && !auth.path_exists);
+  const openrouterOnly = Boolean(auth.use_openrouter_proxy);
   const lines = [
     "approval_policy = \"never\"",
     "sandbox_mode = \"danger-full-access\"",
@@ -497,7 +498,7 @@ export const CODEX_WRITE_ARGS = Object.freeze([
 
 export function extraCodexConfigArgs(io) {
   const auth = classifyAuth(io);
-  if (!auth.openrouter || auth.path_exists) return [];
+  if (!auth.use_openrouter_proxy) return [];
   const maxOut = Number(io.env.CODEX_MAX_OUTPUT_TOKENS || 1024) || 1024;
   const model = resolveOpenRouterModel(io);
   return [
@@ -1078,6 +1079,8 @@ export function runWorker(io = createIo()) {
         version: cli.version,
         auth_method: auth.method,
         paid_api_required: auth.paid_api_required,
+        provider_selected: auth.provider_selected,
+        use_openrouter_proxy: Boolean(auth.use_openrouter_proxy),
       };
     }
     if (status === "UNAVAILABLE" && !evidence.human_actions_required?.length) {
@@ -1134,10 +1137,21 @@ export function runWorker(io = createIo()) {
     patch_source: "none",
     version: cli.version,
     auth_method: auth.method,
-    model: auth.openrouter && !auth.path_exists ? resolveOpenRouterModel(io) : (io.env.CODEX_MODEL || null),
+    model: auth.use_openrouter_proxy ? resolveOpenRouterModel(io) : (io.env.CODEX_MODEL || null),
     paid_api_required: false,
+    provider_selected: auth.provider_selected,
+    use_openrouter_proxy: Boolean(auth.use_openrouter_proxy),
   };
-  evidence.measurements.push({ name: "cli", ...cli }, { name: "auth", method: auth.method, available: auth.available });
+  evidence.measurements.push(
+    { name: "cli", ...cli },
+    {
+      name: "auth",
+      method: auth.method,
+      available: auth.available,
+      provider_selected: auth.provider_selected,
+      use_openrouter_proxy: Boolean(auth.use_openrouter_proxy),
+    },
+  );
 
   if (!cli.available) {
     evidence.human_actions_required.push({

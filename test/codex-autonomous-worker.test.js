@@ -509,8 +509,8 @@ describe("codex autonomous worker", () => {
     assert.doesNotMatch(JSON.stringify(mem), /sk-|access_token|"live": true/);
   });
 
-  it("pins worker v9 and does not ask Carl to dispatch after UNAVAILABLE", () => {
-    assert.equal(WORKER_VERSION, "codex-autonomous-worker.v9");
+  it("pins worker v10 and does not ask Carl to dispatch after UNAVAILABLE", () => {
+    assert.equal(WORKER_VERSION, "codex-autonomous-worker.v10");
     const io = ioFor({ authFile: false });
     const ev = runWorker(io);
     assert.equal(ev.status, "UNAVAILABLE");
