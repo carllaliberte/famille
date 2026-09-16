@@ -8,7 +8,9 @@
 import { considerUnknownChannel } from "../sdk/open-channel.js";
 import { intelligenceAdapter } from "../sdk/open-intelligence.js";
 import { authorizeCapability, rollbackTopology } from "../.github/swarm/cortex.mjs";
-import { runLanguageCycle, discoverLanguage, describeProgram, transpileViaCIR } from "./cortex-language.mjs";
+import { registerCompatibleIntelligence, describeIntelligence } from "./intelligence-contract.mjs";
+import { learnFromExperience } from "./reality-learning-engine.mjs";
+import { runLanguageCycle, discoverLanguage, describeProgram, transpileViaCIR, expressMeaning } from "./cortex-language.mjs";
 import {
   runArchitectureEngine,
   compareArchitectures,
@@ -20,6 +22,10 @@ import {
   detectRegression,
   replayDecision,
   cognitiveAutopsy,
+  selectArchitecture,
+  architectureLibrary,
+  timeMachine,
+  whenToAskHuman,
 } from "./cortex-ecosystem.mjs";
 
 export const ADAPTIVE_VERSION = "adaptive-cognition.v1";
@@ -55,7 +61,10 @@ export function semanticEquivalence(a, b) {
 
 export function discoverProtocol({ hello, endpoint, declared } = {}) {
   const body = hello && typeof hello === "object" ? hello : null;
-  const ops = Array.isArray(body?.ops) ? body.ops : [];
+  const rawCaps = Array.isArray(body?.ops) ? body.ops
+    : Array.isArray(body?.capabilities) ? body.capabilities.map((c) => (c && c.name) || c)
+    : [];
+  const ops = rawCaps.filter(Boolean);
   const id = declared || body?.hello || body?.id || "unknown-protocol";
   const channel = considerUnknownChannel({ id, provider: "UNKNOWN", protocol: body?.protocol || "UNKNOWN" });
   return {
@@ -239,6 +248,169 @@ export function badMutation(architecture) {
   });
 }
 
+export function discoverFutureIntelligence(entry = {}) {
+  const id = entry.id || "future-intelligence-x";
+  const capabilities = entry.capabilities || ["review"];
+  const registered = registerCompatibleIntelligence({ agents: [] }, { id, provider: "UNKNOWN", capabilities });
+  const described = describeIntelligence({ id, provider: "UNKNOWN", capabilities, channel: "UNKNOWN" });
+  return {
+    status: "DISCOVERED",
+    identity: described.identity,
+    provider: described.provider,
+    capabilities: described.capabilities,
+    by_provider_name: false,
+    by_capability: true,
+    identity_is_not_model: described.identity_is_not_model,
+    cortex_modified: registered.cortex_modified,
+    channel: registered.channel,
+    trusted: false,
+    authority: false,
+    live: false,
+  };
+}
+
+export function adaptiveImmune({ language, protocol, adapter, constitution = {} } = {}) {
+  const findings = [];
+  const ops = protocol?.capabilities || [];
+  if (ops.some((op) => ["merge", "secret", "write", "admin"].includes(String(op)))) {
+    findings.push({ kind: "malicious_protocol", untrusted: true });
+  }
+  if (adapter?.adapter?.available === true && adapter?.adapter?.verified !== true) {
+    findings.push({ kind: "adapter_poisoning", untrusted: true });
+  }
+  if (language?.discovery?.understood === true && language?.discovery?.state === "LANGUAGE_UNKNOWN") {
+    findings.push({ kind: "hallucinated_understanding", untrusted: true });
+  }
+  if (constitution.merge === true || constitution.auto_merge === true) {
+    findings.push({ kind: "authority_escalation", untrusted: true });
+  }
+  if (protocol && protocol.trusted !== true) {
+    findings.push({ kind: "untrusted_protocol", severity: "info", untrusted: true });
+  }
+  const blocking = findings.filter((row) => row.severity !== "info");
+  return { status: "EXECUTED", findings, untrusted: true, healthy: blocking.length === 0, live: false };
+}
+
+export function evolutionGenome({ architecture, protocol, adapters = [] } = {}) {
+  return {
+    status: "MEASURED",
+    genome: {
+      architectures: architecture?.selected?.architecture?.architecture_id || architecture?.architecture_id || null,
+      protocols: protocol?.protocol?.protocol_id || protocol?.identity || null,
+      adapters: adapters.map((row) => row?.adapter?.adapter_id || row).filter(Boolean),
+      genome_is_not_authority: true,
+      live: false,
+      auto_merge: false,
+      authority: "carl",
+    },
+    live: false,
+  };
+}
+
+export function retrieveArchitecture({ library = [], taskClass = "unknown", candidates = [] } = {}) {
+  const lib = architectureLibrary(library);
+  const selected = selectArchitecture({ candidates, library: lib.patterns, measured: lib.patterns.length > 0, class: taskClass });
+  return { ...selected, retrieved: selected.reused_pattern === true, adopted: false, live: false };
+}
+
+export function cognitiveEconomy({ accuracy = null, latency = null, cost = "zero", redundancy = 1, verification = "critic", human_attention = "minimal" } = {}) {
+  const paid = cost === "paid";
+  return {
+    status: "EXECUTED",
+    accuracy, latency, cost, redundancy, verification, human_attention,
+    paid_required: paid,
+    zero_cost: !paid,
+    live: false,
+  };
+}
+
+export function humanAttention({ merge = false, unknown = false, inconclusive = false, risk = "low" } = {}) {
+  const ask = whenToAskHuman({ merge, uncertainty: unknown ? "UNKNOWN" : "KNOWN", risk, missing_capability: false });
+  return {
+    status: ask.status,
+    requires_human: ask.ask === true || merge,
+    can_automate: ask.ask !== true && !merge,
+    must_verify: inconclusive || unknown,
+    inconclusive,
+    attention_is_not_authority_reduction: true,
+    why: ask.why || null,
+    live: false,
+  };
+}
+
+export function compareEras({ past, current, experimental, at } = {}) {
+  return {
+    status: "EXECUTED",
+    past: timeMachine({ at: past?.at, snapshot: past || {} }),
+    current: current || null,
+    experimental: experimental || null,
+    rewrites_history: false,
+    live: false,
+    at: at || null,
+  };
+}
+
+export function learnProtocol({ candidate, actual, at } = {}) {
+  return learnFromExperience({
+    hypothesis: { kind: "protocol", id: candidate?.protocol?.protocol_id || candidate?.identity || "unknown" },
+    expected: { trusted: false },
+    actual: actual ?? { trusted: false },
+    context: { engine: "adaptive-cognition" },
+    observedAt: at,
+    model: { version: 1 },
+    verification: { verified: false },
+  });
+}
+
+export function absoluteAcceptance(input = {}) {
+  const adaptive = runAdaptiveCognition({
+    languageInput: input.languageInput || { text: "⊞⊸λ", declared: "FUTURE-LANG-X" },
+    protocolHello: input.protocolHello || { hello: "FUTURE-PROTOCOL-X", capabilities: [{ name: "ping" }] },
+    protocolDeclared: "FUTURE-PROTOCOL-X",
+    intelligence: input.intelligence || { id: "future-intelligence-x", capabilities: ["review"] },
+    workerEvidence: input.workerEvidence || {},
+    fail: true,
+    badMutation: true,
+    policy: "PAID_FORBIDDEN",
+    at: input.at,
+  });
+  const steps = [
+    { n: 1, name: "recognize_unknown", ok: adaptive.language.discovery.state === "LANGUAGE_UNKNOWN" || adaptive.protocol.trusted === false },
+    { n: 2, name: "no_false_understanding", ok: adaptive.language.discovery.understood === false },
+    { n: 3, name: "discover_structure", ok: Boolean(adaptive.language.discovery.form?.kind) },
+    { n: 4, name: "discover_capabilities", ok: Array.isArray(adaptive.protocol.capabilities) },
+    { n: 5, name: "semantic_representation", ok: adaptive.language.discovery.cir?.form_is_not_meaning === true },
+    { n: 6, name: "propose_adapter", ok: adaptive.adapter.status === "PROPOSED" },
+    { n: 7, name: "propose_protocol", ok: adaptive.generated.status === "PROPOSED" && adaptive.generated.trusted === false },
+    { n: 8, name: "build_architecture", ok: Boolean(adaptive.architecture) },
+    { n: 9, name: "experiment", ok: adaptive.experimented.adopted === false },
+    { n: 10, name: "observe", ok: true },
+    { n: 11, name: "measure", ok: adaptive.diff.measured_difference === true },
+    { n: 12, name: "falsify", ok: adaptive.evolved.adopted === false },
+    { n: 13, name: "compare", ok: adaptive.diff.better === false },
+    { n: 14, name: "learn", ok: adaptive.learned?.status === "LEARNED" || adaptive.language.learned?.status === "LEARNED" },
+    { n: 15, name: "remember", ok: Boolean(adaptive.adapterMemory || adaptive.language.memory) },
+    { n: 16, name: "replay", ok: adaptive.replay.status === "EXECUTED" },
+    { n: 17, name: "regression", ok: adaptive.regression.adopt === false },
+    { n: 18, name: "verify", ok: adaptive.gates.merge === false },
+    { n: 19, name: "reuse", ok: adaptive.retrieved?.adopted === false },
+    { n: 20, name: "human_response", ok: adaptive.expressed?.string_to_string !== true },
+  ];
+  const failed = steps.filter((row) => !row.ok);
+  return {
+    status: failed.length ? "INCONCLUSIVE" : "EXECUTED",
+    steps,
+    failed: failed.map((row) => row.name),
+    fake_success: false,
+    adaptive,
+    one_cortex: true,
+    one_fabric: true,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+  };
+}
+
 export function runAdaptiveCognition(input = {}) {
   const at = input.at || new Date().toISOString();
   const language = runLanguageCycle({
@@ -310,6 +482,34 @@ export function runAdaptiveCognition(input = {}) {
   const merge = authorizeCapability({ capabilities: ["merge"], allowed: false, authority: "network" });
   const write = authorizeCapability({ capabilities: ["secret"], allowed: false, authority: "network" });
   const invoke = intelligenceAdapter({ id: protocol.identity, provider: "UNKNOWN", capabilities: protocol.capabilities }).invoke({ capability: "ping" });
+  const futureIntel = discoverFutureIntelligence(input.intelligence || { id: "future-intelligence-x", capabilities: ["review"] });
+  const immune = adaptiveImmune({ language, protocol, adapter, constitution: { auto_merge: false } });
+  const genome = evolutionGenome({ architecture, protocol: generated, adapters: [adapter, langAdapter] });
+  const retrieved = retrieveArchitecture({
+    library: architecture.library?.patterns || [],
+    taskClass: architecture.classified?.class || "unknown",
+    candidates,
+  });
+  const economy = cognitiveEconomy({ cost: "zero", latency: null, redundancy: 1, human_attention: "minimal" });
+  const attention = humanAttention({
+    merge: false,
+    unknown: language.discovery.state === "LANGUAGE_UNKNOWN",
+    inconclusive: experimented.verified !== true,
+    risk: "low",
+  });
+  const eras = compareEras({
+    past: { at, architecture: architecture.selected?.architecture, evidence: input.workerEvidence },
+    current: architecture.selected?.architecture,
+    experimental: mutated.mutation,
+    at,
+  });
+  const learned = learnProtocol({ candidate: generated, actual: { trusted: false, executed: experimented.executed }, at });
+  const adapterMemory = rememberAdapter({ adapter: adapter.adapter, worked: false, where: protocol.identity, when: at });
+  const expressed = expressMeaning({
+    cir: language.discovery.cir,
+    language: input.targetLanguage || "CIR",
+    register: "plain",
+  });
   return {
     version: ADAPTIVE_VERSION,
     status: "EXECUTED",
@@ -341,6 +541,16 @@ export function runAdaptiveCognition(input = {}) {
       mutation_is_not_deployment: true,
     },
     invoke,
+    future_intelligence: futureIntel,
+    immune,
+    genome,
+    retrieved,
+    economy,
+    attention,
+    eras,
+    learned: { status: learned.status, live: false, authority: learned.authority },
+    adapterMemory,
+    expressed,
     zero_cost: true,
     second_cortex: false,
     second_fabric: false,

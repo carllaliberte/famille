@@ -225,7 +225,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   const ad = output.organism?.adaptive;
   if (ad) {
-    console.log(`adaptive.protocol=${ad.protocol?.state || "none"} negotiated=${(ad.negotiated?.common || []).join(",") || "none"} diff.better=${ad.diff?.better === true} mutation.adopted=${ad.evolved?.adopted === true} second_cortex=${ad.second_cortex === true} live=false`);
+    console.log(`adaptive.protocol=${ad.protocol?.state || "none"} negotiated=${(ad.negotiated?.common || []).join(",") || "none"} intel=${ad.future_intelligence?.identity || "none"} immune.untrusted=${ad.immune?.untrusted === true} diff.better=${ad.diff?.better === true} mutation.adopted=${ad.evolved?.adopted === true} second_cortex=${ad.second_cortex === true} live=false`);
   }
   console.log(JSON.stringify(output, null, 2));
 }
