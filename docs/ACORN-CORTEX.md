@@ -91,6 +91,8 @@ Language adaptation lives in the same Cortex. CIR (`cir.v0`) separates form from
 
 Adaptive cognition is the single engine: language, protocol and evolution are three manifestations, not three Cortexes. Unknown protocol → discover → negotiate → propose adapter (`PROPOSED`, not trusted). Architectures are compared as measured differences, never “B is better”. Checkpoints isolate experiments. Mutations do not deploy. Unknown intelligence is routed by capability, not provider name. Immune treats unknowns as untrusted. Genome describes evolution and is not authority. `CAPABILITY ≠ AUTHORITY`. `live=false`.
 
+Meta-evolution is the same Cortex observing its own cognition. Self-model fields stay KNOWN / MEASURED / INFERRED / HYPOTHESIZED / UNKNOWN — never auto-promoted. Architecture search produces candidates, not winners. Experiments can be rejected. Counterfactuals are not observations. SELF-PROPOSE ≠ SELF-AUTHORIZE. `live=false`.
+
 
 
 

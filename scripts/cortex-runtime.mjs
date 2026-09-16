@@ -227,5 +227,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (ad) {
     console.log(`adaptive.protocol=${ad.protocol?.state || "none"} negotiated=${(ad.negotiated?.common || []).join(",") || "none"} intel=${ad.future_intelligence?.identity || "none"} immune.untrusted=${ad.immune?.untrusted === true} diff.better=${ad.diff?.better === true} mutation.adopted=${ad.evolved?.adopted === true} second_cortex=${ad.second_cortex === true} live=false`);
   }
+  const meta = output.organism?.meta;
+  if (meta) {
+    console.log(`meta.self_authorize=${meta.improved?.self_authorize === true} rejected=${meta.improved?.rejected === true} winner=${meta.winner || "none"} unknown=${meta.unknown?.kind || "none"} counterfactual=${meta.counterfactual?.counterfactual === true} live=false`);
+  }
   console.log(JSON.stringify(output, null, 2));
 }

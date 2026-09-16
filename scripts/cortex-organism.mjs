@@ -12,6 +12,7 @@ import { laneInventory } from "./inference-lanes.mjs";
 import { intelligenceAdapter } from "../sdk/open-intelligence.js";
 import { runEcosystemCycle } from "./cortex-ecosystem.mjs";
 import { runAdaptiveCognition } from "./cortex-adaptive.mjs";
+import { runMetaEvolution } from "./cortex-meta.mjs";
 import {
   authorizeCapability,
   runEvolutionLoop,
@@ -450,6 +451,17 @@ export function runOrganismCycle(input = {}) {
     at,
   });
   const language = adaptive.language;
+  const metaEvolution = runMetaEvolution({
+    adaptive,
+    ecosystem,
+    workerEvidence: input.workerEvidence || {},
+    genome,
+    immune,
+    memory: memory.kept,
+    prediction_error: error,
+    nodes: agents,
+    at,
+  });
   const record = {
     version: ORGANISM_VERSION,
     loop: ORGANISM_LOOP,
@@ -477,6 +489,7 @@ export function runOrganismCycle(input = {}) {
     ecosystem,
     language,
     adaptive,
+    meta: metaEvolution,
     adapter: { reason: adapterInvoke.reason, live: false },
     constitution,
     live: false,
