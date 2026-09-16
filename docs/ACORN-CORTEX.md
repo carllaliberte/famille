@@ -79,6 +79,9 @@ PERCEIVE → INGEST → UNDERSTAND → HYPOTHESIZE → COMPOSE → EXPERIMENT
 
 Roster status is not presence. `chatgpt` remains DECLARED until a channel is present. The cognitive-worker is ACTIVE only when worker evidence exists. Future intelligences enter through `intelligenceAdapter`; missing channels stay `CHANNEL_NOT_PRESENT`.
 
+Inference lanes are unpaid-first: **keyless** (local Cortex, Ollama, GitHub Models via `GITHUB_TOKEN`) → **free** (OpenRouter `:free`) → **paid**. A missing paid key is `CHANNEL_NOT_PRESENT`, not a stall. The organism continues without any model key. `paid_api_required=false`.
+
+
 Knowledge fabric preserves disagreement. Consensus is not truth. Predictions are stored before execution and never rewritten. Causal claims stay `INCONCLUSIVE` without intervention evidence. Genome snapshots are versioned. Mutations are candidates. Simulation is not proof of reality. `CAPABILITY ≠ AUTHORITY`. `SELF-EVOLUTION ≠ SELF-AUTHORIZATION`.
 
 

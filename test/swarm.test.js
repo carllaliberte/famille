@@ -184,20 +184,18 @@ describe("keyedModels fail-closed", () => {
     assert.equal(skip[0].id, "chatgpt");
   });
 
-  it("OPENROUTER_API_KEY runs gemini only at $0 cadence", () => {
+  it("OPENROUTER_API_KEY runs gemini route plus :free seats, never paid natives", () => {
     const { run, skip } = keyedModels(
       ["sonnet", "fable", "chatgpt", "deepseek", "gemini", "haiku", "llama", "qwen", "xai"],
       { OPENROUTER_API_KEY: "or-test" },
     );
-    assert.deepEqual(
-      run.map((m) => m.id),
-      ["gemini"],
-    );
+    const ids = run.map((m) => m.id);
+    assert.ok(ids.includes("gemini"));
+    assert.ok(ids.includes("llama"));
+    assert.equal(ids.includes("chatgpt"), false);
+    assert.equal(ids.includes("xai"), false);
     assert.ok(run.every((m) => m.via === "openrouter"));
-    assert.equal(
-      skip.map((s) => s.id).join(","),
-      "sonnet,fable,chatgpt,deepseek,haiku,llama,qwen,xai",
-    );
+    assert.ok(skip.some((s) => s.id === "chatgpt"));
     assert.equal(OPENROUTER_ROUTES.gemini, "google/gemini-2.5-flash");
     assert.equal(MODELS.llama.auto, false);
     assert.equal(MODELS.deepseek.auto, false);

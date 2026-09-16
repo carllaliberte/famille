@@ -6,9 +6,10 @@ const env = (extra = {}) => ({ XAI_API_KEY: "secret", OPENROUTER_API_KEY: "fallb
 
 test("system automation detects configured credentials without exposing values", () => {
   const result = inspectSystems({ env: env() });
-  assert.deepEqual(result.configured, ["xai", "openrouter"]);
-  assert.equal(result.systems[0].credential.value_exposed, false);
-  assert.equal(result.systems[0].credential.key_name, "XAI_API_KEY");
+  assert.deepEqual(result.configured, ["openrouter", "xai"]);
+  const xai = result.systems.find((row) => row.id === "xai");
+  assert.equal(xai.credential.value_exposed, false);
+  assert.equal(xai.credential.key_name, "XAI_API_KEY");
   assert.equal(result.ready_for_execution, false);
   assert.equal(result.live, false);
 });
@@ -33,4 +34,14 @@ test("missing credentials produce a human configuration requirement", () => {
   assert.equal(result.action, "HUMAN_CONFIGURATION_REQUIRED");
   assert.equal(result.automated_provisioning, false);
   assert.equal(result.value_exposed, false);
+});
+
+test("lu prefers unpaid OpenRouter over paid xAI when both keys exist", () => {
+  const result = routeSystem({ capability: "lu", env: env() });
+  assert.equal(result.selected.id, "openrouter");
+});
+
+test("github-models is preferred for lu when GITHUB_TOKEN is present", () => {
+  const result = routeSystem({ capability: "lu", env: { GITHUB_TOKEN: "ghs_test", XAI_API_KEY: "x" } });
+  assert.equal(result.selected.id, "github-models");
 });

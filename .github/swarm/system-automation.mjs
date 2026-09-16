@@ -2,11 +2,13 @@
 /** ACORN SYSTEM AUTOMATION — connector-side planning only. Secrets never exposed. */
 export const SYSTEM_AUTOMATION_VERSION = "system-automation.v1";
 const SYSTEMS = Object.freeze([
-  { id: "xai", key: "XAI_API_KEY", capabilities: ["grok", "build", "review", "lu"], priority: 10 },
-  { id: "openai", key: "OPENAI_API_KEY", capabilities: ["reason", "review", "build", "lu"], priority: 20 },
-  { id: "anthropic", key: "ANTHROPIC_API_KEY", capabilities: ["reason", "review", "build", "lu"], priority: 30 },
-  { id: "google", key: "GEMINI_API_KEY", capabilities: ["reason", "review", "lu"], priority: 40 },
-  { id: "openrouter", key: "OPENROUTER_API_KEY", capabilities: ["model", "fallback", "lu"], priority: 50 },
+  { id: "ollama", key: "OLLAMA_HOST", capabilities: ["lu", "review"], priority: 1, lane: "keyless" },
+  { id: "github-models", key: "GITHUB_TOKEN", capabilities: ["lu", "review"], priority: 2, lane: "keyless" },
+  { id: "openrouter", key: "OPENROUTER_API_KEY", capabilities: ["model", "fallback", "lu", "review"], priority: 3, lane: "free" },
+  { id: "xai", key: "XAI_API_KEY", capabilities: ["grok", "build", "review", "lu"], priority: 10, lane: "paid" },
+  { id: "openai", key: "OPENAI_API_KEY", capabilities: ["reason", "review", "build", "lu"], priority: 20, lane: "paid" },
+  { id: "anthropic", key: "ANTHROPIC_API_KEY", capabilities: ["reason", "review", "build", "lu"], priority: 30, lane: "paid" },
+  { id: "google", key: "GEMINI_API_KEY", capabilities: ["reason", "review", "lu"], priority: 40, lane: "paid" },
 ]);
 const hasCredential = (env, key) => typeof env?.[key] === "string" && env[key].trim().length > 0;
 const describe = (s, env) => ({ id: s.id, capabilities: [...s.capabilities], priority: s.priority, credential: { configured: hasCredential(env, s.key), key_name: s.key, value_exposed: false } });

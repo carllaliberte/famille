@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { CANALS, FREE_DISPATCH_CAP, idsForDispatch, MODELS, parseTrigger } from "../.github/swarm/review.mjs";
+import { isFreeModel } from "../scripts/inference-lanes.mjs";
 
 const rows = JSON.parse(
   readFileSync(new URL("../schema/canals-free.json", import.meta.url), "utf8"),
@@ -62,10 +63,10 @@ describe("canals-free — catalogue additif, collision skip, pas Groq", () => {
   it("OPENROUTER_API_KEY alone dispatches at most FREE_DISPATCH_CAP :free", () => {
     assert.equal(FREE_DISPATCH_CAP, 3);
     const withOr = idsForDispatch({ OPENROUTER_API_KEY: "x" });
-    const free = withOr.filter((id) => String(MODELS[id].model).includes(":free"));
+    const free = withOr.filter((id) => isFreeModel(MODELS[id]));
     assert.ok(free.length <= FREE_DISPATCH_CAP);
-    assert.ok(withOr.includes("openrouter"));
     assert.ok(withOr.includes("orfree"));
+    assert.equal(withOr.includes("openrouter"), false);
     assert.equal(withOr.includes("llama"), false);
     const xaiOnly = idsForDispatch({ XAI_API_KEY: "x" });
     assert.ok(xaiOnly.includes("xai"));

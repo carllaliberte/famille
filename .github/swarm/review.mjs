@@ -18,6 +18,7 @@ import {
   ROSTER_DOC,
 } from "./flux.mjs";
 import { kernelFooter, sealSwarm } from "./kernel.mjs";
+import { isFreeModel, preferUnpaid } from "../../scripts/inference-lanes.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../..");
@@ -125,6 +126,12 @@ const CANALS_CORE = Object.freeze({
     model: "llama3.2",
     maxTokens: 2048,
   },
+  ghmodels: {
+    provider: "github-models",
+    secret: "GITHUB_TOKEN",
+    model: "openai/gpt-4o-mini",
+    maxTokens: 2048,
+  },
 });
 
 /** Known callers only. Groq and unknown providers stay out. Collision keeps the existing seat. */
@@ -136,6 +143,7 @@ const CANAL_PROVIDERS = Object.freeze([
   "xai",
   "openrouter",
   "ollama",
+  "github-models",
 ]);
 
 function loadFreeCanals(core) {
@@ -345,20 +353,7 @@ export function meshUser(baseUser, flux) {
 export const FREE_DISPATCH_CAP = 3;
 
 export function idsForDispatch(env = process.env) {
-  const ids = [];
-  const seen = new Set();
-  let freeN = 0;
-  for (const [id, spec] of Object.entries(MODELS)) {
-    if (String(env[spec.secret] || "").trim() && !seen.has(id)) {
-      const isFree =
-        id === "orfree" || String(spec.model || "").includes(":free");
-      if (isFree && freeN >= FREE_DISPATCH_CAP) continue;
-      seen.add(id);
-      ids.push(id);
-      if (isFree) freeN += 1;
-    }
-  }
-  return ids;
+  return preferUnpaid(Object.values(MODELS), env, { freeCap: FREE_DISPATCH_CAP }).selected;
 }
 
 export function keyedModels(ids, env = process.env) {
@@ -378,6 +373,13 @@ export function keyedModels(ids, env = process.env) {
         ...spec,
         via: "openrouter",
         model: OPENROUTER_ROUTES[id],
+      });
+      continue;
+    }
+    if (orKey && isFreeModel(spec)) {
+      run.push({
+        ...spec,
+        via: "openrouter",
       });
       continue;
     }
@@ -683,6 +685,33 @@ async function callOllama(spec, system, user, host) {
 
 const callLocal = callOllama;
 
+async function callGithubModels(spec, system, user, key) {
+  const { ok, status, json } = await postJson(
+    "https://models.github.ai/inference/chat/completions",
+    {
+      id: spec.id,
+      headers: {
+        authorization: `Bearer ${key}`,
+        accept: "application/vnd.github+json",
+        "x-github-api-version": "2022-11-28",
+      },
+      body: {
+        model: spec.model,
+        max_tokens: spec.maxTokens || 2048,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      },
+    },
+  );
+  if (!ok) {
+    throw new Error(`github-models ${status}: ${JSON.stringify(json).slice(0, 400)}`);
+  }
+  const text = json?.choices?.[0]?.message?.content;
+  return typeof text === "string" ? text : "";
+}
+
 const CALLERS = {
   anthropic: callAnthropic,
   openai: callOpenAI,
@@ -691,6 +720,7 @@ const CALLERS = {
   xai: callXai,
   openrouter: callOpenRouter,
   ollama: callOllama,
+  "github-models": callGithubModels,
 };
 
 export async function reviewOne(spec, system, user, env = process.env) {

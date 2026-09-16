@@ -8,6 +8,7 @@
  * LIVE is never minted here.
  */
 import { diagnoseWorkerEvidence, selfHealDecision } from "./self-heal.mjs";
+import { laneInventory } from "./inference-lanes.mjs";
 import { intelligenceAdapter } from "../sdk/open-intelligence.js";
 import {
   authorizeCapability,
@@ -347,6 +348,8 @@ export function runOrganismCycle(input = {}) {
     worker: Boolean(input.workerEvidence?.v),
     fluidity: input.fluidity?.state || null,
     local_intelligences: local.map((row) => row.id),
+    lanes: laneInventory(input.env || process.env),
+    paid_required: false,
   };
   const ingested = (input.contributions || []).map((row) => contributeKnowledge({ ...row, when: row.when || at }));
   const knowledge = ingested.filter((row) => row.ok).map((row) => row.entry);
