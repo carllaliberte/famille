@@ -95,6 +95,8 @@ Meta-evolution is the same Cortex observing its own cognition. Self-model fields
 
 Acceleration is a capability, not a vendor. NVIDIA is a candidate adapter (`CHANNEL_NOT_PRESENT` unless a real channel responds). CPU/GPU/NPU/unknown silicon share one discovery path. `HARDWARE ≠ INTELLIGENCE ≠ PROVIDER ≠ CHANNEL`. `PASSPORT ≠ PRESENCE`. A missing accelerator degrades or holds — never fake success. `live=false`.
 
+The Breaker belongs to Carl. Acorn observes it, tests around it, and never controls it. `BREAKER_CLOSED` and `BREAKER_AMBIGUOUS` are `HOLD_HUMAN`. Failover, genome, adapters and intelligences cannot bypass it. `ACORN NEVER CONTROLS THE BREAKER`.
+
 
 
 

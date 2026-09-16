@@ -15,6 +15,7 @@ import { runAdaptiveCognition } from "./cortex-adaptive.mjs";
 import { runMetaEvolution } from "./cortex-meta.mjs";
 import { runContinuityFabric } from "./cortex-continuity.mjs";
 import { runAccelerationFabric } from "./cortex-acceleration.mjs";
+import { runFuturesEngine } from "./cortex-futures.mjs";
 import {
   authorizeCapability,
   runEvolutionLoop,
@@ -469,6 +470,12 @@ export function runOrganismCycle(input = {}) {
     memory: memory.kept,
     at,
   });
+  const futures = runFuturesEngine({
+    workerEvidence: input.workerEvidence || {},
+    skipContinuity: true,
+    skipWorld: false,
+    at,
+  });
   const acceleration = runAccelerationFabric({
     workerEvidence: input.workerEvidence || {},
     env: input.env || process.env,
@@ -503,6 +510,8 @@ export function runOrganismCycle(input = {}) {
     adaptive,
     meta: metaEvolution,
     continuity,
+    futures,
+    world: futures.world || { live: false, model_is_not_world: true },
     acceleration,
     adapter: { reason: adapterInvoke.reason, live: false },
     constitution,

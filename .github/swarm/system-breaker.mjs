@@ -37,9 +37,31 @@ export function resolveMode(env = process.env) {
   const raw = String(env.ACORN_SYSTEM_MODE ?? "RUN").trim().toUpperCase();
   return Object.values(MODES).includes(raw) ? raw : MODES.OFF;
 }
+export function breakerIsAmbiguous(env = process.env) {
+  if (!Object.prototype.hasOwnProperty.call(env, "ACORN_SYSTEM_MODE")) return false;
+  const raw = String(env.ACORN_SYSTEM_MODE ?? "").trim().toUpperCase();
+  if (!raw) return true;
+  return !Object.values(MODES).includes(raw);
+}
 export function controlState(env = process.env) {
   const mode = resolveMode(env);
-  return { mode, breaker_closed: mode === MODES.OFF, diagnostic: mode === MODES.DEBUG, normal: mode === MODES.RUN, ai_ingress_allowed: mode !== MODES.OFF, production_write_allowed: false, auto_merge: false, live: false, human_authority: "carl" };
+  const ambiguous = breakerIsAmbiguous(env);
+  return {
+    mode,
+    breaker_closed: mode === MODES.OFF,
+    diagnostic: mode === MODES.DEBUG,
+    normal: mode === MODES.RUN && !ambiguous,
+    ai_ingress_allowed: mode !== MODES.OFF && !ambiguous,
+    production_write_allowed: false,
+    auto_merge: false,
+    live: false,
+    human_authority: "carl",
+    ambiguous,
+    assumed_open: false,
+    ai_may_open: false,
+    ai_may_close: false,
+    ai_may_change: false,
+  };
 }
 export function assertSystemMayProceed({ env = process.env, origin = "unknown", action = "execute" } = {}) {
   const state = controlState(env);

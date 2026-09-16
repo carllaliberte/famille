@@ -11,6 +11,7 @@ import { classifyFailure, selfHealDecision } from "./self-heal.mjs";
 import { learnFromExperience } from "./reality-learning-engine.mjs";
 import { homeostasisOf, independenceGraph, searchArchitectures } from "./cortex-ecosystem.mjs";
 import { checkpointCortex } from "./cortex-adaptive.mjs";
+import { observeBreaker } from "./cortex-sovereignty.mjs";
 
 export const CONTINUITY_VERSION = "cortex-continuity.v1";
 export const NODE_ROLES = Object.freeze([
@@ -43,6 +44,7 @@ export function describeContinuityNode({
   id, role = "PRIMARY", capabilities = ["review"], runtime = "local",
   channel = "UNKNOWN", health = "ALIVE", state = "DEFINED", host = "local",
   provider = "UNKNOWN", constitution_version = "acorn.v0",
+  ready_for_failover = false,
 } = {}) {
   const r = NODE_ROLES.includes(role) ? role : "EMERGENCY";
   return {
@@ -58,7 +60,7 @@ export function describeContinuityNode({
     constitution_version,
     last_verified: null,
     last_seen: null,
-    ready_for_failover: false,
+    ready_for_failover: ready_for_failover === true,
     presence_is_not_role: true,
     live: false,
   };
@@ -214,18 +216,30 @@ export function failoverModeFor(failure = {}) {
 }
 
 export function runFailover({
-  failure, lease, primary, standbys = [], fenced = false, workerEvidence = {}, at,
+  failure, lease, primary, standbys = [], fenced = false, workerEvidence = {}, at, env = process.env,
 } = {}) {
+  const breaker = observeBreaker({ env });
+  if (breaker.status === "HOLD_HUMAN") {
+    return {
+      status: "HOLD_HUMAN",
+      mode: "HOLD_HUMAN",
+      promoted: false,
+      reason: breaker.reason,
+      authority_transferred: false,
+      bypass: false,
+      live: false,
+    };
+  }
   const mode = failoverModeFor(failure || {});
   if (mode === "HOLD_HUMAN") {
-    return { status: "HOLD_HUMAN", mode, promoted: false, reason: failure?.kind || "ambiguous", live: false };
+    return { status: "HOLD_HUMAN", mode, promoted: false, reason: failure?.kind || "ambiguous", authority_transferred: false, live: false };
   }
   if (failure?.failed && !fenced) {
-    return { status: "REFUSED", mode, promoted: false, reason: "FAILOVER_WITHOUT_FENCING", live: false };
+    return { status: "REFUSED", mode, promoted: false, reason: "FAILOVER_WITHOUT_FENCING", authority_transferred: false, live: false };
   }
   const chosen = selectStandby({ nodes: standbys });
   if (!chosen.selected) {
-    return { status: "HOLD_HUMAN", mode, promoted: false, reason: "NO_VERIFIED_STANDBY", live: false };
+    return { status: "HOLD_HUMAN", mode, promoted: false, reason: "NO_VERIFIED_STANDBY", authority_transferred: false, live: false };
   }
   return {
     status: workerEvidence?.v ? "EXECUTED" : "PROPOSED",
@@ -360,10 +374,10 @@ export function shadowCompare({ active = {}, shadow = {} } = {}) {
 
 export function reintegrate({ recovered, shadow, stable_ms = 0 } = {}) {
   if (!shadow || shadow.authority === true) {
-    return { status: "REFUSED", reintegrated: false, reason: "shadow_has_authority_or_missing", live: false };
+    return { status: "REFUSED", reintegrated: false, automatic_primary_return: false, reason: "shadow_has_authority_or_missing", live: false };
   }
   if (stable_ms < 1) {
-    return { status: "HOLD_HUMAN", reintegrated: false, reason: "minimum_stability", live: false };
+    return { status: "HOLD_HUMAN", reintegrated: false, automatic_primary_return: false, reason: "minimum_stability", live: false };
   }
   return {
     status: "PROPOSED",
