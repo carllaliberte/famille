@@ -83,6 +83,9 @@ Inference lanes are unpaid-first: **keyless** (local Cortex, Ollama, GitHub Mode
 
 The intelligence contract is Cortex-owned. Roster and CANALS are caches, not the brain. Routing is capability-first (`need` → candidates → cost policy → evidence). A new compatible intelligence enters by `describe` / `discover` / `adapt` / `probe` / `register` without modifying Cortex. `PAID_FORBIDDEN` never silently retries paid. Catalog fetches without a key stay `INCONCLUSIVE`, not LIVE.
 
+The organism also runs a cognitive ecosystem pass: nodes (model, tool, memory, human), measurable synapses with plasticity, temporary assemblies, unknown space, curiosity, replay, architecture search, homeostasis and resilient reroute. Capability graph and authority graph stay separate. `PROPOSED ≠ ADOPTED`. `UNKNOWN ≠ FAILURE`. `HOLD_HUMAN ≠ ERROR`. Human attention is a scarce node, not a validate-everything button. `live=false`.
+
+
 
 
 Knowledge fabric preserves disagreement. Consensus is not truth. Predictions are stored before execution and never rewritten. Causal claims stay `INCONCLUSIVE` without intervention evidence. Genome snapshots are versioned. Mutations are candidates. Simulation is not proof of reality. `CAPABILITY ≠ AUTHORITY`. `SELF-EVOLUTION ≠ SELF-AUTHORIZATION`.

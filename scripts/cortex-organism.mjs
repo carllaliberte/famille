@@ -10,6 +10,7 @@
 import { diagnoseWorkerEvidence, selfHealDecision } from "./self-heal.mjs";
 import { laneInventory } from "./inference-lanes.mjs";
 import { intelligenceAdapter } from "../sdk/open-intelligence.js";
+import { runEcosystemCycle } from "./cortex-ecosystem.mjs";
 import {
   authorizeCapability,
   runEvolutionLoop,
@@ -426,6 +427,19 @@ export function runOrganismCycle(input = {}) {
     authority: "carl",
     self_authorization: false,
   });
+  const ecosystem = runEcosystemCycle({
+    agents,
+    workerEvidence: input.workerEvidence || {},
+    need: "review",
+    required: ["review"],
+    knowledge,
+    metabolism,
+    immune,
+    memory: memory.kept,
+    topology: evolution.reconfiguration.topology || input.topology || {},
+    fluidity: input.fluidity || {},
+    claims: knowledge,
+  });
   const record = {
     version: ORGANISM_VERSION,
     loop: ORGANISM_LOOP,
@@ -450,6 +464,7 @@ export function runOrganismCycle(input = {}) {
     genome,
     mutation,
     metacognition: meta,
+    ecosystem,
     adapter: { reason: adapterInvoke.reason, live: false },
     constitution,
     live: false,

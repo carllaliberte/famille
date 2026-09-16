@@ -212,5 +212,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (output.organism?.genome?.genome) {
     writeFileSync("cortex-genome.json", `${JSON.stringify(output.organism.genome, null, 2)}\n`);
   }
+  const eco = output.organism?.ecosystem;
+  if (eco) {
+    console.log(`ecosystem.executor=${eco.graph?.assembly?.roles?.executor || "none"} homeostasis=${eco.homeostasis?.state || "none"} unknown_is_not_failure=${eco.unknown?.unknown_is_not_failure === true} live=false`);
+  }
   console.log(JSON.stringify(output, null, 2));
 }
