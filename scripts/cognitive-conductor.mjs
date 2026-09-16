@@ -9,6 +9,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { performance } from "node:perf_hooks";
+import { applyFluidityHint } from "./cognitive-fluidity.mjs";
 
 export const CONDUCTOR_VERSION = "cognitive-conductor.v1";
 
@@ -38,12 +39,14 @@ function runNode(script) {
   });
 }
 
-export function planConductor() {
+export function planConductor(prior = {}) {
+  const applied = applyFluidityHint(prior);
   return {
     version: CONDUCTOR_VERSION,
     waves: EXECUTION_WAVES,
+    fluidity: applied,
     rules: {
-      parallelize_independent: true,
+      parallelize_independent: applied.parallelize || true,
       preserve_dependency_order: true,
       no_authority_escalation: true,
       no_auto_merge: true,
@@ -52,7 +55,12 @@ export function planConductor() {
   };
 }
 
-export async function runParallelCognitiveWave({ timingPath = process.env.FLUIDITY_TIMING || "cognitive-fluidity-timing.json" } = {}) {
+export async function runParallelCognitiveWave({
+  timingPath = process.env.FLUIDITY_TIMING || "cognitive-fluidity-timing.json",
+  priorPath = process.env.FLUIDITY_PRIOR || "cognitive-fluidity-prior.json",
+} = {}) {
+  const prior = existsSync(priorPath) ? readJson(priorPath, {}) : {};
+  const applied = applyFluidityHint(prior);
   const startedAt = new Date().toISOString();
   const start = performance.now();
   const results = await Promise.all([
@@ -69,6 +77,7 @@ export async function runParallelCognitiveWave({ timingPath = process.env.FLUIDI
     stages: results,
     status: failed.length ? "FAILED" : "VERIFIED",
     dependency_boundary: "worker evidence available before wave; economic reconciliation remains downstream",
+    fluidity: applied,
     security: { auto_merge: false, live: false, authority: "carl" },
   };
   writeTiming(timingPath, wave);

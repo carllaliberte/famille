@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { composeFabric, routeIngress } from "../scripts/cognitive-fabric.mjs";
+import { CONNECTOR_VERSION } from "../.github/swarm/ai-connector.mjs";
 
 const front = { number: 469, sha: "a".repeat(40) };
 
@@ -23,7 +24,7 @@ test("fabric routes every source through the common connector", () => {
   assert.equal(fabric.collective, true);
   assert.equal(fabric.live, false);
   assert.equal(fabric.authority, "carl");
-  assert.ok(fabric.routes.every((r) => r.connector === "ai-connector.v1"));
+  assert.ok(fabric.routes.every((r) => r.connector === CONNECTOR_VERSION));
   assert.ok(fabric.synapses.every((s) => s.state === "PROPOSED"));
 });
 

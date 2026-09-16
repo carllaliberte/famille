@@ -2,8 +2,8 @@
 # Observe -> discover -> dispatch -> measure -> Cortex -> identity/usage -> economic reconciliation.
 # Synaptic memory persists routing outcomes through workflow artifacts, never source.
 # Economic evidence records identity, measured usage, pricing state and billing boundary.
-# Fluidity is measured on the real critical path and fed back into the next cycle.
-# The conductor executes dependency-free cognitive stages concurrently, then preserves proof order.
+# Fluidity is a runtime property: work must flow, never silent-stop.
+# Prior fluidity hint is loaded and consumed by the conductor; measurement verifies it.
 # Never writes source, never merges, never claims LIVE, never auto-charges.
 name: cognitive-worker
 on:
@@ -34,6 +34,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Restore prior fluidity hint
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          FLUIDITY_PRIOR: cognitive-fluidity-prior.json
+        run: |
+          node --input-type=module <<'EOF'
+          import { writeFileSync } from 'node:fs';
+          import { loadPriorFluidity } from './scripts/cognitive-fluidity.mjs';
+          const prior = loadPriorFluidity();
+          if (!prior) { console.log('prior_fluidity=none'); process.exit(0); }
+          writeFileSync('cognitive-fluidity-prior.json', `${JSON.stringify(prior, null, 2)}\n`);
+          console.log(`prior_fluidity=${prior.state || 'unknown'} mode=${prior.mode || 'unknown'} hint_consumed_next=true`);
+          EOF
       - name: Initialize cognitive fluidity timing
         run: |
           rm -f cognitive-fluidity-timing.json cognitive-fluidity.json
@@ -75,6 +90,7 @@ jobs:
           WORKER_EVIDENCE: worker-evidence.json
           USAGE_COMMERCE: identity-usage-commerce.json
           FLUIDITY_TIMING: cognitive-fluidity-timing.json
+          FLUIDITY_PRIOR: cognitive-fluidity-prior.json
         run: node scripts/cognitive-conductor.mjs
       - name: Reconcile the complete economic network state
         env:
@@ -95,6 +111,8 @@ jobs:
           FLUIDITY_TIMING: cognitive-fluidity-timing.json
           FLUIDITY_OUTPUT: cognitive-fluidity.json
           WORKER_EVIDENCE: worker-evidence.json
+          FLUIDITY_PRIOR: cognitive-fluidity-prior.json
+          RUNTIME_DIAGNOSIS: runtime-diagnosis.json
         run: node scripts/cognitive-fluidity.mjs
       - name: Preserve cycle evidence
         if: always()
@@ -183,7 +201,7 @@ jobs:
         run: |
           echo "cognitive-worker + parallel Cortex/usage + economic-network + fluidity cycle completed."
           echo "DEFINED != EXECUTED != VERIFIED != LIVE."
-          echo "fluidity = execute independent stages concurrently; keep dependent proof ordered."
+          echo "fluidity = runtime property FLOWING|FRICTION|STALLED|HOLD_HUMAN; silent skip is STALLED."
           echo "economic evidence = identity + connection + verified usage + explicit pricing state."
           echo "no hidden tracking; no identity guessing; no automatic charge; payment remains a human/billing boundary."
           echo "auto_merge=false; live=false; human authority=carl"

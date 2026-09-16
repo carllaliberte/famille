@@ -22,6 +22,7 @@ Jamais transformer DEFINED en EXECUTED ou LIVE VERIFIED sans preuve.
 HOLD_HUMAN si secret, autorisation, paiement ou décision humaine. Pas d'auto-merge.
 
 Outil manquant : chercher → réutiliser → sinon BUILD_TOOL (tester, garder, réutiliser). Jamais « impossible ». BUILD est remplaçable : cognition, Codex, self-heal et le runtime continuent sans lui.
+Fluidité = propriété du runtime (FLOWING / FRICTION / STALLED / HOLD_HUMAN), pas une fonction à ajouter. Un skip silencieux est STALLED. HOLD_HUMAN est une pause valide. Le hint du cycle suivant doit être consommé.
 
 ## Capacité client
 
