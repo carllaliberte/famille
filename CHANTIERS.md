@@ -13,3 +13,5 @@ Priorité inchangée : client → techno née → bots.
 | 6 | Rentabiliser | [RENTE.md](RENTE.md) | œuvre + marque + acte, pas token |
 
 Hors chantier : Estoc, contract, CreatorFlow, nœud QUANTUM, L1, second slug.
+
+Complétude : UN GRAND CHANTIER N'EST PAS TERMINÉ PARCE QUE LE CODE EXISTE. Il faut exécuter, mesurer, tester, corriger et vérifier avant le merge final. Pas un 7e chantier. La même capacité cognitive end-to-end est offerte à chaque futur client, isolée, mesurable, sans classement global des intelligences.

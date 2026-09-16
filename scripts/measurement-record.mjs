@@ -90,6 +90,17 @@ function readRunRecord(run, dir, runCommand) {
   }
 }
 
+function findPredecessorRecord(runs, startIndex, digest, dir, runCommand) {
+  if (!digest) return null;
+  for (let index = startIndex + 1; index < runs.length; index += 1) {
+    const candidate = readRunRecord(runs[index], dir, runCommand);
+    if (!candidate) continue;
+    if (candidate.seal?.digest !== digest) continue;
+    return candidate;
+  }
+  return null;
+}
+
 export function loadMeasurementRecord(run = execFileSync, env = process.env) {
   const fallback = emptyMeasurementRecord();
   if (!env.GITHUB_REPOSITORY) return fallback;
@@ -115,14 +126,8 @@ export function loadMeasurementRecord(run = execFileSync, env = process.env) {
     if (!prior) return fallback;
 
     if (prior.previous_record_digest) {
-      let predecessor = null;
-      for (let index = priorRunIndex + 1; index < runs.length; index += 1) {
-        const candidate = readRunRecord(runs[index], dir, run);
-        if (!candidate) continue;
-        predecessor = candidate;
-        break;
-      }
-      if (!predecessor || !verifyMeasurementRecord(predecessor) || predecessor.seal?.digest !== prior.previous_record_digest) {
+      const predecessor = findPredecessorRecord(runs, priorRunIndex, prior.previous_record_digest, dir, run);
+      if (!predecessor || !verifyMeasurementRecord(predecessor)) {
         return { ...fallback, integrity: "CONFLICT" };
       }
     }
@@ -177,14 +182,8 @@ export function loadPriorMeasuredCycle(run = execFileSync, env = process.env) {
     if (!prior) return empty;
 
     if (prior.previous_record_digest) {
-      let predecessor = null;
-      for (let index = priorRunIndex + 1; index < runs.length; index += 1) {
-        const candidate = readRunRecord(runs[index], recordDir, run);
-        if (!candidate) continue;
-        predecessor = candidate;
-        break;
-      }
-      if (!predecessor || !verifyMeasurementRecord(predecessor) || predecessor.seal?.digest !== prior.previous_record_digest) {
+      const predecessor = findPredecessorRecord(runs, priorRunIndex, prior.previous_record_digest, recordDir, run);
+      if (!predecessor || !verifyMeasurementRecord(predecessor)) {
         return conflictCycle(runs[priorRunIndex].databaseId);
       }
     }

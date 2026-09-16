@@ -20,6 +20,10 @@ Date every claim. Distinguish fact, hypothesis, opinion, proposal, decision.
 A specialty is a contribution, not authority.
 Declared is not connected. Connected is not LIVE.
 
+A grand chantier is not complete because the code exists.
+DEFINED ≠ CODE VERIFIED ≠ TEST VERIFIED ≠ EXECUTED ≠ MEASURED ≠ LIVE VERIFIED.
+Client isolation: never reuse another client's context. Route by task, never a global ranking.
+
 ## Canal
 
 Pull request comments + FILE.md. Collage apps are dead.

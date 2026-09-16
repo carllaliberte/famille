@@ -26,6 +26,7 @@ Carl Laliberté merge. Les IA proposent. Une signature n’est pas une vérité.
 ## Doctrine & posture
 
 - Ce dépôt présente des composants vérifiables (`CODE VERIFIED`). Ce n’est pas `TEST VERIFIED`. Ce n’est pas `LIVE VERIFIED`.
+- DEFINED ≠ CODE VERIFIED ≠ TEST VERIFIED ≠ EXECUTED ≠ MEASURED ≠ LIVE VERIFIED. Un grand chantier n'est pas terminé parce que le code existe.
 - Pas d’étiquette marketing PQC. Pas ε = 0.
 - Découplage processus ≠ contenu (`claim.v0`). Le kernel vérifie l’intégrité (`evidence_hash`) et la structure, jamais la sémantique métier.
 

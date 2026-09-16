@@ -37,6 +37,15 @@ Jamais Φ / ZK / BFT comme couleur de porte. CHANNEL NOT PRESENT n'est pas VERT.
 Un 200 n'est pas VERT.
 Preview is not a receipt.
 
+## Problème client
+
+Le client apporte un problème. Il voit un résultat, des limites, une date, une couleur si le juge s'applique.
+Il ne choisit pas l'intelligence. Il ne voit pas le roster, le worker, ni le canal.
+Acorn route selon la tâche et le contexte mesuré. Jamais un classement global meilleur/pire.
+Isolation : le contexte d'un client n'alimente pas un autre client.
+DEFINED ≠ CODE VERIFIED ≠ TEST VERIFIED ≠ EXECUTED ≠ MEASURED ≠ LIVE VERIFIED.
+Un cycle LU n'est pas LIVE.
+
 ## Efficacité
 
 Moins de relectures « c'est encore vrai ? ».

@@ -81,6 +81,15 @@ LE SWARM APPREND CONTEXTUELLEMENT.
 CARL CONSERVE LA DÉCISION FINALE.
 LIVE VERIFIED = CARL SEULEMENT.
 
+## Grand chantier et offre client
+
+UN GRAND CHANTIER N'EST PAS TERMINÉ PARCE QUE LE CODE EXISTE.
+DEFINED ≠ CODE VERIFIED ≠ TEST VERIFIED ≠ EXECUTED ≠ MEASURED ≠ LIVE VERIFIED.
+La même capacité est générique : un humain apporte un problème réel ; Acorn découvre les capacités, route selon la tâche, fait collaborer, vérifie, conserve la provenance, mesure, et laisse l'humain décider.
+Isolation client : `client` dans [schema/cognition.v0.json](schema/cognition.v0.json). `shareAcrossClients(..., { explicit: true })` seulement.
+Appel : `node .github/swarm/cognition.mjs --client demo "problème réel"`.
+CONNECTED reste 0 sans clé. HOLD_HUMAN. Jamais LIVE depuis le code.
+
 ---
 
 ## Ce que ce n'est pas

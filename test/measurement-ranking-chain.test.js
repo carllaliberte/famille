@@ -242,3 +242,41 @@ test("empty prior cycle does not mint READY", () => {
   assert.deepEqual(emptyRanking().measured, []);
   assert.equal(emptyMeasurementRecord().ranking_digest, null);
 });
+
+test("sibling successful runs do not break the predecessor digest chain", () => {
+  const parentRanking = rankingA("2026-09-15T21:28:11.443Z");
+  const parentRecord = recordFor(parentRanking, "03b8662337efdf728ea7b10969ab35dd4b1633c1");
+  const siblingRanking = rankingB("2026-09-15T21:52:22.628Z");
+  const siblingRecord = buildMeasurementRecord({
+    env: { ...env, GITHUB_SHA: "4b7b3b1c221e0bc472aa3afbb203c64c295d8061" },
+    observedAt: siblingRanking.observed_at,
+    ranking: siblingRanking,
+    previousRecord: parentRecord,
+  });
+  const newestRanking = rankingA("2026-09-15T21:52:23.805Z");
+  const newestRecord = buildMeasurementRecord({
+    env: { ...env, GITHUB_SHA: "86877dafec623b8764108f2086a6cd727bec414a" },
+    observedAt: newestRanking.observed_at,
+    ranking: newestRanking,
+    previousRecord: parentRecord,
+  });
+  assert.equal(newestRecord.previous_record_digest, parentRecord.seal.digest);
+  assert.equal(siblingRecord.previous_record_digest, parentRecord.seal.digest);
+  assert.notEqual(siblingRecord.seal.digest, parentRecord.seal.digest);
+  const gh = mockCycle({
+    runs: [
+      { databaseId: 39, headSha: "4b7b3b1c221e0bc472aa3afbb203c64c295d8061" },
+      { databaseId: 26, headSha: "4b7b3b1c221e0bc472aa3afbb203c64c295d8061" },
+      { databaseId: 64, headSha: "03b8662337efdf728ea7b10969ab35dd4b1633c1" },
+    ],
+    records: { 39: newestRecord, 26: siblingRecord, 64: parentRecord },
+    rankings: { 39: newestRanking, 26: siblingRanking, 64: parentRanking },
+  });
+  const prior = loadPriorMeasuredCycle(gh, env);
+  assert.equal(prior.runId, 39);
+  assert.equal(prior.record.integrity, "VERIFIED");
+  assert.equal(prior.ranking.integrity, "VERIFIED");
+  assert.equal(prior.record.ranking_digest, newestRanking.seal.digest);
+  assert.doesNotThrow(() => assertRecordMatchesRanking(prior.record, prior.ranking));
+  assertMeasurementRecordSafe(prior.record);
+});

@@ -85,6 +85,13 @@ Acorn works in **large coherent workstreams, not micro-chantiers**.
 
 The objective is not a collection of tickets. The objective is a functioning Acorn system.
 
+## Completeness — a grand chantier is not done because code exists
+
+DEFINED ≠ CODE VERIFIED ≠ TEST VERIFIED ≠ EXECUTED ≠ MEASURED ≠ LIVE VERIFIED.
+Execute, measure, test, correct, verify before the final merge. Never promote DEFINED to EXECUTED or LIVE VERIFIED without proof. HOLD_HUMAN for secrets, authorization, payment, merge. Never auto-merge.
+
+A human brings a real problem. Acorn mobilizes relevant intelligences. The client does not need the internal architecture. Isolate clients. Route by task and context, never a global best/worst ranking.
+
 ## Self-healing — ordinary bugs repair themselves
 
 Acorn must not depend on Carl to notice or repair ordinary runtime failures.

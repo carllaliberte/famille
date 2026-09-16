@@ -55,6 +55,15 @@ Acorn privilégie les **grands chantiers cohérents**, jamais les micro-chantier
 
 L'objectif est un système Acorn fonctionnel et cohérent, pas une collection de tickets.
 
+## Complétude d'un grand chantier
+
+UN GRAND CHANTIER N'EST PAS TERMINÉ PARCE QUE LE CODE EXISTE.
+DEFINED ≠ CODE VERIFIED ≠ TEST VERIFIED ≠ EXECUTED ≠ MEASURED ≠ LIVE VERIFIED.
+Exécuter, mesurer, tester, corriger, vérifier avant le merge final. Jamais promouvoir DEFINED en EXECUTED ou LIVE sans preuve.
+HOLD_HUMAN si secret, autorisation, paiement, merge. Pas d'auto-merge.
+
+Un humain apporte un problème réel. Acorn mobilise les intelligences pertinentes. Le client n'a pas à connaître l'architecture. Isolation par client. Routage selon la tâche, pas un classement global.
+
 ## Auto-réparation du système
 
 Les bugs ordinaires du système doivent être détectés et réparés sans dépendre de Carl.

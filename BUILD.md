@@ -34,3 +34,5 @@ FAIRE
 Carl ne fait que : lire, squash, merge, secrets, wrangler.
 Point final.
 ```
+
+Complétude : un grand chantier n'est pas terminé parce que le code existe. DEFINED ≠ CODE VERIFIED ≠ TEST VERIFIED ≠ EXECUTED ≠ MEASURED ≠ LIVE VERIFIED. Preuve avant merge. Pas d'auto-merge.

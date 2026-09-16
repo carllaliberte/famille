@@ -72,6 +72,23 @@
       "pattern": "^[a-z][a-z0-9-]{1,24}$",
       "description": "Project context. Memory does not leak across projects unless shareAcrossProjects is explicit."
     },
+    "client": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,24}$",
+      "description": "Client isolation. Memory, provenance and collaboration context do not leak across clients unless shareAcrossClients is explicit. Not a regulatory claim."
+    },
+    "completeness": {
+      "enum": [
+        "DEFINED",
+        "CODE_VERIFIED",
+        "TEST_VERIFIED",
+        "EXECUTED",
+        "MEASURED",
+        "LIVE_VERIFIED",
+        "HOLD_HUMAN"
+      ],
+      "description": "A grand chantier is not complete because code exists. Never promote DEFINED to EXECUTED or LIVE_VERIFIED without proof. LIVE_VERIFIED is Carl only."
+    },
     "canal": {
       "type": "string",
       "enum": ["CLASSICAL", "OPTICAL_QUANTUM"],
