@@ -88,7 +88,7 @@ test("Cortex measures collaborative gain and only learns from verified evidence"
     collaborative: 0.9,
     method: "paired evaluation",
   });
-  assert.equal(measurement.delta, 0.2);
+  assert.ok(Math.abs(measurement.delta - 0.2) < Number.EPSILON);
   assert.equal(measurement.improved, true);
 
   const lesson = learnCollaboration({
