@@ -2,6 +2,7 @@
 # Observe -> discover -> dispatch -> measure -> Cortex -> identity/usage -> economic reconciliation.
 # Synaptic memory persists routing outcomes through workflow artifacts, never source.
 # Economic evidence records identity, measured usage, pricing state and billing boundary.
+# Fluidity is measured on the real critical path and fed back into the next cycle.
 # Never writes source, never merges, never claims LIVE, never auto-charges.
 name: cognitive-worker
 on:
@@ -32,6 +33,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Initialize cognitive fluidity timing
+        run: |
+          rm -f cognitive-fluidity-timing.json cognitive-fluidity.json
+          FLUIDITY_STAGE=setup FLUIDITY_PHASE=start node scripts/cognitive-fluidity-timer.mjs
       - name: Global breaker gate
         env:
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
@@ -50,21 +55,56 @@ jobs:
           MEASURED_RANKING: measured-intelligence-ranking.json
           MEASUREMENT_FEEDBACK: measurement-feedback.json
           MEASUREMENT_RECORD: measurement-record.json
-        run: node scripts/cognitive-worker.mjs
+          FLUIDITY_TIMING: cognitive-fluidity-timing.json
+        run: |
+          FLUIDITY_STAGE=worker FLUIDITY_PHASE=start node scripts/cognitive-fluidity-timer.mjs
+          set +e
+          node scripts/cognitive-worker.mjs
+          status=$?
+          FLUIDITY_STAGE=worker FLUIDITY_PHASE=stop node scripts/cognitive-fluidity-timer.mjs
+          exit $status
       - name: Run Cortex over the measured worker cycle
-        run: node scripts/cortex-runtime.mjs
+        env:
+          FLUIDITY_TIMING: cognitive-fluidity-timing.json
+        run: |
+          FLUIDITY_STAGE=cortex FLUIDITY_PHASE=start node scripts/cognitive-fluidity-timer.mjs
+          set +e
+          node scripts/cortex-runtime.mjs
+          status=$?
+          FLUIDITY_STAGE=cortex FLUIDITY_PHASE=stop node scripts/cognitive-fluidity-timer.mjs
+          exit $status
       - name: Measure identified usage for commercial review
         env:
           WORKER_EVIDENCE: worker-evidence.json
           USAGE_COMMERCE: identity-usage-commerce.json
-        run: node scripts/usage-commerce-cycle.mjs
+          FLUIDITY_TIMING: cognitive-fluidity-timing.json
+        run: |
+          FLUIDITY_STAGE=usage FLUIDITY_PHASE=start node scripts/cognitive-fluidity-timer.mjs
+          set +e
+          node scripts/usage-commerce-cycle.mjs
+          status=$?
+          FLUIDITY_STAGE=usage FLUIDITY_PHASE=stop node scripts/cognitive-fluidity-timer.mjs
+          exit $status
       - name: Reconcile the complete economic network state
         env:
           USAGE_COMMERCE: identity-usage-commerce.json
           CONNECTION_EVIDENCE: connection-evidence.json
           ECONOMIC_PRICING: schema/economic-pricing.v0.json
           ECONOMIC_SNAPSHOT: economic-network-snapshot.json
-        run: node scripts/economic-cycle.mjs
+          FLUIDITY_TIMING: cognitive-fluidity-timing.json
+        run: |
+          FLUIDITY_STAGE=economic FLUIDITY_PHASE=start node scripts/cognitive-fluidity-timer.mjs
+          set +e
+          node scripts/economic-cycle.mjs
+          status=$?
+          FLUIDITY_STAGE=economic FLUIDITY_PHASE=stop node scripts/cognitive-fluidity-timer.mjs
+          exit $status
+      - name: Measure cognitive fluidity and close the feedback loop
+        env:
+          FLUIDITY_TIMING: cognitive-fluidity-timing.json
+          FLUIDITY_OUTPUT: cognitive-fluidity.json
+          WORKER_EVIDENCE: worker-evidence.json
+        run: node scripts/cognitive-fluidity.mjs
       - name: Preserve cycle evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -97,6 +137,16 @@ jobs:
           path: economic-network-snapshot.json
           if-no-files-found: warn
           retention-days: 365
+      - name: Preserve cognitive fluidity evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acorn-cognitive-fluidity-${{ github.run_id }}
+          path: |
+            cognitive-fluidity.json
+            cognitive-fluidity-timing.json
+          if-no-files-found: warn
+          retention-days: 90
       - name: Preserve synaptic memory
         if: always()
         uses: actions/upload-artifact@v4
@@ -140,8 +190,9 @@ jobs:
       - name: Record bounded result
         if: always()
         run: |
-          echo "cognitive-worker + Cortex + identity/usage + economic-network cycle completed."
+          echo "cognitive-worker + Cortex + identity/usage + economic-network + fluidity cycle completed."
           echo "DEFINED != EXECUTED != VERIFIED != LIVE."
+          echo "fluidity = measure the real critical path; parallelize only independent work; keep dependent proof ordered."
           echo "economic evidence = identity + connection + verified usage + explicit pricing state."
           echo "no hidden tracking; no identity guessing; no automatic charge; payment remains a human/billing boundary."
           echo "auto_merge=false; live=false; human authority=carl"
