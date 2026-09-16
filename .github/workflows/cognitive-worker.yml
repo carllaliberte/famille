@@ -1,10 +1,8 @@
 # Acorn Cognitive Worker — bounded continuous cognition.
-# Observe -> discover -> dispatch -> measure through existing swarm/collaboration workflows.
+# Observe -> discover -> dispatch -> measure -> Cortex -> identity/usage -> economic reconciliation.
 # Synaptic memory persists routing outcomes through workflow artifacts, never source.
-# Unified memory index joins measured routing/collaboration/execution evidence without authority.
-# A dated measurement record links the cycle state and is read back before prior evidence is reused.
-# Cortex records the same real cycle; it never invents execution or authority.
-# Never writes source, never merges, never claims LIVE.
+# Economic evidence records identity, measured usage, pricing state and billing boundary.
+# Never writes source, never merges, never claims LIVE, never auto-charges.
 name: cognitive-worker
 on:
   schedule:
@@ -29,7 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # PR runs execute the actual PR head; branch pushes execute that branch; scheduled runs execute main.
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
           fetch-depth: 1
       - uses: actions/setup-node@v4
@@ -56,6 +53,18 @@ jobs:
         run: node scripts/cognitive-worker.mjs
       - name: Run Cortex over the measured worker cycle
         run: node scripts/cortex-runtime.mjs
+      - name: Measure identified usage for commercial review
+        env:
+          WORKER_EVIDENCE: worker-evidence.json
+          USAGE_COMMERCE: identity-usage-commerce.json
+        run: node scripts/usage-commerce-cycle.mjs
+      - name: Reconcile the complete economic network state
+        env:
+          USAGE_COMMERCE: identity-usage-commerce.json
+          CONNECTION_EVIDENCE: connection-evidence.json
+          ECONOMIC_PRICING: schema/economic-pricing.v0.json
+          ECONOMIC_SNAPSHOT: economic-network-snapshot.json
+        run: node scripts/economic-cycle.mjs
       - name: Preserve cycle evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -72,6 +81,22 @@ jobs:
           path: cortex-evidence.json
           if-no-files-found: warn
           retention-days: 30
+      - name: Preserve identity usage commerce evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: identity-usage-commerce-${{ github.run_id }}
+          path: identity-usage-commerce.json
+          if-no-files-found: warn
+          retention-days: 365
+      - name: Preserve economic network evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acorn-economic-network-${{ github.run_id }}
+          path: economic-network-snapshot.json
+          if-no-files-found: warn
+          retention-days: 365
       - name: Preserve synaptic memory
         if: always()
         uses: actions/upload-artifact@v4
@@ -115,11 +140,8 @@ jobs:
       - name: Record bounded result
         if: always()
         run: |
-          echo "cognitive-worker.v14 + cortex-runtime.v0 — observe/discover/compose/route/dispatch/measure/verify/learn cycle completed."
+          echo "cognitive-worker + Cortex + identity/usage + economic-network cycle completed."
           echo "DEFINED != EXECUTED != VERIFIED != LIVE."
-          echo "execution ref=${GITHUB_REF} sha=${GITHUB_SHA}"
-          echo "ranking = measured execution/collaboration/routing evidence only."
-          echo "feedback = bounded routing guidance, not authority; MEASURE_MORE receives confirmation priority."
-          echo "measurement-record = dated state + chained integrity link, not authority or truth."
-          echo "Cortex = cognitive-network record over the real worker cycle; no invented execution."
+          echo "economic evidence = identity + connection + verified usage + explicit pricing state."
+          echo "no hidden tracking; no identity guessing; no automatic charge; payment remains a human/billing boundary."
           echo "auto_merge=false; live=false; human authority=carl"

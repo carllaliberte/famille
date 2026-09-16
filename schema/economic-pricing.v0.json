@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "economic-pricing.v0",
+  "title": "Acorn Economic Pricing Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "enabled", "currency", "per_execution", "per_work_unit", "per_minute"],
+  "properties": {
+    "version": { "type": "string", "pattern": "^economic-pricing\\.v[0-9]+$" },
+    "enabled": { "type": "boolean" },
+    "currency": { "type": ["string", "null"], "minLength": 3, "maxLength": 3 },
+    "per_execution": { "type": "number", "minimum": 0 },
+    "per_work_unit": { "type": "number", "minimum": 0 },
+    "per_minute": { "type": "number", "minimum": 0 }
+  }
+}
