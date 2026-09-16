@@ -193,8 +193,17 @@ function selectNextWork(input) {
   }
   return { action: "STOP", status: "IDLE", justification: "aucun travail ex\xE9cutable sans merge" };
 }
+function causalErrorLine(message) {
+  const text = String(message || "");
+  const lines = text.split(/\n/);
+  const hit = [...lines].reverse().find((line) =>
+    /\b(429|401|402|403|404)\b|too many requests|exceeded retry limit|payment required|unauthorized/i.test(line)
+  );
+  return (hit || text).trim();
+}
 function errorSignature(input) {
-  const msg = String(input.message || "").toLowerCase().replace(/[0-9a-f]{7,}/g, "#").replace(/\s+/g, " ").slice(0, 180);
+  const raw = causalErrorLine(input.message);
+  const msg = raw.toLowerCase().replace(/[0-9a-f]{7,}/g, "#").replace(/\s+/g, " ").slice(0, 180);
   return `${input.category}::${msg || "unknown"}`;
 }
 function recordErrorSignature(memory, input) {
