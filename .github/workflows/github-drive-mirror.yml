@@ -46,6 +46,7 @@ jobs:
           GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
         run: |
+          set -o pipefail
           node scripts/github-drive-mirror.mjs snapshot | tee mirror-result.json
           echo "SOURCE_OF_TRUTH=github-main"
           echo "auto_merge=false"
