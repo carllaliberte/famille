@@ -1,0 +1,3 @@
+# Channel Reality
+
+`credentialPresent != CALLABLE`.
