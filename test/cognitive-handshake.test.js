@@ -34,6 +34,10 @@ test('backfills every existing roster identity as declared, never connected or L
   assert.ok(registry.entries.every(e => e.state.status === 'declared'));
   assert.ok(registry.entries.every(e => e.state.claims_are_measured === false));
   assert.ok(registry.entries.every(e => e.provenance.source.endsWith('schema/agents.json')));
+  const ids = new Set(registry.entries.map(e => e.identity.id));
+  assert.ok(ids.has('grok') && ids.has('heavy') && ids.has('build') && ids.has('carl'));
+  const grok = registry.entries.find(e => e.identity.id === 'grok');
+  assert.equal(grok.identity.kind, 'chef');
 });
 
 test('rejects duplicate identities', () => {

@@ -28,7 +28,7 @@ export function normalizeHandshake(input, now = new Date().toISOString()) {
   const id = requiredString(identity.id, 'identity.id');
   if (!/^[a-z][a-z0-9-]{1,63}$/.test(id)) throw new Error('identity.id: invalid');
   const kind = requiredString(identity.kind, 'identity.kind');
-  if (!['model','agent','service','tool','human','seat','guest','other'].includes(kind)) throw new Error('identity.kind: invalid');
+  if (!['model','agent','service','tool','human','seat','guest','other','chef','consult'].includes(kind)) throw new Error('identity.kind: invalid');
   const state = input.state ?? {};
   const status = state.status ?? 'declared';
   if (!STATUS.has(status)) throw new Error('state.status: invalid');
