@@ -42,6 +42,28 @@ export function emptyRanking() {
   return { v: MEASURED_RANKING_VERSION, observed_at: null, authority: "carl", auto_merge: false, live: false, measured: [], unmeasured: [], changes: [], integrity: "UNSEALED" };
 }
 
+export function rankingArtifactFile(dir) {
+  const candidates = [join(dir, "measured-intelligence-ranking.json"), join(dir, MEASURED_RANKING_ARTIFACT, "measured-intelligence-ranking.json")];
+  return candidates.find((path) => existsSync(path)) || null;
+}
+
+export function readRunRanking(run, dir, runCommand) {
+  rmSync(dir, { recursive: true, force: true });
+  mkdirSync(dir, { recursive: true });
+  try {
+    runCommand("gh", ["run", "download", String(run.databaseId), "--repo", run.repository, "--name", MEASURED_RANKING_ARTIFACT, "--dir", dir], { encoding: "utf8", stdio: "pipe" });
+  } catch {
+    return null;
+  }
+  const file = rankingArtifactFile(dir);
+  if (!file) return null;
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 export function loadMeasuredRanking(run = execFileSync, env = process.env) {
   const dir = ".acorn-measured-ranking";
   try {
@@ -49,11 +71,8 @@ export function loadMeasuredRanking(run = execFileSync, env = process.env) {
     const runs = run("gh", ["run", "list", "--repo", env.GITHUB_REPOSITORY, "--workflow", "cognitive-worker.yml", "--status", "success", "--limit", "5", "--json", "databaseId"], { encoding: "utf8", stdio: "pipe" });
     const prior = JSON.parse(runs || "[]")[0]?.databaseId;
     if (!prior) return emptyRanking();
-    run("gh", ["run", "download", String(prior), "--repo", env.GITHUB_REPOSITORY, "--name", MEASURED_RANKING_ARTIFACT, "--dir", dir], { encoding: "utf8", stdio: "pipe" });
-    const candidates = [join(dir, "measured-intelligence-ranking.json"), join(dir, MEASURED_RANKING_ARTIFACT, "measured-intelligence-ranking.json")];
-    const file = candidates.find((path) => existsSync(path));
-    if (!file) return emptyRanking();
-    const parsed = JSON.parse(readFileSync(file, "utf8"));
+    const parsed = readRunRanking({ databaseId: prior, repository: env.GITHUB_REPOSITORY }, dir, run);
+    if (!parsed) return emptyRanking();
     return verifyEvidenceSeal(parsed) ? { ...parsed, integrity: "VERIFIED" } : { ...emptyRanking(), integrity: "CONFLICT" };
   } catch {
     return emptyRanking();

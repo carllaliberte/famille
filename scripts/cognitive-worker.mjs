@@ -14,9 +14,9 @@ import { loadMemory, rankSources, updateMemory, memorySummary } from "./synaptic
 import { loadCollaborationMemory } from "./collaboration-memory.mjs";
 import { loadModelExecutionMemory } from "./model-execution-memory.mjs";
 import { assertMemoryIndexSafe, buildMemoryIndex, memoryIndexSummary } from "./cognitive-memory-index.mjs";
-import { assertRankingSafe, compareRankings, loadMeasuredRanking, rankAgents, rankingSummary } from "./measured-ranking.mjs";
+import { assertRankingSafe, compareRankings, emptyRanking, rankAgents, rankingSummary } from "./measured-ranking.mjs";
 import { assertMeasurementFeedbackSafe, buildMeasurementFeedback, feedbackSummary } from "./measurement-feedback.mjs";
-import { assertMeasurementRecordSafe, assertRecordMatchesRanking, buildMeasurementRecord, loadMeasurementRecord, measurementRecordSummary } from "./measurement-record.mjs";
+import { assertMeasurementRecordSafe, assertRecordMatchesRanking, buildMeasurementRecord, emptyMeasurementRecord, loadPriorMeasuredCycle, measurementRecordSummary } from "./measurement-record.mjs";
 import { sealEvidence } from "./evidence-seal.mjs";
 
 export const LIMIT = 20;
@@ -219,8 +219,16 @@ export function runWorker(opts = {}) {
   const memoryIndex = opts.memoryIndex || buildMemoryIndex({ synaptic: memory, collaboration: collaborationMemory, modelExecution: modelExecutionMemory, observedAt: new Date().toISOString() });
   assertMemoryIndexSafe(memoryIndex);
   const agents = opts.agents || loadAgentRoster(gh, env);
-  const previousRanking = opts.previousRanking || loadMeasuredRanking(gh, env);
-  const previousMeasurementRecord = opts.previousMeasurementRecord || loadMeasurementRecord(gh, env);
+  let previousRanking;
+  let previousMeasurementRecord;
+  if (opts.previousRanking || opts.previousMeasurementRecord) {
+    previousRanking = opts.previousRanking || emptyRanking();
+    previousMeasurementRecord = opts.previousMeasurementRecord || emptyMeasurementRecord();
+  } else {
+    const prior = loadPriorMeasuredCycle(gh, env);
+    previousRanking = prior.ranking;
+    previousMeasurementRecord = prior.record;
+  }
   assertMeasurementRecordSafe(previousMeasurementRecord);
   assertRecordMatchesRanking(previousMeasurementRecord, previousRanking);
   let ranking = rankAgents(agents, memoryIndex, memoryIndex.observed_at);
