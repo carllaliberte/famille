@@ -3,9 +3,10 @@
  * ACORN ECONOMIC NETWORK CYCLE
  * Reconciles connection observations, verified usage, commercial state,
  * pricing rules and billing candidates in one dated documentary snapshot.
+ * No synthetic execution is created during reconciliation.
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { economicSnapshot, observeConnection, meterExecution } from "./economic-core.mjs";
+import { economicSnapshot, observeConnection } from "./economic-core.mjs";
 
 const usagePath = process.env.USAGE_COMMERCE || "identity-usage-commerce.json";
 const connectionPath = process.env.CONNECTION_EVIDENCE || "connection-evidence.json";
@@ -26,23 +27,9 @@ for (const raw of Array.isArray(connectionDoc.connections) ? connectionDoc.conne
   if (observed.ok) connections.push(observed);
 }
 
-const usage = [];
-for (const account of Array.isArray(usageDoc.accounts) ? usageDoc.accounts : []) {
-  if (!account?.actor || !account?.measured_usage) continue;
-  const measured = meterExecution({
-    actor: account.actor,
-    execution_id: `aggregate:${account.actor}:${account.last_seen || "unknown"}`,
-    capability: "aggregate-verified-usage",
-    channel: "identity-usage-commerce",
-    executions: account.executions,
-    work_units: account.work_units,
-    duration_ms: account.duration_ms,
-    executed: true,
-    verified: true,
-    at: account.last_seen,
-  });
-  if (measured.ok) usage.push(measured);
-}
+const usage = (Array.isArray(usageDoc.usage_events) ? usageDoc.usage_events : [])
+  .filter((event) => event?.event === "USAGE_MEASURED" && event?.verified === true)
+  .map((event) => ({ ok: true, event }));
 
 const accounts = Object.fromEntries(
   (Array.isArray(usageDoc.accounts) ? usageDoc.accounts : []).map((a) => [a.actor, {
@@ -57,5 +44,7 @@ snapshot.source = {
   pricing: pricingPath,
 };
 snapshot.observed_at = new Date().toISOString();
+snapshot.truth.reconciliation_creates_execution = false;
+snapshot.truth.usage_source = "raw_verified_usage_events";
 writeFileSync(outputPath, `${JSON.stringify(snapshot, null, 2)}\n`);
 console.log(JSON.stringify(snapshot, null, 2));
