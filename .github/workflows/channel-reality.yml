@@ -1,0 +1,32 @@
+name: channel-reality
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+  schedule:
+    - cron: "23 * * * *"
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run channel reality contract
+        run: node --test test/channel-reality.test.js
+      - name: Verify no retired provider is classified executable
+        run: |
+          node --input-type=module <<'EOF'
+          import { classifyLane, secretAvailable, preferUnpaid } from './scripts/inference-lanes.mjs';
+          const spec = { id: 'ghmodels', provider: 'github-models', secret: 'GITHUB_TOKEN', model: 'openai/gpt-4o-mini' };
+          const env = { GITHUB_TOKEN: 'present-but-not-proof' };
+          if (classifyLane(spec) !== 'retired') throw new Error('retired provider escaped lane guard');
+          if (secretAvailable(spec, env)) throw new Error('retired provider became credential-callable');
+          if (preferUnpaid([spec], env).selected.includes('ghmodels')) throw new Error('retired provider entered dispatch');
+          console.log('retired-provider-guard=PASS');
+          EOF
