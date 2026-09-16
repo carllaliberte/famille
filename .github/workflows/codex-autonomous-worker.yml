@@ -72,9 +72,11 @@ jobs:
 
       - name: Activate OpenRouter wire budget guard
         run: |
-          chmod +x scripts/codex
-          echo "$GITHUB_WORKSPACE/scripts" >> "$GITHUB_PATH"
-          test -x scripts/codex
+          mkdir -p "$RUNNER_TEMP/codex-bin"
+          cp scripts/codex "$RUNNER_TEMP/codex-bin/codex"
+          chmod +x "$RUNNER_TEMP/codex-bin/codex"
+          echo "$RUNNER_TEMP/codex-bin" >> "$GITHUB_PATH"
+          test -x "$RUNNER_TEMP/codex-bin/codex"
           node --check scripts/codex-openrouter-budget-proxy.mjs
 
       - name: Verify Codex CLI version
