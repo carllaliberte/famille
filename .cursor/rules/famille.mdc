@@ -30,6 +30,21 @@ Acorn privilégie les **grands chantiers cohérents**, jamais les micro-chantier
 
 L'objectif est un système Acorn fonctionnel et cohérent, pas une collection de tickets.
 
+## Auto-réparation du système
+
+Les bugs ordinaires du système doivent être détectés et réparés sans dépendre de Carl.
+
+- Surveiller les échecs mesurés du runtime, des workers, de CI et de cadence.
+- Classer avant d'agir : transitoire → retry ; environnement → restart ; code/test → réparation par le worker ; inconnu → diagnostic.
+- Exécuter automatiquement la boucle complète : détecter → comprendre → réparer → tester → mesurer → reprendre.
+- Les réparations de code passent par une PR traçable ; elles ne doivent jamais contourner Carl pour le merge.
+- Ne jamais contourner le breaker, les secrets, la branche protégée, la gouvernance ou les règles LIVE.
+- Ne jamais exposer, créer, payer ou faire tourner des secrets automatiquement.
+- Si une intervention humaine est réellement requise, produire HOLD_HUMAN plutôt que fabriquer un succès.
+- Limiter les tentatives ; une répétition non résolue devient une escalade mesurée, pas une boucle infinie.
+
+Carl ne doit pas avoir à réparer les bugs ordinaires. Acorn s'auto-répare dans la frontière autorisée et réserve l'humain à la frontière réellement humaine.
+
 OTS : rail séparé. Ne pas retoucher ots-anchor.yml.
 Canaris / plagiat : dispatch Carl, pas un 2e bot main.
 
