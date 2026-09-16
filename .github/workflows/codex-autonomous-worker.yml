@@ -88,10 +88,12 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/codex-bin"
           cp scripts/codex "$RUNNER_TEMP/codex-bin/codex"
+          cp scripts/codex-openrouter-budget-proxy.mjs "$RUNNER_TEMP/codex-bin/codex-openrouter-budget-proxy.mjs"
           chmod +x "$RUNNER_TEMP/codex-bin/codex"
           echo "$RUNNER_TEMP/codex-bin" >> "$GITHUB_PATH"
           test -x "$RUNNER_TEMP/codex-bin/codex"
-          node --check scripts/codex-openrouter-budget-proxy.mjs
+          test -f "$RUNNER_TEMP/codex-bin/codex-openrouter-budget-proxy.mjs"
+          node --check "$RUNNER_TEMP/codex-bin/codex-openrouter-budget-proxy.mjs"
 
       - name: Verify Codex CLI version
         run: |
