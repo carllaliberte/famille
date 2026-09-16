@@ -16,14 +16,16 @@ function arg(name, fallback) {
 
 const port = Number(arg("--port", "17891"));
 const maxOutputTokens = Number(arg("--max-output-tokens", "1024"));
-const upstream = new URL("https://openrouter.ai");
+const upstream = new URL("https://openrouter.ai/api/v1");
 const diagnostic = process.env.CODEX_PROXY_DIAGNOSTIC === "1";
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("invalid proxy port");
 if (!Number.isInteger(maxOutputTokens) || maxOutputTokens < 1) throw new Error("invalid max output token budget");
 
 function requestPath(req) {
-  return new URL(req.url || "/", upstream).pathname + new URL(req.url || "/", upstream).search;
+  const incoming = new URL(req.url || "/", "http://127.0.0.1");
+  const suffix = incoming.pathname.replace(/^\/v1(?=\/|$)/, "");
+  return `${upstream.pathname.replace(/\/$/, "")}${suffix || "/"}${incoming.search}`;
 }
 
 function diag(message) {
