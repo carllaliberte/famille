@@ -8,6 +8,8 @@
 
 ## Tests
 - [ ] `npm test` vert
+- [ ] DEFINED ≠ CODE VERIFIED ≠ TEST VERIFIED ≠ EXECUTED ≠ MEASURED ≠ LIVE VERIFIED
+- [ ] chemin exécuté et mesuré, pas seulement codé
 
 ## Human gate
 Carl squash seulement. Pas de merge automatique. Pas de signature IA.

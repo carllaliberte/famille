@@ -118,6 +118,7 @@ export const PRINCIPLES = Object.freeze([
 ]);
 
 export const DEFAULT_PROJECT = "famille";
+export const DEFAULT_CLIENT = "famille";
 const PROJECT_RE = /^[a-z][a-z0-9-]{1,24}$/;
 
 const REPLY_ACT = Object.freeze({
@@ -203,10 +204,22 @@ export function parseProject(raw) {
   return { ok: true, id };
 }
 
+export function parseClient(raw) {
+  const id = String(raw || DEFAULT_CLIENT).toLowerCase();
+  if (!PROJECT_RE.test(id)) return fail("BAD_CLIENT", "client id must match mesh from/to");
+  return { ok: true, id };
+}
+
 export function memoryFor(project) {
   const parsed = parseProject(project);
   if (!parsed.ok) return [];
   return MEMORY.filter((e) => e.project === parsed.id);
+}
+
+export function memoryForClient(client) {
+  const parsed = parseClient(client);
+  if (!parsed.ok) return [];
+  return MEMORY.filter((e) => (e.client || DEFAULT_CLIENT) === parsed.id);
 }
 
 /** Documentary adapter. Kind + caps + specialty. Never `if (id === …)`. */
@@ -577,11 +590,14 @@ export function remember(input) {
   const ts = isoTs(raw.ts);
   const project = parseProject(raw.project);
   if (!project.ok) return project;
+  const client = parseClient(raw.client);
+  if (!client.ok) return client;
   const entry = Object.freeze({
     id: String(raw.id || newId("m")),
     mode: MODE,
     pool: COGNITION_VERSION,
     project: project.id,
+    client: client.id,
     sessionId: raw.sessionId || null,
     statement,
     claim: kind.claim,
@@ -623,6 +639,33 @@ export function shareAcrossProjects(entry, toProject, opts = {}) {
     project: dest.id,
     sessionId: opts.sessionId || null,
     ts: opts.ts,
+    client: opts.client || entry.client || DEFAULT_CLIENT,
+  });
+}
+
+export function shareAcrossClients(entry, toClient, opts = {}) {
+  if (!entry || !entry.id) return fail("UNKNOWN_MEMORY", "share needs a dated entry");
+  if (opts.explicit !== true) {
+    return fail("IMPLICIT_LEAK", "inter-client share must be explicit and voluntary");
+  }
+  const dest = parseClient(toClient);
+  if (!dest.ok) return dest;
+  const fromClient = entry.client || DEFAULT_CLIENT;
+  if (fromClient === dest.id) {
+    return fail("SAME_CLIENT", "shareAcrossClients is for a different client");
+  }
+  return remember({
+    from: opts.from || entry.from,
+    claim: entry.claim,
+    statement: entry.statement,
+    status: "unresolved",
+    sources: [...(entry.sources || []), `client:${fromClient}`, entry.id],
+    disagreement: entry.disagreement,
+    context: `from-client:${fromClient}`,
+    project: opts.project || entry.project || DEFAULT_PROJECT,
+    client: dest.id,
+    sessionId: opts.sessionId || null,
+    ts: opts.ts,
   });
 }
 
@@ -641,6 +684,7 @@ export function reevaluate(entry, input) {
     context: `reevaluate:${entry.id}`,
     sessionId: raw.sessionId || entry.sessionId,
     project: raw.project || entry.project,
+    client: raw.client || entry.client,
     ts: raw.ts,
   });
   if (!next.ok) return next;
@@ -687,6 +731,8 @@ export function openSession(input) {
   if (!topic) return fail("BODY_MISSING", "session needs a question");
   const project = parseProject(raw.project);
   if (!project.ok) return project;
+  const client = parseClient(raw.client);
+  if (!client.ok) return client;
   const ts = isoTs(raw.ts);
   const question = Object.freeze({
     id: String(raw.id || newId("q")),
@@ -700,6 +746,7 @@ export function openSession(input) {
     cognition: COGNITION_VERSION,
     flux: FLUX_VERSION,
     project: project.id,
+    client: client.id,
     id: question.id,
     session_id: question.id,
     question,
@@ -741,6 +788,7 @@ function thinkOne(session, agent, body, actor, ts) {
     id: accepted.packet.id,
     sessionId: session.id,
     project: session.project,
+    client: session.client || DEFAULT_CLIENT,
     agent_id: agent.id,
     message_id: accepted.packet.id,
     timestamp: accepted.packet.ts,
@@ -983,6 +1031,8 @@ export function correct(session, input) {
     disagreement: [target.from],
     context: `corrects:${target.id}`,
     ts: raw.ts,
+    project: session.project,
+    client: session.client,
   });
   return {
     ok: true,
@@ -1069,6 +1119,7 @@ export function synthesize(session, input = {}) {
     from,
     sessionId: session.id,
     project: session.project,
+    client: session.client,
     claim: "proposal",
     statement: body,
     status: clustered.status,
@@ -1128,6 +1179,7 @@ export function runCycle(input) {
     lesson: syn.lesson,
     census: census(),
     project: session.project,
+    client: session.client,
   };
 }
 
@@ -1179,6 +1231,112 @@ export function verifySwarm(input = {}) {
   };
 }
 
+export function discoverCapabilities(problem, agents = thinkers()) {
+  const text = String(problem || "").toLowerCase();
+  const needed = [];
+  if (/review|revue|audit/.test(text)) needed.push("review");
+  if (/build|code|implement|fix/.test(text)) needed.push("build");
+  if (/measur|preuve|verify|vérif/.test(text)) needed.push("measure");
+  if (/route|orchestr/.test(text)) needed.push("route");
+  if (!needed.length) needed.push("lu");
+  const available = [];
+  const missing = [];
+  for (const agent of agents) {
+    const caps = (agent.capabilities || []).map(String);
+    const specialty = String(agent.specialty || agent.role || "");
+    const matches = needed.some((need) => caps.includes(need) || specialty.toLowerCase().includes(need) || need === "lu" && caps.includes("lu"));
+    if (!matches) continue;
+    const presence = presenceOf(agent);
+    const row = {
+      id: agent.id,
+      specialty: specialty || null,
+      presence: presence.presence,
+      connected: presence.connected === true,
+    };
+    if (presence.presence === "CONNECTED" || presence.presence === "ACTIVE") available.push(row);
+    else missing.push({ ...row, reason: presence.reason || presence.presence });
+  }
+  return {
+    needed,
+    available,
+    missing,
+    ranking: "by-task",
+    global_best: false,
+    together: "Que pouvons-nous faire ensemble que nous ne pouvons pas faire séparément ?",
+  };
+}
+
+export function serveClientProblem(input = {}) {
+  const client = parseClient(input.client);
+  if (!client.ok) return client;
+  const problem = clip(input.problem || input.topic || input.body, 2000);
+  if (!problem) return fail("BODY_MISSING", "client problem required");
+  const capabilities = discoverCapabilities(problem);
+  const cycle = runCycle({
+    topic: problem,
+    project: input.project || DEFAULT_PROJECT,
+    client: client.id,
+    actor: input.actor,
+    ts: input.ts,
+  });
+  if (!cycle.ok) return cycle;
+  const snap = cycle.census || census();
+  const disagreements = (cycle.session?.relations || [])
+    .filter((row) => row.reply === "DISAGREE" || row.reply === "NEED_EVIDENCE" || row.reply === "NEED_RETEST")
+    .map((row) => ({ kind: row.reply, statement: clip(row.body || row.packet?.body, 280) }));
+  const hold = snap.connected === 0
+    ? { decision: "HOLD_HUMAN", why: "provider credentials required for CONNECTED canals", authority: "carl" }
+    : null;
+  const leaked = memoryForClient(client.id).some((entry) => entry.client && entry.client !== client.id);
+  return {
+    ok: true,
+    client: client.id,
+    problem,
+    understanding: {
+      topic: problem,
+      status: cycle.synthesis?.status || "unresolved",
+      truth: false,
+    },
+    result: {
+      summary: cycle.synthesis?.packet?.body || cycle.synthesis?.status || "unresolved",
+      status: cycle.synthesis?.status || "unresolved",
+      contributors: (cycle.filed || []).length,
+      disagreements,
+    },
+    limits: [
+      "LU cycle is not a provider connection.",
+      "CONNECTED requires a real canal.",
+      "LIVE VERIFIED is Carl only.",
+      "Majority is not truth.",
+      "Client isolation forbids implicit context share.",
+    ],
+    capabilities,
+    together: {
+      question: capabilities.together,
+      measured: (cycle.filed || []).length >= 2,
+    },
+    completeness: {
+      DEFINED: true,
+      CODE_VERIFIED: false,
+      TEST_VERIFIED: false,
+      EXECUTED: cycle.ok === true,
+      MEASURED: true,
+      LIVE_VERIFIED: false,
+    },
+    hold,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+    isolation: { client: client.id, leaked },
+    provenance: {
+      session_id: cycle.session?.id || null,
+      project: cycle.project,
+      client: client.id,
+      internal: false,
+    },
+  };
+}
+
 function isMain() {
   try {
     return import.meta.url === pathToFileURL(process.argv[1]).href;
@@ -1188,28 +1346,54 @@ function isMain() {
 }
 
 if (isMain()) {
-  const topic = process.argv.slice(2).join(" ").trim() || "Les certitudes ont-elles une date de fin ?";
-  const report = verifySwarm({ topic });
-  const out = {
-    mode: report.mode,
-    label: report.label,
-    configured: report.census.configured,
-    thinkers: report.census.thinkers,
-    connected: report.census.connected,
-    active: report.census.active,
-    blocked: report.census.blocked,
-    channelNotPresent: report.census.channelNotPresent,
-    live: 0,
-    tour1: report.tour1,
-    tour2: report.tour2,
-    tour3: report.tour3,
-    disagreements: report.disagreements,
-    provenance: report.provenance,
-    synthesis: report.synthesis,
-    truth: false,
-    judge: false,
-    note: "ARCHITECTURE READY. 0 CONNECTED. LU cycle ran for every thinking identity.",
-    agents: (report.agents || []).map((a) => `${a.id}=${a.presence} t1=${a.tour1} t3=${a.tour3}`),
-  };
-  console.log(JSON.stringify(out, null, 2));
+  const args = process.argv.slice(2);
+  let client = null;
+  const rest = [];
+  for (let i = 0; i < args.length; i += 1) {
+    if (args[i] === "--client") {
+      client = args[i + 1];
+      i += 1;
+      continue;
+    }
+    rest.push(args[i]);
+  }
+  const topic = rest.join(" ").trim() || "Les certitudes ont-elles une date de fin ?";
+  if (client) {
+    const served = serveClientProblem({ client, problem: topic });
+    console.log(JSON.stringify({
+      ok: served.ok,
+      client: served.client,
+      status: served.result?.status || served.code,
+      executed: served.completeness?.EXECUTED === true,
+      measured: served.completeness?.MEASURED === true,
+      live: false,
+      hold: served.hold?.decision || null,
+      together: served.together?.measured === true,
+      note: "Client path executed. LIVE VERIFIED is Carl only.",
+    }, null, 2));
+  } else {
+    const report = verifySwarm({ topic });
+    const out = {
+      mode: report.mode,
+      label: report.label,
+      configured: report.census.configured,
+      thinkers: report.census.thinkers,
+      connected: report.census.connected,
+      active: report.census.active,
+      blocked: report.census.blocked,
+      channelNotPresent: report.census.channelNotPresent,
+      live: 0,
+      tour1: report.tour1,
+      tour2: report.tour2,
+      tour3: report.tour3,
+      disagreements: report.disagreements,
+      provenance: report.provenance,
+      synthesis: report.synthesis,
+      truth: false,
+      judge: false,
+      note: "ARCHITECTURE READY. 0 CONNECTED. LU cycle ran for every thinking identity.",
+      agents: (report.agents || []).map((a) => `${a.id}=${a.presence} t1=${a.tour1} t3=${a.tour3}`),
+    };
+    console.log(JSON.stringify(out, null, 2));
+  }
 }

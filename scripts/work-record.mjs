@@ -11,6 +11,14 @@ import { sealEvidence } from "./evidence-seal.mjs";
 
 export const WORK_RECORD_VERSION = "work-record.v1";
 export const STAGES = Object.freeze(["code", "tested", "executed", "measured", "verified", "live"]);
+export const COMPLETENESS_STATES = Object.freeze([
+  "DEFINED",
+  "CODE_VERIFIED",
+  "TEST_VERIFIED",
+  "EXECUTED",
+  "MEASURED",
+  "LIVE_VERIFIED",
+]);
 
 export function emptyWorkRecord() {
   return {
@@ -85,7 +93,51 @@ export function assertWorkRecord(record) {
       throw new Error("EXECUTED_WITHOUT_DEFINED");
     }
   }
+  assertChantierComplete(record);
   return true;
+}
+
+export function completenessOf(record = {}) {
+  const stages = record.stages || {};
+  const states = {
+    DEFINED: true,
+    CODE_VERIFIED: stages.code === true,
+    TEST_VERIFIED: stages.code === true && stages.tested === true,
+    EXECUTED: stages.code === true && stages.tested === true && stages.executed === true,
+    MEASURED: stages.code === true && stages.tested === true && stages.executed === true && stages.measured === true,
+    LIVE_VERIFIED: false,
+  };
+  if (
+    stages.live === true
+    && record.live?.proof === "LIVE_VERIFIED"
+    && states.MEASURED
+    && stages.verified === true
+  ) {
+    states.LIVE_VERIFIED = true;
+  }
+  return states;
+}
+
+export function assertChantierComplete(record = {}) {
+  const states = completenessOf(record);
+  if (record.complete === true) {
+    if (!states.CODE_VERIFIED || !states.TEST_VERIFIED || !states.EXECUTED || !states.MEASURED) {
+      throw new Error("PREMATURE_COMPLETENESS");
+    }
+  }
+  if (record.completeness === "LIVE_VERIFIED" && !states.LIVE_VERIFIED) {
+    throw new Error("LIVE_WITHOUT_PROOF");
+  }
+  if (record.completeness === "EXECUTED" && !states.EXECUTED) {
+    throw new Error("PREMATURE_COMPLETENESS");
+  }
+  if (record.completeness === "TEST_VERIFIED" && !states.TEST_VERIFIED) {
+    throw new Error("PREMATURE_COMPLETENESS");
+  }
+  if (record.completeness === "MEASURED" && !states.MEASURED) {
+    throw new Error("PREMATURE_COMPLETENESS");
+  }
+  return states;
 }
 
 export function buildWorkRecord(input = {}) {

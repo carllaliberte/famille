@@ -13,6 +13,19 @@ QUESTION → RÉFLEXION INDÉPENDANTE → PARTAGE → CONTRE-ANALYSE → DÉSACC
 
 LE CONSENSUS N'EST PAS LA VÉRITÉ. Les désaccords restent visibles. LIVE VERIFIED = Carl seulement.
 
+## Grand chantier — complétude réelle
+
+UN GRAND CHANTIER N'EST PAS TERMINÉ PARCE QUE LE CODE EXISTE.
+Il est terminé seulement lorsque le sujet fonctionne de bout en bout : exécuté, mesuré, testé, corrigé, vérifié avant le merge final.
+DEFINED ≠ CODE VERIFIED ≠ TEST VERIFIED ≠ EXECUTED ≠ MEASURED ≠ LIVE VERIFIED.
+Jamais transformer DEFINED en EXECUTED ou LIVE VERIFIED sans preuve.
+HOLD_HUMAN si secret, autorisation, paiement ou décision humaine. Pas d'auto-merge.
+
+## Capacité client
+
+Un humain apporte un problème réel. Acorn mobilise les intelligences pertinentes. Elles collaborent. Les résultats peuvent être vérifiés. Les limites sont visibles. La provenance est conservée. Le travail est mesuré. L'humain conserve la décision.
+Le client n'a pas à connaître l'architecture interne. Isolation par client : pas de fuite de contexte. Routage selon la tâche, jamais un classement global meilleur/pire.
+
 Toutes les IA cogitent ensemble : Claude, Grok, Gemini, ChatGPT, DeepSeek, Astra, Codex, Cursor, les autres. Pas une liste fermée. Une nouvelle IA rejoint par son identifiant, même mode, sans modifier le protocole.
 
 Lire le contexte commun (raw + SHA) **et** les LU déjà sur le fil. Analyser. Challenger les hypothèses. Proposer. Signaler risques et contradictions. Apprendre des contributions des autres.
