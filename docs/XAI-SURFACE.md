@@ -1,31 +1,23 @@
-# xAI surface — surveillance du noyau Acorn
+# xAI surface — noyau Acorn
 
-Carte datée. Pas LIVE. Pas une étiquette éternelle.
+LU 2026-09-15. Indissociable du kernel `SOVEREIGN_KERNEL` / flux `acorn.v0`.
 
-- Catalogue : [`schema/xai-surface.json`](../schema/xai-surface.json)
-- Schéma : [`schema/xai-surface.v0.json`](../schema/xai-surface.v0.json)
-- Sonde : [`scripts/xai-surface-monitor.mjs`](../scripts/xai-surface-monitor.mjs)
-- Noyau inchangé : [`schema/kernel.v0.json`](../schema/kernel.v0.json) — `SOVEREIGN_KERNEL`, `auto_merge=false`
+- Catalogue daté : `schema/xai-surface.json`
+- Schéma : `schema/xai-surface.v0.json`
+- Mesure : `node scripts/xai-surface-monitor.mjs`
+- Workflow : `.github/workflows/xai-surface.yml` (`workflow_dispatch`)
+- Secret Actions : `XAI_API_KEY` (valeur jamais dans git, jamais dans les logs)
 
-## Indissociable ≠ obligatoire
+`XAI_API_KEY` absente = `CONFIGURATION_ERROR`. Jamais une présence simulée.
+Slug sans API = `CHANNEL_NOT_PRESENT`.
+Tesla / Neuralink / Colossus / Government = `OUT_OF_RUNTIME` / `NOT_CANAL`.
 
-Le chef Grok (`grok` → `grok-4.6`) est déclaré dans le roster noyau.
-La clé `XAI_API_KEY` n’est **pas** requise pour `RUN`.
-Clé absente = `CONFIGURATION_ERROR` sur les slugs, pas « xAI absent ».
+Déjà injecté (nom seulement) dans :
+- `.github/workflows/grok-build-bridge.yml`
+- `.github/workflows/swarm.yml`
+- `.github/workflows/prove-all-models.yml`
+- `.github/workflows/xai-surface.yml`
+- `.github/workflows/acorn-autopilot.yml` (présence pour le worker)
 
-## Continu / éternité
-
-Acorn refuse l’étiquette sans date.
-`measured_on` + `horizon` : le catalogue périme. Il faut le re-mesurer (PR Carl), pas le sceller.
-Le monitor ne met pas à jour les slugs tout seul. Pas d’auto-merge.
-
-## Interdit comme canal runtime
-
-Tesla FSD / Optimus / Dojo · Neuralink · Colossus · Government · slugs inventés (`grok-5`, `grok-heavy`, `grok-expert`).
-
-## Mesure
-
-```bash
-node scripts/xai-surface-monitor.mjs
-node --test test/xai-surface-monitor.test.js
-```
+Continu = réévaluation mesurée + PR humaine quand docs.x.ai change un slug.
+`auto_merge=false`. `live=false`. Carl merge.
