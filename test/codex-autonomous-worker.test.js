@@ -377,6 +377,10 @@ describe("codex autonomous worker", () => {
     const clap = redactSecrets("error: unexpected argument '--ask-for-approval' found");
     assert.match(clap, /unexpected argument '--ask-for-approval'/);
     assert.equal(redactSecrets("sk-or-abcdefghijklmnop"), "[REDACTED]");
+    const measured = redactSecrets({ estimated_prompt_tokens: 661, prompt_chars: 1664, token: "abc" });
+    assert.equal(measured.estimated_prompt_tokens, 661);
+    assert.equal(measured.prompt_chars, 1664);
+    assert.equal(measured.token, "[REDACTED]");
   });
 
   it("classifies errors into operational categories", () => {
@@ -708,6 +712,39 @@ describe("codex autonomous worker", () => {
     assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "nvidia/nemotron-3.5-lightning:free" } }), "cohere/north-mini-code:free");
     assert.equal(resolveOpenRouterModel({ env: { CODEX_MODEL: "cohere/north-mini-code:free" } }), "cohere/north-mini-code:free");
     assert.equal(ev.codex.model, "cohere/north-mini-code:free");
+  });
+
+  it("on OpenRouter 402 retries once with the cheaper free model", () => {
+    let n = 0;
+    const io = ioFor({
+      authFile: false,
+      env: {
+        OPENROUTER_API_KEY: "sk-or-test-key-123456",
+        CODEX_MODEL: "google/gemini-2.5-flash",
+        CODEX_REPAIR_ATTEMPTS: "2",
+      },
+      issues: [{ number: 560, title: "x", body: "y", url: "https://github.com/carllaliberte/famille/issues/560" }],
+      git: { sha: "aaa", dirty: "", branch: "main" },
+      codex: (git, args) => {
+        n += 1;
+        const modelArg = args.filter((a, i) => args[i - 1] === "-c" && String(a).startsWith("model=")).pop();
+        if (n === 1) {
+          assert.equal(modelArg, "model=google/gemini-2.5-flash");
+          return {
+            status: 1,
+            stderr: "ERROR: unexpected status 402 Payment Required: credits\nOPENROUTER_PROXY_DIAG response status=402\n",
+          };
+        }
+        assert.equal(modelArg, "model=cohere/north-mini-code:free");
+        git.sha = "bbb";
+        git.dirty = " M scripts/codex-autonomous-worker.mjs";
+        return { status: 0, stdout: "ok" };
+      },
+    });
+    const ev = runWorker(io);
+    assert.ok(n >= 2);
+    assert.equal(ev.codex.model, "cohere/north-mini-code:free");
+    assert.notEqual(ev.status, "UNAVAILABLE");
   });
 
   it("keeps workflow run blocks indented so GitHub registers workflow_dispatch", () => {
