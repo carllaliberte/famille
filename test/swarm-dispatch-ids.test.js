@@ -16,15 +16,15 @@ test("workflow_dispatch parseTrigger does not default to autoIds", () => {
   assert.deepEqual(parseTrigger("", [], "workflow_dispatch"), []);
 });
 
-test("idsForDispatch follows secrets not roster status", () => {
+test("idsForDispatch prefers free OpenRouter over paid native keys", () => {
   const ids = idsForDispatch({
     GEMINI_API_KEY: "g",
     OPENROUTER_API_KEY: "o",
     XAI_API_KEY: "x",
   });
-  assert.ok(ids.includes("gemini"));
-  assert.ok(ids.includes("xai"));
-  assert.ok(ids.includes("openrouter"));
+  assert.equal(ids.includes("xai"), false);
+  assert.equal(ids.includes("gemini"), false);
+  assert.ok(ids.some((id) => id === "orfree" || id.includes("gemma") || id.includes("nemotron") || id === "llama"));
 });
 
 test("missing secret is skip not provider error", () => {

@@ -39,6 +39,10 @@ Daemon : **DOWN** (curl 11434 échoue). Poids disque : `llama3.2`. Pas de pull.
 
 Ne pas confondre `local`/llama3.2 avec canaux `llama` / `qwen` OpenRouter.
 
+## Lanes (unpaid first)
+
+Auto-dispatch : **keyless** (Cortex local, Ollama, GitHub Models / `GITHUB_TOKEN`) → **free** (OpenRouter `:free`) → **paid**. Si un lane unpaid existe, xAI/OpenAI/Anthropic/Gemini ne partent pas tout seuls. `/xai` reste explicite. Clé payante absente = skip, jamais une présence simulée. `ghmodels` = `openai/gpt-4o-mini` via GitHub Models, pas une facture OpenAI.
+
 ## NON_AJOUTÉ
 
 Aucun. Crédits 0 · pas d’ordre Carl · grok-2 gelé · grok-2-mini n’est pas un siège à promouvoir.
