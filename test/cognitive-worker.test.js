@@ -46,3 +46,9 @@ test("worker prevents overlapping cycles and remains bounded", () => {
   assert.match(workflow, /cancel-in-progress: false/);
   assert.match(runtime, /export const LIMIT = 20/);
 });
+
+test("worker consumes the paired cycle loader, not the orphan ranking loader", () => {
+  assert.match(runtime, /loadPriorMeasuredCycle/);
+  assert.doesNotMatch(runtime, /loadMeasuredRanking\(/);
+  assert.doesNotMatch(runtime, /loadMeasurementRecord\(/);
+});
