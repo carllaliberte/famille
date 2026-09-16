@@ -2,7 +2,7 @@
 # Never on PR. Never on a working branch. Never before merge.
 # No third-party secret. Public OTS calendars are anonymous.
 # Identity: ots-bot (not Carl). Message: ots: anchor <sha>
-# Main is PR-only: ots-bot prepares an anchor PR; Carl remains the sole merger.
+# Main is PR-only: ots-bot prepares an anchor branch; Carl remains the sole merger.
 name: ots-anchor
 on:
   push:
@@ -58,11 +58,13 @@ jobs:
           test "$ok" -eq 1
           cp ".ots-anchor/${SHA}.sha.ots" .ots-anchor/latest.sha.ots
           ots info ".ots-anchor/${SHA}.sha.ots" || true
-      - name: publish anchor PR
+      - name: publish anchor branch and PR
         id: publish
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
         run: |
           set -euo pipefail
           git config user.name "ots-bot"
@@ -77,11 +79,31 @@ jobs:
           git switch -c "$BRANCH"
           git commit -m "ots: anchor ${SHA}"
           git push --set-upstream origin "$BRANCH"
-          gh pr create \
+
+          # GitHub Actions may be configured to forbid the built-in token from
+          # creating PRs. The anchor branch is still valid and must not be lost.
+          # In that case leave a deterministic human PR URL and finish cleanly.
+          PR_URL="${SERVER_URL}/${REPO}/compare/main...${BRANCH}?expand=1"
+          if gh pr create \
             --base main \
             --head "$BRANCH" \
             --title "ots: anchor ${SHA}" \
-            --body "OpenTimestamps anchor for merged SHA ${SHA}.\n\nCreated automatically because main requires changes through a pull request.\n\nCarl is the sole merge authority; no auto-merge."
+            --body "OpenTimestamps anchor for merged SHA ${SHA}.\n\nCreated automatically because main requires changes through a pull request.\n\nCarl is the sole merge authority; no auto-merge."; then
+            echo "anchor PR created automatically"
+          else
+            echo "HUMAN_REQUIRED: GitHub Actions token cannot create pull requests in this repository."
+            echo "Create the anchor PR manually: ${PR_URL}"
+            {
+              echo "### OpenTimestamps anchor"
+              echo ""
+              echo "Automatic PR creation was rejected by the repository Actions policy."
+              echo ""
+              echo "- SHA: \`${SHA}\`"
+              echo "- Branch: \`${BRANCH}\`"
+              echo "- PR: ${PR_URL}"
+              echo "- Merge authority: Carl only"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: alert stamp failure
         if: failure() && steps.stamp.outcome == 'failure'
         env:
