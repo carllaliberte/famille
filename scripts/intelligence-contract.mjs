@@ -163,7 +163,9 @@ export function routeTask({
     protocol: row.protocol,
   }));
   const byCap = routeByCapability({ need }, adapters);
-  const specs = byCap.map((hit) => (discovered.entries || []).find((row) => row.identity === hit.id)).filter(Boolean);
+  const specs = byCap
+    .map((hit) => (discovered.entries || []).find((row) => row.identity === hit.id))
+    .filter((row) => row && (row.state === "CALLABLE" || row.state === "EXECUTED"));
   const unpaid = preferUnpaid(specs.map((row) => ({ ...row, id: row.identity, secret: row.channel })), env);
   const unpaidRows = specs.filter((row) => row.lane === "keyless" || row.lane === "free" || row.identity === "cortex-local" || unpaid.selected.includes(row.identity));
   const allowPaid = policyMode === "PAID_ALLOWED" || (policyMode === "FREE_FIRST" && unpaidRows.length === 0);
