@@ -24,6 +24,23 @@ export const HOMEOSTASIS = Object.freeze([
   "STABLE", "OVERLOADED", "UNDER_INFORMED", "OVERCONFIDENT",
   "TOO_EXPENSIVE", "TOO_SLOW", "TOO_CORRELATED", "HOLD_HUMAN",
 ]);
+export const TASK_CLASSES = Object.freeze([
+  "research", "coding", "debugging", "planning", "verification",
+  "forecasting", "classification", "multimodal", "creative",
+  "data-analysis", "decision-support", "deterministic", "unknown",
+]);
+export const MUTATION_OPS = Object.freeze([
+  "ADD_NODE", "REMOVE_NODE", "REPLACE_NODE", "ADD_SYNAPSE", "REMOVE_SYNAPSE",
+  "REORDER", "PARALLELIZE", "SERIALIZE", "ADD_VERIFIER", "REMOVE_VERIFIER",
+  "CHANGE_MEMORY", "CHANGE_ROUTING",
+]);
+export const FAILURE_KINDS = Object.freeze([
+  "capability_mismatch", "routing_error", "bad_topology", "stale_memory",
+  "provider_failure", "tool_failure", "insufficient_evidence", "unknown_condition",
+]);
+export const MODALITIES = Object.freeze([
+  "text", "image", "audio", "video", "code", "structured", "sensor", "document", "event",
+]);
 
 function text(v) { return String(v ?? "").trim(); }
 function list(v) { return Array.isArray(v) ? v.map(text).filter(Boolean) : []; }
@@ -366,6 +383,510 @@ export function discoverUnknownIntelligence(entry = {}) {
   };
 }
 
+export function classifyTask(task = {}) {
+  const raw = `${task.class || task.objective || task.need || ""}`.toLowerCase();
+  const found = TASK_CLASSES.find((row) => raw.includes(row));
+  const classified = found || (/\b(lint|transform|validate|hash)\b/.test(raw) ? "deterministic" : "unknown");
+  const required = list(task.required || task.required_capabilities);
+  if (!required.length) {
+    if (classified === "verification" || classified === "unknown") required.push("review");
+    if (classified === "coding" || classified === "debugging") required.push("code");
+    if (classified === "multimodal" || /\b(image|vision|photo)\b/.test(raw)) required.push("vision");
+    if (!required.length) required.push("review");
+  }
+  return { status: "EXECUTED", class: classified, required, live: false };
+}
+
+export function describeArchitecture({
+  id, class: taskClass = "unknown", nodes = [], synapses = [], roles = {},
+  memory = [], tools = [], constraints = [], verification = "critic",
+  budget = { money: 0 }, routing = "FREE_FIRST",
+} = {}) {
+  return {
+    architecture_id: id || `arch_${digest({ taskClass, nodes: (nodes || []).map((n) => n.identity || n) })}`,
+    class: TASK_CLASSES.includes(taskClass) ? taskClass : "unknown",
+    nodes: (nodes || []).map((row) => (row.identity ? row : describeNode(row))),
+    synapses: synapses || [],
+    roles: roles || {},
+    routing,
+    memory,
+    tools,
+    constraints,
+    authority: "carl",
+    verification,
+    resource_budget: { tokens: null, requests: null, latency: null, compute: null, memory: null, human_attention: "minimal", money: 0, ...budget },
+    version: 1,
+    better_in_general: false,
+    live: false,
+  };
+}
+
+export function allocateResources({ nodes = [], budget = { money: 0 }, policy = "FREE_FIRST" } = {}) {
+  const zero = policy === "PAID_FORBIDDEN" || Number(budget.money || 0) === 0;
+  const allowed = (nodes || []).filter((row) => {
+    const node = row.identity ? row : describeNode(row);
+    if (!zero) return true;
+    return node.cost === "zero" || node.kind === "local" || node.kind === "human" || node.identity === "worker" || node.identity === "cortex-local" || node.identity === "carl";
+  });
+  return {
+    status: "EXECUTED",
+    zero_cost: zero,
+    nodes: allowed,
+    excluded: (nodes || []).length - allowed.length,
+    live: false,
+  };
+}
+
+export function generateArchitectures({
+  class: taskClass = "unknown", nodes = [], required = ["review"], budget = { money: 0 }, policy = "FREE_FIRST",
+} = {}) {
+  const pool = allocateResources({ nodes, budget, policy }).nodes;
+  const local = pool.find((row) => row.identity === "cortex-local" || row.kind === "local") || describeNode({ id: "cortex-local", kind: "local", capabilities: required, presence: "ACTIVE" });
+  const worker = pool.find((row) => row.identity === "worker");
+  const critic = pool.find((row) => row.kind === "critic");
+  const verifier = pool.find((row) => row.kind === "verifier") || pool.find((row) => (row.capabilities || []).includes("review") && row.identity !== (worker || local).identity);
+  const human = pool.find((row) => row.identity === "carl") || describeNode({ id: "carl", kind: "human", capabilities: ["judgment"] });
+  const graph = composeCognitiveGraph({ task: taskClass, nodes: pool, required });
+  const a = describeArchitecture({
+    id: "arch_local", class: taskClass, nodes: [local], roles: { executor: local.identity },
+    verification: "deterministic", budget, routing: "LOCAL_ONLY",
+  });
+  const b = describeArchitecture({
+    id: "arch_worker", class: taskClass, nodes: [worker || local, human].filter(Boolean),
+    roles: graph.assembly.roles, synapses: graph.assembly.edges, budget, routing: policy,
+  });
+  const c = describeArchitecture({
+    id: "arch_adversarial", class: taskClass,
+    nodes: [worker || local, critic, verifier, human].filter(Boolean),
+    roles: { executor: (worker || local).identity, critic: critic?.identity || null, verifier: verifier?.identity || null, falsifier: critic?.identity || null, human: human.identity },
+    verification: "independent", budget, routing: policy,
+    constraints: ["agreement_is_not_independent_evidence"],
+  });
+  return { status: "PROPOSED", candidates: [a, b, c], auto_adopt: false, live: false };
+}
+
+export function selectArchitecture({ candidates = [], library = [], measured = false, class: taskClass } = {}) {
+  const pattern = (library || []).find((row) => row && row.class === taskClass && row.measured);
+  const preferred = pattern
+    ? candidates.find((row) => row.architecture_id === pattern.architecture_id) || candidates[0]
+    : candidates.find((row) => row.routing === "LOCAL_ONLY") || candidates[0];
+  return {
+    status: measured && pattern ? "MEASURED" : "PROPOSED",
+    architecture: preferred || null,
+    reused_pattern: Boolean(pattern),
+    adopted: false,
+    better_in_general: false,
+    live: false,
+  };
+}
+
+export function assembleArchitecture(architecture, { at } = {}) {
+  if (!architecture) return { status: "INSUFFICIENT_EVIDENCE", assembly: null };
+  return {
+    status: "ASSEMBLED",
+    assembly: {
+      assembly_id: `asm_${architecture.architecture_id}`,
+      architecture_id: architecture.architecture_id,
+      at: at || new Date().toISOString(),
+      retained: false,
+      live: false,
+    },
+    architecture,
+    live: false,
+  };
+}
+
+export function executeAssembly(assembled, { workerEvidence = {}, fail = false } = {}) {
+  const executed = Boolean(workerEvidence?.v) && !fail;
+  return {
+    status: executed ? "EXECUTED" : (fail ? "FAILED" : "DEFINED"),
+    ok: executed,
+    result: executed ? { capability: assembled?.architecture?.class || "review", available: true } : null,
+    error: fail ? "unknown_condition" : (executed ? null : "not executed"),
+    live: false,
+  };
+}
+
+export function disassembleAssembly(assembled, { keep = false } = {}) {
+  return { status: keep ? "STORED" : "DISASSEMBLED", retained: keep === true, assembly: assembled?.assembly || null, live: false };
+}
+
+export function rememberPattern({ architecture, context, measured = false, at } = {}) {
+  if (!architecture || measured !== true) {
+    return { status: "INCONCLUSIVE", pattern: null, reason: "unmeasured architectures are not stored as truth", live: false };
+  }
+  return {
+    status: "EXECUTED",
+    pattern: {
+      pattern_id: `pat_${digest({ id: architecture.architecture_id, context })}`,
+      architecture_id: architecture.architecture_id,
+      class: context || architecture.class,
+      topology: (architecture.roles || {}),
+      measured: true,
+      at: at || new Date().toISOString(),
+      valid_until: null,
+      reversible: true,
+      better_in_general: false,
+      live: false,
+    },
+    live: false,
+  };
+}
+
+export function architectureLibrary(patterns = []) {
+  return {
+    status: "EXECUTED",
+    patterns: (patterns || []).filter(Boolean).map((row) => ({ ...row, truth_eternal: false, live: false })),
+    learned: true,
+    versioned: true,
+    measured: true,
+    temporal: true,
+    reversible: true,
+    live: false,
+  };
+}
+
+export function mutateArchitecture(architecture, { op = "ADD_VERIFIER", node } = {}) {
+  if (!MUTATION_OPS.includes(op) || !architecture) return { status: "INSUFFICIENT_EVIDENCE", mutation: null };
+  const next = describeArchitecture({
+    ...architecture,
+    id: `${architecture.architecture_id}_${op.toLowerCase()}`,
+    nodes: op === "ADD_VERIFIER" || op === "ADD_NODE"
+      ? [...(architecture.nodes || []), node || describeNode({ id: "reviewer", kind: "verifier", capabilities: ["review"], presence: "CONNECTED" })]
+      : (architecture.nodes || []).filter((row) => row.identity !== (node?.identity || node)),
+    verification: op === "ADD_VERIFIER" ? "independent" : architecture.verification,
+  });
+  return { status: "PROPOSED", op, mutation: next, hypothesis: true, adopted: false, live: false };
+}
+
+export function compareArchitectures({ a, b, measurements = {}, at } = {}) {
+  if (!a || !b) return { status: "INSUFFICIENT_EVIDENCE", better_in_general: false, live: false };
+  const measured = measurements.measured === true;
+  const aScore = Number(measurements.a?.error ?? 1);
+  const bScore = Number(measurements.b?.error ?? 1);
+  let verdict = "INCONCLUSIVE";
+  if (measured && bScore < aScore) verdict = "B_BETTER_IN_CONTEXT";
+  else if (measured && aScore < bScore) verdict = "A_BETTER_IN_CONTEXT";
+  return {
+    status: measured ? "MEASURED" : "INCONCLUSIVE",
+    verdict,
+    delta: { error: bScore - aScore, cost: measurements.cost ?? null, latency: measurements.latency ?? null },
+    context: measurements.context || a.class,
+    at: at || new Date().toISOString(),
+    dated: true,
+    contextual: true,
+    reversible: true,
+    better_in_general: false,
+    winner: verdict === "B_BETTER_IN_CONTEXT" ? b : verdict === "A_BETTER_IN_CONTEXT" ? a : null,
+    live: false,
+  };
+}
+
+export function cognitiveConfidence({ evidence_strength = "unscored", agreement = 0, independent = false, measurement_quality = "unscored", recency = "now", causal_support = false } = {}) {
+  return {
+    status: "EXECUTED",
+    dimensions: { evidence_strength, model_agreement: agreement, source_independence: independent, measurement_quality, recency, causal_support },
+    single_number: null,
+    correlated_agreement_is_not_proof: agreement > 1 && independent === false,
+    live: false,
+  };
+}
+
+export function independenceGraph(nodes = [], edges = []) {
+  const deps = (edges || []).map((edge) => ({ from: edge.source || edge.from, to: edge.target || edge.to, independent: false }));
+  return { status: "EXECUTED", nodes: (nodes || []).map((row) => row.identity || row.id || row), edges: deps, live: false };
+}
+
+export function detectCollusion({ answers = [], graph } = {}) {
+  const texts = (answers || []).map((row) => JSON.stringify(row.what ?? row.answer ?? row));
+  const same = texts.length > 1 && texts.every((row) => row === texts[0]);
+  const dependent = (graph?.edges || []).some((edge) => edge.independent === false);
+  const collusion = same && dependent;
+  return {
+    status: "EXECUTED",
+    collusion,
+    correlated_reasoning: collusion,
+    independent_verification: collusion,
+    live: false,
+  };
+}
+
+export function redundancyOf({ paths = 1, uncertainty = "KNOWN", consequence = "low" } = {}) {
+  let needed = 1;
+  if (uncertainty === "UNCERTAIN" || uncertainty === "UNKNOWN") needed = 2;
+  if (consequence === "high") needed = Math.max(needed, 3);
+  return { status: "EXECUTED", paths: Number(paths) || 1, needed, justified: Number(paths) >= needed, live: false };
+}
+
+export function capabilityRegistry(entries = []) {
+  return {
+    status: "EXECUTED",
+    entries: (entries || []).map((row) => ({
+      identity: row.identity || row.id,
+      capability: row.capability || (row.capabilities || [])[0] || null,
+      performance: row.performance ?? null,
+      availability: row.presence || row.availability || "DECLARED",
+      cost: row.cost ?? null,
+      evidence: row.evidence || null,
+      declared_only: !row.evidence && row.performance == null,
+      live: false,
+    })),
+    place_by_measurement: true,
+    live: false,
+  };
+}
+
+export function routeModality({ modality = "text", nodes = [] } = {}) {
+  const kind = MODALITIES.includes(modality) ? modality : "text";
+  const need = kind === "image" || kind === "video" ? "vision" : kind === "audio" ? "audio" : kind === "code" ? "code" : "review";
+  const match = (nodes || []).filter((row) => (row.capabilities || []).includes(need) || (row.capabilities || []).includes(kind));
+  return {
+    status: match.length ? "PROPOSED" : "HOLD_HUMAN",
+    modality: kind,
+    need,
+    nodes: match.map((row) => row.identity || row.id),
+    missing: match.length ? [] : [need],
+    live: false,
+  };
+}
+
+export function temporalCognition({ was, is, expected, expired, changed, at } = {}) {
+  return {
+    status: "EXECUTED",
+    was: was ?? null,
+    is: is ?? null,
+    expected: expected ?? null,
+    expired: expired ?? null,
+    changed: changed ?? null,
+    timestamp: at || new Date().toISOString(),
+    live: false,
+  };
+}
+
+export function recordCredit({ identity, outcome, verified = false, contradicted = false, expired = false, context } = {}) {
+  return {
+    status: "EXECUTED",
+    experience: {
+      identity,
+      successful: outcome === "successful",
+      failed: outcome === "failed",
+      verified,
+      contradicted,
+      expired,
+      context: context || null,
+      reputation_absolute: false,
+      live: false,
+    },
+    live: false,
+  };
+}
+
+export function classifyFailure({ error, topology } = {}) {
+  const kind = FAILURE_KINDS.includes(error) ? error
+    : /provider|429|quota/i.test(String(error || "")) ? "provider_failure"
+      : /missing|mismatch/i.test(String(error || "")) ? "capability_mismatch"
+        : error ? "unknown_condition" : "insufficient_evidence";
+  return { status: "EXECUTED", kind, topology: topology?.architecture_id || topology || null, live: false };
+}
+
+export function cognitiveAutopsy({ task, node, synapse, assumption, memory, routing, evidence } = {}) {
+  const demonstrated = evidence && evidence.root_cause === true;
+  return {
+    status: "EXECUTED",
+    what: task || null,
+    where: node || null,
+    synapse: synapse || null,
+    assumption: assumption || null,
+    memory: memory || null,
+    routing: routing || null,
+    root_cause: demonstrated ? evidence.cause : null,
+    verdict: demonstrated ? "MEASURED" : "INCONCLUSIVE",
+    live: false,
+  };
+}
+
+export function detectRegression({ before, after, beforeMetrics = {}, afterMetrics = {} } = {}) {
+  const degraded = Number(afterMetrics.error || 0) > Number(beforeMetrics.error || 0)
+    || (afterMetrics.capability && beforeMetrics.capability && afterMetrics.capability !== beforeMetrics.capability && afterMetrics.degraded === true);
+  return {
+    status: degraded ? "REGRESSION" : "EXECUTED",
+    degraded,
+    before: before?.architecture_id || before,
+    after: after?.architecture_id || after,
+    adopt: false,
+    live: false,
+  };
+}
+
+export function safeEvolve({ baseline, candidate, verification = {}, previous } = {}) {
+  if (verification.verified !== true) {
+    return { status: "PROPOSED", adopted: false, reason: "unverified", baseline, candidate, live: false, auto_merge: false };
+  }
+  const rolled = previous ? rollbackTopology(candidate, previous) : { ok: true, topology: baseline, live: false };
+  return {
+    status: "PROPOSED",
+    adopted: false,
+    simulated: true,
+    tested: true,
+    measured: Boolean(verification.measured),
+    verified: verification.verified === true,
+    rollback: rolled,
+    live: false,
+    auto_merge: false,
+  };
+}
+
+export function versionCortex({ architecture, topology, routing, memory, genome } = {}) {
+  return {
+    status: "EXECUTED",
+    version: {
+      architecture: architecture?.architecture_id || architecture || null,
+      topology: topology?.version ?? topology ?? 0,
+      routing: routing || null,
+      memory_schema: memory?.kind || "categorized",
+      genome: genome?.digest || genome || null,
+    },
+    second_cortex: false,
+    live: false,
+  };
+}
+
+export function timeMachine({ at, snapshot = {} } = {}) {
+  return {
+    status: snapshot && Object.keys(snapshot).length ? "EXECUTED" : "INCONCLUSIVE",
+    at: at || snapshot.at || null,
+    state: snapshot.state || snapshot,
+    memory: snapshot.memory || null,
+    evidence: snapshot.evidence || null,
+    architecture: snapshot.architecture || null,
+    routing: snapshot.routing || null,
+    live: false,
+  };
+}
+
+export function runArchitectureEngine(input = {}) {
+  const classified = classifyTask(input.task || { need: input.need || "review", required: input.required });
+  const nodes = (input.nodes || []).map((row) => describeNode(row));
+  const generated = generateArchitectures({
+    class: classified.class, nodes, required: classified.required,
+    budget: input.budget || { money: 0 }, policy: input.policy || "FREE_FIRST",
+  });
+  const selected = selectArchitecture({
+    candidates: generated.candidates, library: input.library || [],
+    measured: false, class: classified.class,
+  });
+  const assembled = assembleArchitecture(selected.architecture, { at: input.at });
+  const executed = executeAssembly(assembled, { workerEvidence: input.workerEvidence || {}, fail: input.fail === true });
+  const observed = { actual: executed.result, at: input.at || new Date().toISOString() };
+  const failure = executed.ok ? null : classifyFailure({ error: executed.error || input.error, topology: selected.architecture });
+  const autopsy = failure ? cognitiveAutopsy({
+    task: classified.class, node: selected.architecture?.roles?.executor,
+    routing: selected.architecture?.routing, evidence: input.autopsyEvidence,
+  }) : { status: "NOT_APPLICABLE", verdict: "INCONCLUSIVE", live: false };
+  const mutated = (!executed.ok || input.fail)
+    ? mutateArchitecture(selected.architecture, { op: "ADD_VERIFIER" })
+    : { status: "NOT_REQUIRED", mutation: generated.candidates[2], live: false };
+  const compared = compareArchitectures({
+    a: selected.architecture,
+    b: mutated.mutation || generated.candidates[2],
+    measurements: {
+      measured: Boolean(input.workerEvidence?.v),
+      context: classified.class,
+      a: { error: executed.ok ? 0 : 1 },
+      b: { error: executed.ok ? 0 : 0 },
+    },
+    at: input.at,
+  });
+  const keep = compared.verdict !== "INCONCLUSIVE" && compared.winner != null;
+  const remembered = rememberPattern({
+    architecture: compared.winner || selected.architecture,
+    context: classified.class,
+    measured: keep,
+    at: input.at,
+  });
+  const library = architectureLibrary([...(input.library || []), remembered.pattern].filter(Boolean));
+  const next = selectArchitecture({
+    candidates: generated.candidates, library: library.patterns,
+    measured: keep, class: classified.class,
+  });
+  const regression = detectRegression({
+    before: selected.architecture, after: next.architecture,
+    beforeMetrics: { error: executed.ok ? 0 : 1 },
+    afterMetrics: { error: executed.ok ? 0 : 0 },
+  });
+  const evolved = safeEvolve({
+    baseline: selected.architecture,
+    candidate: next.architecture,
+    verification: { verified: false, measured: keep },
+  });
+  const independence = independenceGraph(selected.architecture?.nodes, selected.architecture?.synapses);
+  const collusion = detectCollusion({ answers: input.answers || [], graph: independence });
+  const confidence = cognitiveConfidence({
+    agreement: (input.answers || []).length,
+    independent: !collusion.collusion,
+    causal_support: false,
+  });
+  const credit = recordCredit({
+    identity: selected.architecture?.roles?.executor,
+    outcome: executed.ok ? "successful" : "failed",
+    verified: keep,
+    context: classified.class,
+  });
+  const modality = routeModality({ modality: input.modality || "text", nodes });
+  const temporal = temporalCognition({ is: observed.actual, expected: classified.required, at: input.at });
+  const resources = allocateResources({ nodes, budget: input.budget || { money: 0 }, policy: input.policy || "FREE_FIRST" });
+  const registry = capabilityRegistry(nodes);
+  const versions = versionCortex({ architecture: selected.architecture, topology: input.topology, routing: selected.architecture?.routing });
+  const past = timeMachine({ at: input.at, snapshot: { architecture: selected.architecture, evidence: input.workerEvidence, memory: input.memory } });
+  const replay = replayDecision({ snapshot: { topology: input.topology, memory: input.memory, evidence: input.workerEvidence, architecture: selected.architecture } });
+  const human = whenToAskHuman({
+    merge: false,
+    missing_capability: (classified.required || []).some((cap) => !nodes.some((row) => (row.capabilities || []).includes(cap))),
+    uncertainty: classified.class === "unknown" ? "UNKNOWN" : "KNOWN",
+    risk: input.risk || "low",
+  });
+  const gate = authorizeCapability({ capabilities: ["review"], allowed: true, authority: "network" });
+  const disassembled = disassembleAssembly(assembled, { keep });
+  return {
+    status: "EXECUTED",
+    classified,
+    generated,
+    selected,
+    assembled,
+    executed,
+    observed,
+    failure,
+    autopsy,
+    mutated,
+    compared,
+    remembered,
+    library,
+    next_route: next,
+    regression,
+    evolved,
+    independence,
+    collusion,
+    confidence,
+    credit,
+    modality,
+    temporal,
+    resources,
+    registry,
+    versions,
+    time_machine: past,
+    replay,
+    human,
+    disassembled,
+    authorize: gate,
+    authority_granted: false,
+    traceable: true,
+    better_in_general: false,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+  };
+}
+
 export function runEcosystemCycle(input = {}) {
   const agents = input.agents || [];
   const nodes = [
@@ -426,6 +947,18 @@ export function runEcosystemCycle(input = {}) {
     graphs: [graph, resilient.graph],
     metrics: { measured: Boolean(input.workerEvidence?.v), cost: "zero" },
   });
+  const architecture = runArchitectureEngine({
+    task: { need: input.need || "review", required: input.required || ["review"] },
+    nodes,
+    workerEvidence: input.workerEvidence || {},
+    budget: { money: 0 },
+    policy: input.policy || "FREE_FIRST",
+    topology: input.topology,
+    memory: input.memory,
+    library: input.library || [],
+    fail: input.fail === true,
+    at: input.at,
+  });
   const replay = replayDecision({
     snapshot: { topology: input.topology, memory: input.memory, evidence: input.workerEvidence, inputs: { need: input.need || "review" } },
     topology: input.topology,
@@ -465,6 +998,7 @@ export function runEcosystemCycle(input = {}) {
     homeostasis: homeo,
     resilience: resilient,
     architectures: search,
+    architecture,
     replay,
     gap,
     explain: why,

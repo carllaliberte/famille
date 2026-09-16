@@ -214,7 +214,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   const eco = output.organism?.ecosystem;
   if (eco) {
-    console.log(`ecosystem.executor=${eco.graph?.assembly?.roles?.executor || "none"} homeostasis=${eco.homeostasis?.state || "none"} unknown_is_not_failure=${eco.unknown?.unknown_is_not_failure === true} live=false`);
+    const arch = eco.architecture;
+    console.log(`ecosystem.executor=${eco.graph?.assembly?.roles?.executor || "none"} homeostasis=${eco.homeostasis?.state || "none"} unknown_is_not_failure=${eco.unknown?.unknown_is_not_failure === true} architecture.class=${arch?.classified?.class || "none"} architecture.selected=${arch?.selected?.architecture?.architecture_id || "none"} architecture.better_in_general=${arch?.better_in_general === true} live=false`);
   }
   console.log(JSON.stringify(output, null, 2));
 }

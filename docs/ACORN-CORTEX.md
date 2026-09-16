@@ -85,6 +85,8 @@ The intelligence contract is Cortex-owned. Roster and CANALS are caches, not the
 
 The organism also runs a cognitive ecosystem pass: nodes (model, tool, memory, human), measurable synapses with plasticity, temporary assemblies, unknown space, curiosity, replay, architecture search, homeostasis and resilient reroute. Capability graph and authority graph stay separate. `PROPOSED ≠ ADOPTED`. `UNKNOWN ≠ FAILURE`. `HOLD_HUMAN ≠ ERROR`. Human attention is a scarce node, not a validate-everything button. `live=false`.
 
+The same pass now builds a **cognitive architecture** per task: classify → generate A/B/C → select → assemble → execute → compare → remember pattern. Architectures are dated, contextual, measured and reversible. Never “better in general”. Zero-cost mode recomposes locally. Collusion, regression and unverified evolution stay `PROPOSED` / `INCONCLUSIVE`. `auto_merge=false`.
+
 
 
 
