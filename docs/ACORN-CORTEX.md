@@ -89,6 +89,8 @@ The same pass now builds a **cognitive architecture** per task: classify → gen
 
 Language adaptation lives in the same Cortex. CIR (`cir.v0`) separates form from meaning. Unknown forms are `LANGUAGE_UNKNOWN`, not errors. `pack-lieu` remains a surface cache, not a cognitive ceiling. There is no `SUPPORTED_LANGUAGES` allowlist. A → CIR → B, never N×M translators. Understanding a language is not execution, not write, not merge. Zero-cost. `live=false`.
 
+Adaptive cognition is the single engine: language, protocol and evolution are three manifestations, not three Cortexes. Unknown protocol → discover → negotiate → propose adapter (`PROPOSED`, not trusted). Architectures are compared as measured differences, never “B is better”. Checkpoints isolate experiments. Mutations do not deploy. `CAPABILITY ≠ AUTHORITY`. `live=false`.
+
 
 
 

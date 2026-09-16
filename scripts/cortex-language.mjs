@@ -121,6 +121,17 @@ export function surfaceOf(cir) {
   return cir?.form || { kind: "UNKNOWN_LANGUAGE" };
 }
 
+export function hypothesizeIntent(sample = "") {
+  const s = String(sample).toLowerCase();
+  if (/pourquoi|why|ne (marche|fonctionne) pas|isn'?t working|pas pantoute|figure out/.test(s)) {
+    return { value: "diagnose", object: "system", action: "analyze", state: "HYPOTHESIS" };
+  }
+  if (/peux-tu|can you|please/.test(s)) {
+    return { value: "request", state: "HYPOTHESIS" };
+  }
+  return { value: null, object: null, action: null, state: "UNKNOWN" };
+}
+
 export function classifyLanguageState({ form, declared, evidence, measured } = {}) {
   if (form?.kind === "UNKNOWN_SYMBOLIC_SYSTEM" && !measured) return "LANGUAGE_UNKNOWN";
   if (!declared && !measured && form?.kind === "UNKNOWN_LANGUAGE") return "LANGUAGE_UNKNOWN";
@@ -146,13 +157,15 @@ export function discoverLanguage({ text: sample, declared, modality = "TEXT" } =
     ? considerUnknownChannel({ id: declared || "unknown-language", provider: "UNKNOWN", protocol: form.kind })
     : null;
   const units = String(sample || "").split(/\s+/).filter(Boolean);
+  const guessed = hypothesizeIntent(sample || "");
   const cir = describeCIR({
-    intent: null,
-    meaning: null,
+    intent: guessed.value,
+    meaning: guessed.value,
+    action: guessed.action,
     structure: { units: units.length, tokens: units.slice(0, 12) },
     form,
     uncertainty: state,
-    context: { declared: declared || null, pack_tag: pack?.connu ? pack.tag : null },
+    context: { declared: declared || null, pack_tag: pack?.connu ? pack.tag : null, object: guessed.object || null },
   });
   return {
     status: "EXECUTED",

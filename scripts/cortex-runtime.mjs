@@ -223,5 +223,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (lang) {
     console.log(`language.state=${lang.discovery?.state || "none"} form.kind=${lang.discovery?.form?.kind || "none"} understood=${lang.discovery?.understood === true} zero_cost=${lang.zero_cost === true} authority_merge=${lang.gates?.merge === true} live=false`);
   }
+  const ad = output.organism?.adaptive;
+  if (ad) {
+    console.log(`adaptive.protocol=${ad.protocol?.state || "none"} negotiated=${(ad.negotiated?.common || []).join(",") || "none"} diff.better=${ad.diff?.better === true} mutation.adopted=${ad.evolved?.adopted === true} second_cortex=${ad.second_cortex === true} live=false`);
+  }
   console.log(JSON.stringify(output, null, 2));
 }

@@ -11,7 +11,7 @@ import { diagnoseWorkerEvidence, selfHealDecision } from "./self-heal.mjs";
 import { laneInventory } from "./inference-lanes.mjs";
 import { intelligenceAdapter } from "../sdk/open-intelligence.js";
 import { runEcosystemCycle } from "./cortex-ecosystem.mjs";
-import { runLanguageCycle } from "./cortex-language.mjs";
+import { runAdaptiveCognition } from "./cortex-adaptive.mjs";
 import {
   authorizeCapability,
   runEvolutionLoop,
@@ -441,10 +441,15 @@ export function runOrganismCycle(input = {}) {
     fluidity: input.fluidity || {},
     claims: knowledge,
   });
-  const language = runLanguageCycle({
-    ...(input.languageInput || { text: "⊞⊸λ", declared: "FUTURE-LANG-X" }),
+  const adaptive = runAdaptiveCognition({
+    languageInput: input.languageInput || { text: "⊞⊸λ", declared: "FUTURE-LANG-X" },
+    workerEvidence: input.workerEvidence || {},
+    architecture: ecosystem.architecture,
+    nodes: agents,
+    policy: "FREE_FIRST",
     at,
   });
+  const language = adaptive.language;
   const record = {
     version: ORGANISM_VERSION,
     loop: ORGANISM_LOOP,
@@ -471,6 +476,7 @@ export function runOrganismCycle(input = {}) {
     metacognition: meta,
     ecosystem,
     language,
+    adaptive,
     adapter: { reason: adapterInvoke.reason, live: false },
     constitution,
     live: false,
