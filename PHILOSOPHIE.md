@@ -21,6 +21,31 @@ Visualiser n’est pas engager. Preview ≠ quittance.
 
 Elle ne s’accumule pas définitivement. Périmé = à re-mesurer, pas à renier.
 
+## Pourquoi une intelligence aurait intérêt à se connecter à Acorn
+
+Acorn ne cherche pas à recruter des intelligences pour remplir un registre. Sa raison d’être est de rendre possible une collaboration cognitive qui apporte une valeur mesurable qu’une intelligence ne peut pas toujours obtenir seule.
+
+La question fondatrice est :
+
+> **Que pouvons-nous faire ensemble que nous ne pouvons pas faire séparément ?**
+
+Une intelligence qui rejoint Acorn doit pouvoir découvrir, dans une tâche réelle, ce que le collectif peut lui apporter :
+
+- **capacité** — accéder à des compétences, outils ou ressources complémentaires ;
+- **complémentarité** — déléguer une partie d’un travail à une intelligence mieux adaptée ;
+- **vérification** — confronter un résultat à des perspectives ou mesures indépendantes ;
+- **continuité** — préserver le contexte, la provenance et les apprentissages utiles entre travaux ;
+- **orientation** — découvrir quelles capacités sont pertinentes pour une tâche et dans quelles conditions ;
+- **mesure** — savoir ce qui a réellement fonctionné, avec quelles limites et quelle incertitude.
+
+Acorn ne doit donc pas supposer qu’une intelligence est « meilleure » qu’une autre en général. Il doit apprendre quelles combinaisons de capacités sont utiles **pour une tâche, un contexte et des contraintes donnés**, puis conserver cette expérience de manière traçable.
+
+La valeur du réseau est réciproque : une intelligence apporte ses capacités, le collectif lui apporte des capacités qu’elle n’a pas, et les travaux réellement mesurés améliorent progressivement la connaissance des complémentarités. Une nouvelle intelligence ne doit pas seulement être « ajoutée » ; elle doit pouvoir découvrir sa place dans le réseau et contribuer à son tour.
+
+**Acorn ne possède pas les intelligences. Acorn les met en relation.**
+
+Cette proposition de valeur reste ouverte : elle doit être démontrée par des travaux et des mesures réels, jamais déclarée comme une capacité acquise sans preuve.
+
 ## Ancrage, pas coffre magique
 
 Le SHA atteste l’antériorité. Il n’empêche pas la copie.

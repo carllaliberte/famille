@@ -1,0 +1,88 @@
+name: acorn-self-heal
+
+# Autonomous recovery rail: detect measured failure, recover or dispatch repair.
+# Never merges, never exposes secrets, never bypasses the global breaker.
+on:
+  workflow_run:
+    workflows:
+      - codex-autonomous-worker
+      - cadence
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Measured failure reason"
+        required: false
+        default: "manual diagnostic"
+        type: string
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: acorn-self-heal-${{ github.event.workflow_run.id || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  recover:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Measure failure and choose bounded recovery
+        id: heal
+        env:
+          FAILURE_STATUS: ${{ github.event.workflow_run.conclusion || 'failure' }}
+          FAILURE_REASON: ${{ github.event.workflow_run.name || inputs.reason }}
+          FAILURE_RUN_ID: ${{ github.event.workflow_run.id || github.run_id }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+        run: |
+          node --input-type=module <<'EOF'
+          import { selfHealDecision } from './scripts/self-heal.mjs';
+          const d = selfHealDecision({
+            status: process.env.FAILURE_STATUS,
+            reason: process.env.FAILURE_REASON,
+            attempt: 0,
+            breaker: process.env.ACORN_SYSTEM_MODE || 'RUN',
+          });
+          console.log(JSON.stringify({ ...d, failed_run_id: process.env.FAILURE_RUN_ID }, null, 2));
+          const fs = await import('node:fs');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `action=${d.action}\nreason=${d.reason}\n`);
+          EOF
+
+      - name: Restart or dispatch repair worker
+        if: steps.heal.outputs.action == 'RETRY' || steps.heal.outputs.action == 'RESTART_WORKER' || steps.heal.outputs.action == 'DISPATCH_REPAIR' || steps.heal.outputs.action == 'DIAGNOSE'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ACTION: ${{ steps.heal.outputs.action }}
+          REASON: ${{ steps.heal.outputs.reason }}
+        run: |
+          echo "SELF_HEAL action=$ACTION reason=$REASON"
+          gh workflow run codex-autonomous-worker.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            -f max_tasks=12 \
+            -f max_minutes=300 \
+            -f debug=true \
+            -f self_test=false
+
+      - name: Record human boundary without pretending success
+        if: steps.heal.outputs.action == 'HOLD_HUMAN' || steps.heal.outputs.action == 'ESCALATE' || steps.heal.outputs.action == 'STOP'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTION: ${{ steps.heal.outputs.action }}
+          REASON: ${{ steps.heal.outputs.reason }}
+        run: |
+          echo "SELF_HEAL boundary action=$ACTION reason=$REASON"
+          gh issue create --title "Acorn self-heal boundary: $ACTION" --body "Measured recovery boundary. action=$ACTION reason=$REASON. No secret or merge action was attempted."

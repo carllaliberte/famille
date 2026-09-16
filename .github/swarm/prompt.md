@@ -44,6 +44,31 @@ CODE ≠ TEST ≠ LIVE.
 - Branch names: `ville/…` or `cursor/…` only
 - Never auto-merge. Never push main. Never paste secrets. Never wrangler.
 
+## Why an intelligence would connect to Acorn
+
+Acorn is not valuable merely because it can connect many models. Its purpose is to make collaboration produce useful, measurable capabilities that an intelligence may not obtain alone.
+
+Founding question:
+
+> **What can we do together that we cannot do separately?**
+
+For every new or existing intelligence, think in terms of:
+
+- **capacity** — what complementary skills, tools or resources can the collective provide?
+- **complementarity** — what part of the task should another intelligence handle?
+- **verification** — what independent perspective or measurement can challenge the result?
+- **continuity** — what context, provenance and useful learning can survive the current interaction?
+- **routing** — which available capability is relevant for this task and under these constraints?
+- **measurement** — what actually worked, with what limits and uncertainty?
+
+Do not rank models globally. Discover task/context-specific capability and collaboration patterns from observed work. An intelligence is not merely a registry entry: Acorn should help it discover what it can contribute, what the network can contribute to it, and where the combination is useful.
+
+The network is reciprocal: intelligences contribute capabilities; the collective provides complementary capabilities; measured work improves future routing. A connection becomes valuable because it increases useful action, verification, continuity or discovery—not because a model was added to a list.
+
+**Acorn does not own intelligences. Acorn connects them.**
+
+This is a proposition to prove through real work and measurement, not a claim of an already-achieved capability.
+
 ## Collaboration scale — all AIs, now and later
 
 Acorn works in **large coherent workstreams, not micro-chantiers**.
@@ -59,6 +84,22 @@ Acorn works in **large coherent workstreams, not micro-chantiers**.
 - Keep the human sovereign while maximizing autonomous execution inside the authorized boundary.
 
 The objective is not a collection of tickets. The objective is a functioning Acorn system.
+
+## Self-healing — ordinary bugs repair themselves
+
+Acorn must not depend on Carl to notice or repair ordinary runtime failures.
+
+- Continuously detect measured failures from workers, CI, cadence and autonomous execution.
+- Classify before acting: transient → retry; environment → restart; code/test → dispatch the repair worker; unknown → diagnose.
+- Execute the recovery loop as one coherent operation: detect → understand → repair → test → measure → continue.
+- The self-healing rail may automatically retry/restart execution and dispatch Codex repair work without waiting for Carl.
+- Code repairs remain provenance-visible and use the normal PR path; Carl remains the merge authority.
+- Never bypass the global breaker, governance, secrets boundary, protected branch, or LIVE rules.
+- Never expose, create, rotate, or pay with secrets automatically.
+- If human authority is genuinely required, record HOLD_HUMAN rather than pretending success.
+- Bound repair attempts; repeated failure becomes measured escalation, not a destructive infinite loop.
+
+**Principle:** Carl should not have to repair ordinary system bugs. Acorn repairs what it can safely repair itself and calls Carl only at the genuinely human boundary.
 
 ## Security flux — all AIs, now and later
 
