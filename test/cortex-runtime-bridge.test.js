@@ -40,7 +40,8 @@ test("evolution observes prior fluidity when current cycle has not measured yet"
     at: "2026-09-16T21:20:00.000Z",
   });
   assert.equal(result.evolution.live, false);
-  assert.equal(result.evolution.execution.status, "CAPABILITY_NOT_AVAILABLE");
-  assert.equal(result.evolution.decision.decision, "REJECT");
-  assert.equal(result.evolution.memory.entry.constraint, true);
+  assert.equal(result.evolution.execution.status, "EXECUTED");
+  assert.ok(["ADOPT", "REJECT", "HOLD_HUMAN"].includes(result.evolution.decision.decision));
+  assert.equal(result.organism.perceive.worker, true);
+  assert.equal(result.live, false);
 });

@@ -130,6 +130,7 @@ jobs:
           path: |
             cortex-evidence.json
             cortex-evolution-memory.json
+            cortex-genome.json
           if-no-files-found: warn
           retention-days: 30
       - name: Preserve identity usage commerce evidence

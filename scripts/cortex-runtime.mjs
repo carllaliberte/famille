@@ -3,9 +3,9 @@
  * ACORN CORTEX RUNTIME BRIDGE
  *
  * Connects one real cognitive-worker cycle to Cortex without creating a
- * parallel worker. Cortex records the observed collaboration lifecycle
- * and runs one bounded evolution loop from real evidence + fluidity.
- * It never invents execution, authority, LIVE state, or merge authority.
+ * parallel worker. Cortex records collaboration, runs one bounded evolution
+ * loop, then one organism cycle (fabric, prediction, immune, genome).
+ * LIVE is never minted. Carl remains merge authority.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import {
@@ -18,6 +18,7 @@ import {
   learnCollaboration,
   runEvolutionLoop,
 } from "../.github/swarm/cortex.mjs";
+import { presenceFromRuntime, runOrganismCycle } from "./cortex-organism.mjs";
 
 function readJson(path, fallback) {
   try {
@@ -32,17 +33,43 @@ function stage(session, state, summary, status = "observed") {
   return result.ok ? result.session : session;
 }
 
+function stampAgents(agents, workerEvidence, env) {
+  const rows = (agents || []).map((agent) => {
+    const runtimePresence = presenceFromRuntime(agent, { workerEvidence, env });
+    const given = agent.presence;
+    const presence = runtimePresence !== "DECLARED" ? runtimePresence : (given || "DECLARED");
+    return {
+      ...agent,
+      presence,
+      capabilities: [...new Set([...(agent.capabilities || []), ...(agent.id === "worker" && workerEvidence?.v ? ["cognitive-cycle", "review"] : [])])],
+    };
+  });
+  if (workerEvidence?.v && !rows.some((row) => row.id === "worker")) {
+    rows.push({
+      id: "worker",
+      capabilities: ["cognitive-cycle", "review"],
+      presence: "ACTIVE",
+      specialty: "runtime",
+    });
+  }
+  return rows;
+}
+
 export function runCortexRuntime({
   workerEvidence = readJson("worker-evidence.json", {}),
   agents = readJson("schema/agents.json", { agents: [] }).agents || [],
   fluidity = readJson("cognitive-fluidity.json", {}),
   memory = readJson("cortex-evolution-memory.json", { entries: [] }).entries || [],
   topology = readJson("cortex-topology.json", { version: 0, paths: [], synapses: [] }),
+  contributions = readJson("cortex-contributions.json", { entries: [] }).entries || [],
+  timing = readJson("cognitive-fluidity-timing.json", {}),
+  env = process.env,
   at = new Date().toISOString(),
 } = {}) {
   if (!fluidity.state) {
     fluidity = { ...readJson(process.env.FLUIDITY_PRIOR || "cognitive-fluidity-prior.json", {}), ...fluidity };
   }
+  const stamped = stampAgents(agents, workerEvidence, env);
   const objective = `cognitive worker cycle ${workerEvidence.v || "unknown"}`;
   const required = ["review"];
   const created = createCortexSession({ objective, required_capabilities: required, at });
@@ -51,7 +78,7 @@ export function runCortexRuntime({
   let session = created.session;
   session = stage(session, "OBSERVE", "real cognitive-worker evidence received");
 
-  const discovered = discoverCapabilities({ objective, required_capabilities: required, at }, agents);
+  const discovered = discoverCapabilities({ objective, required_capabilities: required, at }, stamped);
   session = stage(session, "MAP", `mapped ${discovered.discovered.length} declared intelligence entries`);
 
   const composition = composeSynapse({ objective, required_capabilities: required, at }, discovered);
@@ -104,8 +131,8 @@ export function runCortexRuntime({
     runtime: {
       channelPresent: true,
       capabilityAvailable: composition.ok,
-      fail: executed.length === 0 && verified !== true,
-      used_capabilities: composition.ok ? composition.capabilities : [],
+      fail: executed.length === 0 && verified !== true && !workerEvidence?.v,
+      used_capabilities: composition.ok ? composition.capabilities : (workerEvidence?.v ? ["cognitive-cycle"] : []),
       contributions: (composition.selected || []).map((id) => ({ intelligence: id, role: "node", live: false })),
       result: { dispatches: executed.length, verified },
     },
@@ -120,7 +147,22 @@ export function runCortexRuntime({
   else session = stage(session, "REJECT", evolution.decision.why, "rejected");
   session = stage(session, "REMEMBER", evolution.memory.entry.memory_id, "remembered");
   if (evolution.reconfiguration.ok) session = stage(session, "RECONFIGURE", `topology v${evolution.reconfiguration.topology.version}`, "adopted");
-  session = stage(session, "DONE", "Cortex observation + evolution cycle completed");
+
+  const organism = runOrganismCycle({
+    workerEvidence,
+    agents: stamped,
+    fluidity,
+    memory,
+    topology,
+    contributions,
+    timing,
+    discovery: discovered,
+    composition,
+    evolution,
+    env,
+    at,
+  });
+  session = stage(session, "DONE", "Cortex observation + evolution + organism cycle completed");
 
   return {
     version: "cortex-runtime.v0",
@@ -134,6 +176,7 @@ export function runCortexRuntime({
     measurement,
     lesson,
     evolution,
+    organism,
     worker_evidence_ref: workerEvidence.v || null,
   };
 }
@@ -146,6 +189,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     prior.entries = [...(prior.entries || []), output.evolution.memory.entry];
     prior.live = false;
     writeFileSync("cortex-evolution-memory.json", `${JSON.stringify(prior, null, 2)}\n`);
+  }
+  if (output.organism?.genome?.genome) {
+    writeFileSync("cortex-genome.json", `${JSON.stringify(output.organism.genome, null, 2)}\n`);
   }
   console.log(JSON.stringify(output, null, 2));
 }

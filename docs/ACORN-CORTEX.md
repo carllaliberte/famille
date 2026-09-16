@@ -68,6 +68,20 @@ OBSERVE → HYPOTHESIZE → COMPOSE → EXPERIMENT → EXECUTE → MEASURE → V
 
 Fluidity is a first-class property of the experiment: a correct result that adds STALLED/FRICTION is `INCONCLUSIVE`, not an improvement. `DEFINED ≠ PROPOSED ≠ EXECUTED ≠ MEASURED ≠ VERIFIED ≠ LIVE`. Auto-evolution is `operational: false` until a full chain is demonstrated live.
 
+## Organism runtime
+
+Cortex owns one organism cycle after the evolution loop. It is not a second Cortex.
+
+```text
+PERCEIVE → INGEST → UNDERSTAND → HYPOTHESIZE → COMPOSE → EXPERIMENT
+→ EXECUTE → OBSERVE → MEASURE → FALSIFY → DECIDE → CONSOLIDATE → ADAPT → REUSE
+```
+
+Roster status is not presence. `chatgpt` remains DECLARED until a channel is present. The cognitive-worker is ACTIVE only when worker evidence exists. Future intelligences enter through `intelligenceAdapter`; missing channels stay `CHANNEL_NOT_PRESENT`.
+
+Knowledge fabric preserves disagreement. Consensus is not truth. Predictions are stored before execution and never rewritten. Causal claims stay `INCONCLUSIVE` without intervention evidence. Genome snapshots are versioned. Mutations are candidates. Simulation is not proof of reality. `CAPABILITY ≠ AUTHORITY`. `SELF-EVOLUTION ≠ SELF-AUTHORIZATION`.
+
+
 
 ## Intelligence is not capability
 
