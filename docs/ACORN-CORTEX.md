@@ -58,6 +58,17 @@ RECOMPOSE
 
 A missing capability does not automatically stop the cycle. Cortex searches for a compatible capability, reuses an existing one, requests an authorized Build/tool path, or reaches a real `HOLD_HUMAN` boundary.
 
+## Evolution loop
+
+Cortex may hypothesize, experiment, measure, falsify, remember and reconfigure. A hypothesis is never a capability. Adoption never merges.
+
+```text
+OBSERVE → HYPOTHESIZE → COMPOSE → EXPERIMENT → EXECUTE → MEASURE → VERIFY → ADOPT|REJECT → REMEMBER → RECONFIGURE
+```
+
+Fluidity is a first-class property of the experiment: a correct result that adds STALLED/FRICTION is `INCONCLUSIVE`, not an improvement. `DEFINED ≠ PROPOSED ≠ EXECUTED ≠ MEASURED ≠ VERIFIED ≠ LIVE`. Auto-evolution is `operational: false` until a full chain is demonstrated live.
+
+
 ## Intelligence is not capability
 
 An intelligence has an identity and a set of capabilities. Capability is what the network can actually request and measure in a context.
