@@ -1,0 +1,78 @@
+# GitHub main = SOURCE_OF_TRUTH. Drive = mirror/backup only.
+# A Drive outage must not be reported as a main failure.
+name: github-drive-mirror
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "13 * * * *"
+  workflow_dispatch:
+    inputs:
+      rebuild:
+        description: "Rebuild snapshot for current HEAD even if already snapshotted"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: github-drive-mirror-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build GitHub snapshot
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GOOGLE_DRIVE_ACCESS_TOKEN: ${{ secrets.GOOGLE_DRIVE_ACCESS_TOKEN }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+        run: |
+          node scripts/github-drive-mirror.mjs snapshot | tee mirror-result.json
+          echo "SOURCE_OF_TRUTH=github-main"
+          echo "auto_merge=false"
+          echo "authority=carl"
+          echo "live=false"
+
+      - name: Preserve snapshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: acorn-snapshot-${{ github.sha }}
+          path: |
+            github-drive-snapshots/**
+            mirror-result.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Measure Drive without failing GitHub truth
+        if: always()
+        run: |
+          STATUS="UNKNOWN"
+          if [ -f mirror-result.json ]; then
+            STATUS="$(node -e 'const fs=require("node:fs"); const t=fs.readFileSync("mirror-result.json","utf8"); const j=JSON.parse(t.includes("{")?t.slice(t.indexOf("{")):"{}"); process.stdout.write(String(j.drive||j.last_sync_status||"UNKNOWN"))')"
+          fi
+          echo "DRIVE_STATUS=$STATUS"
+          if [ "$STATUS" = "BLOCKED" ] || [ "$STATUS" = "DRIVE_BLOCKED" ]; then
+            echo "DRIVE_MIRROR=BLOCKED — GitHub snapshot kept, pending retry."
+            exit 0
+          fi
+          echo "Drive status measured: $STATUS"
