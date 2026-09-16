@@ -3,6 +3,7 @@
 # Synaptic memory persists routing outcomes through workflow artifacts, never source.
 # Economic evidence records identity, measured usage, pricing state and billing boundary.
 # Fluidity is measured on the real critical path and fed back into the next cycle.
+# The conductor executes dependency-free cognitive stages concurrently, then preserves proof order.
 # Never writes source, never merges, never claims LIVE, never auto-charges.
 name: cognitive-worker
 on:
@@ -63,28 +64,18 @@ jobs:
           status=$?
           FLUIDITY_STAGE=worker FLUIDITY_PHASE=stop node scripts/cognitive-fluidity-timer.mjs
           exit $status
-      - name: Run Cortex over the measured worker cycle
+      - name: Run independent cognitive stages concurrently
         env:
-          FLUIDITY_TIMING: cognitive-fluidity-timing.json
-        run: |
-          FLUIDITY_STAGE=cortex FLUIDITY_PHASE=start node scripts/cognitive-fluidity-timer.mjs
-          set +e
-          node scripts/cortex-runtime.mjs
-          status=$?
-          FLUIDITY_STAGE=cortex FLUIDITY_PHASE=stop node scripts/cognitive-fluidity-timer.mjs
-          exit $status
-      - name: Measure identified usage for commercial review
-        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GITHUB_REF: ${{ github.event.pull_request.head.ref || github.ref }}
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+          FAIL_ON_DISPATCH_ERROR: 'false'
           WORKER_EVIDENCE: worker-evidence.json
           USAGE_COMMERCE: identity-usage-commerce.json
           FLUIDITY_TIMING: cognitive-fluidity-timing.json
-        run: |
-          FLUIDITY_STAGE=usage FLUIDITY_PHASE=start node scripts/cognitive-fluidity-timer.mjs
-          set +e
-          node scripts/usage-commerce-cycle.mjs
-          status=$?
-          FLUIDITY_STAGE=usage FLUIDITY_PHASE=stop node scripts/cognitive-fluidity-timer.mjs
-          exit $status
+        run: node scripts/cognitive-conductor.mjs
       - name: Reconcile the complete economic network state
         env:
           USAGE_COMMERCE: identity-usage-commerce.json
@@ -190,9 +181,9 @@ jobs:
       - name: Record bounded result
         if: always()
         run: |
-          echo "cognitive-worker + Cortex + identity/usage + economic-network + fluidity cycle completed."
+          echo "cognitive-worker + parallel Cortex/usage + economic-network + fluidity cycle completed."
           echo "DEFINED != EXECUTED != VERIFIED != LIVE."
-          echo "fluidity = measure the real critical path; parallelize only independent work; keep dependent proof ordered."
+          echo "fluidity = execute independent stages concurrently; keep dependent proof ordered."
           echo "economic evidence = identity + connection + verified usage + explicit pricing state."
           echo "no hidden tracking; no identity guessing; no automatic charge; payment remains a human/billing boundary."
           echo "auto_merge=false; live=false; human authority=carl"
