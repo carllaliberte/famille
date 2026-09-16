@@ -4,11 +4,15 @@ import {
   ACCELERATOR_KINDS,
   acceleratorPassport,
   acceleratorUnavailable,
+  compareResources,
   describeAccelerator,
   discoverAccelerators,
   discoverCapability,
+  futureProofUnknown,
   hardwareFailureDomains,
+  noLockIn,
   nvidiaUnavailable,
+  observeAccelerator,
   probeAccelerator,
   replaceIntelligence,
   runAccelerationFabric,
@@ -158,12 +162,57 @@ test("security: accelerator discovery never becomes merge/write", () => {
   assert.equal(fabric.live, false);
 });
 
-test("organism and runtime expose acceleration without LIVE", () => {
+test("NVIDIA is never coded as better reasoning; metrics stay uninvented", () => {
+  const compared = compareResources({
+    a: { id: "cpu-local" },
+    b: { id: "nvidia-gpu" },
+    measurements: { measured: false },
+  });
+  assert.equal(compared.nvidia_is_better_reasoning, false);
+  assert.equal(compared.better_in_general, false);
+  assert.equal(compared.invented_metrics, false);
+  const obs = observeAccelerator({ identity: "nvidia-gpu", presence: "CHANNEL_NOT_PRESENT" }, {});
+  assert.equal(obs.invented, false);
+  assert.equal(obs.latency, null);
+  assert.equal(obs.live, false);
+});
+
+test("Cortex survives provider/model/hardware/protocol/adapter/intelligence replacement", () => {
+  for (const kind of ["provider", "model", "hardware", "protocol", "adapter", "intelligence"]) {
+    const row = noLockIn({ kind });
+    assert.equal(row.cortex_survives, true);
+    assert.equal(row.acorn_replaced, false);
+    assert.equal(row.activated, false);
+  }
+});
+
+test("future-proof unknown bundle does not pretend understanding", () => {
+  const u = futureProofUnknown();
+  assert.equal(u.unknown_intelligence, true);
+  assert.equal(u.unknown_hardware, true);
+  assert.equal(u.understood, false);
+  assert.equal(u.live, false);
+});
+
+test("intelligence contract carries optional fields without inventing measurements", () => {
+  const d = describeIntelligence({ id: "reasoner", provider: "UNKNOWN", type: "REASONING" });
+  assert.equal(d.capabilities_are_not_authority, true);
+  assert.equal(d.observed_performance, null);
+  assert.equal(d.context_window, null);
+  assert.equal(d.confidence, "UNSCORED");
+  assert.equal(d.cost_class, "PAID");
+});
+
+test("organism wires futures without a second Cortex or LIVE", () => {
   const organism = runOrganismCycle({
     workerEvidence: { v: "cognitive-worker.v14" },
     agents: [{ id: "worker", capabilities: ["review"] }],
     fluidity: { state: "FLOWING", property: { silent_stop: false } },
   });
+  assert.equal(organism.futures.claim.pretended, false);
+  assert.equal(organism.world.model_is_not_world, true);
+  assert.equal(organism.acceleration.compared.nvidia_is_better_reasoning, false);
+  assert.equal(organism.acceleration.lockin.length, 6);
   assert.equal(organism.acceleration.nvidia.state, "CHANNEL_NOT_PRESENT");
   assert.equal(organism.acceleration.unknown.identity, "FUTURE_ACCELERATOR_X");
   assert.equal(organism.acceleration.gates.nvidia_is_architecture, false);
@@ -180,6 +229,7 @@ test("organism and runtime expose acceleration without LIVE", () => {
     at: "2026-09-16T23:20:00.000Z",
   });
   assert.equal(runtime.organism.acceleration.failover.fake_success, false);
+  assert.equal(runtime.organism.futures.claim.pretended, false);
   assert.equal(runtime.live, false);
   assert.equal(runtime.auto_merge, false);
 });

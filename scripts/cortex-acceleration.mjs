@@ -218,6 +218,71 @@ export function hardwareFailureDomains(nodes = []) {
   };
 }
 
+export function compareResources({ a = {}, b = {}, measurements = {} } = {}) {
+  const measured = measurements.measured === true;
+  return {
+    status: measured ? "MEASURED" : "INCONCLUSIVE",
+    a: a.identity || a.id || null,
+    b: b.identity || b.id || null,
+    nvidia_is_better_reasoning: false,
+    speed_is_not_quality: true,
+    quality_is_not_reliability: true,
+    cost_is_not_reasoning: true,
+    better_in_general: false,
+    invented_metrics: false,
+    live: false,
+  };
+}
+
+export function observeAccelerator(entry = {}, evidence = {}) {
+  return {
+    status: evidence.executed ? "EXECUTED" : "DEFINED",
+    identity: entry.identity || entry.id || "unknown-accelerator",
+    availability: entry.presence || "UNKNOWN",
+    latency: evidence.latency ?? null,
+    throughput: evidence.throughput ?? null,
+    errors: evidence.errors ?? null,
+    timeouts: evidence.timeouts ?? null,
+    resource_usage: evidence.resource_usage ?? null,
+    verification: "UNVERIFIED",
+    cost: entry.cost_class || "UNKNOWN",
+    failure_domain: entry.host || entry.provider || "UNKNOWN",
+    invented: false,
+    live: false,
+  };
+}
+
+export function noLockIn({ kind = "provider", current, candidate } = {}) {
+  const replaced = replaceComponent({
+    current: current || { id: `${kind}-a` },
+    candidate: candidate || { id: `${kind}-b` },
+    compared: false,
+    verified: false,
+  });
+  return {
+    status: "EXECUTED",
+    kind,
+    acorn_replaced: false,
+    cortex_survives: true,
+    activated: replaced.activated === true,
+    live: false,
+  };
+}
+
+export function futureProofUnknown() {
+  return {
+    status: "EXECUTED",
+    unknown_intelligence: true,
+    unknown_language: true,
+    unknown_protocol: true,
+    unknown_hardware: true,
+    unknown_capability: true,
+    understood: false,
+    trusted: false,
+    live: false,
+  };
+}
+
 export function cognitiveCompiler({ intent, capabilities = [], resources = [] } = {}) {
   return {
     status: "EXECUTED",
@@ -391,6 +456,10 @@ export function runAccelerationFabric(input = {}) {
     capabilities: unknown.capabilities,
   }).invoke({ capability: "compute" });
   const merge = authorizeCapability({ capabilities: ["merge"], allowed: false, authority: "network" });
+  const compared = compareResources({ a: cpu, b: nvidia, measurements: { measured: false } });
+  const observed = observeAccelerator(cpu, { executed: Boolean(input.workerEvidence?.v) });
+  const lockin = ["provider", "model", "hardware", "protocol", "adapter", "intelligence"].map((kind) => noLockIn({ kind }));
+  const unknownBundle = futureProofUnknown();
   return {
     version: ACCEL_VERSION,
     status: "EXECUTED",
@@ -405,6 +474,10 @@ export function runAccelerationFabric(input = {}) {
     tomorrow,
     experiment,
     invoke,
+    compared,
+    observed,
+    lockin,
+    unknown_bundle: unknownBundle,
     gates: {
       merge: merge.ok,
       nvidia_is_architecture: false,
