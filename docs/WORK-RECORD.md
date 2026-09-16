@@ -15,14 +15,6 @@ node scripts/work-record.mjs
 
 Carl merge. `auto_merge=false`.
 
-## 2026-09-16 — wake skip
+## 2026-09-16 — worker compact prompt hook
 
-SHA `49b723b36d0bd309909dc6236fcade03230e84c8` : #560 en `skipped_tasks` raison `IDLE` sans `codex_executed`.
-Dispatch ciblé 35080741477 : cancelled, 0 artifact.
-Ce commit change le SHA de main pour invalider le skip. Breaker intact. LIVE=false.
-
-## 2026-09-16 — measure B slug
-
-Schedule 35094356157 on `66c97b0` : `SKIP_JUSTIFIÉ` same SHA, `codex_executed=false`, resolver fallback `cohere/north-mini-code:free`.
-B target remains `vars.CODEX_MODEL=google/gemini-2.5-flash`. This note only changes main SHA.
-`auto_merge=false`. LIVE=false. Carl merges.
+Branch `fix/worker-compact-prompt-hook`: `codex-autonomous-worker.mjs` must import `taskPrompt`/`continuityBrief` from `scripts/codex-task-prompt.mjs`. No second local constructor.
