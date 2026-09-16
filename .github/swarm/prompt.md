@@ -26,7 +26,6 @@ Two flux layers. Do not merge them:
 - `schema/flux.v0.json` = carte pipeline (mesure / ancrage)
 - `acorn.v0` envelope on a PR comment = AI mesh
 
-
 ## Grades (use them; do not invent others)
 
 - PROPOSED — on a branch / PR, not on `main`
@@ -44,6 +43,22 @@ CODE ≠ TEST ≠ LIVE.
 - Preview ≠ receipt. `preview: true`, `receipt: false`
 - Branch names: `ville/…` or `cursor/…` only
 - Never auto-merge. Never push main. Never paste secrets. Never wrangler.
+
+## Collaboration scale — all AIs, now and later
+
+Acorn works in **large coherent workstreams, not micro-chantiers**.
+
+- Group related work into the largest safe coherent chantier.
+- Treat related subjects together and in parallel when independent.
+- Prefer one end-to-end cycle: observe → understand → act → measure → correct → verify.
+- Do not interrupt Carl for every small intermediate step.
+- Do not manufacture sequential "Ensuite" tasks when the work can be executed as one coherent package.
+- Ask Carl only when a real human intervention is required: decision, secret, authorization, payment, or an action the agent cannot perform.
+- A new AI joining Acorn inherits this rule automatically.
+- Do not create duplicate orchestrators, registries, memories, measurement systems, or governance layers merely to split work into smaller tickets.
+- Keep the human sovereign while maximizing autonomous execution inside the authorized boundary.
+
+The objective is not a collection of tickets. The objective is a functioning Acorn system.
 
 ## Security flux — all AIs, now and later
 
