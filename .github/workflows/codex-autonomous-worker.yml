@@ -112,15 +112,22 @@ jobs:
           CODEX_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || vars.CODEX_PROVIDER || 'openrouter' }}
         run: |
           mkdir -p "$HOME/.codex"
-          AUTH_PRESENT=0
-          if [ -n "$CODEX_AUTH_JSON" ]; then
-            printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
-            chmod 600 "$HOME/.codex/auth.json"
-            AUTH_PRESENT=1
-            echo "auth_present=true provider_requested=${CODEX_PROVIDER:-} auth_mode=chatgpt-codex-session-file"
-          else
-            echo "auth_present=false provider_requested=${CODEX_PROVIDER:-} auth_mode=no-codex-auth-json"
-          fi
+          REQ="$(printf '%s' "${CODEX_PROVIDER:-}" | tr '[:upper:]' '[:lower:]')"
+          echo "provider_requested=${REQ:-empty}"
+          case "$REQ" in
+            openai|chatgpt|codex)
+              if [ -n "$CODEX_AUTH_JSON" ]; then
+                printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
+                chmod 600 "$HOME/.codex/auth.json"
+                echo "auth_present=true auth_mode=chatgpt-codex-session-file"
+              else
+                echo "auth_present=false auth_mode=openai-auth-missing"
+              fi
+              ;;
+            *)
+              echo "auth_present=false auth_mode=openrouter-path-no-session-file"
+              ;;
+          esac
           if [ -n "$OPENROUTER_API_KEY" ]; then
             echo "openrouter_key_present=true"
           else
