@@ -21,6 +21,7 @@ import {
 import { presenceFromRuntime, runOrganismCycle } from "./cortex-organism.mjs";
 import { runIntelligenceContract } from "./intelligence-contract.mjs";
 import { learnCortexExperience } from "./cortex-learning-cycle.mjs";
+import { MODELS } from "../.github/swarm/review.mjs";
 
 function readJson(path, fallback) {
   try {
@@ -167,7 +168,7 @@ export function runCortexRuntime({
   const intelligence = runIntelligenceContract({
     env,
     agents: stamped,
-    canals: {},
+    canals: MODELS,
     workerEvidence,
     need: "review",
     policy: env.ACORN_COST_POLICY || "FREE_FIRST",

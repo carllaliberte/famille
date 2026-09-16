@@ -123,6 +123,7 @@ test("runtime wires discovery, routing and reality learning without LIVE", () =>
   });
   assert.equal(result.intelligence.closed_list, false);
   assert.equal(result.intelligence.consensus_is_truth, false);
+  assert.notEqual(result.intelligence.routed.selected?.lane, "paid");
   assert.equal(result.learning.status, "LEARNED");
   assert.equal(result.live, false);
   assert.equal(result.intelligence.live, false);
