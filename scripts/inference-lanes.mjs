@@ -18,6 +18,10 @@ function present(env, key) {
   return String(env?.[key] || "").trim().length > 0;
 }
 
+function githubToken(env = {}) {
+  return present(env, "GITHUB_TOKEN") || present(env, "GH_TOKEN");
+}
+
 export function isFreeModel(spec = {}) {
   const model = String(spec.model || "");
   return spec.id === "orfree"
@@ -39,6 +43,7 @@ export function classifyLane(spec = {}) {
 
 export function secretAvailable(spec = {}, env = {}) {
   if (present(env, spec.secret)) return true;
+  if (spec.secret === "GITHUB_TOKEN" && githubToken(env)) return true;
   if (present(env, "OPENROUTER_API_KEY") && isFreeModel(spec) && spec.secret === "OPENROUTER_API_KEY") return true;
   return false;
 }
@@ -71,7 +76,7 @@ export function laneInventory(env = {}) {
     version: "inference-lanes.v1",
     keyless: {
       ollama: present(env, "OLLAMA_HOST"),
-      github_models: present(env, "GITHUB_TOKEN"),
+      github_models: githubToken(env),
       cortex_local: true,
     },
     free: {
@@ -83,7 +88,7 @@ export function laneInventory(env = {}) {
       xai: present(env, "XAI_API_KEY"),
       gemini: present(env, "GEMINI_API_KEY"),
     },
-    default: present(env, "OLLAMA_HOST") || present(env, "GITHUB_TOKEN")
+    default: present(env, "OLLAMA_HOST") || githubToken(env)
       ? "keyless"
       : present(env, "OPENROUTER_API_KEY")
         ? "free"
