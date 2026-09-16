@@ -1,0 +1,11 @@
+import { readFileSync, writeFileSync } from "node:fs";
+import { reconcile, billingBoundary } from "./economic-network-contract.mjs";
+const read=p=>{try{return JSON.parse(readFileSync(p,"utf8"));}catch{return {};}};
+const usage=read(process.env.USAGE_COMMERCE||"identity-usage-commerce.json");
+const connections=read(process.env.CONNECTION_EVIDENCE||"connection-evidence.json");
+const pricing=read(process.env.ECONOMIC_PRICING||"schema/economic-pricing.v0.json");
+const commercial=Object.fromEntries((usage.accounts||[]).map(a=>[a.actor,{state:a.commercial_state||"FREE"}]));
+const actors=reconcile({connections:connections.connections||[],usage:(usage.usage_events||[]),commercial});
+const billing=actors.map(a=>billingBoundary(a,pricing));
+const report={version:"economic-network.v2",observed_at:new Date().toISOString(),actors,billing,totals:{actors:actors.length,connected:actors.filter(a=>a.connections>0).length,measured:actors.filter(a=>a.measured_usage).length,payable:actors.filter(a=>a.commercial_state==="PAYABLE"&&a.measured_usage).length,candidates:billing.filter(b=>b.eligible).length},truth:{identity_inference:false,hidden_tracking:false,verified_usage_only:true,automatic_charge:false,payment_attempted:false,human_authority:"carl",live:false,auto_merge:false}};
+writeFileSync(process.env.ECONOMIC_REPORT||"economic-network-report.json",`${JSON.stringify(report,null,2)}\n`);console.log(JSON.stringify(report,null,2));
