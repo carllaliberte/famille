@@ -5,6 +5,7 @@ import {
   wrapperShouldProxy,
   normalizeProvider,
 } from "../scripts/codex-provider.mjs";
+import { classifyAuth, extraCodexConfigArgs, buildCodexConfig, createIo } from "../scripts/codex-autonomous-worker.mjs";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, chmodSync } from "node:fs";
@@ -76,6 +77,42 @@ describe("codex provider selection", () => {
       wrapperShouldProxy({ CODEX_PROVIDER: "openrouter", OPENROUTER_API_KEY: "sk-or-v1-abcdefghijklmnopqrstuvwxyz" }, true),
       true,
     );
+  });
+
+  it("classifyAuth honors explicit openai", () => {
+    const io = createIo({
+      env: {
+        HOME: "/tmp/no-codex-home",
+        CODEX_PROVIDER: "openai",
+        OPENROUTER_API_KEY: "sk-or-v1-abcdefghijklmnopqrstuvwxyz",
+      },
+      exists: (p) => String(p).endsWith("auth.json"),
+      spawn: () => ({ status: 0, stdout: "codex-cli 0.153.4\n" }),
+    });
+    const auth = classifyAuth(io);
+    assert.equal(auth.provider_selected, "openai");
+    assert.equal(auth.use_openrouter_proxy, false);
+    assert.equal(extraCodexConfigArgs(io).length, 0);
+    const cfg = buildCodexConfig(io, auth);
+    assert.doesNotMatch(cfg, /model_provider = "openrouter"/);
+  });
+
+  it("classifyAuth honors explicit openrouter", () => {
+    const io = createIo({
+      env: {
+        HOME: "/tmp/no-codex-home",
+        CODEX_PROVIDER: "openrouter",
+        OPENROUTER_API_KEY: "sk-or-v1-abcdefghijklmnopqrstuvwxyz",
+        CODEX_MAX_OUTPUT_TOKENS: "1024",
+      },
+      exists: () => false,
+      spawn: () => ({ status: 0, stdout: "codex-cli 0.153.4\n" }),
+    });
+    const auth = classifyAuth(io);
+    assert.equal(auth.provider_selected, "openrouter");
+    assert.ok(extraCodexConfigArgs(io).includes("model_max_output_tokens=1024"));
+    const cfg = buildCodexConfig(io, auth);
+    assert.match(cfg, /model_provider = "openrouter"/);
   });
 });
 
