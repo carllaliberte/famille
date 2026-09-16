@@ -165,9 +165,9 @@ export function routeTask({
   const byCap = routeByCapability({ need }, adapters);
   const specs = byCap.map((hit) => (discovered.entries || []).find((row) => row.identity === hit.id)).filter(Boolean);
   const unpaid = preferUnpaid(specs.map((row) => ({ ...row, id: row.identity, secret: row.channel })), env);
-  let selected = unpaid.selected.length
-    ? specs.filter((row) => unpaid.selected.includes(row.identity))
-    : (policyMode === "PAID_FORBIDDEN" || policyMode === "FREE_ONLY" || policyMode === "LOCAL_ONLY" ? [] : specs);
+  const unpaidRows = specs.filter((row) => row.lane === "keyless" || row.lane === "free" || row.identity === "cortex-local" || unpaid.selected.includes(row.identity));
+  const allowPaid = policyMode === "PAID_ALLOWED" || (policyMode === "FREE_FIRST" && unpaidRows.length === 0);
+  let selected = unpaidRows.length ? unpaidRows : (allowPaid ? specs : []);
   const avoid = new Set((memory || []).filter((row) => row.constraint && row.intelligence).map((row) => row.intelligence));
   selected = selected.filter((row) => !avoid.has(row.identity));
   const chosen = selected[0] || (discovered.entries || []).find((row) => row.identity === "cortex-local");
