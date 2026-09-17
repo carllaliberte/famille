@@ -26,6 +26,7 @@
     "./acorn-defense": "./scripts/acorn-defense.mjs",
     "./acorn-capability-inventory": "./scripts/acorn-capability-inventory.mjs",
     "./acorn-continuous-runtime": "./scripts/acorn-continuous-runtime.mjs",
+    "./acorn-organism-loop": "./scripts/acorn-organism-loop.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
   },

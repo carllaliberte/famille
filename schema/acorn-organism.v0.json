@@ -1,0 +1,26 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/acorn-organism.v0.json",
+  "title": "famille.acorn-organism.v0",
+  "description": "One organism loop composing existing Cortex, Defense and continuous runtime. PERCEIVE ≠ UNDERSTAND ≠ PLAN ≠ ACT ≠ MEASURE ≠ FALSIFY ≠ PROTECT ≠ CORRECT ≠ VERIFY ≠ LEARN ≠ ADAPT ≠ PROVE ≠ CONTINUE. Not a second Cortex, Defense, runtime, Breaker or Fabric. LIVE VERIFIED remains Carl.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["loop", "live", "auto_merge", "authority"],
+  "properties": {
+    "loop": {
+      "type": "array"
+    },
+    "health": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "enum": ["HEALTHY", "DEGRADED", "PROTECTED", "RECOVERING", "UNKNOWN"]
+        },
+        "live": { "const": false }
+      }
+    },
+    "auto_merge": { "const": false },
+    "live": { "const": false },
+    "authority": { "const": "carl" },
+    "simulated": { "const": false }
+  }
+}

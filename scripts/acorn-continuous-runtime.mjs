@@ -27,8 +27,9 @@ import {
   quarantineResource,
 } from "./acorn-defense.mjs";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
-import { cortexCycle, cortexConstitution } from "./cortex-cognition.mjs";
+import { cortexCycle } from "./cortex-cognition.mjs";
 import { sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
+import { enrichOrganism } from "./acorn-organism-loop.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
 
@@ -44,6 +45,7 @@ export function inventoryProbe() {
     second_runtime: false,
     continuity: true,
     defense_never_hold: true,
+    one_loop: true,
   };
 }
 
@@ -146,6 +148,7 @@ export async function runContinuousRuntime({
     acorn_controls_carl: false,
     acorn_controls_breaker: false,
     capability_is_not_authority: true,
+    one_loop: true,
     auto_merge: false,
     live: false,
   };
@@ -191,8 +194,9 @@ export async function runContinuousRuntime({
       quarantines.push(isolated);
       entry.states.quarantined = true;
       entry.lifecycle = "QUARANTINED";
+      const recoveryEval = alternativesFor(entry, inventory);
       const recovery = chooseRecovery({
-        candidates: alternativesFor(entry, inventory),
+        candidates: recoveryEval,
         evidence: { breaker_ambiguous: breaker.observed !== "OPEN" },
         human_required: false,
       });
@@ -304,6 +308,12 @@ export async function runContinuousRuntime({
     authority: "carl",
   };
 
+  const organism = enrichOrganism(result, { now: at });
+  result.organism = organism;
+  result.loop = organism.loop;
+  result.health = organism.health;
+  result.constitution.one_loop = true;
+
   if (evidencePath) {
     mkdirSync(dirname(evidencePath), { recursive: true });
     writeFileSync(evidencePath, `${JSON.stringify(result, null, 2)}\n`);
@@ -348,6 +358,8 @@ if (isMain()) {
     breaker: result.breaker.observed,
     defense: result.defense.state,
     cortex: result.cortex.status,
+    health: result.health?.state,
+    obstacle: result.organism?.obstacle?.id,
     DISCOVERED: c.discovered_count,
     LOADABLE: c.loadable_count,
     WIRED: c.wired_count,
