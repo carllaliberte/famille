@@ -128,7 +128,7 @@ export function applyPlasticity(synapse, proposal) {
   const action = proposal?.action;
   if (action === "CREATE" || action === "RECOVER") next.state = "ACTIVE";
   if (action === "STRENGTHEN") next.weight = clamp(next.weight + 0.1);
-  if (action === "WEAKEN") next.weight = clamp(next.weight - 0.1);
+  if (action === "WEAKEN") next.weight = Math.round(clamp(next.weight - 0.1) * 1e12) / 1e12;
   if (action === "PRUNE" || action === "RETIRED") next.state = "PRUNED";
   if (action === "ISOLATE") next.state = "ISOLATED";
   if (action === "DUPLICATE") next.state = "ACTIVE";
