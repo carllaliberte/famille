@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { executeDispatch } from "../scripts/cognitive-worker.mjs";
+import { authorizeRuntimeEffect } from "../scripts/acorn-runtime-interposition.mjs";
 
 test("real cognitive-worker dispatch is governed by the interposition firewall", () => {
   const calls = [];
@@ -16,8 +17,7 @@ test("real cognitive-worker dispatch is governed by the interposition firewall",
   assert.equal(calls.length, 2);
 });
 
-test("runtime dispatch cannot execute when interposition requirements are not satisfied", () => {
-  const { authorizeRuntimeEffect } = await import("../scripts/acorn-runtime-interposition.mjs");
+test("runtime execution cannot proceed when interposition requirements are not satisfied", () => {
   const decision = authorizeRuntimeEffect({
     actor: "test",
     operation: "dangerous.effect",
