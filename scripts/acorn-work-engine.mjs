@@ -298,7 +298,7 @@ export async function runContinuousWorkEngine({
     completed_count: completed.length,
     blocked_count: blocked.length,
     usage: currentUsage,
-    governor: governorSnapshot({ env, limits, usage: currentUsage }),\n    budget_window: { minutes: windowMinutes, started_at: budgetWindowStartedAt, reset: windowExpired },
+    governor: governorSnapshot({ env, limits, usage: currentUsage }),
     executor_policy: policy,
     runtime: {
       state: organism.state,
