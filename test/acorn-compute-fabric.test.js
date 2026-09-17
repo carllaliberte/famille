@@ -489,3 +489,14 @@ test("GPU discovery never falls back to CPU execution", async () => {
   assert.equal(result.reason, "GPU_RUNTIME_NOT_IMPLEMENTED");
   assert.equal(result.result, undefined);
 });
+
+
+test("GPU runtime is executable only when a real local runtime is discovered", async () => {
+  const { executeGpuWork } = await import("../scripts/acorn-gpu-runtime.mjs");
+  const held = executeGpuWork({ task: { size: 4 }, runtimeProbe: { frameworks: [] }, allowExec: true });
+  assert.equal(held.status, "HOLD_HUMAN");
+  assert.equal(held.reason, "GPU_RUNTIME_NOT_PRESENT");
+  const disabled = executeGpuWork({ task: { size: 4 }, runtimeProbe: { frameworks: ["torch"] }, allowExec: false });
+  assert.equal(disabled.status, "HOLD_HUMAN");
+  assert.equal(disabled.reason, "GPU_EXECUTION_NOT_ENABLED");
+});
