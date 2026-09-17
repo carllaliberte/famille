@@ -4,7 +4,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
-import { inventoryProbe, runAutonomousRuntime } from "../scripts/autonomous-runtime.mjs";
+import { inventoryProbe, runAutonomousRuntime, measureAutonomy, autonomyBudget } from "../scripts/autonomous-runtime.mjs";
 
 function runtimeEnv(extra = {}) {
   const dir = mkdtempSync(join(tmpdir(), "acorn-runtime-"));
@@ -138,4 +138,18 @@ test("breaker OFF still runs continuity and never places defense on HOLD", async
   assert.equal(continuityCalls, 2);
   assert.equal(result.defense_active, true);
   assert.equal(result.continuity_active, true);
+});
+
+test("autonomy remains a measured vector and a budget, not a boolean", () => {
+  const measured = measureAutonomy({ autonomous_steps: 2, duration_ms: 50 });
+  assert.equal(measured.autonomous, "NOT_BOOLEAN");
+  assert.equal(measured.autonomous_steps, 2);
+  const budget = autonomyBudget({
+    limits: { autonomous_steps: 4 },
+    uncertainty: { unknown: true },
+    breaker: "OFF",
+  });
+  assert.equal(budget.reduced, true);
+  assert.equal(budget.breaker_changed, false);
+  assert.equal(budget.is_not_breaker, true);
 });

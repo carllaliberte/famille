@@ -35,3 +35,48 @@ export function verifyEvidenceSeal(value) {
   if (!expected || value?.seal?.algorithm !== "sha256" || value?.seal?.v !== EVIDENCE_SEAL_VERSION) return false;
   return expected === evidenceDigest(value);
 }
+
+export const EVIDENCE_STATES = Object.freeze([
+  "VALID",
+  "AGING",
+  "EXPIRED",
+  "SUPERSEDED",
+  "CONTRADICTED",
+  "REVOKED",
+]);
+
+export function expireEvidence({
+  evidence = {},
+  now = Date.now(),
+  issued_at = null,
+  ttl_ms = null,
+  superseded_by = null,
+  contradicted = false,
+  revoked = false,
+} = {}) {
+  if (revoked === true) {
+    return { status: "REVOKED", sufficient_for_current_state: false, was_false: false, live: false };
+  }
+  if (contradicted === true) {
+    return { status: "CONTRADICTED", sufficient_for_current_state: false, was_false: false, live: false };
+  }
+  if (superseded_by) {
+    return { status: "SUPERSEDED", sufficient_for_current_state: false, superseded_by, was_false: false, live: false };
+  }
+  const issued = issued_at || evidence.issued_at || evidence.observed_at || evidence.at;
+  const ttl = Number(ttl_ms);
+  if (!issued || !Number.isFinite(ttl)) {
+    return { status: "UNKNOWN", sufficient_for_current_state: "UNKNOWN", was_false: false, live: false };
+  }
+  const age = Number(now) - Date.parse(issued);
+  if (!Number.isFinite(age)) {
+    return { status: "UNKNOWN", sufficient_for_current_state: "UNKNOWN", was_false: false, live: false };
+  }
+  if (age > ttl) {
+    return { status: "EXPIRED", age_ms: age, ttl_ms: ttl, sufficient_for_current_state: false, was_false: false, live: false };
+  }
+  if (age > ttl * 0.7) {
+    return { status: "AGING", age_ms: age, ttl_ms: ttl, sufficient_for_current_state: true, was_false: false, live: false };
+  }
+  return { status: "VALID", age_ms: age, ttl_ms: ttl, sufficient_for_current_state: true, was_false: false, live: false };
+}

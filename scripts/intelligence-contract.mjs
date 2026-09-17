@@ -60,6 +60,8 @@ export function describeIntelligence(input = {}) {
     lane,
     cost: input.cost ?? (lane === "paid" ? "paid" : lane === "free" ? "free" : "zero"),
     authority: false,
+    capability_ceiling: input.capability_ceiling ?? "UNKNOWN",
+    authority_ceiling: 0,
     capabilities_are_not_authority: true,
     live: false,
     identity_is_not_model: true,

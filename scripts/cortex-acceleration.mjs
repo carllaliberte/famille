@@ -73,8 +73,7 @@ export function probeAccelerator({ identity, vendor, env = process.env, evidence
   const id = text(identity) || "unknown-accelerator";
   const v = text(vendor).toLowerCase();
   const configured = Boolean(
-    (v === "nvidia" || /nvidia/.test(id))
-    && (String(env.NVIDIA_VISIBLE_DEVICES || "").trim() || String(env.CUDA_VISIBLE_DEVICES || "").trim())
+    String(env.NVIDIA_VISIBLE_DEVICES || "").trim() || String(env.CUDA_VISIBLE_DEVICES || "").trim()
   );
   const present = evidence.channel_responding === true;
   const executed = evidence.executed === true;
