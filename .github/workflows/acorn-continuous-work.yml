@@ -74,8 +74,10 @@ jobs:
 
       - name: Run continuous organism work engine
         run: |
-          ACORN_WORK_STATE_PATH=.acorn-state/continuous-work-state.json \
-          node --input-type=module <<'EOF'
+          set +e
+          output="$(
+            ACORN_WORK_STATE_PATH=.acorn-state/continuous-work-state.json \
+            node --input-type=module <<'EOF' 2>&1
           import { runContinuousWorkEngine } from "./scripts/acorn-work-engine.mjs";
           const result = await runContinuousWorkEngine({
             root: ".",
@@ -92,6 +94,13 @@ jobs:
             external_spend: result.governor.policy.limits.external_spend,
           }, null, 2));
           EOF
+          )"
+          code=$?
+          printf '%s\n' "$output"
+          ACORN_RUN_EXIT_CODE="$code" ACORN_RUN_STDERR="$output" \
+            node scripts/acorn-cognitive-run-triage.mjs
+          triage=$?
+          exit "$triage"
 
       - name: Upload persistent work state
         uses: actions/upload-artifact@v4
