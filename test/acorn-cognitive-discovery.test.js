@@ -5,19 +5,30 @@ import {
   CAPABILITY_LIFECYCLE,
   GRAPH_OPS,
   admitUnknownIntelligence,
+  analyzeIndependence,
+  architectureProvenance,
+  challengeCognitiveArchitecture,
   cognitiveBudget,
   cognitiveDiscoveryCycle,
   cognitiveTrust,
+  compareCognitiveArchitectures,
   describeCognitiveSynapse,
   detectCommonMode,
+  discoverCognitiveArchitectures,
+  discoverCognitivePattern,
   experienceCognitiveSynapse,
   expireCognitiveKnowledge,
+  falsifyCognitiveArchitecture,
   findCognitivePaths,
   mutateCognitiveGraph,
   qualifyCapability,
+  recomposeCognitiveArchitecture,
   recoverFromLoss,
   rememberCognitiveExperience,
+  rememberCognitiveFailure,
+  rememberCognitiveStrategy,
   runExperimentLab,
+  selectCognitiveStrategy,
 } from "../scripts/cognitive-discovery.mjs";
 import { describeArchitecture } from "../scripts/cortex-ecosystem.mjs";
 
@@ -284,6 +295,13 @@ test("cognitiveDiscoveryCycle composes organs without a second Cortex", () => {
   assert.equal(cycle.unknown.cortex_modified, false);
   assert.equal(cycle.metrics.invented, false);
   assert.equal(cycle.intelligence.nvidia.state, "CHANNEL_NOT_PRESENT");
+  assert.equal(cycle.architectures.brute_force, false);
+  assert.equal(cycle.architectures.adopted, false);
+  assert.ok(cycle.architectures.candidates.some((row) => row.kind === "SIMPLE"));
+  assert.equal(cycle.architectures.candidates.some((row) => row.kind === "ENSEMBLE"), false);
+  assert.equal(cycle.strategy.move, "ANSWER_DIRECTLY");
+  assert.equal(cycle.pattern.status, "INCONCLUSIVE");
+  assert.equal(cycle.comparison.better_in_general, false);
 });
 
 test("discovery engine does not branch Cortex on NVIDIA or OpenAI names", () => {
@@ -299,7 +317,8 @@ test("discovery engine does not branch Cortex on NVIDIA or OpenAI names", () => 
   assert.equal(/function composeCognitiveGraph/.test(discovery), false);
   assert.equal(/function falsify\s*\(/.test(discovery), false);
   assert.equal(/function plasticSynapse\s*\(/.test(discovery), false);
-  assert.equal(/function resilientReroute\s*\(/.test(discovery), false);
+  assert.match(discovery, /generateArchitectures\(/);
+  assert.equal(/function generateArchitectures\s*\(/.test(discovery), false);
 });
 
 const matrix = [
@@ -343,3 +362,193 @@ for (const [name, spec] of matrix) {
     assert.equal(cycle.live, false);
   });
 }
+
+const resourcesThree = [
+  { id: "a", identity: "a", capabilities: ["review"], presence: "ACTIVE", provider: "local", kind: "local" },
+  { id: "b", identity: "b", capabilities: ["review"], presence: "CONNECTED", provider: "openai", kind: "llm" },
+  { id: "c", identity: "c", capabilities: ["review"], presence: "CONNECTED", provider: "anthropic", kind: "critic" },
+];
+
+test("progressive search stays small on LOW risk and does not brute-force", () => {
+  const found = discoverCognitiveArchitectures({
+    task: { objective: "review", required_capabilities: ["review"], risk: "LOW" },
+    resources: resourcesThree,
+  });
+  assert.equal(found.brute_force, false);
+  assert.equal(found.stopped_early, true);
+  assert.equal(found.adopted, false);
+  assert.ok(found.candidates.length <= 6);
+  assert.ok(found.candidates.some((row) => row.kind === "SIMPLE"));
+  assert.equal(found.candidates.some((row) => row.kind === "ENSEMBLE"), false);
+  assert.equal(found.better_in_general, false);
+  assert.equal(found.live, false);
+});
+
+test("CRITICAL search adds falsification and ensemble without claiming superiority", () => {
+  const found = discoverCognitiveArchitectures({
+    task: { objective: "review", required_capabilities: ["review"], risk: "CRITICAL" },
+    resources: resourcesThree,
+  });
+  const kinds = found.candidates.map((row) => row.kind);
+  assert.ok(kinds.includes("ADVERSARIAL"));
+  assert.ok(kinds.includes("ENSEMBLE"));
+  assert.ok(kinds.includes("RECOVERY"));
+  assert.equal(found.adopted, false);
+  assert.equal(found.brute_force, false);
+  assert.ok(found.candidates.length <= 6);
+});
+
+test("architectures are not ranked without a metric and an experiment", () => {
+  const found = discoverCognitiveArchitectures({
+    task: { objective: "review", risk: "CRITICAL" },
+    resources: resourcesThree,
+  });
+  const noMetric = compareCognitiveArchitectures({ architectures: found.candidates, measurements: { measured: true } });
+  assert.equal(noMetric.status, "INCONCLUSIVE");
+  assert.equal(noMetric.reason, "METRIC_REQUIRED");
+  const noExperiment = compareCognitiveArchitectures({
+    architectures: found.candidates,
+    measurements: {},
+    metric: "error",
+  });
+  assert.equal(noExperiment.reason, "EXPERIMENT_REQUIRED");
+  assert.equal(noExperiment.better_in_general, false);
+});
+
+test("meta-cognition selects a strategy with proof and does not adopt it", () => {
+  const low = selectCognitiveStrategy({ task: { risk: "LOW_RISK" } });
+  assert.equal(low.move, "ANSWER_DIRECTLY");
+  assert.equal(low.adopted, false);
+  const crit = selectCognitiveStrategy({ task: { risk: "CRITICAL" } });
+  assert.equal(crit.move, "FALSIFY");
+  const reduce = selectCognitiveStrategy({ task: { risk: "CRITICAL" }, context: { overcomplex: true } });
+  assert.equal(reduce.move, "REDUCE_COMPLEXITY");
+});
+
+test("two models from the same provider are false diversity, not two proofs", () => {
+  const independence = analyzeIndependence([
+    { id: "gpt-a", provider: "openai", host: "api", runtime: "cloud", upstream: "openai" },
+    { id: "gpt-b", provider: "openai", host: "api", runtime: "cloud", upstream: "openai" },
+  ]);
+  assert.equal(independence.FALSE_DIVERSITY, true);
+  assert.equal(independence.SHARED_UPSTREAM, true);
+  assert.equal(independence.two_models_are_not_two_proofs, true);
+});
+
+test("challenge finds a single point of failure on SIMPLE and proposes an alternative", () => {
+  const found = discoverCognitiveArchitectures({
+    task: { objective: "review", risk: "LOW_RISK" },
+    resources: [{ id: "solo", capabilities: ["review"], kind: "local" }],
+  });
+  const simple = found.candidates.find((row) => row.kind === "SIMPLE");
+  const challenged = challengeCognitiveArchitecture({ architecture: simple });
+  assert.equal(challenged.single_point_of_failure, true);
+  assert.ok(challenged.findings.includes("single_point_of_failure"));
+  assert.equal(challenged.adopted, false);
+  assert.equal(challenged.alternative?.adopted, false);
+});
+
+test("strategy memory is historical, not a guarantee, and unmeasured patterns are not truth", () => {
+  const found = discoverCognitiveArchitectures({
+    task: { objective: "review", risk: "LOW_RISK" },
+    resources: [{ id: "local", capabilities: ["review"], kind: "local" }],
+  });
+  const remembered = rememberCognitiveStrategy({
+    task_class: "review",
+    architecture: found.candidates[0],
+    measurements: { measured: false },
+  });
+  assert.equal(remembered.status, "INCONCLUSIVE");
+  assert.equal(remembered.strategy.historical_is_not_guarantee, true);
+  const measured = rememberCognitiveStrategy({
+    task_class: "review",
+    architecture: found.candidates[0],
+    measurements: { measured: true },
+    expiry: "2020-01-01T00:00:00.000Z",
+    at: "2026-09-17T00:00:00.000Z",
+  });
+  assert.equal(measured.strategy.expired, true);
+  assert.equal(measured.strategy.historical_is_not_guarantee, true);
+});
+
+test("NEW_COGNITIVE_PATTERN requires measured, repeatable, verifiable, traceable evidence", () => {
+  const incomplete = discoverCognitivePattern({ measurements: { measured: true }, repeated: true });
+  assert.equal(incomplete.status, "INCONCLUSIVE");
+  assert.equal(incomplete.pattern, null);
+  const ok = discoverCognitivePattern({
+    before: "A+B",
+    after: "A→B→C",
+    measurements: { measured: true },
+    repeated: true,
+    verified: true,
+    traced: true,
+  });
+  assert.equal(ok.status, "DISCOVERED");
+  assert.equal(ok.pattern.kind, "NEW_COGNITIVE_PATTERN");
+  assert.equal(ok.adopted, false);
+  assert.equal(ok.live, false);
+});
+
+test("falsified architecture is kept as negative knowledge and not adopted", () => {
+  const found = discoverCognitiveArchitectures({
+    task: { objective: "review", risk: "LOW_RISK" },
+    resources: [{ id: "local", capabilities: ["review"], kind: "local" }],
+  });
+  const attack = falsifyCognitiveArchitecture({
+    architecture: found.candidates[0],
+    hypothesis: "SIMPLE is sufficient",
+    contradiction: true,
+    executed: true,
+    measured: true,
+  });
+  assert.equal(attack.negative_knowledge, true);
+  assert.equal(attack.adopted, false);
+  assert.equal(attack.failure.kind, "architecture_falsified");
+});
+
+test("failure memory is temporal and does not block later revalidation", () => {
+  const failure = rememberCognitiveFailure({ kind: "resource_failed", subject: "xai" });
+  assert.equal(failure.do_not_repeat_blindly, true);
+  assert.equal(failure.expired_is_not_permanent, true);
+  assert.equal(failure.temporal, true);
+  assert.equal(failure.live, false);
+});
+
+test("architecture provenance cannot claim it works in general", () => {
+  const found = discoverCognitiveArchitectures({
+    task: { objective: "review", risk: "LOW_RISK" },
+    resources: [{ id: "local", capabilities: ["review"], kind: "local" }],
+  });
+  const proof = architectureProvenance({ architecture: found.candidates[0], task: "review" });
+  assert.equal(proof.works_in_general, false);
+  assert.equal(proof.architecture_id, found.candidates[0].architecture_id);
+  assert.ok(Array.isArray(proof.limitations));
+  assert.equal(proof.live, false);
+});
+
+test("recovery recomposes a node without rebuilding the system", () => {
+  const recovered = recomposeCognitiveArchitecture({
+    lost: "xai",
+    nodes: [
+      { id: "xai", identity: "xai", capabilities: ["review"], presence: "CONNECTED" },
+      { id: "cortex-local", identity: "cortex-local", kind: "local", capabilities: ["review"], presence: "ACTIVE" },
+    ],
+    required: ["review"],
+  });
+  assert.equal(recovered.rebuilt_system, false);
+  assert.equal(recovered.recomposed, true);
+  assert.equal(recovered.silent_fallback, false);
+});
+
+test("unknown resource plus unknown strategy does not rewrite Cortex", () => {
+  const unknown = admitUnknownIntelligence({ id: "tomorrowx", provider: "UNKNOWN", env: {} });
+  const strategy = selectCognitiveStrategy({
+    task: { risk: "AMBIGUOUS" },
+    context: { unknown: true },
+    independence: { FALSE_DIVERSITY: false },
+    evidence: { insufficient: true },
+  });
+  assert.equal(unknown.cortex_modified, false);
+  assert.equal(strategy.adopted, false);
+  assert.equal(strategy.live, false);
+});

@@ -489,6 +489,30 @@ export async function runContinuousRuntime({
         auto_adopt: false,
         strategy: discovery.experiment.strategy,
       },
+      architectures: {
+        count: (discovery.architectures?.candidates || []).length,
+        kinds: (discovery.architectures?.candidates || []).map((row) => row.kind),
+        brute_force: discovery.architectures?.brute_force === true,
+        stopped_early: discovery.architectures?.stopped_early === true,
+        adopted: false,
+        selected: discovery.architectures?.selected?.architecture_id || null,
+      },
+      strategy: {
+        move: discovery.strategy?.move || null,
+        adopted: false,
+      },
+      independence: {
+        false_diversity: discovery.independence?.FALSE_DIVERSITY === true,
+        two_models_are_not_two_proofs: true,
+      },
+      challenge: {
+        findings: discovery.challenge?.findings || [],
+        adopted: false,
+      },
+      pattern: {
+        status: discovery.pattern?.status || "INCONCLUSIVE",
+        adopted: false,
+      },
       unknown: { cortex_modified: discovery.unknown.cortex_modified, live: false },
       synapses: {
         active: discovery.metrics.synapses_active,

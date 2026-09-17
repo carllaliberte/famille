@@ -38,6 +38,11 @@ import {
   describeArchitecture,
   describeNode,
   rememberCategorized,
+  generateArchitectures,
+  selectArchitecture,
+  rememberPattern,
+  searchArchitectures,
+  architectureLibrary,
 } from "./cortex-ecosystem.mjs";
 import { commonModeFailure } from "./cortex-continuity.mjs";
 import {
@@ -94,10 +99,25 @@ export const EXPERIMENT_STAGES = Object.freeze([
 export const BUDGET_TIERS = Object.freeze({
   LOW_RISK: { resources: 1, verify: false, falsify: false, independent: false },
   SIMPLE: { resources: 1, verify: false, falsify: false, independent: false },
+  LOW: { resources: 1, verify: false, falsify: false, independent: false },
   AMBIGUOUS: { resources: 2, verify: false, falsify: false, independent: false },
+  MEDIUM: { resources: 2, verify: false, falsify: false, independent: false },
   IMPORTANT: { resources: 2, verify: true, falsify: false, independent: true },
+  HIGH: { resources: 2, verify: true, falsify: false, independent: true },
   CRITICAL: { resources: 3, verify: true, falsify: true, independent: true },
 });
+
+export const ARCHITECTURE_KINDS = Object.freeze([
+  "SIMPLE", "DUAL", "ADVERSARIAL", "SPECIALIST", "ENSEMBLE", "RECOVERY",
+]);
+
+export const SEARCH_STAGES = Object.freeze([
+  "ONE_RESOURCE", "TWO_RESOURCES", "SPECIALIST", "VERIFICATION", "ADVERSARIAL", "ENSEMBLE",
+]);
+
+export const STRATEGY_MOVES = Object.freeze([
+  "ANSWER_DIRECTLY", "RESEARCH", "SECOND_OPINION", "FALSIFY", "EXPERIMENT", "SPECIALISTS", "REDUCE_COMPLEXITY",
+]);
 
 function idOf(row) {
   return String(row?.id || row?.identity || "").trim();
@@ -481,12 +501,12 @@ export function cognitiveBudget({ risk = "LOW_RISK", consequence = "low", uncert
   const tier = BUDGET_TIERS[key] || BUDGET_TIERS.LOW_RISK;
   const redundancy = redundancyOf({
     paths: paths ?? tier.resources,
-    uncertainty: key === "AMBIGUOUS" ? "UNCERTAIN" : uncertainty,
+    uncertainty: key === "AMBIGUOUS" || key === "MEDIUM" ? "UNCERTAIN" : uncertainty,
     consequence: key === "CRITICAL" ? "high" : consequence,
   });
   const budget = uncertaintyBudget({
-    known: key === "LOW_RISK" || key === "SIMPLE" ? ["task"] : [],
-    unknown: key === "AMBIGUOUS" || key === "CRITICAL" ? ["UNKNOWN"] : [],
+    known: ["LOW_RISK", "SIMPLE", "LOW"].includes(key) ? ["task"] : [],
+    unknown: ["AMBIGUOUS", "MEDIUM", "CRITICAL"].includes(key) ? ["UNKNOWN"] : [],
   });
   return {
     status: "EXECUTED",
@@ -578,6 +598,435 @@ export function admitUnknownIntelligence(entry = {}) {
   };
 }
 
+function architectureCandidate({ kind, nodes, edges = [], required = [], verification, risks = [], plan = {} } = {}) {
+  const described = describeArchitecture({
+    id: `arch_${String(kind || "simple").toLowerCase()}`,
+    class: "unknown",
+    nodes,
+    synapses: edges,
+    verification: verification || "none",
+  });
+  return {
+    kind,
+    architecture_id: described.architecture_id,
+    nodes: described.nodes,
+    edges,
+    capabilities: required,
+    resources: described.nodes.map((row) => row.identity),
+    channels: described.nodes.map((row) => row.channel).filter(Boolean),
+    dependencies: edges.map((edge) => ({ from: edge.source, to: edge.target })),
+    expected_behavior: kind,
+    risks,
+    verification_plan: plan.verification || (verification && verification !== "none" ? [verification] : []),
+    measurement_plan: plan.measurement || ["outcome"],
+    hypothesis: true,
+    better_in_general: false,
+    adopted: false,
+    live: false,
+    architecture: described,
+  };
+}
+
+export function analyzeIndependence(nodes = [], extra = {}) {
+  const common = detectCommonMode(nodes, extra);
+  const upstream = new Set((nodes || []).map((row) => row.upstream || row.training_source || row.provider || "unknown"));
+  const evidence = new Set((nodes || []).map((row) => row.evidence_source || extra.evidence_source || "unknown"));
+  const gateway = new Set((nodes || []).map((row) => row.gateway || row.channel || "unknown"));
+  const family = new Set((nodes || []).map((row) => row.model_family || row.family || row.model || "unknown"));
+  return {
+    ...common,
+    FALSE_DIVERSITY: common.COMMON_MODE_RISK === true && (nodes || []).length > 1,
+    SHARED_UPSTREAM: (nodes || []).length > 1 && upstream.size === 1,
+    SHARED_EVIDENCE: (nodes || []).length > 1 && evidence.size === 1,
+    SHARED_FAILURE: common.shared_runtime === true || common.shared_host === true,
+    SHARED_GATEWAY: (nodes || []).length > 1 && gateway.size === 1,
+    SHARED_FAMILY: (nodes || []).length > 1 && family.size === 1,
+    two_models_are_not_two_proofs: true,
+    live: false,
+  };
+}
+
+export function discoverCognitiveArchitectures({
+  task = {},
+  resources = [],
+  constraints = {},
+  library = [],
+  measurements = {},
+} = {}) {
+  const classified = classifyTask(task);
+  const required = classified.required;
+  const risk = task.risk || constraints.risk || "LOW_RISK";
+  const budget = cognitiveBudget({
+    risk,
+    consequence: task.consequence || constraints.consequence,
+    uncertainty: task.uncertainty || constraints.uncertainty,
+  });
+  const pool = (resources || []).map((row) => describeNode(row));
+  const generated = generateArchitectures({
+    class: classified.class,
+    nodes: pool,
+    required,
+    budget: { money: constraints.cost_budget ?? 0 },
+  });
+  const covering = pool.filter((row) =>
+    required.some((cap) => (row.capabilities || []).includes(cap))
+    || row.kind === "local"
+    || row.identity === "cortex-local"
+    || row.identity === "carl",
+  );
+  const primary = covering[0] || describeNode({ id: "cortex-local", kind: "local", capabilities: required, presence: "ACTIVE" });
+  const secondary = covering.find((row) => row.identity !== primary.identity) || null;
+  const tertiary = covering.find((row) => row.identity !== primary.identity && row.identity !== secondary?.identity) || null;
+  const verifier = pool.find((row) => row.kind === "verifier") || secondary;
+  const critic = pool.find((row) => row.kind === "critic") || tertiary;
+  const human = pool.find((row) => row.identity === "carl") || describeNode({ id: "carl", kind: "human", capabilities: ["judgment"] });
+  const candidates = [];
+  const stages_reached = [];
+
+  candidates.push(architectureCandidate({
+    kind: "SIMPLE",
+    nodes: [primary],
+    edges: [{ source: "task", target: primary.identity, purpose: "execute" }],
+    required,
+    verification: "none",
+    risks: ["single_point_of_failure"],
+    plan: { verification: [], measurement: ["outcome"] },
+  }));
+  stages_reached.push("ONE_RESOURCE");
+
+  const trivial = budget.resources <= 1 && budget.verify !== true && budget.falsify !== true
+    && constraints.evidence_requirement !== "high";
+  if (!trivial) {
+    if (secondary && budget.resources >= 2) {
+      candidates.push(architectureCandidate({
+        kind: "DUAL",
+        nodes: [primary, secondary],
+        edges: [
+          { source: "task", target: primary.identity, purpose: "execute" },
+          { source: "task", target: secondary.identity, purpose: "parallel" },
+          { source: primary.identity, target: "synthesis", purpose: "synthesize" },
+          { source: secondary.identity, target: "synthesis", purpose: "synthesize" },
+        ],
+        required,
+        verification: "synthesis",
+        risks: ["false_diversity"],
+        plan: { verification: ["synthesis"], measurement: ["consistency"] },
+      }));
+      stages_reached.push("TWO_RESOURCES");
+    }
+    if (budget.verify === true || budget.independent === true) {
+      candidates.push(architectureCandidate({
+        kind: "SPECIALIST",
+        nodes: [primary, verifier, human].filter(Boolean),
+        edges: [
+          { source: "research", target: "reasoning", purpose: "specialize" },
+          { source: "reasoning", target: primary.identity, purpose: "execute" },
+          { source: primary.identity, target: (verifier || human).identity, purpose: "verify" },
+        ],
+        required,
+        verification: "independent",
+        risks: ["capability_mismatch"],
+        plan: { verification: ["independent"], measurement: ["verification_success"] },
+      }));
+      stages_reached.push("SPECIALIST");
+      stages_reached.push("VERIFICATION");
+    }
+    if (budget.falsify === true) {
+      candidates.push(architectureCandidate({
+        kind: "ADVERSARIAL",
+        nodes: [primary, critic, verifier, human].filter(Boolean),
+        edges: [
+          { source: primary.identity, target: (critic || human).identity, purpose: "challenge" },
+          { source: (critic || human).identity, target: (verifier || human).identity, purpose: "falsify" },
+        ],
+        required,
+        verification: "adversarial",
+        risks: ["common_mode"],
+        plan: { verification: ["falsification"], measurement: ["error"] },
+      }));
+      stages_reached.push("ADVERSARIAL");
+    }
+    if (budget.resources >= 3) {
+      candidates.push(architectureCandidate({
+        kind: "ENSEMBLE",
+        nodes: [primary, secondary, tertiary, verifier, human].filter(Boolean),
+        edges: [
+          { source: primary.identity, target: "synthesis", purpose: "vote" },
+          { source: (secondary || primary).identity, target: "synthesis", purpose: "vote" },
+          { source: (tertiary || primary).identity, target: "synthesis", purpose: "vote" },
+          { source: "synthesis", target: (verifier || human).identity, purpose: "verify" },
+        ],
+        required,
+        verification: "ensemble",
+        risks: ["false_diversity", "cost"],
+        plan: { verification: ["ensemble"], measurement: ["consistency", "error"] },
+      }));
+      stages_reached.push("ENSEMBLE");
+    }
+  }
+
+  candidates.push(architectureCandidate({
+    kind: "RECOVERY",
+    nodes: [primary, secondary || describeNode({ id: "cortex-local", kind: "local", capabilities: required, presence: "ACTIVE" })],
+    edges: [
+      { source: primary.identity, target: "failure", purpose: "detect" },
+      { source: "failure", target: (secondary || { identity: "cortex-local" }).identity, purpose: "reroute" },
+    ],
+    required,
+    verification: "recovery",
+    risks: ["unverified_substitute"],
+    plan: { verification: ["probe"], measurement: ["recovery_success"] },
+  }));
+
+  const limited = candidates.slice(0, 6);
+  const searched = searchArchitectures({
+    graphs: limited.map((row) => ({ assembly: { assembly_id: row.architecture_id } })),
+    metrics: measurements,
+  });
+  const selected = selectArchitecture({
+    candidates: limited.map((row) => row.architecture),
+    library,
+    measured: measurements.measured === true,
+    class: classified.class,
+  });
+  return {
+    status: "PROPOSED",
+    required,
+    budget,
+    stages_reached,
+    brute_force: false,
+    stopped_early: trivial === true,
+    candidates: limited,
+    generated: (generated.candidates || []).map((row) => row.architecture_id),
+    search: searched,
+    selected: selected.architecture
+      ? { architecture_id: selected.architecture.architecture_id, adopted: false, reused_pattern: selected.reused_pattern }
+      : null,
+    adopted: false,
+    auto_adopt: false,
+    better_in_general: false,
+    live: false,
+  };
+}
+
+export function compareCognitiveArchitectures({ architectures = [], measurements = {}, metric } = {}) {
+  if (!metric) {
+    return { status: "INCONCLUSIVE", reason: "METRIC_REQUIRED", ranked: false, better_in_general: false, live: false };
+  }
+  if (measurements.measured !== true) {
+    return { status: "INCONCLUSIVE", reason: "EXPERIMENT_REQUIRED", ranked: false, better_in_general: false, live: false };
+  }
+  const [first, second] = architectures;
+  if (!first || !second) {
+    return { status: "INSUFFICIENT_EVIDENCE", ranked: false, better_in_general: false, live: false };
+  }
+  const comparison = compareArchitectures({
+    a: first.architecture || first,
+    b: second.architecture || second,
+    measurements,
+  });
+  return {
+    ...comparison,
+    metric,
+    ranked: comparison.status === "MEASURED",
+    better_in_general: false,
+    live: false,
+  };
+}
+
+export function selectCognitiveStrategy({ task = {}, context = {}, budget, independence, evidence } = {}) {
+  const b = budget || cognitiveBudget({ risk: task.risk || "LOW_RISK" });
+  let move = "ANSWER_DIRECTLY";
+  if (context.needs_research === true) move = "RESEARCH";
+  if (b.resources >= 2 || b.risk === "AMBIGUOUS" || b.risk === "MEDIUM") move = "SECOND_OPINION";
+  if (b.independent === true) move = "SPECIALISTS";
+  if (b.falsify === true || independence?.FALSE_DIVERSITY === true) move = "FALSIFY";
+  if (evidence?.insufficient === true) move = "EXPERIMENT";
+  if (context.overcomplex === true) move = "REDUCE_COMPLEXITY";
+  return {
+    status: "PROPOSED",
+    move,
+    moves: STRATEGY_MOVES,
+    proof: {
+      budget: b.risk,
+      resources: b.resources,
+      independence: independence?.FALSE_DIVERSITY === true,
+    },
+    measured: false,
+    adopted: false,
+    live: false,
+  };
+}
+
+export function challengeCognitiveArchitecture({ architecture, nodes, graph } = {}) {
+  const nodeList = architecture?.nodes || nodes || [];
+  const ids = nodeList.map(idOf).filter(Boolean);
+  const radius = blastRadius({
+    lost: ids.slice(0, 1),
+    graph: graph || { nodes: nodeList.map((row) => ({ id: idOf(row), single_point: nodeList.length <= 1 })) },
+  });
+  const independence = analyzeIndependence(nodeList);
+  const findings = [];
+  if (nodeList.length <= 1) findings.push("single_point_of_failure");
+  if (independence.FALSE_DIVERSITY) findings.push("common_mode");
+  if (independence.SHARED_UPSTREAM) findings.push("hidden_dependency");
+  if (!architecture?.verification || architecture.verification === "none") findings.push("measurement_gap");
+  if (nodeList.some((row) => row.authority === true && idOf(row) !== "carl")) findings.push("authority_violation");
+  if (!(architecture?.verification_plan || []).length && architecture?.kind === "SIMPLE") findings.push("unsupported_assumption");
+  const alternative = mutateCognitiveGraph({
+    architecture: architecture?.architecture || architecture,
+    op: "expand",
+  });
+  return {
+    status: "EXECUTED",
+    weakest_node: ids[0] || null,
+    single_point_of_failure: nodeList.length <= 1,
+    findings,
+    independence,
+    blast: radius,
+    alternative: alternative.mutation
+      ? { architecture_id: alternative.mutation.architecture_id, adopted: false, hypothesis: true }
+      : null,
+    adopted: false,
+    live: false,
+  };
+}
+
+export function rememberCognitiveFailure({ kind = "strategy_failed", subject, at, valid_until } = {}) {
+  const kinds = [
+    "strategy_failed", "resource_failed", "channel_failed", "verification_failed",
+    "common_mode_detected", "architecture_falsified", "recovery_failed",
+  ];
+  const categorized = rememberCategorized({
+    kind: "FAILURE",
+    content: { failure: kind, subject },
+    at,
+    valid_until,
+  });
+  return {
+    status: "RECORDED",
+    kind: kinds.includes(kind) ? kind : "strategy_failed",
+    subject: subject || null,
+    temporal: true,
+    do_not_repeat_blindly: true,
+    expired_is_not_permanent: true,
+    live: false,
+    entry: categorized.entry || categorized,
+  };
+}
+
+export function falsifyCognitiveArchitecture({
+  architecture,
+  hypothesis,
+  observation,
+  contradiction = false,
+  executed = false,
+  measured = false,
+  verified = false,
+} = {}) {
+  const lab = runExperimentLab({
+    hypothesis: hypothesis || architecture?.kind || architecture?.architecture_id,
+    experiment: { expected: architecture?.expected_behavior },
+    observation,
+    contradiction,
+    executed,
+    measured,
+    verified,
+    adopt: false,
+  });
+  const failure = lab.falsification?.refuted === true
+    ? rememberCognitiveFailure({ kind: "architecture_falsified", subject: architecture?.architecture_id })
+    : null;
+  return {
+    ...lab,
+    architecture_id: architecture?.architecture_id || null,
+    negative_knowledge: Boolean(failure),
+    failure,
+    adopted: false,
+    live: false,
+  };
+}
+
+export function rememberCognitiveStrategy({
+  task_class, required, architecture, measurements, outcome, evidence, at, expiry,
+} = {}) {
+  const pattern = rememberPattern({
+    architecture: architecture?.architecture || architecture,
+    context: task_class,
+    measured: measurements?.measured === true,
+    at,
+  });
+  const time = stampTime({ at, valid_until: expiry });
+  return {
+    status: pattern.status,
+    strategy: {
+      task_class: task_class || null,
+      required_capabilities: required || [],
+      architecture_id: architecture?.architecture_id || architecture?.id || null,
+      measurements: measurements || null,
+      outcome: outcome || null,
+      evidence: evidence || null,
+      expiry: time.valid_until,
+      expired: time.expired,
+      historical_is_not_guarantee: true,
+      live: false,
+    },
+    pattern,
+    library: architectureLibrary(pattern.pattern ? [pattern.pattern] : []),
+    live: false,
+  };
+}
+
+export function discoverCognitivePattern({ before, after, measurements, repeated = false, verified = false, traced = false } = {}) {
+  const ok = measurements?.measured === true && repeated === true && verified === true && traced === true;
+  return {
+    status: ok ? "DISCOVERED" : "INCONCLUSIVE",
+    pattern: ok
+      ? { kind: "NEW_COGNITIVE_PATTERN", before: before || null, after: after || null, live: false }
+      : null,
+    measured: measurements?.measured === true,
+    repeatable: repeated === true,
+    verifiable: verified === true,
+    traceable: traced === true,
+    adopted: false,
+    live: false,
+  };
+}
+
+export function architectureProvenance({
+  architecture, task, experiment, measurements, falsification, verification, at,
+} = {}) {
+  const time = stampTime({ at });
+  return {
+    architecture_id: architecture?.architecture_id || null,
+    task: task || null,
+    resources: architecture?.resources || [],
+    channels: architecture?.channels || [],
+    capabilities: architecture?.capabilities || [],
+    strategy: architecture?.kind || null,
+    experiment: experiment || null,
+    measurements: measurements || null,
+    falsification: falsification || null,
+    verification: verification || null,
+    timestamp: time.created_at,
+    versions: { discovery: DISCOVERY_VERSION },
+    dependencies: architecture?.dependencies || [],
+    limitations: architecture?.risks || [],
+    works_in_general: false,
+    live: false,
+  };
+}
+
+export function recomposeCognitiveArchitecture({ lost, nodes = [], required = ["review"], graph } = {}) {
+  const recovered = recoverFromLoss({ lost, nodes, required, graph });
+  return {
+    ...recovered,
+    recomposed: recovered.status === "CONTINUED",
+    rebuilt_system: false,
+    live: false,
+  };
+}
+
 export function discoveryMetrics(cycle = {}) {
   const intel = cycle.intelligence || {};
   const counts = intel.counts || {};
@@ -605,6 +1054,10 @@ export function discoveryMetrics(cycle = {}) {
     common_mode_risks: cycle.common_mode?.COMMON_MODE_RISK ? 1 : 0,
     falsifications: cycle.experiment?.falsification?.refuted ? 1 : 0,
     false_assumptions_detected: cycle.common_mode?.three_sentinels_are_not_three_sources ? 1 : 0,
+    architectures_proposed: (cycle.architectures?.candidates || []).length,
+    architectures_verified: 0,
+    strategies_remembered: cycle.strategy_memory?.pattern?.pattern ? 1 : 0,
+    brute_force: cycle.architectures?.brute_force === true,
     invented: false,
     live: false,
   };
@@ -666,6 +1119,36 @@ export function cognitiveDiscoveryCycle({
     consequence: task.consequence,
     uncertainty: task.uncertainty,
   });
+  const architectures = discoverCognitiveArchitectures({
+    task,
+    resources: discoveredResources,
+    constraints: { risk: task.risk || "LOW_RISK", evidence_requirement: task.evidence_requirement },
+    measurements,
+  });
+  const independence = analyzeIndependence(discoveredResources);
+  const strategy = selectCognitiveStrategy({ task, budget, independence });
+  const challenged = architectures.candidates[0]
+    ? challengeCognitiveArchitecture({ architecture: architectures.candidates[0] })
+    : { findings: [], adopted: false, live: false };
+  const comparison = compareCognitiveArchitectures({
+    architectures: architectures.candidates,
+    measurements,
+    metric: measurements.metric || null,
+  });
+  const strategy_memory = rememberCognitiveStrategy({
+    task_class: classified.class,
+    required: classified.required,
+    architecture: architectures.candidates[0],
+    measurements,
+    outcome: "CYCLE",
+    at,
+  });
+  const pattern = discoverCognitivePattern({ measurements, repeated: false, verified: false, traced: false });
+  const provenance = architectureProvenance({
+    architecture: architectures.candidates[0],
+    task: classified.class,
+    at,
+  });
   const synapses = [];
   for (const edge of (paths.assembly?.assembly?.edges || []).slice(0, 4)) {
     if (!edge?.source || !edge?.target) continue;
@@ -695,8 +1178,8 @@ export function cognitiveDiscoveryCycle({
     adopt: false,
   });
   const recovery = lost
-    ? recoverFromLoss({ lost, nodes: discoveredResources, required: classified.required, graph: paths.graph })
-    : { status: "NOT_REQUIRED", silent_fallback: false, live: false };
+    ? recomposeCognitiveArchitecture({ lost, nodes: discoveredResources, required: classified.required, graph: paths.graph })
+    : { status: "NOT_REQUIRED", silent_fallback: false, rebuilt_system: false, live: false };
   const memory = rememberCognitiveExperience({
     task: classified.class,
     resources: discoveredResources.map(idOf).filter(Boolean),
@@ -727,6 +1210,14 @@ export function cognitiveDiscoveryCycle({
     registry,
     paths,
     budget,
+    architectures,
+    strategy,
+    independence,
+    challenge: challenged,
+    comparison,
+    strategy_memory,
+    pattern,
+    provenance,
     synapses,
     common_mode,
     trust,

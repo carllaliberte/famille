@@ -35,7 +35,7 @@ Carte des **organes déjà présents** dans FAMILLE, plus quelques adaptateurs m
 | Souveraineté cognitive | capability ≠ authority, autonomie mesurable | `measureAuthorityEnvelope` · `autonomyBudget` — pas un second organe |
 | Sens / action / diagnostic | purpose humain ≠ objectif dérivé ; décision ≠ action | `declareMeaning` · `authorizeAction` · `diagnoseConflict` |
 | Écosystème d’intelligences | découvrir des canaux, pas des marques | `discoverIntelligenceChannels` · `connectionOpportunity` |
-| Moteur de découverte cognitive | qualifier · chemin · graphe · expérience | `cognitiveDiscoveryCycle` |
+| Moteur de découverte cognitive | qualifier · chemin · graphe · configuration | `cognitiveDiscoveryCycle` · `discoverCognitiveArchitectures` |
 
 ## Boucle
 
