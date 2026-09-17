@@ -7,7 +7,9 @@
  *
  * Capability is the unit. Provider is a property of a resource.
  * DECLARED ≠ MEASURED. Ranked ≠ proved. LEARNING ≠ unverified auto-modification.
+ * OBSERVED ≠ VERIFIED. EMERGENCE ≠ PROOF. EMERGENCE ≠ AUTHORITY.
  */
+import { createHash } from "node:crypto";
 import {
   composeCognitiveGraph as composeTaskGraph,
   discoverCognitiveCapabilities,
@@ -43,6 +45,7 @@ import {
   rememberPattern,
   searchArchitectures,
   architectureLibrary,
+  safeEvolve,
 } from "./cortex-ecosystem.mjs";
 import { commonModeFailure } from "./cortex-continuity.mjs";
 import {
@@ -88,7 +91,7 @@ const GRAPH_OP_TO_MUTATION = Object.freeze({
 });
 
 export const SYNAPSE_STATES = Object.freeze([
-  "DISCOVERED", "TESTING", "ACTIVE", "WEAKENED", "EXPIRED", "DISABLED", "RECOVERING",
+  "DISCOVERED", "TESTING", "EXPERIMENTAL", "ACTIVE", "WEAKENED", "EXPIRED", "DISABLED", "RECOVERING",
 ]);
 
 export const EXPERIMENT_STAGES = Object.freeze([
@@ -118,6 +121,37 @@ export const SEARCH_STAGES = Object.freeze([
 export const STRATEGY_MOVES = Object.freeze([
   "ANSWER_DIRECTLY", "RESEARCH", "SECOND_OPINION", "FALSIFY", "EXPERIMENT", "SPECIALISTS", "REDUCE_COMPLEXITY",
 ]);
+
+export const EMERGENCE_CLASSES = Object.freeze([
+  "KNOWN_CAPABILITY", "COMPOSITION", "SYNERGY", "EMERGENT_CANDIDATE",
+]);
+
+export const EMERGENCE_STATES = Object.freeze([
+  "OBSERVED", "CANDIDATE", "EXPERIMENTAL", "MEASURED", "REPRODUCED", "VERIFIED", "EXPIRED", "FALSIFIED",
+]);
+
+export const MUTATION_KINDS = Object.freeze([
+  "add_node", "remove_node", "replace_resource", "replace_channel",
+  "add_synapse", "remove_synapse", "reorder_nodes", "change_strategy",
+  "increase_verification", "reduce_redundancy",
+]);
+
+export const PLASTICITY_OPS = Object.freeze([
+  "strengthen", "weaken", "expire", "reactivate", "split", "merge",
+]);
+
+const MUTATION_TO_GRAPH_OP = Object.freeze({
+  add_node: "expand",
+  remove_node: "simplify",
+  replace_resource: "replace",
+  replace_channel: "replace",
+  add_synapse: "expand",
+  remove_synapse: "disable",
+  reorder_nodes: "reorder",
+  change_strategy: "reorder",
+  increase_verification: "expand",
+  reduce_redundancy: "simplify",
+});
 
 function idOf(row) {
   return String(row?.id || row?.identity || "").trim();
@@ -1027,6 +1061,486 @@ export function recomposeCognitiveArchitecture({ lost, nodes = [], required = ["
   };
 }
 
+function genomeDigest(body) {
+  return createHash("sha256").update(JSON.stringify(body ?? null)).digest("hex").slice(0, 16);
+}
+
+export function classifyEmergence({
+  parts = [],
+  catalog = [],
+  measurements = {},
+  extra_property = false,
+  reproduced = false,
+} = {}) {
+  const named = new Set((catalog || []).map((row) => row.capability || row.name || row).filter(Boolean));
+  const labels = (parts || []).map((row) => row.capability || row.name || row);
+  if (labels.length <= 1 && labels.every((label) => named.has(label))) {
+    return {
+      class: "KNOWN_CAPABILITY",
+      state: "OBSERVED",
+      emergent: false,
+      candidate: false,
+      live: false,
+    };
+  }
+  const measured = measurements.measured === true;
+  const extra = extra_property === true
+    || (Number.isFinite(measurements.synergy) && measurements.synergy > 0);
+  if (!measured || !extra) {
+    return {
+      class: "COMPOSITION",
+      state: measured ? "MEASURED" : "OBSERVED",
+      emergent: false,
+      candidate: false,
+      reason: measured ? "NO_EXTRA_PROPERTY" : "UNMEASURED_COMBINATION_IS_NOT_EMERGENCE",
+      live: false,
+    };
+  }
+  const inCatalog = labels.every((label) => named.has(label)) && named.has(labels.join("+"));
+  return {
+    class: inCatalog ? "SYNERGY" : "EMERGENT_CANDIDATE",
+    state: reproduced === true ? "REPRODUCED" : "CANDIDATE",
+    emergent: false,
+    candidate: true,
+    verified: false,
+    live: false,
+  };
+}
+
+export function measureBaselines({ parts = [], measurements = {}, combined } = {}) {
+  const singles = (parts || []).map((part) => {
+    const id = part.id || part.capability || part;
+    return { id, value: measurements[id] ?? null, measured: measurements[id] != null };
+  });
+  const pairs = [];
+  for (let i = 0; i < (parts || []).length; i += 1) {
+    for (let j = i + 1; j < parts.length; j += 1) {
+      const key = `${parts[i].id || parts[i].capability || parts[i]}+${parts[j].id || parts[j].capability || parts[j]}`;
+      pairs.push({ id: key, value: measurements[key] ?? null, measured: measurements[key] != null });
+    }
+  }
+  const combinedValue = combined ?? measurements.combined ?? null;
+  return {
+    status: singles.length && singles.every((row) => row.measured) ? "MEASURED" : "INCOMPLETE",
+    singles,
+    pairs,
+    combined: { value: combinedValue, measured: combinedValue != null },
+    incomplete_baseline_blocks_emergence: singles.length === 0 || singles.some((row) => !row.measured),
+    live: false,
+  };
+}
+
+export function measureSynergy({
+  baseline = {},
+  combined,
+  metric,
+  uncertainty,
+  sample_size,
+  conditions,
+  limitations = [],
+} = {}) {
+  if (!metric) {
+    return { status: "INCONCLUSIVE", reason: "METRIC_REQUIRED", invented_formula: false, universal_formula: false, live: false };
+  }
+  if (combined == null || baseline.expected == null) {
+    return { status: "INCONCLUSIVE", reason: "BASELINE_REQUIRED", invented_formula: false, live: false };
+  }
+  return {
+    status: "MEASURED",
+    baseline,
+    combined_result: combined,
+    metric,
+    synergy: Number(combined) - Number(baseline.expected),
+    uncertainty: uncertainty ?? null,
+    sample_size: sample_size ?? null,
+    conditions: conditions ?? null,
+    limitations,
+    invented_formula: false,
+    universal_formula: false,
+    live: false,
+  };
+}
+
+export function reproduceEmergence({ observations = [], independent = false } = {}) {
+  const measured = (observations || []).filter((row) => row.measured === true);
+  if (measured.length < 2) {
+    return { status: "CANDIDATE", reproduced: false, reason: "SINGLE_OBSERVATION", live: false };
+  }
+  const same = measured.every((row) => JSON.stringify(row.outcome) === JSON.stringify(measured[0].outcome));
+  return {
+    status: same ? "REPRODUCED" : "FALSIFIED",
+    reproduced: same,
+    independent: independent === true,
+    sample_size: measured.length,
+    live: false,
+  };
+}
+
+export function discoverEmergentCapabilities({
+  resources = [],
+  capabilities = [],
+  synapses = [],
+  cognitive_architectures = [],
+  experiments = [],
+  measurements = {},
+  memory,
+  context,
+  catalog,
+  extra_property = false,
+  now,
+} = {}) {
+  const catalogList = catalog || capabilities || [];
+  const parts = (capabilities || []).map((row) => (typeof row === "string" ? { capability: row } : row));
+  const composed = composeCapabilities({ parts, name: parts.map((row) => row.capability).join("+") });
+  const baselines = measureBaselines({ parts, measurements, combined: measurements.combined });
+  const classified = classifyEmergence({
+    parts,
+    catalog: catalogList,
+    measurements,
+    extra_property: extra_property && baselines.incomplete_baseline_blocks_emergence !== true,
+    reproduced: measurements.reproduced === true,
+  });
+  const time = stampTime({ at: now, valid_until: measurements.valid_until });
+  const candidates = [];
+  if (classified.candidate === true) {
+    candidates.push({
+      capability_id: `emergent_${genomeDigest({ parts: composed.capability.name, at: time.created_at })}`,
+      description: composed.capability.name,
+      origin_resources: (resources || []).map(idOf).filter(Boolean),
+      origin_capabilities: parts.map((row) => row.capability),
+      origin_synapses: (synapses || []).map((row) => row.synapse?.synapse_id || row.synapse_id).filter(Boolean),
+      architecture: cognitive_architectures[0]?.architecture_id || cognitive_architectures[0]?.kind || null,
+      context: context || null,
+      observations: measurements.observations || null,
+      measurements: measurements.measured === true ? measurements : null,
+      evidence: measurements.evidence || null,
+      reproducibility: measurements.reproduced === true ? "REPRODUCED" : "CANDIDATE",
+      confidence: null,
+      state: classified.state,
+      class: classified.class,
+      created_at: time.created_at,
+      expires_at: time.valid_until,
+      limitations: baselines.incomplete_baseline_blocks_emergence
+        ? ["incomplete_baseline"]
+        : ["not_verified", "not_authority"],
+      verified: false,
+      live: false,
+    });
+  }
+  return {
+    status: "EXECUTED",
+    composed,
+    baselines,
+    classified,
+    candidates,
+    experiments: experiments || [],
+    memory: memory || null,
+    observed_is_not_verified: true,
+    emergence_is_not_proof: true,
+    live: false,
+  };
+}
+
+export function expireEmergentCapability({ candidate, now, model_changed = false } = {}) {
+  const expiry = expireCognitiveKnowledge({
+    kind: "measurement",
+    issued_at: candidate?.created_at,
+    now,
+    ttl_ms: 86_400_000,
+  });
+  const expired = expiry.expired === true || model_changed === true;
+  return {
+    status: expired ? "REVALIDATION_REQUIRED" : expiry.status,
+    expired,
+    revalidation_required: expired,
+    eternally_true: false,
+    live: false,
+  };
+}
+
+export function synapticFitness({ synapse, success, failure, latency, reliability, verification, context_fit } = {}) {
+  return {
+    status: "EXECUTED",
+    synapse_id: synapse?.synapse_id || null,
+    dimensions: {
+      success: success ?? null,
+      failure: failure ?? null,
+      latency: latency ?? null,
+      reliability: reliability ?? null,
+      verification: verification ?? null,
+      context_fit: context_fit ?? null,
+    },
+    score: null,
+    magic_score: false,
+    live: false,
+  };
+}
+
+export function evolveCognitiveSynapse({ synapse, op = "strengthen", outcome, at, now } = {}) {
+  if (!PLASTICITY_OPS.includes(op)) {
+    return { status: "INSUFFICIENT_EVIDENCE", op, adopted: false, live: false };
+  }
+  if (op === "reactivate") {
+    return {
+      status: "PROPOSED",
+      action: "reactivate",
+      synapse: synapse ? { ...synapse, state: "RECOVERING", live: false } : null,
+      adopted: false,
+      live: false,
+    };
+  }
+  if (op === "split" || op === "merge") {
+    return { ...mutateCognitiveGraph({ op, architecture: synapse }), adopted: false, live: false };
+  }
+  const experienced = experienceCognitiveSynapse({
+    synapse,
+    outcome: outcome || { measured: true, success: op === "strengthen" },
+    at,
+    now,
+  });
+  return { ...experienced, adopted: false, live: false };
+}
+
+export function describeCognitiveGenome({
+  resources = [],
+  capabilities = [],
+  synapses = [],
+  architecture,
+  strategies = [],
+  constraints = [],
+  verification_rules = [],
+  parents,
+  mutation,
+  context,
+  measurements,
+  version = 1,
+} = {}) {
+  const genome = {
+    resources: (resources || []).map(idOf).filter(Boolean),
+    capabilities,
+    synapses: (synapses || []).map((row) => row.synapse?.synapse_id || row.synapse_id || row.id).filter(Boolean),
+    architecture: architecture?.architecture_id || architecture || null,
+    strategies,
+    constraints,
+    verification_rules,
+  };
+  return {
+    version,
+    digest: genomeDigest(genome),
+    parents: parents || [],
+    mutation: mutation || null,
+    context: context || null,
+    measurements: measurements || null,
+    genome,
+    live: false,
+  };
+}
+
+export function compareCognitiveGenomes({ a, b } = {}) {
+  if (!a || !b) return { status: "INSUFFICIENT_EVIDENCE", changed: [], better_in_general: false, live: false };
+  const keys = ["resources", "capabilities", "synapses", "architecture", "strategies", "constraints", "verification_rules"];
+  const bodyA = a.genome || a;
+  const bodyB = b.genome || b;
+  const changed = keys.filter((key) => JSON.stringify(bodyA[key] ?? null) !== JSON.stringify(bodyB[key] ?? null));
+  return {
+    status: "MEASURED",
+    same_digest: a.digest === b.digest,
+    changed,
+    better_in_general: false,
+    live: false,
+  };
+}
+
+export function proposeCognitiveMutation({ genome, kind, payload } = {}) {
+  if (!MUTATION_KINDS.includes(kind)) {
+    return { status: "INSUFFICIENT_EVIDENCE", kind: kind || null, adopted: false, live: false };
+  }
+  const mutated = mutateCognitiveGraph({
+    architecture: genome?.architecture || genome,
+    op: MUTATION_TO_GRAPH_OP[kind],
+    node: payload?.node,
+  });
+  return {
+    status: "PROPOSED",
+    kind,
+    mutation: mutated,
+    sandbox: true,
+    adopted: false,
+    live: false,
+  };
+}
+
+export function safeEvolutionLoop({ current, mutation, measurements = {}, verified = false, simulated = true } = {}) {
+  const proposed = mutation?.status === "PROPOSED" ? mutation : proposeCognitiveMutation(mutation || {});
+  const lab = runExperimentLab({
+    hypothesis: proposed.kind || "mutation",
+    executed: measurements.executed === true,
+    measured: measurements.measured === true,
+    verified,
+    adopt: false,
+    simulated,
+  });
+  const evolved = safeEvolve({
+    baseline: current,
+    candidate: proposed,
+    verification: { verified, measured: measurements.measured === true },
+    previous: current,
+  });
+  const governed = governEvolution({ verified, simulated, adopted: false, reversible: true });
+  return {
+    status: "PROPOSED",
+    current_preserved: true,
+    candidate: proposed,
+    experiment: lab,
+    evolution: evolved,
+    governed,
+    adopted: false,
+    reversible: true,
+    live: false,
+    auto_merge: false,
+  };
+}
+
+export function compareMutations({ a, b, measurements = {}, metric, conditions } = {}) {
+  if (!metric) {
+    return { status: "INCONCLUSIVE", reason: "METRIC_REQUIRED", better_in_general: false, live: false };
+  }
+  if (measurements.measured !== true) {
+    return { status: "INCONCLUSIVE", reason: "EXPERIMENT_REQUIRED", better_in_general: false, live: false };
+  }
+  const aScore = Number(measurements.a ?? 0);
+  const bScore = Number(measurements.b ?? 0);
+  return {
+    status: "MEASURED",
+    metric,
+    conditions: conditions || null,
+    uncertainty: measurements.uncertainty ?? null,
+    verdict: aScore === bScore ? "INCONCLUSIVE" : (bScore > aScore ? "B_BETTER_IN_CONTEXT" : "A_BETTER_IN_CONTEXT"),
+    better_in_general: false,
+    live: false,
+  };
+}
+
+export function groupEmergentFunctions({ candidates = [] } = {}) {
+  const verified = (candidates || []).filter((row) => row.state === "VERIFIED" && row.reproduced === true);
+  return {
+    status: verified.length ? "PROPOSED" : "INCONCLUSIVE",
+    functions: verified.map((row) => ({
+      kind: "COGNITIVE_FUNCTION",
+      capability: row.capability_id,
+      organ_candidate: true,
+      live: false,
+    })),
+    second_cortex: false,
+    second_runtime: false,
+    new_authority: false,
+    new_mesh: false,
+    new_governance: false,
+    live: false,
+  };
+}
+
+export function emergenceAuthority({ candidate } = {}) {
+  return {
+    capability: candidate?.capability_id || null,
+    authority: false,
+    can_modify_breaker: false,
+    can_merge: false,
+    can_change_governance: false,
+    can_bypass_defense: false,
+    can_access_secrets: false,
+    capability_is_not_authority: true,
+    live: false,
+  };
+}
+
+export function watchEvolution({ mutation, grant = {}, unexpected = false, integrity_changed = false } = {}) {
+  const findings = [];
+  if (mutation?.adopted === true && grant.actor !== "carl") findings.push("unsafe_mutation");
+  if (grant.authority === true) findings.push("authority_escalation");
+  if (grant.breaker === true) findings.push("breaker_bypass");
+  if (grant.defense_bypass === true) findings.push("defense_bypass");
+  if (grant.secrets === true) findings.push("secret_access");
+  if (integrity_changed === true) findings.push("integrity_change");
+  if (unexpected === true) findings.push("unexpected_behavior");
+  return {
+    status: findings.length ? "CONTAINED" : "EXECUTED",
+    findings,
+    blocked: findings.length > 0,
+    defense_continues: true,
+    live: false,
+  };
+}
+
+export function describeSelfKnowledge({ qualifications = [], failures = [] } = {}) {
+  const of = (predicate) => (qualifications || []).filter(predicate).map((row) => row.capability).filter(Boolean);
+  return {
+    can_do: of((row) => row.measured === true),
+    think_i_can_do: of((row) => row.declared === true && row.measured !== true),
+    verified_i_can_do: of((row) => row.verified === true),
+    cannot_do: of((row) => row.state === "FAILED"),
+    never_tested: of((row) => row.state === "DECLARED" || row.state === "UNOBSERVED"),
+    recently_failed: failures || [],
+    expired: of((row) => row.expired === true),
+    categories_distinct: true,
+    live: false,
+  };
+}
+
+export function discoverCognitiveBlindSpots({
+  qualifications = [],
+  resources = [],
+  architectures = [],
+  assumptions = [],
+} = {}) {
+  const findings = [];
+  if ((qualifications || []).some((row) => row.measured !== true)) findings.push("capability_not_tested");
+  if ((qualifications || []).some((row) => row.expired === true)) findings.push("capability_old");
+  const providers = new Set((resources || []).map((row) => row.provider).filter(Boolean));
+  const models = new Set((resources || []).map((row) => row.model || row.id).filter(Boolean));
+  const channels = new Set((resources || []).map((row) => row.channel).filter(Boolean));
+  if (providers.size === 1 && (resources || []).length > 1) findings.push("single_provider_dependency");
+  if (models.size === 1 && (resources || []).length > 1) findings.push("single_model_dependency");
+  if (channels.size === 1 && (resources || []).length > 1) findings.push("single_channel_dependency");
+  if ((assumptions || []).some((row) => row.verified !== true)) findings.push("unverified_assumption");
+  if (!(architectures || []).some((row) => row.kind === "ADVERSARIAL" || row.kind === "ENSEMBLE")) {
+    findings.push("unexplored_configuration");
+  }
+  if ((qualifications || []).every((row) => row.grade !== "VERIFIED")) findings.push("single_evidence_source");
+  return { status: "EXECUTED", findings, live: false };
+}
+
+export function prioritizeExperiments({ candidates = [] } = {}) {
+  return {
+    status: "PROPOSED",
+    ranked: (candidates || []).map((row) => ({
+      id: row.id || null,
+      components: {
+        expected_information_gain: row.information_gain ?? null,
+        risk: row.risk ?? null,
+        cost: row.cost ?? null,
+        latency: row.latency ?? null,
+        uncertainty: row.uncertainty ?? null,
+        strategic_value: row.strategic_value ?? null,
+      },
+      opaque_score: null,
+    })),
+    opaque_score: false,
+    live: false,
+  };
+}
+
+export function proposeCognitiveCuriosity({ unknown, hypothesis } = {}) {
+  return {
+    status: "PROPOSED",
+    unknown: unknown || "UNKNOWN",
+    hypothesis: hypothesis || null,
+    experiment: { status: "HYPOTHESIS" },
+    adopted: false,
+    live: false,
+  };
+}
+
 export function discoveryMetrics(cycle = {}) {
   const intel = cycle.intelligence || {};
   const counts = intel.counts || {};
@@ -1058,6 +1572,15 @@ export function discoveryMetrics(cycle = {}) {
     architectures_verified: 0,
     strategies_remembered: cycle.strategy_memory?.pattern?.pattern ? 1 : 0,
     brute_force: cycle.architectures?.brute_force === true,
+    candidate_capabilities: (cycle.emergence?.candidates || []).length,
+    emergent_candidates: (cycle.emergence?.candidates || []).filter((row) => row.class === "EMERGENT_CANDIDATE").length,
+    reproduced_emergence: (cycle.emergence?.candidates || []).filter((row) => row.state === "REPRODUCED").length,
+    falsified_emergence: cycle.emergence?.classified?.state === "FALSIFIED" ? 1 : 0,
+    mutations_tested: cycle.evolution?.experiment?.status === "EXECUTED" ? 1 : 0,
+    mutations_rejected: cycle.evolution?.adopted === false ? 1 : 0,
+    mutations_verified: 0,
+    cognitive_blind_spots: (cycle.blind_spots?.findings || []).length,
+    negative_knowledge_entries: cycle.memory?.categorized?.kind === "FAILURE" ? 1 : 0,
     invented: false,
     live: false,
   };
@@ -1195,6 +1718,41 @@ export function cognitiveDiscoveryCycle({
     now: at,
     ttl_ms: 86_400_000,
   });
+  const emergence = discoverEmergentCapabilities({
+    resources: discoveredResources,
+    capabilities: classified.required,
+    synapses,
+    cognitive_architectures: architectures.candidates,
+    measurements,
+    context: classified.class,
+    now: at,
+  });
+  const genome = describeCognitiveGenome({
+    resources: discoveredResources,
+    capabilities: classified.required,
+    synapses,
+    architecture: architectures.candidates[0],
+    strategies: [strategy.move],
+    constraints: ["capability_is_not_authority"],
+    verification_rules: ["observed_is_not_verified"],
+  });
+  const self_knowledge = describeSelfKnowledge({ qualifications });
+  const blind_spots = discoverCognitiveBlindSpots({
+    qualifications,
+    resources: discoveredResources,
+    architectures: architectures.candidates,
+  });
+  const curiosity = proposeCognitiveCuriosity({
+    unknown: unknown.state || "UNKNOWN",
+    hypothesis: "unmeasured combinations are not emergent capabilities",
+  });
+  const evolution = safeEvolutionLoop({
+    current: genome,
+    mutation: { kind: "increase_verification" },
+    measurements,
+    verified: false,
+    simulated: true,
+  });
   const cycle = {
     version: DISCOVERY_VERSION,
     status: "EXECUTED",
@@ -1226,6 +1784,12 @@ export function cognitiveDiscoveryCycle({
     recovery,
     memory,
     expiry,
+    emergence,
+    genome,
+    self_knowledge,
+    blind_spots,
+    curiosity,
+    evolution,
     second_cortex: false,
     second_mesh: false,
     second_governance: false,

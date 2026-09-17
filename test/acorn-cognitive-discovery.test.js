@@ -8,27 +8,47 @@ import {
   analyzeIndependence,
   architectureProvenance,
   challengeCognitiveArchitecture,
+  classifyEmergence,
   cognitiveBudget,
   cognitiveDiscoveryCycle,
   cognitiveTrust,
   compareCognitiveArchitectures,
+  compareCognitiveGenomes,
+  compareMutations,
+  describeCognitiveGenome,
   describeCognitiveSynapse,
+  describeSelfKnowledge,
   detectCommonMode,
   discoverCognitiveArchitectures,
+  discoverCognitiveBlindSpots,
   discoverCognitivePattern,
+  discoverEmergentCapabilities,
+  emergenceAuthority,
+  evolveCognitiveSynapse,
   experienceCognitiveSynapse,
   expireCognitiveKnowledge,
+  expireEmergentCapability,
   falsifyCognitiveArchitecture,
   findCognitivePaths,
+  groupEmergentFunctions,
+  measureBaselines,
+  measureSynergy,
   mutateCognitiveGraph,
+  prioritizeExperiments,
+  proposeCognitiveCuriosity,
+  proposeCognitiveMutation,
   qualifyCapability,
   recomposeCognitiveArchitecture,
   recoverFromLoss,
   rememberCognitiveExperience,
   rememberCognitiveFailure,
   rememberCognitiveStrategy,
+  reproduceEmergence,
   runExperimentLab,
+  safeEvolutionLoop,
   selectCognitiveStrategy,
+  synapticFitness,
+  watchEvolution,
 } from "../scripts/cognitive-discovery.mjs";
 import { describeArchitecture } from "../scripts/cortex-ecosystem.mjs";
 
@@ -302,6 +322,11 @@ test("cognitiveDiscoveryCycle composes organs without a second Cortex", () => {
   assert.equal(cycle.strategy.move, "ANSWER_DIRECTLY");
   assert.equal(cycle.pattern.status, "INCONCLUSIVE");
   assert.equal(cycle.comparison.better_in_general, false);
+  assert.equal(cycle.emergence.classified.class, "KNOWN_CAPABILITY");
+  assert.equal(cycle.emergence.classified.emergent, false);
+  assert.equal(cycle.emergence.candidates.length, 0);
+  assert.equal(cycle.evolution.adopted, false);
+  assert.equal(cycle.genome.digest.length, 16);
 });
 
 test("discovery engine does not branch Cortex on NVIDIA or OpenAI names", () => {
@@ -319,6 +344,11 @@ test("discovery engine does not branch Cortex on NVIDIA or OpenAI names", () => 
   assert.equal(/function plasticSynapse\s*\(/.test(discovery), false);
   assert.match(discovery, /generateArchitectures\(/);
   assert.equal(/function generateArchitectures\s*\(/.test(discovery), false);
+  assert.match(discovery, /composeCapabilities\(/);
+  assert.match(discovery, /safeEvolve\(/);
+  assert.match(discovery, /governEvolution\(/);
+  assert.equal(/function composeCapabilities\s*\(/.test(discovery), false);
+  assert.equal(/function safeEvolve\s*\(/.test(discovery), false);
 });
 
 const matrix = [
@@ -551,4 +581,236 @@ test("unknown resource plus unknown strategy does not rewrite Cortex", () => {
   assert.equal(unknown.cortex_modified, false);
   assert.equal(strategy.adopted, false);
   assert.equal(strategy.live, false);
+});
+
+test("single known resource is not emergence", () => {
+  const classified = classifyEmergence({
+    parts: [{ capability: "reasoning" }],
+    catalog: ["reasoning"],
+  });
+  assert.equal(classified.class, "KNOWN_CAPABILITY");
+  assert.equal(classified.emergent, false);
+});
+
+test("unmeasured combination is composition, not emergence", () => {
+  const found = discoverEmergentCapabilities({
+    resources: [{ id: "a" }, { id: "b" }],
+    capabilities: ["reasoning", "memory"],
+    measurements: {},
+  });
+  assert.equal(found.classified.class, "COMPOSITION");
+  assert.equal(found.classified.reason, "UNMEASURED_COMBINATION_IS_NOT_EMERGENCE");
+  assert.equal(found.candidates.length, 0);
+  assert.equal(found.emergence_is_not_proof, true);
+});
+
+test("measured combination without extra property is false emergence", () => {
+  const classified = classifyEmergence({
+    parts: [{ capability: "reasoning" }, { capability: "memory" }],
+    catalog: ["reasoning", "memory"],
+    measurements: { measured: true, synergy: 0 },
+    extra_property: false,
+  });
+  assert.equal(classified.class, "COMPOSITION");
+  assert.equal(classified.reason, "NO_EXTRA_PROPERTY");
+  assert.equal(classified.candidate, false);
+});
+
+test("synergy requires a complete baseline, a metric, and an extra property", () => {
+  const incomplete = measureBaselines({
+    parts: [{ id: "A" }, { id: "B" }],
+    measurements: { A: 1 },
+  });
+  assert.equal(incomplete.incomplete_baseline_blocks_emergence, true);
+  const noMetric = measureSynergy({ baseline: { expected: 2 }, combined: 3 });
+  assert.equal(noMetric.reason, "METRIC_REQUIRED");
+  const synergy = measureSynergy({
+    baseline: { expected: 2 },
+    combined: 4,
+    metric: "accuracy",
+    sample_size: 3,
+    conditions: "review",
+    limitations: ["small sample"],
+  });
+  assert.equal(synergy.status, "MEASURED");
+  assert.equal(synergy.synergy, 2);
+  assert.equal(synergy.universal_formula, false);
+  const classified = classifyEmergence({
+    parts: [{ capability: "reasoning" }, { capability: "memory" }],
+    catalog: ["reasoning", "memory"],
+    measurements: { measured: true, synergy: 2 },
+    extra_property: true,
+  });
+  assert.equal(classified.class, "EMERGENT_CANDIDATE");
+  assert.equal(classified.state, "CANDIDATE");
+  assert.equal(classified.verified, false);
+});
+
+test("a single observation stays CANDIDATE; reproduction can falsify", () => {
+  const once = reproduceEmergence({ observations: [{ measured: true, outcome: "ok" }] });
+  assert.equal(once.status, "CANDIDATE");
+  assert.equal(once.reproduced, false);
+  const twice = reproduceEmergence({
+    observations: [{ measured: true, outcome: "ok" }, { measured: true, outcome: "ok" }],
+  });
+  assert.equal(twice.status, "REPRODUCED");
+  const clash = reproduceEmergence({
+    observations: [{ measured: true, outcome: "ok" }, { measured: true, outcome: "fail" }],
+  });
+  assert.equal(clash.status, "FALSIFIED");
+});
+
+test("emergent candidates expire and are never eternally true", () => {
+  const expiry = expireEmergentCapability({
+    candidate: { created_at: "2020-01-01T00:00:00.000Z" },
+    now: "2026-09-17T00:00:00.000Z",
+  });
+  assert.equal(expiry.revalidation_required, true);
+  assert.equal(expiry.eternally_true, false);
+  const model = expireEmergentCapability({ candidate: { created_at: "2026-09-17T00:00:00.000Z" }, now: "2026-09-17T00:00:00.000Z", model_changed: true });
+  assert.equal(model.status, "REVALIDATION_REQUIRED");
+});
+
+test("plasticity strengthens, weakens, expires, and reactivates without auto-adoption", () => {
+  const liveSynapse = describeCognitiveSynapse({
+    source: "a",
+    target: "b",
+    capability: "review",
+  }).synapse;
+  const stronger = evolveCognitiveSynapse({ synapse: liveSynapse, op: "strengthen", outcome: { measured: true, success: true } });
+  assert.equal(stronger.action, "strengthen");
+  assert.equal(stronger.adopted, false);
+  const weaker = evolveCognitiveSynapse({ synapse: liveSynapse, op: "weaken", outcome: { measured: true, success: false } });
+  assert.equal(weaker.action, "weaken");
+  const dated = describeCognitiveSynapse({
+    source: "a",
+    target: "b",
+    capability: "review",
+    at: "2026-01-01T00:00:00.000Z",
+    valid_until: "2026-06-01T00:00:00.000Z",
+  }).synapse;
+  const expired = evolveCognitiveSynapse({ synapse: dated, op: "expire", now: "2026-09-17T00:00:00.000Z" });
+  assert.equal(expired.status, "EXPIRED");
+  const revived = evolveCognitiveSynapse({ synapse: { ...dated, state: "EXPIRED" }, op: "reactivate" });
+  assert.equal(revived.action, "reactivate");
+  assert.equal(revived.synapse.state, "RECOVERING");
+  assert.equal(revived.adopted, false);
+  const fitness = synapticFitness({ synapse: liveSynapse, success: 1, failure: 0, latency: null });
+  assert.equal(fitness.score, null);
+  assert.equal(fitness.magic_score, false);
+});
+
+test("mutations stay in a sandbox and the previous genome remains recoverable", () => {
+  const genome = describeCognitiveGenome({
+    resources: [{ id: "local" }],
+    capabilities: ["review"],
+    architecture: { architecture_id: "arch_simple" },
+  });
+  const mutation = proposeCognitiveMutation({ genome, kind: "increase_verification" });
+  assert.equal(mutation.status, "PROPOSED");
+  assert.equal(mutation.sandbox, true);
+  assert.equal(mutation.adopted, false);
+  const loop = safeEvolutionLoop({ current: genome, mutation, measurements: { executed: true, measured: true }, verified: false });
+  assert.equal(loop.current_preserved, true);
+  assert.equal(loop.adopted, false);
+  assert.equal(loop.reversible, true);
+  const adopted = safeEvolutionLoop({ current: genome, mutation, measurements: { executed: true, measured: true }, verified: true, simulated: true });
+  assert.equal(adopted.adopted, false);
+});
+
+test("mutation comparison requires a metric and never claims better in general", () => {
+  const noMetric = compareMutations({ a: { kind: "add_node" }, b: { kind: "add_synapse" }, measurements: { measured: true } });
+  assert.equal(noMetric.reason, "METRIC_REQUIRED");
+  const compared = compareMutations({
+    a: { kind: "add_node" },
+    b: { kind: "increase_verification" },
+    measurements: { measured: true, a: 1, b: 2 },
+    metric: "verification_success",
+    conditions: "review",
+  });
+  assert.equal(compared.verdict, "B_BETTER_IN_CONTEXT");
+  assert.equal(compared.better_in_general, false);
+});
+
+test("genome digest identifies exactly what changed", () => {
+  const a = describeCognitiveGenome({ resources: [{ id: "a" }], capabilities: ["review"] });
+  const b = describeCognitiveGenome({ resources: [{ id: "a" }, { id: "b" }], capabilities: ["review"] });
+  const diff = compareCognitiveGenomes({ a, b });
+  assert.equal(diff.same_digest, false);
+  assert.ok(diff.changed.includes("resources"));
+  assert.equal(diff.better_in_general, false);
+});
+
+test("emergent organs stay functions of the same Acorn", () => {
+  const grouped = groupEmergentFunctions({
+    candidates: [{ capability_id: "x", state: "VERIFIED", reproduced: true }],
+  });
+  assert.equal(grouped.second_cortex, false);
+  assert.equal(grouped.second_runtime, false);
+  assert.equal(grouped.new_authority, false);
+  const none = groupEmergentFunctions({ candidates: [{ state: "CANDIDATE" }] });
+  assert.equal(none.status, "INCONCLUSIVE");
+});
+
+test("emergence grants no authority and defense contains unsafe mutations", () => {
+  const authority = emergenceAuthority({ candidate: { capability_id: "x" } });
+  assert.equal(authority.can_modify_breaker, false);
+  assert.equal(authority.can_merge, false);
+  assert.equal(authority.can_bypass_defense, false);
+  assert.equal(authority.can_access_secrets, false);
+  const unsafe = watchEvolution({
+    mutation: { adopted: true },
+    grant: { actor: "acorn", authority: true, breaker: true, defense_bypass: true, secrets: true },
+    integrity_changed: true,
+  });
+  assert.equal(unsafe.status, "CONTAINED");
+  assert.ok(unsafe.findings.includes("unsafe_mutation"));
+  assert.ok(unsafe.findings.includes("authority_escalation"));
+  assert.ok(unsafe.findings.includes("breaker_bypass"));
+  assert.ok(unsafe.findings.includes("defense_bypass"));
+  assert.ok(unsafe.findings.includes("secret_access"));
+  assert.equal(unsafe.defense_continues, true);
+});
+
+test("self-knowledge and blind spots stay distinct categories", () => {
+  const self = describeSelfKnowledge({
+    qualifications: [
+      { capability: "review", declared: true, measured: false, verified: false, state: "DECLARED" },
+      { capability: "code", declared: true, measured: true, verified: false, expired: true },
+    ],
+    failures: ["xai"],
+  });
+  assert.deepEqual(self.think_i_can_do, ["review"]);
+  assert.deepEqual(self.can_do, ["code"]);
+  assert.deepEqual(self.verified_i_can_do, []);
+  assert.deepEqual(self.never_tested, ["review"]);
+  assert.equal(self.categories_distinct, true);
+  const blinds = discoverCognitiveBlindSpots({
+    qualifications: [{ capability: "review", measured: false, expired: true }],
+    resources: [{ provider: "openai", model: "gpt", channel: "api" }, { provider: "openai", model: "gpt", channel: "api" }],
+    architectures: [{ kind: "SIMPLE" }],
+    assumptions: [{ verified: false }],
+  });
+  assert.ok(blinds.findings.includes("capability_not_tested"));
+  assert.ok(blinds.findings.includes("single_provider_dependency"));
+  assert.ok(blinds.findings.includes("unexplored_configuration"));
+});
+
+test("curiosity and experiment priority keep components, not an opaque score", () => {
+  const curiosity = proposeCognitiveCuriosity({ unknown: "unknown_capability", hypothesis: "A+B yields recovery" });
+  assert.equal(curiosity.status, "PROPOSED");
+  assert.equal(curiosity.adopted, false);
+  const ranked = prioritizeExperiments({
+    candidates: [{ id: "e1", information_gain: "high", risk: "LOW", cost: 0 }],
+  });
+  assert.equal(ranked.opaque_score, false);
+  assert.equal(ranked.ranked[0].opaque_score, null);
+  assert.equal(ranked.ranked[0].components.risk, "LOW");
+});
+
+test("unknown capability is admitted without rewriting Cortex", () => {
+  const curiosity = proposeCognitiveCuriosity({ unknown: "UNKNOWN_CAPABILITY" });
+  const unknown = admitUnknownIntelligence({ id: "newcap", provider: "UNKNOWN", env: {} });
+  assert.equal(unknown.cortex_modified, false);
+  assert.equal(curiosity.live, false);
 });

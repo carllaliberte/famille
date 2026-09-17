@@ -513,6 +513,27 @@ export async function runContinuousRuntime({
         status: discovery.pattern?.status || "INCONCLUSIVE",
         adopted: false,
       },
+      emergence: {
+        class: discovery.emergence?.classified?.class || "COMPOSITION",
+        candidates: (discovery.emergence?.candidates || []).length,
+        emergent: discovery.emergence?.classified?.emergent === true,
+        observed_is_not_verified: true,
+      },
+      genome: {
+        digest: discovery.genome?.digest || null,
+        version: discovery.genome?.version || null,
+      },
+      self_knowledge: {
+        can_do: (discovery.self_knowledge?.can_do || []).length,
+        think_i_can_do: (discovery.self_knowledge?.think_i_can_do || []).length,
+        verified: (discovery.self_knowledge?.verified_i_can_do || []).length,
+        never_tested: (discovery.self_knowledge?.never_tested || []).length,
+      },
+      blind_spots: discovery.blind_spots?.findings || [],
+      evolution: {
+        adopted: discovery.evolution?.adopted === true,
+        reversible: discovery.evolution?.reversible === true,
+      },
       unknown: { cortex_modified: discovery.unknown.cortex_modified, live: false },
       synapses: {
         active: discovery.metrics.synapses_active,
