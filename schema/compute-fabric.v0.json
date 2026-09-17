@@ -1,0 +1,51 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/compute-fabric.v0.json",
+  "title": "famille.compute-fabric.v0",
+  "description": "Cortex-owned compute resource layer. Not a second brain, mesh, judge, or governance. CPU/GPU/QPU/HPC and future accelerators are capabilities, never authority. Unmeasured fields are UNKNOWN. LIVE remains Carl. Adapter exists ≠ provider connected ≠ QPU execution verified.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["v", "state"],
+  "properties": {
+    "v": { "const": "compute-fabric.v0" },
+    "state": {
+      "enum": [
+        "DEFINED",
+        "DISCOVERED",
+        "CONNECTED",
+        "MEASURED",
+        "EXECUTABLE",
+        "VERIFIED",
+        "HOLD_HUMAN",
+        "UNAVAILABLE",
+        "FAILED",
+        "UNKNOWN"
+      ]
+    },
+    "compute_type": {
+      "enum": [
+        "cpu",
+        "gpu",
+        "qpu",
+        "simulator",
+        "hpc",
+        "tpu",
+        "npu",
+        "photonic",
+        "neuromorphic",
+        "optical",
+        "analog",
+        "unknown"
+      ]
+    },
+    "availability": { "type": "string" },
+    "authentication_state": { "enum": ["MISSING", "PRESENT", "UNKNOWN"] },
+    "live": { "const": false },
+    "certified": { "const": false },
+    "auto_merge": { "const": false },
+    "authority": { "const": "carl" },
+    "intelligence": { "const": false },
+    "closed_list": { "const": false },
+    "provider_connected": { "type": "boolean" },
+    "qpu_execution_verified": { "type": "boolean" }
+  }
+}
