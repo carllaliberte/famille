@@ -35,6 +35,7 @@ import { measureAutonomy, autonomyBudget } from "./autonomous-runtime.mjs";
 import { learnCortexExperience } from "./cortex-learning-cycle.mjs";
 import { expireEvidence, sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
 import { intelligenceDiscoveryLoop, measureWorld } from "./intelligence-ecosystem.mjs";
+import { cognitiveDiscoveryCycle } from "./cognitive-discovery.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
 
@@ -338,6 +339,12 @@ export async function runContinuousRuntime({
     need: "review",
     env: process.env,
   });
+  const discovery = cognitiveDiscoveryCycle({
+    task: { objective: "review", required_capabilities: ["review"], risk: "LOW_RISK" },
+    intelligence,
+    env: process.env,
+    now: at,
+  });
   const metrics = organismMetrics({
     runtime_coverage: inventory.coverage.execution_coverage,
     capability_discovery_rate: inventory.coverage.discovered_count,
@@ -347,6 +354,7 @@ export async function runContinuousRuntime({
     failed_recoveries: recoveries.filter((row) => row.status !== "RECOVERED" && row.status !== "NOT_REQUIRED").length,
     authority_violations_prevented: envelope.collision ? 1 : 0,
     autonomy_exposure: autonomy.autonomous_steps,
+    common_mode_risk: discovery.metrics.common_mode_risks,
   });
   const sealed = sealEvidence({
     version: CONTINUOUS_RUNTIME_VERSION,
@@ -442,6 +450,51 @@ export async function runContinuousRuntime({
         missing: row.missing,
       })),
       unknown: { state: intelligence.unknown.state, cortex_modified: intelligence.admitted.cortex_modified, live: false },
+      live: false,
+    },
+    discovery: {
+      version: discovery.version,
+      status: discovery.status,
+      second_cortex: false,
+      second_mesh: false,
+      capability_is_not_authority: true,
+      qualifications: {
+        declared: discovery.metrics.capabilities_declared,
+        measured: discovery.metrics.capabilities_measured,
+        verified: discovery.metrics.capabilities_verified,
+      },
+      paths: {
+        count: discovery.paths.paths.length,
+        ranked: discovery.paths.ranked,
+        selected: discovery.paths.selected,
+        kinds: discovery.paths.paths.map((row) => row.id),
+      },
+      budget: {
+        risk: discovery.budget.risk,
+        resources: discovery.budget.resources,
+        verify: discovery.budget.verify,
+        falsify: discovery.budget.falsify,
+      },
+      common_mode: {
+        risk: discovery.common_mode.COMMON_MODE_RISK,
+        provider_correlation: discovery.common_mode.PROVIDER_CORRELATION,
+        consensus_is_not_independence: true,
+      },
+      trust: {
+        single_number: discovery.trust.single_number,
+        dimensions: discovery.trust.dimensions,
+      },
+      experiment: {
+        adopted: discovery.experiment.adopted,
+        auto_adopt: false,
+        strategy: discovery.experiment.strategy,
+      },
+      unknown: { cortex_modified: discovery.unknown.cortex_modified, live: false },
+      synapses: {
+        active: discovery.metrics.synapses_active,
+        expired: discovery.metrics.synapses_expired,
+      },
+      metrics: discovery.metrics,
       live: false,
     },
     organism,

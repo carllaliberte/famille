@@ -186,4 +186,10 @@ test("real Acorn organs remain a single organism", async () => {
   assert.ok(result.coverage.discovered_count > 10);
   assert.equal(result.live, false);
   assert.equal(result.auto_merge, false);
+  assert.equal(result.discovery.second_cortex, false);
+  assert.equal(result.discovery.live, false);
+  assert.equal(result.discovery.paths.ranked, false);
+  assert.equal(result.discovery.trust.single_number, null);
+  assert.equal(result.discovery.experiment.adopted, false);
+  assert.equal(result.discovery.unknown.cortex_modified, false);
 });
