@@ -8,6 +8,7 @@
 import http from "node:http";
 import https from "node:https";
 import { pathToFileURL, URL } from "node:url";
+import { governEffect } from "./acorn-effect-governor.mjs";
 
 export const TOKEN_LIMIT_KEYS = Object.freeze([
   "max_output_tokens",
@@ -24,53 +25,34 @@ export function requestPath(req, upstream = new URL("https://openrouter.ai/api/v
 
 export function clampOpenRouterBudget(parsed, maxOutputTokens) {
   const hits = [];
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return { body: parsed, clamped: false, hits };
-  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { body: parsed, clamped: false, hits };
   const walk = (node, path) => {
     if (!node || typeof node !== "object") return;
-    if (Array.isArray(node)) {
-      node.forEach((item, i) => walk(item, `${path}[${i}]`));
-      return;
-    }
+    if (Array.isArray(node)) { node.forEach((item, i) => walk(item, `${path}[${i}]`)); return; }
     for (const key of TOKEN_LIMIT_KEYS) {
       if (!Object.prototype.hasOwnProperty.call(node, key)) continue;
       const before = node[key];
-      if (Number(before) !== maxOutputTokens) {
-        hits.push({ key: path ? `${path}.${key}` : key, from: before, to: maxOutputTokens });
-      }
+      if (Number(before) !== maxOutputTokens) hits.push({ key: path ? `${path}.${key}` : key, from: before, to: maxOutputTokens });
       node[key] = maxOutputTokens;
     }
-    for (const [key, value] of Object.entries(node)) {
-      if (TOKEN_LIMIT_KEYS.includes(key)) continue;
-      if (value && typeof value === "object") walk(value, path ? `${path}.${key}` : key);
-    }
+    for (const [key, value] of Object.entries(node)) { if (TOKEN_LIMIT_KEYS.includes(key)) continue; if (value && typeof value === "object") walk(value, path ? `${path}.${key}` : key); }
   };
   walk(parsed, "");
-  if (!Object.prototype.hasOwnProperty.call(parsed, "max_output_tokens")) {
-    parsed.max_output_tokens = maxOutputTokens;
-    hits.push({ key: "max_output_tokens", from: null, to: maxOutputTokens });
-  }
+  if (!Object.prototype.hasOwnProperty.call(parsed, "max_output_tokens")) { parsed.max_output_tokens = maxOutputTokens; hits.push({ key: "max_output_tokens", from: null, to: maxOutputTokens }); }
   return { body: parsed, clamped: hits.length > 0, hits };
 }
 
-function arg(name, fallback) {
-  const i = process.argv.indexOf(name);
-  return i >= 0 && process.argv[i + 1] != null ? process.argv[i + 1] : fallback;
-}
+function arg(name, fallback) { const i = process.argv.indexOf(name); return i >= 0 && process.argv[i + 1] != null ? process.argv[i + 1] : fallback; }
 
 export function startProxy({ port, maxOutputTokens, diagnostic = false } = {}) {
   const listenPort = Number(port ?? arg("--port", "17891"));
   const budget = Number(maxOutputTokens ?? arg("--max-output-tokens", "1024"));
   const upstream = new URL("https://openrouter.ai/api/v1");
   const diagOn = diagnostic || process.env.CODEX_PROXY_DIAGNOSTIC === "1";
-
   if (!Number.isInteger(listenPort) || listenPort < 1 || listenPort > 65535) throw new Error("invalid proxy port");
   if (!Number.isInteger(budget) || budget < 1) throw new Error("invalid max output token budget");
 
-  const diag = (message) => {
-    if (diagOn) process.stderr.write(`OPENROUTER_PROXY_DIAG ${message}\n`);
-  };
+  const diag = (message) => { if (diagOn) process.stderr.write(`OPENROUTER_PROXY_DIAG ${message}\n`); };
 
   const server = http.createServer((req, res) => {
     let body = "";
@@ -96,8 +78,25 @@ export function startProxy({ port, maxOutputTokens, diagnostic = false } = {}) {
       headers.host = upstream.host;
       headers["content-length"] = String(Buffer.byteLength(outgoing));
       headers["connection"] = "close";
-
       diag(`request method=${req.method || ""} path=${path} clamped=${clamped} keys=${clampKeys || "none"}`);
+
+      const governance = governEffect({
+        capability_id: `openrouter.proxy:${req.method || "GET"}:${path}`,
+        kind: "EXTERNAL_HTTP_REQUEST",
+        resource: upstream.origin,
+        provider: "openrouter",
+        operation: `${req.method || "GET"} ${path}`,
+        observability: "VERIFIED",
+        control: "VERIFIED",
+        reversibility: "PARTIAL",
+        epistemic: "MEASURED",
+        evidence: { measured: true, verified: true, known_executor: true, known_entrypoint: true },
+      });
+      if (!governance.allowed) {
+        res.writeHead(403, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: "ACORN_INTERPOSITION_BLOCKED", decision: governance.decision, live: false, authority_granted: false }));
+        return;
+      }
 
       const upstreamReq = https.request({
         protocol: upstream.protocol,
@@ -116,23 +115,17 @@ export function startProxy({ port, maxOutputTokens, diagnostic = false } = {}) {
         res.writeHead(upstreamRes.statusCode || 502, upstreamRes.headers);
         upstreamRes.pipe(res);
       });
-
-      upstreamReq.on("socket", (socket) => {
-        socket.on("secureConnect", () => diag("tls secureConnect"));
-      });
+      upstreamReq.on("socket", (socket) => socket.on("secureConnect", () => diag("tls secureConnect")));
       upstreamReq.on("error", (error) => {
         diag(`upstream_error message=${String(error.message || error).replace(/\s+/g, "_")}`);
         if (!res.headersSent) res.writeHead(502, { "content-type": "application/json" });
         res.end(JSON.stringify({ error: "openrouter_proxy_upstream", message: String(error.message || error) }));
       });
-
       upstreamReq.end(outgoing);
     });
   });
 
-  server.listen(listenPort, "127.0.0.1", () => {
-    process.stdout.write(`OPENROUTER_BUDGET_PROXY_READY port=${listenPort} max_output_tokens=${budget}\n`);
-  });
+  server.listen(listenPort, "127.0.0.1", () => process.stdout.write(`OPENROUTER_BUDGET_PROXY_READY port=${listenPort} max_output_tokens=${budget}\n`));
   return server;
 }
 
