@@ -10,7 +10,10 @@ test("real cognitive-worker dispatch is governed by the interposition firewall",
     if (args[0] === "api" && args[1].includes("/comments")) return JSON.stringify({ id: 123, html_url: "https://github.com/example" });
     return JSON.stringify({ id: 123 });
   };
-  const result = executeDispatch([{ number: 1, sha: "abc" }], run, { GITHUB_REPOSITORY: "carllaliberte/famille" });
+  const result = executeDispatch([{ number: 1, sha: "abc" }], run, {
+    GITHUB_REPOSITORY: "carllaliberte/famille",
+    ACORN_SYSTEM_MODE: "RUN",
+  });
   assert.equal(result[0].state, "VERIFIED");
   assert.equal(result[0].interposition.decision, "ALLOW");
   assert.equal(result[0].interposition.authority_granted, false);
