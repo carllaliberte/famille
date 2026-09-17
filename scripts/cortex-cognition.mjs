@@ -80,10 +80,11 @@ export function discoverCognitiveCapabilities(task = {}, resources = []) {
 export function routeByCapability({ task = {}, resources = [] } = {}) {
   const discovery = discoverCognitiveCapabilities(task, resources);
   const composition = composeSynapse(task, discovery);
+  const covering = discovery.discovered.filter((row) => (row.covered || []).length > 0);
   return {
     status: composition.ok ? "DISCOVERED" : "HOLD_HUMAN",
     required_capabilities: discovery.required,
-    candidates: discovery.discovered.map((row) => row.intelligence),
+    candidates: covering.map((row) => row.intelligence),
     selected: composition.selected,
     missing: composition.missing,
     synapse: composition.synapse,
@@ -170,7 +171,12 @@ export function cortexCycle({ task = {}, resources = [], expected, observed, evi
     evidence,
   });
   const executed = evidence.executed === true;
-  const verified = evidence.verified === true && falsification.refuted === false && defenseResult.state !== "HOLD_HUMAN";
+  const breakerObserved = text(defense.breaker || "UNKNOWN") || "UNKNOWN";
+  const ambiguousBreaker = ["AMBIGUOUS", "UNKNOWN", "INVALID"].includes(breakerObserved);
+  const verified = evidence.verified === true
+    && falsification.refuted === false
+    && defenseResult.state !== "HOLD_HUMAN"
+    && ambiguousBreaker === false;
   return {
     version: CORTEX_COGNITION_VERSION,
     status: verified ? "VERIFIED" : executed ? "EXECUTED" : "DISCOVERED",

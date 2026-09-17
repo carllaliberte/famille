@@ -40,9 +40,12 @@ const SKIP_DIR = new Set([
 ]);
 
 const ROOT_CONVENTIONS = Object.freeze([
-  { dir: "scripts", ext: /\.(mjs|js)$/ },
-  { dir: ".github/swarm", ext: /\.mjs$/ },
-  { dir: "sdk", ext: /\.js$/ },
+  { dir: "scripts", ext: /\.(mjs|js)$/, kind: "script" },
+  { dir: ".github/swarm", ext: /\.mjs$/, kind: "swarm" },
+  { dir: "sdk", ext: /\.js$/, kind: "sdk" },
+  { dir: "schema", ext: /\.json$/, kind: "contract" },
+  { dir: ".github/workflows", ext: /\.ya?ml$/, kind: "workflow" },
+  { dir: "test", ext: /\.test\.(js|mjs)$/, kind: "test" },
 ]);
 
 const PROBE_EXPORTS = new Set([
@@ -107,11 +110,30 @@ function isTestFile(name) {
   return /\.test\.(mjs|js|cjs)$/.test(name) || /(^|\/)test\//.test(name);
 }
 
-function conventionKind(relativePath) {
+function conventionKind(relativePath, explicit) {
+  if (explicit) return explicit;
   if (relativePath.startsWith("scripts/")) return "script";
   if (relativePath.startsWith(".github/swarm/")) return "swarm";
   if (relativePath.startsWith("sdk/")) return "sdk";
+  if (relativePath.startsWith("schema/")) return "contract";
+  if (relativePath.startsWith(".github/workflows/")) return "workflow";
+  if (relativePath.startsWith("test/")) return "test";
   return "module";
+}
+
+export function organOf(relativePath = "", kind = "") {
+  const path = String(relativePath);
+  if (kind === "contract") return "schema";
+  if (kind === "workflow") return "workflow";
+  if (kind === "test") return "test";
+  if (/defense|breaker/.test(path)) return "defense";
+  if (/cortex/.test(path)) return "cortex";
+  if (/fabric/.test(path)) return "fabric";
+  if (/mirror|backup|drive|evidence-seal|provenance/.test(path)) return "evidence";
+  if (/memory|learn|evolv/.test(path)) return "memory";
+  if (/connector|adapter|provider|lane|open-channel|open-intelligence/.test(path)) return "adapter";
+  if (/runtime|worker|inventory|continuous/.test(path)) return "runtime";
+  return kind || "module";
 }
 
 function resolveImport(fromFile, spec) {
@@ -215,6 +237,19 @@ export function inventoryProbe() {
 }
 
 export function defaultSyntaxCheck(abs) {
+  if (/\.json$/.test(abs)) {
+    try {
+      JSON.parse(readFileSync(abs, "utf8"));
+      return { loadable: true, reason: "JSON_OK" };
+    } catch (error) {
+      return { loadable: false, failed: true, reason: "JSON_FAILED", error: String(error?.message || error).slice(0, 240) };
+    }
+  }
+  if (/\.ya?ml$/.test(abs)) {
+    const body = readText(abs);
+    if (!body.trim()) return { loadable: false, failed: true, reason: "YAML_EMPTY" };
+    return { loadable: true, reason: "YAML_PRESENT" };
+  }
   try {
     execFileSync(process.execPath, ["--check", abs], { stdio: "pipe", encoding: "utf8" });
     return { loadable: true, reason: "SYNTAX_OK" };
@@ -230,9 +265,9 @@ function discoverFiles(root) {
     if (!existsSync(dir)) continue;
     for (const abs of walkFiles(root, dir)) {
       const relativePath = rel(root, abs);
-      if (isTestFile(relativePath)) continue;
-      if (!convention.ext.test(extname(abs))) continue;
-      found.push({ abs, relativePath, kind: conventionKind(relativePath) });
+      if (convention.kind !== "test" && isTestFile(relativePath)) continue;
+      if (!convention.ext.test(relativePath) && !convention.ext.test(extname(abs))) continue;
+      found.push({ abs, relativePath, kind: conventionKind(relativePath, convention.kind) });
     }
   }
   return found;
@@ -317,6 +352,60 @@ function unknownIfMissing(numerator, denominator) {
   if (!Number.isFinite(denominator) || denominator <= 0) return "UNKNOWN";
   if (!Number.isFinite(numerator) || numerator < 0) return "UNKNOWN";
   return Number((numerator / denominator).toFixed(4));
+}
+
+export function deploymentIntegrity(entries = []) {
+  const findings = [];
+  for (const entry of entries) {
+    const s = entry.states || {};
+    if (s.discovered === true && s.loadable === true && s.wired !== true) {
+      findings.push({ subject: entry.id, kind: "UNWIRED", reason: "executable present but unwired" });
+    }
+    if (s.wired === true && s.deployed !== true) {
+      findings.push({ subject: entry.id, kind: "UNDEPLOYED", reason: "wired but undeployed" });
+    }
+    if (s.deployed === true && s.executed !== true) {
+      findings.push({ subject: entry.id, kind: "UNEXECUTED", reason: "deployed but never executed" });
+    }
+    if (s.executed === true && s.measured !== true) {
+      findings.push({ subject: entry.id, kind: "UNMEASURED", reason: "executed without measurement" });
+    }
+    if (s.measured === true && s.verified !== true) {
+      findings.push({ subject: entry.id, kind: "UNVERIFIED", reason: "measured without verification" });
+    }
+    if (s.verified === true && s.drifted === true) {
+      findings.push({ subject: entry.id, kind: "DIGEST_CHANGED", reason: "verified capability whose implementation digest changed" });
+    }
+    if (s.drifted === true) {
+      findings.push({ subject: entry.id, kind: "STALE_EVIDENCE", reason: entry.drift?.reason || "stale evidence" });
+    }
+  }
+  return {
+    findings,
+    count: findings.length,
+    status: findings.length ? "DIVERGENT" : "ALIGNED",
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+  };
+}
+
+function isScheduledWorkflow(source) {
+  return /^\s+(schedule|push|workflow_dispatch|pull_request):/m.test(String(source || ""));
+}
+
+function definedFor(kind, source, exported) {
+  if (kind === "contract") {
+    try {
+      const parsed = JSON.parse(source);
+      return Boolean(parsed && typeof parsed === "object");
+    } catch {
+      return false;
+    }
+  }
+  if (kind === "workflow") return /^\s*on:/m.test(source);
+  if (kind === "test") return /\btest\s*\(/.test(source);
+  return EXPORT_RE.test(source) || exported;
 }
 
 export function coverageMetrics(entries = []) {
@@ -427,6 +516,9 @@ export function verifyEvidenceChain(records = []) {
 }
 
 async function probeModule(abs, source, importer) {
+  if (!/\.(mjs|js|cjs)$/.test(abs)) {
+    return { executed: false, measured: false, verified: false, reason: "NO_SAFE_PROBE" };
+  }
   if (typeof importer !== "function") {
     return { executed: false, measured: false, verified: false, reason: "NO_IMPORTER" };
   }
@@ -501,15 +593,17 @@ export async function runInventory({
 
   for (const file of files) {
     const source = readText(file.abs);
-    const defined = EXPORT_RE.test(source) || bindings.exported.has(file.abs);
+    const exported = bindings.exported.has(file.abs);
+    const defined = definedFor(file.kind, source, exported);
     const syntax = typeof checkLoadable === "function" ? checkLoadable(file.abs) : { loadable: false, reason: "NO_CHECKER" };
     const loadableUnknown = syntax.loadable !== true && syntax.failed !== true;
-    const exported = bindings.exported.has(file.abs);
     const npmWired = bindings.npm.has(file.abs);
     const workflowWired = workflows.referenced.has(file.abs);
     const importedBy = [...(importers.get(file.abs) || [])];
-    const wired = exported || npmWired || workflowWired || importedBy.length > 0;
-    const deployed = exported || npmWired || workflows.scheduled.has(file.abs);
+    const npmTestDeploys = /test\//.test(String(bindings.pkg?.scripts?.test || ""));
+    const selfWorkflow = file.kind === "workflow";
+    const wired = exported || npmWired || workflowWired || importedBy.length > 0 || selfWorkflow || file.kind === "test";
+    const deployed = exported || npmWired || workflows.scheduled.has(file.abs) || (selfWorkflow && isScheduledWorkflow(source)) || (file.kind === "test" && npmTestDeploys);
     const names = exportNamesFromSource(source);
     let probe = { executed: false, measured: false, verified: false, reason: "NOT_PROBED" };
     if (syntax.loadable === true && typeof importer === "function") {
@@ -556,8 +650,9 @@ export async function runInventory({
       id: file.relativePath.replace(/\.(mjs|js)$/, ""),
       path: file.relativePath,
       kind: file.kind,
-      script: true,
-      capability: defined && names.length > 0,
+      organ: organOf(file.relativePath, file.kind),
+      script: file.kind === "script" || file.kind === "swarm" || file.kind === "sdk",
+      capability: defined && names.length > 0 && file.kind !== "test" && file.kind !== "workflow" && file.kind !== "contract",
       exports: names,
       importers: importedBy,
       package_export: exported ? bindings.exported.get(file.abs).exportKey : null,
@@ -579,6 +674,12 @@ export async function runInventory({
 
   const drift = detectDrift(previous, entries, at);
   const coverage = coverageMetrics(entries);
+  const integrity = deploymentIntegrity(entries);
+  const organs = {};
+  for (const row of entries) {
+    const organ = row.organ || "module";
+    organs[organ] = (organs[organ] || 0) + 1;
+  }
   const evidence = appendEvidence({
     sequence,
     previousDigest,
@@ -601,6 +702,8 @@ export async function runInventory({
     entries,
     drift,
     coverage,
+    integrity,
+    organs,
     evidence,
     auto_merge: false,
     live: false,

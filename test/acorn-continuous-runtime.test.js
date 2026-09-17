@@ -184,6 +184,15 @@ test("real Acorn organs remain a single organism", async () => {
   assert.equal(result.defense.active, true);
   assert.equal(result.state, "DEFENSIVE_CONTINUATION");
   assert.ok(result.coverage.discovered_count > 10);
+  assert.equal(result.drive.GOOGLE_DRIVE, "CHANNEL_NOT_PRESENT");
+  assert.notEqual(result.drive.GOOGLE_DRIVE, "READY");
+  assert.equal(result.mirrors.synchronized, false);
+  assert.equal(result.backup.writes_main, false);
+  assert.equal(result.reconcile.source_of_truth, "github-main");
+  assert.equal(result.reconcile.writes_main, false);
+  assert.equal(result.next.auto_merge, false);
+  assert.equal(result.evolution.live, false);
+  assert.ok(result.organs);
   assert.equal(result.live, false);
   assert.equal(result.auto_merge, false);
 });

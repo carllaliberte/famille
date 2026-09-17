@@ -12,6 +12,18 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SECRET_PATH = /(^|\/)(\.env|auth\.json|credentials\.json|id_rsa|.*\.pem)$/i;
 const SECRET_NAME = /OPENROUTER_API_KEY|OPENAI_API_KEY|CODEX_AUTH_JSON|GOOGLE_DRIVE_ACCESS_TOKEN|sk-[A-Za-z0-9]/;
 
+export function inventoryProbe() {
+  return {
+    ok: true,
+    version: "github-drive-mirror.v1",
+    source_of_truth: "github-main",
+    writes_main: false,
+    auto_merge: false,
+    live: false,
+    authority: "carl",
+  };
+}
+
 export function emptyMirrorState() {
   return {
     source_of_truth: "github-main",

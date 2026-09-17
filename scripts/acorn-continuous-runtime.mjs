@@ -29,6 +29,14 @@ import {
 import { controlState } from "../.github/swarm/system-breaker.mjs";
 import { cortexCycle, cortexConstitution } from "./cortex-cognition.mjs";
 import { sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
+import { learnCortexExperience } from "./cortex-learning-cycle.mjs";
+import {
+  nextConstructionWork,
+  observeBackupMirror,
+  observeMainSha,
+  reconcileOrganism,
+} from "./acorn-organism-sync.mjs";
+import { classifySuite } from "./acorn-test-baseline.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
 
@@ -127,6 +135,11 @@ export async function runContinuousRuntime({
   previousDigest = null,
   evidencePath = null,
   operation = "inventory",
+  git = null,
+  writeLocalSnapshot = false,
+  snapshotRoot = null,
+  previousSha = null,
+  testFailures = null,
 } = {}) {
   const breaker = breakerObservation(env);
   const threatened = mayPerform({ operation, breaker });
@@ -238,6 +251,46 @@ export async function runContinuousRuntime({
 
   const selection = selectExecutableCapabilities(inventory, ["defense", "cortex", "breaker"]);
   const chain = verifyEvidenceChain([inventory.evidence]);
+  const main = observeMainSha({ env, git, root });
+  const sync = observeBackupMirror({
+    env,
+    root,
+    mainSha: main.sha,
+    git,
+    writeLocalSnapshot,
+    outRoot: snapshotRoot,
+  });
+  const reconcile = reconcileOrganism({
+    main,
+    previousSha,
+    inventory,
+    previousInventory: { entries: previous },
+    backup: sync.backup,
+    mirrors: sync.mirrors,
+    drive: sync.drive,
+    restore: sync.restore,
+    at,
+  });
+  const next = nextConstructionWork({
+    inventory,
+    integrity: inventory.integrity,
+    reconcile,
+  });
+  const evolution = learnCortexExperience({
+    observation: {
+      actual: inventory.coverage,
+      evidence: [inventory.evidence],
+      observed_at: at,
+    },
+    prediction: {
+      hypothesis: "coverage does not silently drop",
+      expected: previous.length ? { discovered_count: previous.length } : null,
+    },
+    verification: { verified: inventory.coverage.failed_count === 0 && inventory.evidence != null },
+  });
+  const baseline = Array.isArray(testFailures)
+    ? classifySuite({ failures: testFailures, mainSha: main.sha })
+    : null;
   const sealed = sealEvidence({
     version: CONTINUOUS_RUNTIME_VERSION,
     observed_at: at,
@@ -254,6 +307,11 @@ export async function runContinuousRuntime({
     recoveries: recoveries.map((row) => ({ subject: row.subject, status: row.status, reason: row.reason })),
     cortex_status: cortex.status,
     threatened_operation: threatened,
+    main_sha: main.sha,
+    GOOGLE_DRIVE: sync.drive.GOOGLE_DRIVE,
+    mirror_status: sync.mirrors.status,
+    backup_status: sync.backup.last_sync_status,
+    next_count: next.count,
     auto_merge: false,
     live: false,
     authority: "carl",
@@ -298,6 +356,28 @@ export async function runContinuousRuntime({
       chain,
     },
     threatened_operation: threatened,
+    main,
+    backup: {
+      source_of_truth: "github-main",
+      status: sync.backup.last_sync_status,
+      sha: sync.backup.last_snapshot_sha,
+      current: reconcile.backup_current,
+      writes_main: false,
+    },
+    drive: sync.drive,
+    mirrors: sync.mirrors,
+    restore: sync.restore,
+    reconcile,
+    evolution: {
+      status: evolution.status,
+      live: false,
+      auto_merge: false,
+      reversible: true,
+    },
+    next,
+    baseline,
+    integrity: inventory.integrity,
+    organs: inventory.organs,
     state: breaker.threatened_blocked ? "DEFENSIVE_CONTINUATION" : "CONTINUOUS",
     auto_merge: false,
     live: false,
@@ -360,6 +440,11 @@ if (isMain()) {
     QUARANTINED: c.quarantined_count,
     FAILED: c.failed_count,
     DEFENSE: "ACTIVE",
+    MAIN_SHA: result.main.sha,
+    GOOGLE_DRIVE: result.drive.GOOGLE_DRIVE,
+    MIRROR: result.mirrors.status,
+    BACKUP: result.backup.status,
+    NEXT: result.next.status,
     auto_merge: false,
     live: false,
     authority: "carl",

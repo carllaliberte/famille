@@ -8,8 +8,10 @@ import {
   appendEvidence,
   availabilityFromInventory,
   coverageMetrics,
+  deploymentIntegrity,
   detectDrift,
   inventoryConstitution,
+  organOf,
   runInventory,
   selectExecutableCapabilities,
   verifyEvidenceChain,
@@ -210,6 +212,34 @@ test("real famille tree discovers defense without an allowlist", async () => {
   assert.equal(defense.live, false);
   assert.equal(inventory.constitution.no_script_allowlist, true);
   assert.ok(inventory.coverage.discovered_count > 1);
+});
+
+test("organism inventory discovers contracts, workflows and tests without claiming LIVE", async () => {
+  const inventory = await runInventory({ root: join(import.meta.dirname, "..") });
+  const schema = inventory.entries.find((row) => row.path === "schema/acorn-capability.v0.json");
+  const workflow = inventory.entries.find((row) => row.path === ".github/workflows/acorn-autopilot.yml");
+  const testFile = inventory.entries.find((row) => row.path === "test/acorn-capability-inventory.test.js");
+  assert.ok(schema, "capability schema must be discovered");
+  assert.equal(schema.kind, "contract");
+  assert.equal(schema.organ, "schema");
+  assert.equal(schema.states.defined, true);
+  assert.equal(schema.states.loadable, true);
+  assert.equal(schema.live, false);
+  assert.ok(workflow, "autopilot workflow must be discovered");
+  assert.equal(workflow.kind, "workflow");
+  assert.equal(workflow.states.wired, true);
+  assert.equal(workflow.live, false);
+  assert.ok(testFile, "inventory test must be discovered as a test surface");
+  assert.equal(testFile.kind, "test");
+  assert.equal(testFile.live, false);
+  assert.ok(inventory.organs.schema >= 1);
+  assert.ok(inventory.organs.workflow >= 1);
+  assert.ok(inventory.organs.test >= 1);
+  assert.equal(inventory.integrity.live, false);
+  assert.ok(["ALIGNED", "DIVERGENT"].includes(inventory.integrity.status));
+  assert.equal(organOf("scripts/acorn-defense.mjs", "script"), "defense");
+  const integrity = deploymentIntegrity(inventory.entries);
+  assert.equal(integrity.auto_merge, false);
 });
 
 test("autonomous-runtime is wired through package export, not merely present in git", async () => {

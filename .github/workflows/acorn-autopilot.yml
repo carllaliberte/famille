@@ -72,9 +72,11 @@ jobs:
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
           ACORN_CONTINUOUS_EVIDENCE: evidence/autopilot/continuous-runtime.json
           ACORN_INVENTORY_SNAPSHOT: evidence/autopilot/capability-inventory.json
+          ACORN_MAIN_SHA: ${{ github.event_name == 'push' && github.ref_name == 'main' && github.sha || '' }}
         run: |
           mkdir -p evidence/autopilot
           node scripts/acorn-continuous-runtime.mjs
+          node scripts/acorn-organism-sync.mjs
 
       - name: Run bounded cognitive worker
         if: ${{ steps.breaker.outputs.allowed == 'true' }}

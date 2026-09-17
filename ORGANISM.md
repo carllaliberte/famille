@@ -32,6 +32,7 @@ Carte des **organes déjà présents** dans FAMILLE, plus quelques adaptateurs m
 | Environnement | externe ≠ fiable | `INTEROP-IA.md` |
 | Homéostasie | état **décomposable** | `healthState` — pas un score unique |
 | Continuité | découverte → câblage → mesure → preuve | `scripts/acorn-continuous-runtime.mjs` — pas un second runtime |
+| Réconciliation | main SHA → backup/miroir one-way → next | `scripts/acorn-organism-sync.mjs` — Drive/miroir ≠ autorité |
 
 ## Boucle
 

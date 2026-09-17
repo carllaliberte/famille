@@ -11,6 +11,8 @@
     "live:probe": "node scripts/live-proof.mjs",
     "runtime:continuous": "node scripts/acorn-continuous-runtime.mjs",
     "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
+    "runtime:sync": "node scripts/acorn-organism-sync.mjs",
+    "runtime:baseline": "node scripts/acorn-test-baseline.mjs",
     "work:record": "node scripts/work-record.mjs",
     "peut-dire": "node sdk/cli.js",
     "prepare": "husky"
@@ -26,6 +28,7 @@
     "./acorn-defense": "./scripts/acorn-defense.mjs",
     "./acorn-capability-inventory": "./scripts/acorn-capability-inventory.mjs",
     "./acorn-continuous-runtime": "./scripts/acorn-continuous-runtime.mjs",
+    "./acorn-organism-sync": "./scripts/acorn-organism-sync.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
   },
