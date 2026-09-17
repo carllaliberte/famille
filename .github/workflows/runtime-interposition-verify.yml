@@ -1,0 +1,30 @@
+name: ACORN Runtime Interposition Verify
+
+on:
+  push:
+    branches:
+      - main
+      - 'grok/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-interposition:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: |
+          node --check scripts/acorn-runtime-interposition.mjs
+          node --check scripts/cognitive-worker.mjs
+      - name: Interposition integration tests
+        run: node --test test/acorn-ai-interposition.test.js test/cognitive-worker-interposition.test.js
+      - name: Full regression suite
+        run: npm test
