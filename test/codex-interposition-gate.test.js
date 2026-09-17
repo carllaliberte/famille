@@ -15,13 +15,13 @@ test("Codex write execution crosses the Acorn interposition gate", () => {
   assert.match(r.stderr, /authority_granted=false/);
 });
 
-test("Codex execution cannot cross the gate when governance evidence is unavailable", () => {
+test("Codex execution is fail-closed when the Breaker is not RUN", () => {
   const r = spawnSync(process.execPath, [gate, "exec", "--sandbox", "danger-full-access", "task"], {
     encoding: "utf8",
     env: { ...process.env, ACORN_SYSTEM_MODE: "UNKNOWN", GITHUB_REPOSITORY: "carllaliberte/famille" },
   });
-  assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stderr, /ACORN_CODEX_INTERPOSITION decision=ALLOW/);
+  assert.equal(r.status, 126);
+  assert.match(r.stderr, /decision=DENY reason=BREAKER_NOT_RUN/);
 });
 
 test("read-only Codex discovery is interposed through the same choke point", () => {
