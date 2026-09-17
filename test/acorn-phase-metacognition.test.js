@@ -1,0 +1,11 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { phaseVector, detectPhaseTransition, metacognitiveAssessment, transitionHypothesis, chooseMetacognitiveExperiment, runPhaseMetacognitionCycle, assertPhaseMetacognitionInvariant } from "../scripts/acorn-phase-metacognition.mjs";
+
+test("stable history is not forced into a transition",()=>{const h=[phaseVector({capability:.5,novelty:.2}),phaseVector({capability:.5,novelty:.2}),phaseVector({capability:.5,novelty:.2})];assert.equal(detectPhaseTransition(h).phase,"STABLE");});
+test("rapid capability and novelty change can expose emergence",()=>{const h=[phaseVector({capability:.1,novelty:.1,control:.9}),phaseVector({capability:.3,novelty:.3,control:.9}),phaseVector({capability:.9,novelty:.9,control:.8})];assert.equal(detectPhaseTransition(h).phase,"ACCELERATING");});
+test("high contradiction exposes divergence",()=>{const h=[phaseVector({capability:.4,contradiction:.1,control:.9}),phaseVector({capability:.5,contradiction:.4,control:.9}),phaseVector({capability:.6,contradiction:.8,control:.9})];assert.equal(detectPhaseTransition(h).phase,"DIVERGING");});
+test("unknown control state forces metacognitive remeasurement",()=>{const a=metacognitiveAssessment({history:[phaseVector(),phaseVector(),phaseVector()],unknownSpace:.9,governability:.2});assert.equal(a.needs_remeasurement,true);});
+test("transition hypothesis is not causal truth",()=>{const x=transitionHypothesis({before:{phase:"STABLE"},after:{phase:"EMERGENT"}});assert.equal(x.verified,false);assert.equal(x.causal,false);assert.equal(x.authority_granted,false);});
+test("experiment selection prefers information gain adjusted for risk",()=>{const a=chooseMetacognitiveExperiment({assessment:{phase:"UNKNOWN"},options:[{id:"safe",information_gain:.7,risk:.1},{id:"risky",information_gain:.9,risk:.9}]});assert.equal(a.id,"safe");});
+test("full cycle preserves sovereignty",()=>{const r=runPhaseMetacognitionCycle({history:[phaseVector({capability:.2}),phaseVector({capability:.3}),phaseVector({capability:.8,novelty:.8})],unknownSpace:.2,governability:.8});assert.equal(r.authority,"carl");assert.equal(r.authority_granted,false);assert.equal(r.breaker_bypass,false);assert.equal(r.auto_merge,false);assert.equal(r.live,false);assert.equal(assertPhaseMetacognitionInvariant(r).status,"VERIFIED");});
