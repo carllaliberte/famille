@@ -24,6 +24,7 @@ import { learnCortexExperience } from "./cortex-learning-cycle.mjs";
 import { snapshotComputeFabric } from "./acorn-compute-fabric.mjs";
 import { snapshotOmniCore } from "./acorn-omni-core.mjs";
 import { snapshotConnector } from "./acorn-connector-flux.mjs";
+import { metabolicCycle, assertCognitiveMetabolismInvariant } from "./acorn-cognitive-metabolism.mjs";
 
 function readJson(path, fallback) {
   try {
@@ -189,6 +190,55 @@ export function runCortexRuntime({
   const compute = snapshotComputeFabric({ env, now: at });
   const omni = snapshotOmniCore({ env, now: at });
   const connector = snapshotConnector({ env, now: at });
+  // The metabolism is part of the canonical Cortex cycle: it consumes the
+  // cycle's observations/evidence and returns bounded next-work, homeostasis,
+  // recycling and revalidation state. It does not create another runtime.
+  const metabolism = metabolicCycle({
+    observations: [
+      {
+        id: workerEvidence.v ? `worker:${workerEvidence.v}` : "cortex-runtime-cycle",
+        subject: objective,
+        provenance: {
+          source: "cortex-runtime",
+          worker_evidence: workerEvidence.v || null,
+          observed_at: at,
+        },
+        evidence: {
+          verified,
+          dispatches: executed.length,
+        },
+        measurement: {
+          measured: measurement.ok === true,
+          routed_targets_delta: measurement.delta ?? null,
+        },
+        verification: {
+          verified,
+        },
+        state: verified ? "VERIFIED" : "OBSERVED",
+      },
+    ],
+    frontier: [
+      {
+        id: "runtime-frontier",
+        subject: "next verified capability or integration",
+        uncertainty: verified ? 0.35 : 0.8,
+        impact: 0.8,
+        observability: 0.8,
+        reversibility: 0.9,
+      },
+    ],
+    revalidation: [
+      {
+        id: "runtime-evidence",
+        age: verified ? 0.1 : 0.8,
+        state: verified ? "KNOWN" : "UNCERTAIN",
+      },
+    ],
+    authority: "carl",
+    auto_merge: false,
+    live: false,
+  });
+  assertCognitiveMetabolismInvariant(metabolism);
 
   return {
     version: "cortex-runtime.v0",
@@ -208,6 +258,7 @@ export function runCortexRuntime({
     compute,
     omni,
     connector,
+    metabolism,
     worker_evidence_ref: workerEvidence.v || null,
   };
 }
