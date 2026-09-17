@@ -20,6 +20,7 @@ import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { runContinuousRuntime } from "./acorn-continuous-runtime.mjs";
 import { executeComputeTask, snapshotComputeFabric } from "./acorn-compute-fabric.mjs";
+import { runUniversalComputeSweep } from "./acorn-universal-compute-sweep.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
   limitsFromEnv,
@@ -76,6 +77,20 @@ export function canonicalWorkFromRuntime(runtime) {
   for (const row of runtime?.unified?.evolution?.next_work || []) push(row, "evolution");
   for (const row of runtime?.unified?.learning?.next || []) push(row, "learning");
   for (const row of runtime?.unified?.metabolism?.next || []) push(row, "metabolism");
+
+  // Compute is part of the organism metabolism: execute every currently
+  // executable safe resource, while keeping remote/paid/unknown work gated.
+  push({
+    id: "universal-compute-sweep",
+    subject: "execute all currently executable compute resources",
+    information_gain: 1,
+    capability_gain: 1,
+    risk_reduction: 0.8,
+    uncertainty: 0.8,
+    reversibility: 1,
+    cost: 0.1,
+    execution_kind: "compute-sweep",
+  }, "compute");
 
   if (!rows.length) {
     const coverage = runtime?.coverage || {};
@@ -161,6 +176,18 @@ function executeDeterministic({ root, task, env }) {
 
 export async function executeWorkTask({ root, task, env = process.env, computeDiscovery = null } = {}) {
   const kind = text(task.execution_kind || "deterministic").toLowerCase();
+  if (kind === "compute-sweep") {
+    const started = Date.now();
+    const result = await runUniversalComputeSweep({ env, human_authorization: task.human_authorization === true, policy: task.policy || "FREE_FIRST" });
+    return {
+      status: result.executed_count > 0 || result.held_count > 0 ? "COMPLETED" : "FAILED",
+      duration_ms: Date.now() - started,
+      executor: "compute-fabric-sweep",
+      compute: result,
+      stdout_tail: "",
+      stderr_tail: result.executed_count === 0 && result.held_count === 0 ? "NO_COMPUTE_RESOURCE_EXECUTED_OR_HELD" : "",
+    };
+  }
   if (kind === "compute" || kind === "quantum" || kind === "qpu" || kind === "simulator") {
     const started = Date.now();
     const computeTask = {
@@ -205,6 +232,9 @@ export function executorPolicy({ env = process.env } = {}) {
 }
 
 function defaultTaskFor(row, env = process.env) {
+  if (row.execution_kind === "compute-sweep") {
+    return { ...row, execution_kind: "compute-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
+  }
   if (row.subject.includes("inventory") || row.source === "fallback") {
     return { ...row, command: env.ACORN_WORK_DETERMINISTIC_COMMAND || "node --check scripts/acorn-continuous-runtime.mjs", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
