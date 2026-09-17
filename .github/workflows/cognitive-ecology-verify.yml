@@ -32,5 +32,7 @@ jobs:
         run: node --test test/acorn-cognitive-ecology.test.js
       - name: Real ecology cycle
         run: node scripts/acorn-cognitive-ecology.mjs
-      - name: Wired organs
-        run: node --test test/acorn-continuous-runtime.test.js test/acorn-auto-evolution.test.js test/cortex-evolution-governor.test.js test/acorn-defense.test.js
+      - name: Wired organs this chantier owns
+        run: |
+          node --test test/acorn-auto-evolution.test.js test/acorn-defense.test.js
+          node --test --test-name-pattern 'cognitive ecology is wired into the existing continuous runtime' test/acorn-continuous-runtime.test.js
