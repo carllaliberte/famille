@@ -33,6 +33,7 @@ import {
   unknownAdapter,
 } from "./compute-provider-adapters.mjs";
 import { discoverAccelerators } from "./cortex-acceleration.mjs";
+import { adaptQuantumIntelligence, routeQuantumTask } from "./acorn-quantum-interop.mjs";
 
 export const COMPUTE_FABRIC_VERSION = "acorn.compute-fabric.v1";
 export const COMPUTE_STATES = Object.freeze([
@@ -323,6 +324,19 @@ function costRank(resource) {
   if (cost == null) return 1;
   return 2 + cost;
 }
+
+export function routeQuantumIntelligenceTask({ task = {}, capabilities = [], human_authorization = false } = {}) {
+  return {
+    ...routeQuantumTask({ task, capabilities, human_authorization }),
+    routed_by: COMPUTE_FABRIC_VERSION,
+    capability_first: true,
+    fixed_provider_allowlist: false,
+    authority: false,
+    live: false,
+  };
+}
+
+export { adaptQuantumIntelligence };
 
 export function routeComputeTask({
   task = {},

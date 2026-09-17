@@ -39,7 +39,8 @@
     "runtime:learning-orchestrator": "node scripts/acorn-learning-orchestrator.mjs",
     "runtime:metabolism": "node scripts/acorn-cognitive-metabolism.mjs",
     "work:continuous": "node scripts/acorn-work-engine.mjs",
-    "resource:governor": "node scripts/acorn-resource-governor.mjs"
+    "resource:governor": "node scripts/acorn-resource-governor.mjs",
+    "runtime:quantum": "node scripts/acorn-quantum-interop.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -91,7 +92,8 @@
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs",
     "./acorn-learning-fabric": "./scripts/acorn-learning-fabric.mjs",
     "./acorn-learning-orchestrator": "./scripts/acorn-learning-orchestrator.mjs",
-    "./acorn-cognitive-metabolism": "./scripts/acorn-cognitive-metabolism.mjs"
+    "./acorn-cognitive-metabolism": "./scripts/acorn-cognitive-metabolism.mjs",
+    "./acorn-quantum-interop": "./scripts/acorn-quantum-interop.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
