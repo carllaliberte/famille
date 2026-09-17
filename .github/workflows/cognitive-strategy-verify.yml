@@ -1,0 +1,26 @@
+name: cognitive-strategy-verify
+on:
+  push:
+    branches: [main, 'feat/acorn-cognitive-strategy-learning']
+    paths:
+      - 'scripts/acorn-cognitive-strategy.mjs'
+      - 'test/acorn-cognitive-strategy.test.js'
+      - '.github/workflows/cognitive-strategy-verify.yml'
+  pull_request:
+    paths:
+      - 'scripts/acorn-cognitive-strategy.mjs'
+      - 'test/acorn-cognitive-strategy.test.js'
+      - '.github/workflows/cognitive-strategy-verify.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node --check scripts/acorn-cognitive-strategy.mjs
+      - run: node --test test/acorn-cognitive-strategy.test.js
+      - run: node scripts/acorn-cognitive-strategy.mjs
+      - run: npm test
