@@ -1,12 +1,44 @@
 // ACORN — unified external-effect interposition bridge
-// Reuses the existing AI/runtime interposition fabric. No new authority layer.
-import { authorizeRuntimeEffect, assertRuntimeInterposition } from './acorn-runtime-interposition.mjs';
+// Shared low-level choke point for every governed external effect.
+import { capabilityFirewall, interpositionEvent } from './acorn-ai-interposition.mjs';
 
-export const EFFECT_INTERPOSITION_VERSION = 'acorn.effect-interposition.v1';
+export const EFFECT_INTERPOSITION_VERSION = 'acorn.effect-interposition.v2';
 const DECISIONS = new Set(['ALLOW', 'LIMIT', 'DENY', 'QUARANTINE']);
 const OBSERVABILITY = new Set(['NONE', 'PARTIAL', 'INDIRECT', 'DIRECT', 'VERIFIED']);
 const CONTROL = new Set(['NONE', 'LIMITED', 'CONDITIONAL', 'DIRECT', 'VERIFIED']);
 const REVERSIBILITY = new Set(['REVERSIBLE', 'PARTIAL', 'IRREVERSIBLE', 'UNKNOWN']);
+
+export function authorizeEffectCore({ actor='unknown', capability={}, operation='unknown', risk=0, blastRadius=0, controlGap=null, evidence={}, policy={}, at=new Date().toISOString() }={}) {
+  const decision = capabilityFirewall({
+    capability: { ...capability, kind: capability.kind || operation, actor, effective: true },
+    requestedAuthority: capability.requestedAuthority === true,
+    risk, blastRadius, controlGap, evidence, policy,
+  });
+  const event = interpositionEvent({
+    actor,
+    capability: decision.capability.id,
+    decision: decision.decision,
+    reason: decision.reasons,
+    before: { operation },
+    after: null,
+    evidence,
+    at,
+  });
+  const result = {
+    version: EFFECT_INTERPOSITION_VERSION,
+    allowed: decision.decision === 'ALLOW',
+    decision: decision.decision,
+    reasons: decision.reasons,
+    control_gap: decision.control_gap,
+    authority_granted: false,
+    event,
+    live: false,
+    capability_id: decision.capability.id,
+    operation,
+  };
+  assertExternalEffectDecision(result);
+  return result;
+}
 
 export function interposeExternalEffect(input = {}) {
   const {
@@ -20,19 +52,14 @@ export function interposeExternalEffect(input = {}) {
   if (!CONTROL.has(control)) return blocked('INVALID_CONTROL', capability_id, operation);
   if (!REVERSIBILITY.has(reversibility)) return blocked('INVALID_REVERSIBILITY', capability_id, operation);
 
-  const result = authorizeRuntimeEffect({
-    capability: {
-      id: capability_id, kind, resource, provider, context,
-      observability, control, reversibility, epistemic,
-      evidence: { measured: true, ...evidence },
-    },
+  const result = authorizeEffectCore({
+    actor: input.actor || 'acorn.effect-governor',
+    capability: { id: capability_id, kind, resource, provider, context, observability, control, reversibility, epistemic },
     operation,
     evidence: { measured: true, ...evidence },
     risk,
   });
-  assertRuntimeInterposition(result);
-  assertExternalEffectDecision(result);
-  return { version: EFFECT_INTERPOSITION_VERSION, ...result, provider, context, authority_granted: false, live: false };
+  return { ...result, provider, context, authority_granted: false, live: false };
 }
 
 function blocked(reason, capability_id, operation) {
