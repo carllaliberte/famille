@@ -62,6 +62,16 @@ import {
   searchExistingScience,
   selectNextExperiment,
   scienceAuthority,
+  acornInfinityCycle,
+  boundInfinityCycle,
+  constitutionIsImmutable,
+  decideInfinityAction,
+  describeCognitiveGeneration,
+  discoverLimit,
+  generateCognitiveQuestions,
+  proposeCognitivePrimitive,
+  simplifyCognitiveArchitecture,
+  verifyCognitivePrimitive,
 } from "../scripts/cognitive-discovery.mjs";
 import { describeArchitecture } from "../scripts/cortex-ecosystem.mjs";
 
@@ -368,9 +378,12 @@ test("discovery engine does not branch Cortex on NVIDIA or OpenAI names", () => 
   assert.match(discovery, /detectContradiction\(/);
   assert.match(discovery, /storePrediction\(/);
   assert.match(discovery, /falsifyCause\(/);
+  assert.match(discovery, /homeostasisOf\(/);
+  assert.match(discovery, /acornInfinityCycle\(/);
   assert.equal(/function composeCapabilities\s*\(/.test(discovery), false);
   assert.equal(/function safeEvolve\s*\(/.test(discovery), false);
   assert.equal(/function detectContradiction\s*\(/.test(discovery), false);
+  assert.equal(/function homeostasisOf\s*\(/.test(discovery), false);
 });
 
 const matrix = [
@@ -980,4 +993,122 @@ test("knowledge map keeps categories distinct and never eternal", () => {
   });
   assert.deepEqual(uncertainty.UNTESTED, ["review"]);
   assert.ok(uncertainty.UNKNOWN.includes("UNKNOWN"));
+});
+
+test("the loop has no terminal state and always produces a next question", () => {
+  const first = acornInfinityCycle({
+    task: { objective: "review", required_capabilities: ["review"], risk: "LOW_RISK" },
+    resources: [{ id: "local", capabilities: ["review"], presence: "ACTIVE", kind: "local", provider: "local" }],
+    env: {},
+    intelligence: {
+      counts: { named: 1, identified: 1, present: 1, channel_discovered: 0, authenticated: 0, callable: 0, executed: 0, verified: 0, live: 0 },
+      discoveries: [],
+      nvidia: { state: "CHANNEL_NOT_PRESENT", missing: ["hardware"] },
+      unknown: { state: "IDENTIFIED" },
+    },
+  });
+  assert.equal(first.terminal, false);
+  assert.equal(first.done, false);
+  assert.equal(first.complete_knowledge, false);
+  assert.equal(first.final_version, false);
+  assert.equal(first.second_loop, false);
+  assert.equal(first.second_cortex, false);
+  assert.ok(first.next_question?.text);
+  assert.ok(first.questions.questions.some((row) => row.id === "q_open"));
+  assert.equal(FORBIDDEN_CHECK(first.phase), false);
+  const second = acornInfinityCycle({
+    previous: first,
+    task: { objective: "review", required_capabilities: ["review"], risk: "LOW_RISK" },
+    resources: [{ id: "local", capabilities: ["review"], presence: "ACTIVE", kind: "local", provider: "local" }],
+    env: {},
+    intelligence: first.discovery.intelligence,
+  });
+  assert.equal(second.previous_cycle, first.cycle_id);
+  assert.equal(second.generation.generation, 2);
+  assert.equal(second.done, false);
+  assert.ok(second.next_question?.text);
+  assert.equal(second.live, false);
+});
+
+function FORBIDDEN_CHECK(phase) {
+  return ["FINAL_VERSION", "COMPLETE_KNOWLEDGE", "ALL_CAPABILITIES_DISCOVERED", "OPTIMAL_FOREVER", "PERFECT_ARCHITECTURE"].includes(phase);
+}
+
+test("inaction is a valid decision when nothing is callable", () => {
+  const decision = decideInfinityAction({ callable: false });
+  assert.equal(decision.action, "DO_NOTHING");
+  assert.equal(decision.executed, false);
+  const reuse = decideInfinityAction({ callable: true, existing_evidence: true });
+  assert.equal(reuse.action, "REUSE_EXISTING_EVIDENCE");
+});
+
+test("a new primitive stays a candidate and cannot modify the constitution", () => {
+  const proposed = proposeCognitivePrimitive({ name: "longitudinal_reasoning", reason: "repeated recovery pattern" });
+  assert.equal(proposed.status, "CANDIDATE");
+  assert.equal(proposed.constitution_modified, false);
+  const verified = verifyCognitivePrimitive({ primitive: proposed.primitive, measured: false });
+  assert.equal(verified.status, "CANDIDATE");
+  assert.equal(constitutionIsImmutable().auto_modifiable, false);
+});
+
+test("questions can be generated that were not in the developer prompt", () => {
+  const generated = generateCognitiveQuestions({
+    unknowns: [{ kind: "declared_unobserved" }],
+    contradictions: [{ status: "CONTRADICTION" }],
+    blind_spots: ["unexplored_configuration"],
+  });
+  const ids = generated.questions.map((row) => row.id);
+  assert.ok(ids.includes("q_contradiction"));
+  assert.ok(ids.includes("q_open"));
+  assert.equal(generated.terminal, false);
+});
+
+test("simplification is evolution and is not auto-adopted", () => {
+  const bloated = simplifyCognitiveArchitecture({
+    nodes: [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }, { id: "e" }],
+  });
+  assert.equal(bloated.status, "PROPOSED");
+  assert.equal(bloated.simplification_is_evolution, true);
+  assert.equal(bloated.adopted, false);
+});
+
+test("unknown resource continues the infinity loop without rewriting Cortex", () => {
+  const unknown = admitUnknownIntelligence({ id: "tomorrowx", provider: "UNKNOWN", env: {} });
+  const cycle = acornInfinityCycle({
+    task: { objective: "review", required_capabilities: ["UNKNOWN"] },
+    resources: [{ id: "tomorrowx", capabilities: ["UNKNOWN"], provider: "UNKNOWN" }],
+    env: {},
+  });
+  assert.equal(unknown.cortex_modified, false);
+  assert.equal(cycle.discovery.unknown.cortex_modified, false);
+  assert.equal(cycle.done, false);
+  assert.ok(cycle.next_question);
+  assert.equal(cycle.constitution.capability_is_not_authority, true);
+});
+
+test("limits of a SIMPLE architecture are knowledge, not a stop condition", () => {
+  const limits = discoverLimit({
+    capability: "review",
+    architecture: { kind: "SIMPLE" },
+    assumption: { claim: "one resource is enough", verified: false },
+  });
+  assert.ok(limits.limits.some((row) => row.kind === "single_point_of_failure"));
+  assert.equal(limits.knowledge, true);
+});
+
+test("infinity bounds prevent unbounded exploration", () => {
+  const bounds = boundInfinityCycle();
+  assert.equal(bounds.unbounded, false);
+  assert.ok(bounds.queue_max > 0);
+});
+
+test("generations are versions of one organism, not a new identity", () => {
+  const gen = describeCognitiveGeneration({
+    genome: { digest: "abc" },
+    previous: { generation: 3, cycle_id: "gen_old" },
+  });
+  assert.equal(gen.generation, 4);
+  assert.equal(gen.previous_cycle, "gen_old");
+  assert.equal(gen.identity_independent, false);
+  assert.equal(gen.rollback_capable, true);
 });

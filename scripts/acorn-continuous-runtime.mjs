@@ -35,7 +35,7 @@ import { measureAutonomy, autonomyBudget } from "./autonomous-runtime.mjs";
 import { learnCortexExperience } from "./cortex-learning-cycle.mjs";
 import { expireEvidence, sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
 import { intelligenceDiscoveryLoop, measureWorld } from "./intelligence-ecosystem.mjs";
-import { cognitiveDiscoveryCycle } from "./cognitive-discovery.mjs";
+import { acornInfinityCycle } from "./cognitive-discovery.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
 
@@ -339,12 +339,13 @@ export async function runContinuousRuntime({
     need: "review",
     env: process.env,
   });
-  const discovery = cognitiveDiscoveryCycle({
+  const infinity = acornInfinityCycle({
     task: { objective: "review", required_capabilities: ["review"], risk: "LOW_RISK" },
     intelligence,
     env: process.env,
     now: at,
   });
+  const discovery = infinity.discovery;
   const metrics = organismMetrics({
     runtime_coverage: inventory.coverage.execution_coverage,
     capability_discovery_rate: inventory.coverage.discovered_count,
@@ -544,6 +545,17 @@ export async function runContinuousRuntime({
         causality: discovery.science?.causality?.causality || "INCONCLUSIVE",
         portfolio: (discovery.science?.portfolio?.experiments || []).map((row) => row.experiment_id),
         unknowns: (discovery.science?.unknowns?.unknowns || []).length,
+      },
+      infinity: {
+        cycle_id: infinity.cycle_id,
+        previous_cycle: infinity.previous_cycle,
+        generation: infinity.generation?.generation || 1,
+        phase: infinity.phase,
+        next_question: infinity.next_question?.text || null,
+        action: infinity.action?.action || null,
+        terminal: false,
+        done: false,
+        complete_knowledge: false,
       },
       unknown: { cortex_modified: discovery.unknown.cortex_modified, live: false },
       synapses: {

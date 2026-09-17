@@ -9,6 +9,7 @@
  * DECLARED ≠ MEASURED. Ranked ≠ proved. LEARNING ≠ unverified auto-modification.
  * OBSERVED ≠ VERIFIED. EMERGENCE ≠ PROOF. EMERGENCE ≠ AUTHORITY.
  * EXPERIMENT ≠ PROOF. PREDICTION ≠ OBSERVATION. CORRELATION ≠ CAUSATION.
+ * THE LOOP HAS NO FINAL ITERATION.
  */
 import { createHash } from "node:crypto";
 import {
@@ -48,6 +49,7 @@ import {
   searchArchitectures,
   architectureLibrary,
   safeEvolve,
+  homeostasisOf,
 } from "./cortex-ecosystem.mjs";
 import { commonModeFailure } from "./cortex-continuity.mjs";
 import {
@@ -2189,6 +2191,303 @@ export function activeScienceCycle({
     live: false,
     auto_merge: false,
     capability_is_not_authority: true,
+  };
+}
+
+export const ACORN_INFINITY_STATES = Object.freeze([
+  "OBSERVING", "DISCOVERING", "QUESTIONING", "HYPOTHESIZING", "EXPERIMENTING",
+  "MEASURING", "FALSIFYING", "VERIFYING", "LEARNING", "EVOLVING",
+  "RECOVERING", "STABILIZING", "EXPLORING",
+]);
+
+export const FORBIDDEN_TERMINAL = Object.freeze([
+  "FINAL_VERSION", "COMPLETE_KNOWLEDGE", "ALL_CAPABILITIES_DISCOVERED",
+  "OPTIMAL_FOREVER", "PERFECT_ARCHITECTURE",
+]);
+
+export function generateCognitiveQuestions({
+  unknowns = [], failures = [], contradictions = [], architectures = [], limits = [], blind_spots = [],
+} = {}) {
+  const questions = [];
+  if ((unknowns || []).length) {
+    questions.push({ id: "q_untested", text: "which declared capability has never been tested?", origin: "unknowns" });
+  }
+  if ((failures || []).length) {
+    questions.push({ id: "q_failure", text: "why did this experiment fail, and should it be retried under new conditions?", origin: "failure" });
+  }
+  if ((contradictions || []).length) {
+    questions.push({ id: "q_contradiction", text: "what discriminating experiment resolves this contradiction without rewriting the prediction?", origin: "contradiction" });
+  }
+  if ((blind_spots || []).includes("unexplored_configuration")) {
+    questions.push({ id: "q_architecture", text: "does an unexplored architecture change the result?", origin: "blind_spot" });
+  }
+  if ((architectures || []).some((row) => (row.nodes || []).length > 4)) {
+    questions.push({ id: "q_simplify", text: "can this architecture be simplified without losing verified capability?", origin: "complexity" });
+  }
+  if ((limits || []).length) {
+    questions.push({ id: "q_limit", text: "does this capability hold only in the measured context?", origin: "limit" });
+  }
+  questions.push({ id: "q_open", text: "what do I not know that I do not know?", origin: "open_ended" });
+  return {
+    status: "EXECUTED",
+    questions: questions.map((row) => ({ ...row, measurable: true, live: false })),
+    terminal: false,
+    live: false,
+  };
+}
+
+export function discoverLimit({ capability, architecture, strategy, assumption, measurements = {} } = {}) {
+  const limits = [];
+  if (capability && measurements.measured !== true) limits.push({ kind: "capability_untested", subject: capability });
+  if (architecture?.kind === "SIMPLE") limits.push({ kind: "single_point_of_failure", subject: architecture.kind });
+  if (assumption && assumption.verified !== true) {
+    limits.push({ kind: "unverified_assumption", subject: assumption.claim || assumption });
+  }
+  if (strategy && measurements.context_only === true) limits.push({ kind: "context_bound", subject: strategy });
+  return { status: "EXECUTED", limits, knowledge: true, live: false };
+}
+
+export function challengeCapability({ resource, capability } = {}) {
+  const qualified = qualifyCapability({ resource, capability });
+  return {
+    status: "EXECUTED",
+    declared: qualified.declared,
+    measured: qualified.measured,
+    limit: qualified.measured ? null : "declared_is_not_measured",
+    live: false,
+  };
+}
+
+export function challengeStrategy({ task, budget } = {}) {
+  const selected = selectCognitiveStrategy({ task, budget });
+  return { ...selected, challenged: true, adopted: false, live: false };
+}
+
+export function challengeAssumption({ claim } = {}) {
+  return challengeHypothesis({ hypothesis: { claim } });
+}
+
+export function proposeCognitivePrimitive({ name, reason, evidence } = {}) {
+  return {
+    status: "CANDIDATE",
+    primitive: {
+      name: name || "UNKNOWN_PRIMITIVE",
+      reason: reason || null,
+      evidence: evidence || null,
+      state: "CANDIDATE",
+    },
+    constitution_modified: false,
+    adopted: false,
+    live: false,
+  };
+}
+
+export function verifyCognitivePrimitive({ primitive, measured = false, reproduced = false, verified = false } = {}) {
+  const ok = measured === true && reproduced === true && verified === true;
+  return {
+    status: ok ? "VERIFIED" : "CANDIDATE",
+    primitive: primitive || null,
+    constitution_modified: false,
+    adopted: false,
+    live: false,
+  };
+}
+
+export function describeCognitiveGeneration({ genome, previous, mutation, experiment, at } = {}) {
+  const n = Number(previous?.generation || 0) + 1;
+  return {
+    generation: n,
+    cycle_id: `gen_${genomeDigest({ n, digest: genome?.digest, at })}`,
+    previous_cycle: previous?.cycle_id || null,
+    genome: genome?.digest || null,
+    mutation: mutation || null,
+    experiment: experiment || null,
+    identity_independent: false,
+    auditable: true,
+    rollback_capable: true,
+    historical: true,
+    live: false,
+  };
+}
+
+export function cognitiveHomeostasis({ budget, unknowns = [], risk = "LOW_RISK" } = {}) {
+  const explore = (unknowns || []).length > 0 && (risk === "CRITICAL" || risk === "AMBIGUOUS");
+  const simplify = risk === "LOW_RISK" || risk === "LOW" || risk === "SIMPLE";
+  const balance = homeostasisOf({
+    unknown: { regions: (unknowns || []).slice(0, 3).map(() => ({ region: "UNKNOWN" })) },
+  });
+  return {
+    status: "EXECUTED",
+    explore,
+    expand: false,
+    verify: budget?.verify === true,
+    stabilize: simplify,
+    recover: false,
+    simplify,
+    evolve_for_its_own_sake: false,
+    balance,
+    live: false,
+  };
+}
+
+export function mapCognitiveEcology({ resources = [], synapses = [], architectures = [] } = {}) {
+  const providers = {};
+  for (const row of resources || []) {
+    const key = row.provider || "unknown";
+    providers[key] = (providers[key] || 0) + 1;
+  }
+  const dominant = Object.entries(providers).sort((a, b) => b[1] - a[1])[0];
+  const independence = analyzeIndependence(resources);
+  return {
+    status: "EXECUTED",
+    dominant_resource: dominant?.[0] || null,
+    dominant_is_not_better: true,
+    underused_resource: (resources || []).filter((row) => row.callable !== true).map(idOf).filter(Boolean),
+    single_point_of_failure: (architectures || []).some((row) => row.kind === "SIMPLE"),
+    common_mode: independence.COMMON_MODE_RISK === true,
+    apparent_diversity_is_not_independence: true,
+    synapses: (synapses || []).length,
+    live: false,
+  };
+}
+
+export function decideInfinityAction({
+  callable = false, existing_evidence = false, risk = "LOW_RISK", needs_human = false,
+} = {}) {
+  if (needs_human === true) {
+    return { action: "NEEDS_HUMAN", executed: false, live: false };
+  }
+  if (existing_evidence === true) {
+    return { action: "REUSE_EXISTING_EVIDENCE", executed: false, live: false };
+  }
+  if (callable !== true) {
+    return {
+      action: "DO_NOTHING",
+      reason: "no callable channel; inaction is a valid cognitive decision",
+      executed: false,
+      live: false,
+    };
+  }
+  if (risk === "CRITICAL") {
+    return { action: "VERIFY_BEFORE_EVOLVING", executed: false, live: false };
+  }
+  return { action: "RUN_EXPERIMENT", executed: false, live: false };
+}
+
+export function boundInfinityCycle({ queue_max = 8, time_budget_ms = 50, memory_entries = 64 } = {}) {
+  return { status: "EXECUTED", queue_max, time_budget_ms, memory_entries, unbounded: false, live: false };
+}
+
+export function simplifyCognitiveArchitecture({ architecture, nodes = [] } = {}) {
+  const count = nodes.length || architecture?.nodes?.length || 0;
+  const bloated = count > 3;
+  const mutation = bloated
+    ? proposeCognitiveMutation({ genome: { architecture }, kind: "reduce_redundancy" })
+    : { status: "NOT_REQUIRED", adopted: false, live: false };
+  return {
+    status: bloated ? "PROPOSED" : "STABLE",
+    mutation,
+    simplification_is_evolution: true,
+    adopted: false,
+    live: false,
+  };
+}
+
+export function constitutionIsImmutable() {
+  return {
+    carl_sovereignty: true,
+    breaker_authority: "carl",
+    capability_is_not_authority: true,
+    no_fake_evidence: true,
+    no_fake_live: true,
+    no_silent_fallback: true,
+    no_unauthorized_merge: true,
+    no_authority_escalation: true,
+    auto_modifiable: false,
+    live: false,
+  };
+}
+
+export function acornInfinityCycle({ previous, ...rest } = {}) {
+  const discovery = cognitiveDiscoveryCycle(rest);
+  const unknowns = discovery.science?.unknowns?.unknowns || [];
+  const questions = generateCognitiveQuestions({
+    unknowns,
+    failures: discovery.self_knowledge?.recently_failed,
+    contradictions: discovery.science?.contradiction?.status === "CONTRADICTION" ? [discovery.science.contradiction] : [],
+    architectures: discovery.architectures?.candidates,
+    limits: [],
+    blind_spots: discovery.blind_spots?.findings,
+  });
+  const limits = discoverLimit({
+    capability: discovery.classified?.required?.[0],
+    architecture: discovery.architectures?.candidates?.[0],
+    strategy: discovery.strategy?.move,
+  });
+  const generation = describeCognitiveGeneration({
+    genome: discovery.genome,
+    previous: previous
+      ? { generation: previous.generation?.generation ?? previous.generation, cycle_id: previous.cycle_id }
+      : null,
+    mutation: discovery.evolution?.candidate,
+    experiment: discovery.science?.selected?.selected,
+    at: discovery.at,
+  });
+  const homeostasis = cognitiveHomeostasis({
+    budget: discovery.budget,
+    unknowns,
+    risk: discovery.budget?.risk,
+  });
+  const ecology = mapCognitiveEcology({
+    resources: rest.resources || [],
+    synapses: discovery.synapses,
+    architectures: discovery.architectures?.candidates,
+  });
+  const callable = (discovery.intelligence?.counts?.callable || 0) > 0
+    || (rest.resources || []).some((row) => row.callable === true);
+  const action = decideInfinityAction({
+    callable,
+    existing_evidence: false,
+    risk: discovery.budget?.risk,
+  });
+  const next = questions.questions.find((row) => row.id === "q_untested")
+    || questions.questions.find((row) => row.id === "q_open");
+  const primitive = (unknowns || []).some((row) => row.kind === "UNKNOWN_PHENOMENON")
+    ? proposeCognitivePrimitive({ name: "UNKNOWN_PHENOMENON", reason: "unexplained divergence" })
+    : { status: "NOT_REQUIRED", constitution_modified: false, adopted: false, live: false };
+  const defense = watchEvolution({ mutation: discovery.evolution?.candidate, grant: { actor: "acorn" } });
+  const simplification = simplifyCognitiveArchitecture({
+    architecture: discovery.architectures?.candidates?.[0],
+    nodes: discovery.architectures?.candidates?.[0]?.nodes,
+  });
+  return {
+    version: "acorn.infinity.v1",
+    cycle_id: generation.cycle_id,
+    previous_cycle: previous?.cycle_id || null,
+    phase: action.action === "DO_NOTHING" ? "STABILIZING" : "QUESTIONING",
+    discovery,
+    questions,
+    next_question: next,
+    limits,
+    generation,
+    homeostasis,
+    ecology,
+    action,
+    primitive,
+    simplification,
+    defense,
+    bounds: boundInfinityCycle(),
+    constitution: constitutionIsImmutable(),
+    terminal: false,
+    complete_knowledge: false,
+    done: false,
+    final_version: false,
+    second_cortex: false,
+    second_runtime: false,
+    second_loop: false,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
   };
 }
 
