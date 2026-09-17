@@ -296,45 +296,34 @@ export async function runContinuousRuntime({
     at,
   });
 
-  // UNIFIED ORGANISM CYCLE:
-  // existing fabrics are composed here; no new Cortex/runtime/authority is created.
+  // UNIFIED ORGANISM CYCLE: one canonical cycle, grounded in live inventory measurements.
+  const coverage = inventory.coverage;
+  const ratio = (value, total) => total > 0 ? Number((value / total).toFixed(6)) : 0;
+  const verificationRatio = ratio(coverage.verified_count, coverage.discovered_count);
+  const measurementRatio = ratio(coverage.measured_count, coverage.discovered_count);
+  const wiringRatio = ratio(coverage.wired_count, coverage.discovered_count);
+  const unknownRatio = ratio(coverage.unknown_count, coverage.discovered_count);
+  const failureRatio = ratio(coverage.failed_count, coverage.discovered_count);
   const unifiedObservation = {
-    status: inventory.coverage.failed_count > 0 ? "REGRESSION" : "OBSERVED",
-    category: "ARCHITECTURE",
-    failed: inventory.coverage.failed_count > 0,
-    regression: inventory.coverage.failed_count > 0,
-    unknown: inventory.coverage.unknown_count > 0,
-    evidence: inventory.evidence,
-    provenance: { source: "continuous-runtime", observed_at: at },
-    channel_present: true,
-    capability_available: inventory.coverage.loadable_count > 0,
+    status: coverage.failed_count > 0 ? "REGRESSION" : "OBSERVED",
+    category: "ARCHITECTURE", failed: coverage.failed_count > 0,
+    regression: coverage.failed_count > 0, unknown: coverage.unknown_count > 0,
+    evidence: inventory.evidence, provenance: { source: "continuous-runtime", observed_at: at },
+    channel_present: coverage.wired_count > 0,
+    capability_available: coverage.loadable_count > 0,
   };
-
   const evolution = buildUniversalEvolutionCycle({
     observation: unifiedObservation,
-    execution: {
-      executed: true,
-      failed: inventory.coverage.failed_count > 0,
-    },
-    tests: {
-      passed: inventory.coverage.failed_count === 0,
-      failed: inventory.coverage.failed_count,
-    },
-    measurement: {
-      measured: true,
-      value: inventory.coverage.verified_count,
-    },
-    evidence: {
-      verified: inventory.coverage.failed_count === 0 && chain.ok !== false,
-    },
+    execution: { executed: coverage.executed_count > 0, failed: coverage.failed_count > 0 },
+    tests: { passed: coverage.failed_count === 0, failed: coverage.failed_count },
+    measurement: { measured: coverage.measured_count > 0, value: coverage.verified_count },
+    evidence: { verified: coverage.failed_count === 0 && chain.ok !== false },
     work: {
       observations: [
-        { id: "capability-drift", information_gain: .9, capability_gain: .7, risk_reduction: .8, cost: .2 },
-        { id: "unknown-frontier", information_gain: .8, capability_gain: .9, risk_reduction: .5, cost: .3 },
+        { id: "capability-drift", information_gain: Math.min(1, unknownRatio + failureRatio), capability_gain: 1 - verificationRatio, risk_reduction: verificationRatio, cost: 1 - wiringRatio },
+        { id: "unknown-frontier", information_gain: unknownRatio, capability_gain: unknownRatio, risk_reduction: 1 - failureRatio, cost: 1 - measurementRatio },
       ],
-      independent: [
-        { id: "revalidation", information_gain: .7, capability_gain: .4, risk_reduction: .8, cost: .2 },
-      ],
+      independent: [{ id: "revalidation", information_gain: 1 - verificationRatio, capability_gain: measurementRatio, risk_reduction: verificationRatio, cost: 1 - wiringRatio }],
     },
   });
   assertUniversalEvolutionInvariant(evolution);
@@ -342,11 +331,11 @@ export async function runContinuousRuntime({
   const learning = consolidate({
     observations: [{
       subject: "continuous-runtime",
-      confidence: inventory.coverage.failed_count === 0 ? 1 : .4,
+      confidence: verificationRatio,
       provenance: { source: "continuous-runtime", observed_at: at },
-      evidence: { score: inventory.coverage.failed_count === 0 ? 1 : .4 },
-      measurement: { measured: true, confidence: 1 },
-      verification: { verified: inventory.coverage.failed_count === 0 },
+      evidence: { score: verificationRatio },
+      measurement: { measured: coverage.measured_count > 0, confidence: measurementRatio },
+      verification: { verified: coverage.failed_count === 0 && chain.ok !== false },
     }],
     previous: [],
     frontier: evolution.next_work || [],
@@ -358,10 +347,10 @@ export async function runContinuousRuntime({
       id: "continuous-runtime",
       subject: "canonical organism cycle",
       provenance: { source: "continuous-runtime", observed_at: at },
-      evidence: { score: inventory.coverage.failed_count === 0 ? 1 : .4 },
+      evidence: { score: verificationRatio },
       measurement: { measured: true, confidence: 1 },
       verification: { verified: inventory.coverage.failed_count === 0 },
-      state: inventory.coverage.failed_count === 0 ? "VERIFIED" : "FAILED",
+      state: coverage.failed_count === 0 && chain.ok !== false ? "VERIFIED" : "FAILED",
     }],
     frontier: [
       ...learning.frontier.map(row => ({
@@ -374,10 +363,10 @@ export async function runContinuousRuntime({
       {
         id: "unknown-frontier",
         subject: "unknown capability frontier",
-        uncertainty: .9,
-        impact: .9,
-        observability: .7,
-        reversibility: .9,
+        uncertainty: unknownRatio,
+        impact: unknownRatio,
+        observability: measurementRatio,
+        reversibility: 1 - failureRatio,
       },
     ],
     revalidation: learning.frontier,
@@ -460,6 +449,13 @@ export async function runContinuousRuntime({
       live: false,
     },
     unified: {
+      cycle_order: ["REAL_STATE", "INVENTORY", "DEFENSE", "CORTEX", "EVOLUTION", "LEARNING", "METABOLISM", "EVIDENCE", "CONTINUE"],
+      measurement_basis: {
+        discovered: coverage.discovered_count, wired: coverage.wired_count, executed: coverage.executed_count,
+        measured: coverage.measured_count, verified: coverage.verified_count, unknown: coverage.unknown_count, failed: coverage.failed_count,
+      },
+      measured_from_inventory: true,
+      declared_scores_removed: true,
       evolution: {
         state: evolution.state,
         next_work: evolution.next_work,
