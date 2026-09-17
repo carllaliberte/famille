@@ -16,6 +16,7 @@
     "runtime:strategy": "node scripts/acorn-cognitive-strategy.mjs",
     "runtime:time-machine": "node scripts/acorn-cognitive-time-machine-cycle.mjs",
     "runtime:dream": "node scripts/acorn-cognitive-dream-engine.mjs",
+    "runtime:synaptic": "node scripts/acorn-future-synaptic-fabric.mjs",
     "runtime:substrate": "node scripts/acorn-constitutional-substrate.mjs",
     "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
     "work:record": "node scripts/work-record.mjs",
@@ -55,6 +56,7 @@
     "./acorn-cognitive-strategy": "./scripts/acorn-cognitive-strategy.mjs",
     "./acorn-cognitive-time-machine": "./scripts/acorn-cognitive-time-machine-cycle.mjs",
     "./acorn-cognitive-dream-engine": "./scripts/acorn-cognitive-dream-engine.mjs",
+    "./acorn-future-synaptic-fabric": "./scripts/acorn-future-synaptic-fabric.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
   },
