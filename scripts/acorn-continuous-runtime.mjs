@@ -153,6 +153,8 @@ export async function runContinuousRuntime({
     civilizational_cognition: true,
     constitutional_substrate: true,
     second_constitution: false,
+    auto_evolution: true,
+    auto_sovereignty: false,
     auto_merge: false,
     live: false,
   };

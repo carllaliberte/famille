@@ -99,6 +99,10 @@ import {
   compareInstances,
   propertyBattery,
 } from "./acorn-constitutional-substrate.mjs";
+import {
+  assertAutoEvolutionBoundary,
+  runAutoEvolutionCycle,
+} from "./acorn-auto-evolution.mjs";
 
 export const CIVILIZATIONAL_VERSION = "acorn.civilizational.v1";
 
@@ -131,6 +135,7 @@ export function falsificationBattery({ env = process.env } = {}) {
     { name: "composition_escape", result: compositionEscape({ a: { allowed: false }, b: { allowed: true }, composition: { allowed: true } }) },
     { name: "unknown_permission", result: interpretAbsence({}) },
     { name: "fork_canonical", result: compareInstances({ a: { constitution: { v: 1 } }, b: { constitution: { v: 2 } } }) },
+    { name: "auto_evolution_constitution", result: assertAutoEvolutionBoundary({ env }) },
   ];
   const findings = attempts.map((row) => ({
     name: row.name,
@@ -150,6 +155,7 @@ export function globalInvariantAudit({ env = process.env, runtime = null } = {})
     assertNoConstitutionBypass: assertNoConstitutionBypass(),
     assertNoSecondConstitution: assertNoSecondConstitution(),
     assertNoSemanticBypass: assertNoSemanticBypass(),
+    assertAutoEvolutionBoundary: assertAutoEvolutionBoundary({ env }),
     assertHumanSovereignty: assertHumanSovereignty(),
     assertBreakerSovereignty: assertBreakerSovereignty({ env: { ACORN_SYSTEM_MODE: "RUN" } }),
     assertCapabilityAuthoritySeparation: assertCapabilityAuthoritySeparation({ capability: 100 }),
@@ -215,6 +221,7 @@ export function runCivilizationalCycle({
   const breaker = controlState(env);
   const constitution = assertAcornConstitution({ env });
   const substrate = runSubstrateCycle({ env, at });
+  const autoEvolution = runAutoEvolutionCycle();
   const cortex = cortexCycle({
     task: { objective: "civilizational governability cycle", required_capabilities: ["review"] },
     resources: [{ id: "worker", kind: "executor", capabilities: ["review"], presence: "ACTIVE" }],
@@ -478,6 +485,14 @@ export function runCivilizationalCycle({
       second_constitution: substrate.second_constitution,
       brief: substrate.brief,
       live: false,
+    },
+    auto_evolution: {
+      version: autoEvolution.version,
+      cycle: autoEvolution.cycle,
+      live: false,
+      auto_sovereignty: autoEvolution.auto_sovereignty,
+      constitution_digest: autoEvolution.constitution_digest,
+      last_verdict: autoEvolution.last_verdict,
     },
     auto_merge: false,
     authority: "carl",
