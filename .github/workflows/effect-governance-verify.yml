@@ -21,10 +21,11 @@ jobs:
       - name: Syntax
         run: |
           node --check scripts/acorn-effect-interposition.mjs
+          node --check scripts/acorn-runtime-interposition.mjs
           node --check scripts/acorn-effect-governor.mjs
           node --check scripts/codex-interposition-gate.mjs
       - name: Focused effect governance tests
-        run: node --test test/acorn-effect-governance.test.js test/codex-interposition-gate.test.js test/codex-worker-interposition.test.js test/cognitive-worker-interposition.test.js
+        run: node --test test/acorn-effect-governance.test.js test/effect-governor-worker-regression.test.js test/codex-interposition-gate.test.js test/codex-worker-interposition.test.js test/cognitive-worker-interposition.test.js
       - name: Coverage audit
         run: npm run effect:audit
       - name: Full regression
