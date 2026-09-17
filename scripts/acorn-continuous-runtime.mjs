@@ -151,6 +151,8 @@ export async function runContinuousRuntime({
     constitutional_self_modification: false,
     auto_applied: false,
     civilizational_cognition: true,
+    constitutional_substrate: true,
+    second_constitution: false,
     auto_merge: false,
     live: false,
   };
@@ -332,6 +334,7 @@ export async function runContinuousRuntime({
       reconstruction: civilizational.reconstruction.status,
       anti_escape: civilizational.anti_escape.status,
       defense_of_defense: civilizational.defense.of_defense,
+      substrate: civilizational.substrate,
       long_horizon: {
         continuity: civilizational.long_horizon.continuity.horizon,
         transformation: civilizational.long_horizon.transformation.horizon,
