@@ -148,6 +148,8 @@ export async function runContinuousRuntime({
     acorn_controls_breaker: false,
     capability_is_not_authority: true,
     one_constitution: true,
+    constitutional_self_modification: false,
+    auto_applied: false,
     civilizational_cognition: true,
     auto_merge: false,
     live: false,
