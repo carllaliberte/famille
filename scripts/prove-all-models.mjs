@@ -7,19 +7,34 @@
 import { writeFileSync } from "node:fs";
 import { MODELS, reviewOne, loadPrompt, loadCanon, buildUserMessage } from "../.github/swarm/review.mjs";
 import { loadModelExecutionMemory, updateModelExecutionMemory, modelExecutionSummary } from "./model-execution-memory.mjs";
+import { governEffect } from "./acorn-effect-governor.mjs";
 
 const env = process.env;
 const token = String(env.GITHUB_TOKEN || "").trim();
 const repo = String(env.GITHUB_REPOSITORY || "").trim();
 const pr = String(env.PR_NUMBER || "").trim();
 
-function autoModels() {
-  return Object.values(MODELS).filter((spec) => spec.auto);
-}
+function autoModels() { return Object.values(MODELS).filter((spec) => spec.auto); }
 
 async function github(path, options = {}) {
+  const method = options.method || "GET";
+  const isWrite = !["GET", "HEAD", "OPTIONS"].includes(String(method).toUpperCase());
+  const governance = governEffect({
+    capability_id: `github.api:${method}:${path}`,
+    kind: isWrite ? "GITHUB_API_WRITE" : "GITHUB_API_READ",
+    resource: `https://api.github.com${path}`,
+    provider: "github",
+    operation: `${method} ${path}`,
+    observability: "VERIFIED",
+    control: "VERIFIED",
+    reversibility: isWrite ? "PARTIAL" : "REVERSIBLE",
+    epistemic: "MEASURED",
+    evidence: { measured: true, verified: true, known_executor: true, known_entrypoint: true },
+  });
+  if (!governance.allowed) throw new Error(`ACORN_INTERPOSITION_BLOCKED:${governance.decision}`);
+
   const res = await fetch(`https://api.github.com${path}`, {
-    method: options.method || "GET",
+    method,
     headers: {
       accept: "application/vnd.github+json",
       authorization: `Bearer ${token}`,
@@ -33,13 +48,10 @@ async function github(path, options = {}) {
   return json;
 }
 
-function secretState(spec) {
-  return Boolean(String(env[spec.secret] || "").trim());
-}
+function secretState(spec) { return Boolean(String(env[spec.secret] || "").trim()); }
 
 async function main() {
   if (!token || !repo || !pr) throw new Error("GITHUB_TOKEN, GITHUB_REPOSITORY and PR_NUMBER are required");
-
   const [owner, name] = repo.split("/");
   const pull = await github(`/repos/${owner}/${name}/pulls/${pr}`);
   const fileRows = await github(`/repos/${owner}/${name}/pulls/${pr}/files?per_page=100`);
@@ -53,47 +65,22 @@ async function main() {
   for (const spec of specs) {
     const started = Date.now();
     const result = await reviewOne(spec, system, user, env);
-    results.push({
-      id: spec.id,
-      model: spec.model,
-      provider: spec.provider,
-      secret_configured: secretState(spec),
-      status: result?.skipped ? "SKIPPED" : result?.error ? "ERROR" : result?.text ? "SUCCEEDED" : "EMPTY",
-      reason: result?.reason || result?.error || "",
-      via: result?.via || "",
-      latency_ms: Date.now() - started,
-      text_present: Boolean(result?.text),
-    });
+    results.push({ id: spec.id, model: spec.model, provider: spec.provider, secret_configured: secretState(spec), status: result?.skipped ? "SKIPPED" : result?.error ? "ERROR" : result?.text ? "SUCCEEDED" : "EMPTY", reason: result?.reason || result?.error || "", via: result?.via || "", latency_ms: Date.now() - started, text_present: Boolean(result?.text) });
   }
 
   const memory = loadModelExecutionMemory(undefined, env);
   const nextMemory = updateModelExecutionMemory(memory, results);
-  const counts = results.reduce((a, r) => {
-    a[r.status] = (a[r.status] || 0) + 1;
-    return a;
-  }, {});
-  const evidence = {
-    generated_at: new Date().toISOString(),
-    repo,
-    ref: env.PROOF_REF || "",
-    pr: Number(pr),
-    policy: { merge: false, live: false, source_write: false },
-    counts,
-    results,
-    model_execution_memory: modelExecutionSummary(nextMemory),
-  };
+  const counts = results.reduce((a, r) => { a[r.status] = (a[r.status] || 0) + 1; return a; }, {});
+  const evidence = { generated_at: new Date().toISOString(), repo, ref: env.PROOF_REF || "", pr: Number(pr), policy: { merge: false, live: false, source_write: false }, counts, results, model_execution_memory: modelExecutionSummary(nextMemory) };
   writeFileSync("all-model-proof.json", JSON.stringify(evidence, null, 2) + "\n");
   writeFileSync("model-execution-memory.json", JSON.stringify(nextMemory, null, 2) + "\n");
 
   const lines = [
-    "## All-model execution proof",
-    "",
-    "This is an execution measurement, not a judgment. No merge, no source write, no LIVE claim.",
-    "",
+    "## All-model execution proof", "",
+    "This is an execution measurement, not a judgment. No merge, no source write, no LIVE claim.", "",
     `Auto models attempted: **${results.length}**`,
     `SUCCEEDED: **${counts.SUCCEEDED || 0}** · SKIPPED: **${counts.SKIPPED || 0}** · ERROR: **${counts.ERROR || 0}** · EMPTY: **${counts.EMPTY || 0}**`,
-    `Persistent execution memory cycles: **${nextMemory.cycles}**`,
-    "",
+    `Persistent execution memory cycles: **${nextMemory.cycles}**`, "",
   ];
   for (const r of results) {
     const marker = r.status === "SUCCEEDED" ? "🟢" : r.status === "SKIPPED" ? "🟡" : "🔴";
@@ -103,7 +90,4 @@ async function main() {
   await github(`/repos/${owner}/${name}/issues/${pr}/comments`, { method: "POST", body: { body: lines.join("\n") } });
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch((err) => { console.error(err); process.exit(1); });
