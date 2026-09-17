@@ -1,0 +1,26 @@
+name: ACORN AI Interposition Verify
+
+on:
+  push:
+    branches:
+      - main
+      - 'grok/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ai-interposition:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: node --check scripts/acorn-ai-interposition.mjs
+      - name: Focused tests
+        run: node --test test/acorn-ai-interposition.test.js
