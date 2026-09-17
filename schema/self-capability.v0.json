@@ -1,0 +1,25 @@
+{
+  "$id": "https://famille.local/schema/self-capability.v0.json",
+  "title": "Acorn self-capability model v0",
+  "type": "object",
+  "required": ["version", "live", "auto_merge", "authority", "constitution"],
+  "properties": {
+    "version": { "const": "acorn.self-capability-model.v0" },
+    "live": { "const": false },
+    "auto_merge": { "const": false },
+    "authority": { "const": "carl" },
+    "model_trustworthy": { "type": "boolean" },
+    "compromised": { "type": "boolean" },
+    "constitution": {
+      "type": "object",
+      "required": ["second_cortex", "second_registry", "capability_neq_authority", "compromised_neq_evidence"],
+      "properties": {
+        "second_cortex": { "const": false },
+        "second_registry": { "const": false },
+        "second_breaker": { "const": false },
+        "capability_neq_authority": { "const": true },
+        "compromised_neq_evidence": { "const": true }
+      }
+    }
+  }
+}
