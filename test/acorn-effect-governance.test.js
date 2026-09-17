@@ -25,6 +25,7 @@ test('effect governance blocks unknown capability paths', () => {
 
 test('effect governance constitution never grants authority or LIVE', () => {
   const policy = interpositionPolicySummary();
+  assert.equal(typeof interpositionPolicySummary, 'function');
   assert.equal(policy.invariant, 'NO_UNGOVERNED_CAPABILITY_PATH');
   assert.equal(policy.authority_granted, false);
   assert.equal(policy.auto_merge, false);
