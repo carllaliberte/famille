@@ -1,0 +1,27 @@
+name: cognitive-reality-fabric-verify
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/acorn-cognitive-reality-fabric.mjs'
+      - 'test/acorn-cognitive-reality-fabric.test.js'
+      - 'package.json'
+      - '.github/workflows/cognitive-reality-fabric-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: node --check scripts/acorn-cognitive-reality-fabric.mjs
+      - name: Focused reality fabric tests
+        run: node --test test/acorn-cognitive-reality-fabric.test.js
