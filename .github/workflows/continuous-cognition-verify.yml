@@ -1,0 +1,45 @@
+name: continuous-cognition-verify
+
+on:
+  push:
+    branches: [main, 'feat/acorn-continuous-cognition']
+    paths:
+      - 'scripts/acorn-continuous-cognition.mjs'
+      - 'scripts/cortex-cognition.mjs'
+      - 'scripts/acorn-cognitive-ecology.mjs'
+      - 'test/acorn-continuous-cognition.test.js'
+      - 'package.json'
+      - '.github/workflows/continuous-cognition-verify.yml'
+  pull_request:
+    paths:
+      - 'scripts/acorn-continuous-cognition.mjs'
+      - 'scripts/cortex-cognition.mjs'
+      - 'scripts/acorn-cognitive-ecology.mjs'
+      - 'test/acorn-continuous-cognition.test.js'
+      - 'package.json'
+      - '.github/workflows/continuous-cognition-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: |
+          node --check scripts/acorn-continuous-cognition.mjs
+          node --check scripts/cortex-cognition.mjs
+          node --check scripts/acorn-cognitive-ecology.mjs
+      - name: Focused continuous cognition tests
+        run: node --test test/acorn-continuous-cognition.test.js
+      - name: Real continuous cognition cycle
+        run: node scripts/acorn-continuous-cognition.mjs
+      - name: Full regression
+        run: npm test
