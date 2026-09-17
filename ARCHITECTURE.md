@@ -11,7 +11,7 @@ Pas de token. Pas de L1. Pas de 7e chantier.
 ## Discipline
 
 - **Classique** — défaut produit. Les quatre cartes tiennent, sinon le label reste classique.
-- **Joints** — seams modulaires. Un algo quantique ou une crypto post-quantique pourra se brancher plus tard. On ne les shippe pas maintenant. Le [compute fabric](COMPUTE.md) est un adaptateur de **capacité** sous Cortex, pas un démo QPU. [Omni-Core](OMNI-CORE.md) est le contrat d'horizon du même Cortex : axes indépendants, capacités inconnues légitimes, pas un second organisme. Le [Connector AI / Flux](CONNECTOR.md) est la membrane informationnelle du même Cortex — pas `schema/flux.v0.json`, pas un second organisme. Tous les flux externes passent par elle.
+- **Joints** — seams modulaires. Un algo quantique ou une crypto post-quantique pourra se brancher plus tard. On ne les shippe pas maintenant. Le [compute fabric](COMPUTE.md) est un adaptateur de **capacité** sous Cortex, pas un démo QPU. [Omni-Core](OMNI-CORE.md) est le contrat d'horizon du même Cortex : axes indépendants, capacités inconnues légitimes, pas un second organisme. Le [Connector AI / Flux](CONNECTOR.md) est la membrane informationnelle du même Cortex — pas `schema/flux.v0.json`, pas un second organisme. Tous les flux externes passent par elle. Le [Breaker survival](SURVIVAL.md) est la politique de survie du Breaker existant — pas un second Breaker.
 - **Formel honnête** — aujourd'hui : schémas + juge + INTERDIT + ε. Pas Coq. Pas Lean. ([FORMAL.md](FORMAL.md)). Ne pas écrire « formally verified ».
 - **PQC** — pas encore un défaut industriel ici. Pas d'inventer une suite. UFHY1 n'est pas un théorème produit shippé.
 

@@ -1,0 +1,21 @@
+name: breaker-survival-verify
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run breaker survival contract
+        run: node --test test/acorn-survival-policy.test.js test/breaker-carl-authority.test.js test/system-breaker.test.js
+      - name: Honest local proof loop
+        run: node scripts/acorn-survival-policy.mjs

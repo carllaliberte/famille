@@ -27,7 +27,8 @@ test("RUN resumes normal operation without enabling production authority", () =>
 test("OFF is fail-closed and invalid persisted state also becomes OFF", () => {
   assert.equal(controlState(env("OFF")).breaker_closed, true);
   assert.equal(controlState(env("garbage")).mode, "OFF");
-  assert.equal(controlState({}).mode, "RUN");
+  assert.equal(controlState({}).mode, "OFF");
+  assert.equal(controlState({}).assumed_open, false);
 });
 
 test("DEBUG is restart/diagnostic, not a bypass of human sovereignty", () => {

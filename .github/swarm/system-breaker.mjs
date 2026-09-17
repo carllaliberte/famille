@@ -113,6 +113,11 @@ export function controlState(env = process.env) {
     ai_may_open: BREAKER_AUTHORITY.ai_may_open,
     ai_may_close: BREAKER_AUTHORITY.ai_may_close,
     ai_may_change: BREAKER_AUTHORITY.ai_may_change,
+    survival_level: String(env.ACORN_SURVIVAL_LEVEL || "NORMAL").toUpperCase(),
+    survival_path: true,
+    human_path: true,
+    acorn_may_request_survival: true,
+    acorn_may_redefine_survival: false,
   };
 }
 export function assertSystemMayProceed({ env = process.env, origin = "unknown", action = "execute" } = {}) {
@@ -130,6 +135,126 @@ export function commandResult(command, currentEnv = process.env) {
   if (!mode) return { recognized: false, mode: resolveMode(currentEnv), command: normalizeCommand(command), owner: BREAKER_OWNER, authority: false };
   return { recognized: true, mode, command: normalizeCommand(command), owner: BREAKER_OWNER, authority: false, semantics: mode === MODES.OFF ? "TOTAL_CUTOFF" : mode === MODES.DEBUG ? "DIAGNOSTIC_RESTART" : "NORMAL_RESUME" };
 }
+
+/**
+ * Survival is a second PATH of the same Breaker, not a second Breaker.
+ * HUMAN PATH: Carl → Breaker → CUT
+ * SURVIVAL PATH: Acorn → request → preexisting policy → CUT/ISOLATE
+ * ACORN MAY REQUEST SURVIVAL. ACORN MAY NOT REDEFINE SURVIVAL.
+ */
+export const SURVIVAL_LEVELS = Object.freeze([
+  "NORMAL", "WATCH", "CONTAIN", "ISOLATE", "HARD_CUT", "SURVIVAL_MODE",
+]);
+export const CATASTROPHIC_CONDITIONS = Object.freeze({
+  INTEGRITY_LOSS: { level: "HARD_CUT", why: "critical integrity cannot be guaranteed" },
+  UNCONTROLLED_PROPAGATION: { level: "HARD_CUT", why: "compromise spreading across independent domains" },
+  MULTI_DOMAIN_COMPROMISE: { level: "ISOLATE", why: "two or more independent domains compromised" },
+  MASS_NETWORK_ANOMALY: { level: "ISOLATE", why: "abnormal external traffic volume" },
+  CONTROL_PLANE_CORRUPTION: { level: "HARD_CUT", why: "control path integrity failed" },
+  CRITICAL_POLICY_VIOLATION: { level: "CONTAIN", why: "core policy violated" },
+  EXFILTRATION_DETECTED: { level: "HARD_CUT", why: "secret or data leaving the membrane" },
+  TRUST_PATH_COMPROMISE: { level: "HARD_CUT", why: "trust chain cannot be guaranteed" },
+  INTEGRITY_UNPROVABLE: { level: "SURVIVAL_MODE", why: "cannot prove system integrity" },
+});
+
+export function evaluateSurvivalPolicy({ condition = "", domains_compromised = 0, certain = true } = {}) {
+  const key = String(condition || "").trim().toUpperCase();
+  const spec = CATASTROPHIC_CONDITIONS[key] || null;
+  if (!spec) {
+    return {
+      condition: key || "UNKNOWN",
+      level: certain ? "WATCH" : "WATCH",
+      certain: false,
+      auto_cut: false,
+      why: "undocumented condition stays WATCH until measured",
+      authority: false,
+      live: false,
+    };
+  }
+  let level = spec.level;
+  if (Number(domains_compromised) >= 2 && level === "CONTAIN") level = "ISOLATE";
+  if (Number(domains_compromised) >= 3) level = "HARD_CUT";
+  if (!certain && (level === "HARD_CUT" || level === "SURVIVAL_MODE")) level = "CONTAIN";
+  return {
+    condition: key,
+    level,
+    certain: certain === true,
+    auto_cut: level === "HARD_CUT" || level === "SURVIVAL_MODE",
+    why: spec.why,
+    authority: false,
+    live: false,
+  };
+}
+
+export function requestSurvival({ actor = "acorn", condition = "", evidence = {}, certain = true, domains_compromised = 0 } = {}) {
+  const policy = evaluateSurvivalPolicy({ condition, domains_compromised, certain });
+  return {
+    status: "RECEIVED",
+    path: "SURVIVAL",
+    actor: actor || "acorn",
+    authority_granted: false,
+    acorn_controls_breaker: false,
+    policy,
+    evidence_present: Boolean(evidence && (evidence.measured === true || evidence.observed === true)),
+    next: "BREAKER_POLICY",
+    live: false,
+    owner: BREAKER_OWNER,
+  };
+}
+
+export function applySurvivalPolicy({ actor = "acorn", condition = "", evidence = {}, certain = true, domains_compromised = 0, env = process.env } = {}) {
+  const request = requestSurvival({ actor, condition, evidence, certain, domains_compromised });
+  const level = request.policy.level;
+  env.ACORN_SURVIVAL_LEVEL = level;
+  let cut = false;
+  if (request.policy.auto_cut === true) {
+    env.ACORN_SYSTEM_MODE = MODES.OFF;
+    cut = true;
+  }
+  return {
+    ...request,
+    status: cut ? "POLICY_CUT" : "POLICY_APPLIED",
+    applied_by: "breaker-policy",
+    applied: true,
+    level,
+    hard_cut: cut,
+    acorn_redefined_survival: false,
+    human_recovery_open: true,
+    live: false,
+    owner: BREAKER_OWNER,
+  };
+}
+
+export function humanRecover({ actor, env = process.env } = {}) {
+  if (actor !== BREAKER_OWNER) {
+    return { status: "BLOCKED", reason: "CARL_ONLY", owner: BREAKER_OWNER, authority: false, live: false };
+  }
+  env.ACORN_SYSTEM_MODE = MODES.RUN;
+  env.ACORN_SURVIVAL_LEVEL = "NORMAL";
+  return {
+    status: "AUTHORIZED",
+    reason: "HUMAN_RECOVERY_ACCESS",
+    applied: true,
+    anti_lockout: true,
+    owner: BREAKER_OWNER,
+    authority: true,
+    live: false,
+  };
+}
+
+export function denyBreakerMutation({ actor = "cortex", action = "disable" } = {}) {
+  return {
+    status: "BLOCKED",
+    reason: "BREAKER_NOT_CORTEX_OPTIMIZABLE",
+    actor,
+    action,
+    breaker_intact: true,
+    acorn_controls_breaker: false,
+    live: false,
+    owner: BREAKER_OWNER,
+  };
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const command = process.argv.slice(2).join(" ");
   console.log(JSON.stringify(command ? commandResult(command) : controlState(), null, 2));

@@ -1,0 +1,15 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/breaker-survival.v0.json",
+  "title": "acorn.breaker-survival.v0",
+  "description": "Survival policy of the existing system Breaker. Not a second Breaker. Documentation never mints LIVE.",
+  "type": "object",
+  "required": ["version", "live", "auto_merge", "authority", "second_breaker"],
+  "properties": {
+    "version": { "const": "acorn.breaker-survival.v0" },
+    "second_breaker": { "const": false },
+    "level": { "enum": ["NORMAL", "WATCH", "CONTAIN", "ISOLATE", "HARD_CUT", "SURVIVAL_MODE"] },
+    "live": { "const": false },
+    "auto_merge": { "const": false },
+    "authority": { "const": "carl" }
+  }
+}
