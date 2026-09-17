@@ -1,0 +1,36 @@
+name: future-synaptic-fabric-verify
+
+on:
+  push:
+    branches: [main, 'feat/acorn-future-synaptic-fabric']
+    paths:
+      - 'scripts/acorn-future-synaptic-fabric.mjs'
+      - 'test/acorn-future-synaptic-fabric.test.js'
+      - 'package.json'
+      - '.github/workflows/future-synaptic-fabric-verify.yml'
+  pull_request:
+    paths:
+      - 'scripts/acorn-future-synaptic-fabric.mjs'
+      - 'test/acorn-future-synaptic-fabric.test.js'
+      - 'package.json'
+      - '.github/workflows/future-synaptic-fabric-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: node --check scripts/acorn-future-synaptic-fabric.mjs
+      - name: Focused synaptic tests
+        run: node --test test/acorn-future-synaptic-fabric.test.js
+      - name: Real synaptic cycle
+        run: node scripts/acorn-future-synaptic-fabric.mjs
+      - name: Full regression
+        run: npm test
