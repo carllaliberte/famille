@@ -1,0 +1,21 @@
+name: Cognitive Emergence Verify
+on:
+  push:
+    branches: [main, 'feat/acorn-cognitive-emergence']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  emergence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test test/acorn-cognitive-emergence.test.js
+      - run: node scripts/acorn-cognitive-emergence.mjs
+      - run: npm test
