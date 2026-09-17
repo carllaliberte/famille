@@ -99,3 +99,17 @@ test("continuous work can execute a free quantum simulation through the existing
   assert.equal(result.compute?.execution?.measurement?.measured, true);
   assert.equal(result.compute?.execution?.cost?.actual_cost, 0);
 });
+
+
+test("continuous work engine includes universal compute metabolism", async () => {
+  const { canonicalWorkFromRuntime, executeWorkTask } = await import("../scripts/acorn-work-engine.mjs");
+  const rows = canonicalWorkFromRuntime({ unified: { evolution: {}, learning: {}, metabolism: {} }, coverage: {} });
+  const sweep = rows.find((row) => row.execution_kind === "compute-sweep");
+  assert.ok(sweep);
+  const execution = await executeWorkTask({ root: process.cwd(), task: sweep, env: { ...process.env, ACORN_ALLOW_REMOTE_EXECUTION: "false" } });
+  assert.equal(execution.executor, "compute-fabric-sweep");
+  assert.ok(execution.compute);
+  assert.equal(execution.compute.auto_spend, false);
+  assert.equal(execution.compute.live, false);
+  assert.ok(execution.compute.executed_count > 0 || execution.compute.held_count > 0);
+});
