@@ -23,6 +23,7 @@
     "./agents": "./schema/agents.json",
     "./cortex": "./.github/swarm/cortex.mjs",
     "./cortex-cognition": "./scripts/cortex-cognition.mjs",
+    "./cortex-evolution-governor": "./scripts/cortex-evolution-governor.mjs",
     "./acorn-defense": "./scripts/acorn-defense.mjs",
     "./acorn-capability-inventory": "./scripts/acorn-capability-inventory.mjs",
     "./acorn-continuous-runtime": "./scripts/acorn-continuous-runtime.mjs",
