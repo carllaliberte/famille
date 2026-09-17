@@ -33,7 +33,8 @@
     "work:record": "node scripts/work-record.mjs",
     "effect:audit": "node -e \"import('./scripts/acorn-effect-governor.mjs').then(({auditEffectCoverage})=>console.log(JSON.stringify(auditEffectCoverage(),null,2)))\"",
     "peut-dire": "node sdk/cli.js",
-    "prepare": "husky"
+    "prepare": "husky",
+    "runtime:learning": "node scripts/acorn-learning-fabric.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -82,7 +83,10 @@
     "./acorn-universal-evolution": "./scripts/acorn-universal-evolution.mjs",
     "./compute-provider-adapters": "./scripts/compute-provider-adapters.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
-    "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
+    "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs",
+    "./acorn-learning-fabric": "./scripts/acorn-learning-fabric.mjs"
   },
-  "devDependencies": {"husky": "^9.1.7"}
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
 }
