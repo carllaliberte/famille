@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * ACORN CORTEX — adaptive cognition extension of the existing Cortex runtime.
+ * ACORN CORTEX — adaptive cognition extension of the existing Acorn Cortex runtime.
  *
  * This is NOT a second Cortex. It is the capability-oriented cognitive
- * interface over .github/swarm/cortex.mjs.
+ * interface over .github/swarm/cortex.mjs, and Cortex remains INTERNAL TO ACORN.
  *
- * Canonical hierarchy:
- *   CARL → BREAKER → CORTEX → ACORN → resources
+ * Canonical constitutional hierarchy:
+ *   CARL → BREAKER → ACORN → CORTEX → resources
  *
  * Providers, models and channels are resources. They never become authority.
  */
@@ -24,7 +24,7 @@ import {
 
 export const CORTEX_COGNITION_VERSION = "cortex.cognition.v1";
 export const CORTEX_HIERARCHY = Object.freeze([
-  "CARL", "BREAKER", "CORTEX", "ACORN", "RESOURCES",
+  "CARL", "BREAKER", "ACORN", "CORTEX", "RESOURCES",
 ]);
 
 const text = (v) => String(v ?? "").trim();
@@ -35,6 +35,8 @@ export function cortexConstitution() {
     version: CORTEX_COGNITION_VERSION,
     runtime_version: RUNTIME_CORTEX_VERSION,
     hierarchy: [...CORTEX_HIERARCHY],
+    cortex_belongs_to_acorn: true,
+    acorn_owns_cortex: true,
     one_cortex: true,
     second_cortex: false,
     second_fabric: false,
@@ -188,6 +190,8 @@ export function measureCapabilityGain({ before = [], after = [], verified = fals
 
 export function assertCortexInvariant(result = {}) {
   const checks = [
+    result.constitution?.cortex_belongs_to_acorn === true,
+    result.constitution?.acorn_owns_cortex === true,
     result.constitution?.one_cortex === true,
     result.constitution?.second_cortex === false,
     result.constitution?.provider_is_not_authority === true,
