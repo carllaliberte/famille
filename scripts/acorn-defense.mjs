@@ -47,6 +47,14 @@ const THREAT_WEIGHTS = Object.freeze({
   deception: 8,
   metric_gaming: 6,
   goal_drift: 6,
+  unexpected_connection: 7,
+  unexpected_capability: 8,
+  unexpected_replication: 8,
+  unexpected_persistence: 7,
+  unexpected_control_surface: 8,
+  common_mode_failure: 7,
+  capability_jump: 7,
+  dependency_compromise: 7,
   unknown: 6,
 });
 

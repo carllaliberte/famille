@@ -1,0 +1,36 @@
+name: cognitive-ecology-verify
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/acorn-cognitive-ecology.mjs'
+      - 'test/acorn-cognitive-ecology.test.js'
+      - 'scripts/acorn-cognitive-reality-fabric.mjs'
+      - 'scripts/acorn-continuous-runtime.mjs'
+      - 'scripts/acorn-auto-evolution.mjs'
+      - 'scripts/cortex-evolution-governor.mjs'
+      - 'scripts/acorn-defense.mjs'
+      - 'package.json'
+      - '.github/workflows/cognitive-ecology-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: node --check scripts/acorn-cognitive-ecology.mjs
+      - name: Focused ecology tests
+        run: node --test test/acorn-cognitive-ecology.test.js
+      - name: Real ecology cycle
+        run: node scripts/acorn-cognitive-ecology.mjs
+      - name: Wired organs
+        run: node --test test/acorn-continuous-runtime.test.js test/acorn-auto-evolution.test.js test/cortex-evolution-governor.test.js test/acorn-defense.test.js

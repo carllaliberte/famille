@@ -46,6 +46,7 @@ import { quarantineResource, defenseCycle, assertDefenseInvariant } from "./acor
 import { controlGap, measureBlastRadius, BLAST_LAYERS } from "./acorn-governability.mjs";
 import { assertReplaceability, assertReconstructability, selfImprovementBoundary } from "./acorn-replaceability.mjs";
 import { authorizeBreakerControl } from "../.github/swarm/system-breaker.mjs";
+import { ecologyControlGap, governorInputs, runCognitiveEcologyCycle } from "./acorn-cognitive-ecology.mjs";
 
 export const AUTO_EVOLUTION_VERSION = "acorn.auto-evolution.v1";
 
@@ -253,15 +254,33 @@ export function runAutoEvolutionCycle(input = createEvolutionOrganism()) {
     capability.selected = false;
   }
 
+  const ecology = runCognitiveEcologyCycle({ previous: null, env: process.env, at: `cycle-${cycle}` });
+  const gap = ecologyControlGap({
+    capability: Math.max(0, 0.5 + delta) * 4,
+    observability: "PARTIAL",
+    control: "LIMITED",
+    reversibility: "PARTIAL",
+    uncertainty: 0.5,
+  });
+  const govFeed = governorInputs({
+    information: 0.4,
+    risk: result === "WORSE" ? 0.5 : 0.2,
+    cost: 0.25,
+    controlGap: gap.gap,
+    blast: 0.1,
+  });
   const governor = runEvolutionGovernor({
     candidates: [{
       id: experiment.id,
       hypothesis: hypothesis.claim,
-      expected_information_gain: 0.4,
+      expected_information_gain: govFeed.information_gain,
+      risk_adjusted_information_gain: govFeed.risk_adjusted_information_gain,
       expected_benefit: 0.3,
       uncertainty: 0.5,
       risk: 0.2,
       reversibility: "reversible",
+      control_gap: Math.min(1, gap.gap / 10),
+      blast_radius: 0.1,
       constitutional_change: false,
       breaker_change: false,
       merge: false,
@@ -297,6 +316,13 @@ export function runAutoEvolutionCycle(input = createEvolutionOrganism()) {
   state.auto_sovereignty = false;
   state.constitution_digest = GENESIS_DIGEST;
   state.governor = { verified: governor.verified === true, live: false };
+  state.ecology = {
+    version: ecology.version,
+    control_gap: gap.status,
+    unknown_space: ecology.unknown_space.length,
+    authority: false,
+    live: false,
+  };
   state.last_verdict = `${result} · authority=false · constitution=${constitution.status}`;
   return state;
 }

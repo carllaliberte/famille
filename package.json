@@ -11,6 +11,7 @@
     "live:probe": "node scripts/live-proof.mjs",
     "runtime:continuous": "node scripts/acorn-continuous-runtime.mjs",
     "runtime:civilizational": "node scripts/acorn-civilizational.mjs",
+    "runtime:ecology": "node scripts/acorn-cognitive-ecology.mjs",
     "runtime:substrate": "node scripts/acorn-constitutional-substrate.mjs",
     "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
     "work:record": "node scripts/work-record.mjs",

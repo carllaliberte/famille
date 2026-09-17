@@ -57,6 +57,7 @@ import {
   cognitiveEcology,
   futureIntelligenceByContract,
   assertCognitiveDependencyIntegrity,
+  runCognitiveEcologyCycle,
 } from "./acorn-cognitive-ecology.mjs";
 import {
   compositionExperiment,
@@ -354,6 +355,7 @@ export function runCivilizationalCycle({
       { kind: "UNKNOWN_ENTITIES", id: "future" },
     ],
   });
+  const realityEngine = runCognitiveEcologyCycle({ env, at });
   const future = futureIntelligenceByContract({ entry: { id: "future-x", provider: "UNKNOWN", capabilities: ["review"] } });
   const succession = successionRecord({ original: CONSTITUTION_VERSION, interpretation: CIVILIZATIONAL_VERSION });
   const replaceability = assertReplaceability();
@@ -467,6 +469,12 @@ export function runCivilizationalCycle({
     ontology,
     identity,
     ecology,
+    reality_engine: {
+      version: realityEngine.version,
+      audit: realityEngine.audit.status,
+      control_gap: realityEngine.control_gap.status,
+      live: false,
+    },
     future_intelligence: future,
     succession,
     replaceability,

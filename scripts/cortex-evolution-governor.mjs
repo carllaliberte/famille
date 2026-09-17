@@ -163,7 +163,10 @@ export function scoreCandidate(candidateInput = {}, { mode = "BALANCED", portfol
   const blocked = hardBlock(candidate);
   const diversityPeers = portfolio.filter((row) => row.strategy && row.strategy === candidate.strategy && row.id !== candidate.id).length;
   const diversityBonus = Math.max(0, candidate.diversity - candidate.correlation * 0.75 - diversityPeers * 0.1);
-  const information = candidate.expected_information_gain * 30;
+  const informationGain = Number.isFinite(Number(candidate.risk_adjusted_information_gain))
+    ? clamp01(candidate.risk_adjusted_information_gain)
+    : candidate.expected_information_gain;
+  const information = informationGain * 30;
   const benefit = candidate.expected_benefit * 25;
   const uncertainty = candidate.uncertainty * (mode === "EXPLORE" ? 20 : mode === "EXPLOIT" ? 5 : 12);
   const novelty = candidate.novelty * (mode === "EXPLORE" ? 15 : 7);

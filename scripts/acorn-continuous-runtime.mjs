@@ -30,6 +30,7 @@ import { controlState } from "../.github/swarm/system-breaker.mjs";
 import { cortexCycle, cortexConstitution } from "./cortex-cognition.mjs";
 import { sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
 import { runCivilizationalCycle } from "./acorn-civilizational.mjs";
+import { runCognitiveEcologyCycle, inventoryProbe as ecologyProbe } from "./acorn-cognitive-ecology.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
 
@@ -153,6 +154,8 @@ export async function runContinuousRuntime({
     civilizational_cognition: true,
     constitutional_substrate: true,
     constitutional_plan: true,
+    cognitive_ecology: true,
+    reality_engine: true,
     second_constitution: false,
     auto_evolution: true,
     auto_sovereignty: false,
@@ -284,6 +287,12 @@ export async function runContinuousRuntime({
     },
   });
 
+  const ecology = runCognitiveEcologyCycle({
+    inventory,
+    env,
+    at,
+  });
+
   const result = {
     version: CONTINUOUS_RUNTIME_VERSION,
     constitution,
@@ -348,6 +357,23 @@ export async function runContinuousRuntime({
       },
       live: false,
     },
+    ecology: {
+      version: ecology.version,
+      cycle: ecology.cycle,
+      audit: ecology.audit.status,
+      control_gap: ecology.control_gap.status,
+      unknown_space: ecology.unknown_space.length,
+      governor: ecology.governor.decision,
+      defense_kernel: ecology.defense.kernel,
+      second_cortex: false,
+      second_runtime: false,
+      second_defense: false,
+      second_governor: false,
+      executed: true,
+      measured: true,
+      verified: ecology.audit.status === "VERIFIED",
+      live: false,
+    },
     state: breaker.threatened_blocked ? "DEFENSIVE_CONTINUATION" : "CONTINUOUS",
     auto_merge: false,
     live: false,
@@ -384,6 +410,12 @@ if (isMain()) {
         measured: true,
         verified: selfProbe.auto_merge === false && selfProbe.live === false && selfProbe.second_runtime === false,
         reason: "SELF_ENTRYPOINT",
+      },
+      "scripts/acorn-cognitive-ecology.mjs": {
+        executed: true,
+        measured: true,
+        verified: ecologyProbe().live === false && ecologyProbe().second_cortex === false,
+        reason: "ECOLOGY_CYCLE",
       },
     },
   });
