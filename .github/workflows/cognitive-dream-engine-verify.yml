@@ -1,0 +1,36 @@
+name: cognitive-dream-engine-verify
+
+on:
+  push:
+    branches: [main, 'feat/acorn-cognitive-dream-engine']
+    paths:
+      - 'scripts/acorn-cognitive-dream-engine.mjs'
+      - 'test/acorn-cognitive-dream-engine.test.js'
+      - 'package.json'
+      - '.github/workflows/cognitive-dream-engine-verify.yml'
+  pull_request:
+    paths:
+      - 'scripts/acorn-cognitive-dream-engine.mjs'
+      - 'test/acorn-cognitive-dream-engine.test.js'
+      - 'package.json'
+      - '.github/workflows/cognitive-dream-engine-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: node --check scripts/acorn-cognitive-dream-engine.mjs
+      - name: Focused dream-engine tests
+        run: node --test test/acorn-cognitive-dream-engine.test.js
+      - name: Real dream cycle
+        run: node scripts/acorn-cognitive-dream-engine.mjs
+      - name: Full regression
+        run: npm test
