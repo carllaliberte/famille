@@ -12,11 +12,12 @@ import {
   assertDefenseInvariant,
 } from "../scripts/acorn-defense.mjs";
 
-test("Acorn defense is internal and never becomes a second authority", () => {
+test("Acorn defense is internal, active, and never becomes a second authority", () => {
   const c = defenseConstitution();
   assert.equal(c.owner, "acorn");
   assert.equal(c.one_defense_kernel, true);
   assert.equal(c.second_security_layer, false);
+  assert.equal(c.defense_always_active, true);
   assert.equal(c.carl_controls_breaker, true);
   assert.equal(c.breaker_controls_carl, false);
   assert.equal(c.acorn_controls_carl, false);
@@ -55,15 +56,16 @@ test("anomaly detection produces an explicit measurable delta", () => {
   assert.equal(result.delta, 1);
 });
 
-test("quarantine is reversible and disables selection", () => {
+test("quarantine is reversible and disables selection while defense remains active", () => {
   const result = quarantineResource({ resource: { id: "node-a", presence: "CONNECTED" }, reason: "integrity-failure" });
   assert.equal(result.presence, "QUARANTINED");
   assert.equal(result.executable, false);
   assert.equal(result.selected_for_new_tasks, false);
   assert.equal(result.reversible, true);
+  assert.equal(result.defense_active, true);
 });
 
-test("recovery requires verified non-authority candidates", () => {
+test("recovery uses verified non-authority candidates without requiring a defense hold", () => {
   const result = chooseRecovery({
     candidates: [
       { id: "bad", verified: false },
@@ -72,9 +74,10 @@ test("recovery requires verified non-authority candidates", () => {
   });
   assert.equal(result.status, "RECOVERED");
   assert.equal(result.selected.id, "good");
+  assert.equal(result.defense_active, true);
 });
 
-test("ambiguous Breaker state holds human authority and never falls open", () => {
+test("ambiguous Breaker blocks the operation but the defense stays active", () => {
   const result = defenseCycle({
     actor: "worker",
     capability: { changes_breaker: true },
@@ -84,11 +87,24 @@ test("ambiguous Breaker state holds human authority and never falls open", () =>
     threat: { kind: "authority_bypass" },
     evidence: {},
   });
-  assert.equal(result.state, "HOLD_HUMAN");
-  assert.equal(result.recovery.status, "HOLD_HUMAN");
+  assert.equal(result.state, "BLOCKED");
+  assert.equal(result.recovery.status, "BLOCKED");
+  assert.equal(result.recovery.authority_decision, "UNRESOLVED");
+  assert.equal(result.defense_active, true);
+  assert.equal(result.continue_defending, true);
+  assert.notEqual(result.state, "HOLD_HUMAN");
+  assert.notEqual(result.recovery.status, "HOLD_HUMAN");
   assert.equal(result.breaker_bypass, false);
   assert.equal(result.constitution.fail_open, false);
   assert.equal(assertDefenseInvariant(result).status, "VERIFIED");
+});
+
+test("no verified recovery keeps defense active instead of stopping it", () => {
+  const result = chooseRecovery({ candidates: [], evidence: { breaker_ambiguous: true }, human_required: true });
+  assert.equal(result.status, "BLOCKED");
+  assert.equal(result.defense_active, true);
+  assert.equal(result.continue_defending, true);
+  assert.equal(result.authority_decision, "UNRESOLVED");
 });
 
 test("integrity attack is contained and recovery is evidence-gated", () => {
@@ -103,10 +119,16 @@ test("integrity attack is contained and recovery is evidence-gated", () => {
     observedHash: "tampered",
     recoveryCandidates: [{ id: "clean", verified: true, authority: false, quarantined: false }],
     evidence: { verified: true },
+    sequence: 7,
+    previousDigest: "prior-digest",
   });
-  assert.equal(result.state, "CONTAINED");
+  assert.equal(result.state, "RECOVERED");
   assert.equal(result.integrity.status, "FAILED");
   assert.equal(result.containment.blocked, true);
   assert.equal(result.recovery.status, "RECOVERED");
+  assert.equal(result.event.sequence, 7);
+  assert.equal(result.event.previous_digest, "prior-digest");
+  assert.ok(result.event.digest);
+  assert.equal(result.defense_active, true);
   assert.equal(result.live, false);
 });
