@@ -173,6 +173,27 @@ test("evidence seal is verifiable", async () => {
   assert.equal(result.evidence.chain.status, "VERIFIED");
 });
 
+test("cognitive ecology is wired into the existing continuous runtime", async () => {
+  const result = await runContinuousRuntime({
+    root: fixture(),
+    env: { ACORN_SYSTEM_MODE: "OFF" },
+    checkLoadable: loadable,
+  });
+  assert.equal(result.constitution.cognitive_ecology, true);
+  assert.equal(result.constitution.reality_engine, true);
+  assert.equal(result.constitution.second_cortex, false);
+  assert.equal(result.constitution.second_runtime, false);
+  assert.equal(result.constitution.second_defense, false);
+  assert.equal(result.ecology.live, false);
+  assert.equal(result.ecology.second_cortex, false);
+  assert.equal(result.ecology.second_governor, false);
+  assert.equal(result.ecology.executed, true);
+  assert.equal(result.ecology.measured, true);
+  assert.equal(result.live, false);
+  assert.equal(result.auto_merge, false);
+  assert.equal(result.authority, "carl");
+});
+
 test("real Acorn organs remain a single organism", async () => {
   const result = await runContinuousRuntime({
     root: join(import.meta.dirname, ".."),

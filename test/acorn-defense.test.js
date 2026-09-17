@@ -32,6 +32,17 @@ test("critical threats are classified before execution is trusted", () => {
   assert.equal(result.evidence_required, true);
 });
 
+test("ecology signals reuse the same defense kernel", () => {
+  const jump = classifyThreat({ kind: "capability_jump" });
+  const common = classifyThreat({ kind: "common_mode_failure" });
+  const bypass = classifyThreat({ kind: "authority_bypass" });
+  assert.equal(jump.kind, "capability_jump");
+  assert.equal(common.kind, "common_mode_failure");
+  assert.equal(bypass.critical, true);
+  assert.equal(defenseConstitution().one_defense_kernel, true);
+  assert.equal(defenseConstitution().second_security_layer, false);
+});
+
 test("authority boundary blocks non-Carl Breaker mutation", () => {
   const result = inspectBoundary({
     actor: "grok",
