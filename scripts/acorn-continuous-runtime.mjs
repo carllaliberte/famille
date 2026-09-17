@@ -31,6 +31,9 @@ import { cortexCycle, cortexConstitution } from "./cortex-cognition.mjs";
 import { sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
 import { runCivilizationalCycle } from "./acorn-civilizational.mjs";
 import { runCognitiveEcologyCycle, inventoryProbe as ecologyProbe } from "./acorn-cognitive-ecology.mjs";
+import { buildUniversalEvolutionCycle, assertUniversalEvolutionInvariant } from "./acorn-universal-evolution.mjs";
+import { consolidate, assertLearningOrchestratorInvariant } from "./acorn-learning-orchestrator.mjs";
+import { metabolicCycle, assertCognitiveMetabolismInvariant } from "./acorn-cognitive-metabolism.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
 
@@ -293,6 +296,97 @@ export async function runContinuousRuntime({
     at,
   });
 
+  // UNIFIED ORGANISM CYCLE:
+  // existing fabrics are composed here; no new Cortex/runtime/authority is created.
+  const unifiedObservation = {
+    status: inventory.coverage.failed_count > 0 ? "REGRESSION" : "OBSERVED",
+    category: "ARCHITECTURE",
+    failed: inventory.coverage.failed_count > 0,
+    regression: inventory.coverage.failed_count > 0,
+    unknown: inventory.coverage.unknown_count > 0,
+    evidence: inventory.evidence,
+    provenance: { source: "continuous-runtime", observed_at: at },
+    channel_present: true,
+    capability_available: inventory.coverage.loadable_count > 0,
+  };
+
+  const evolution = buildUniversalEvolutionCycle({
+    observation: unifiedObservation,
+    execution: {
+      executed: true,
+      failed: inventory.coverage.failed_count > 0,
+    },
+    tests: {
+      passed: inventory.coverage.failed_count === 0,
+      failed: inventory.coverage.failed_count,
+    },
+    measurement: {
+      measured: true,
+      value: inventory.coverage.verified_count,
+    },
+    evidence: {
+      verified: inventory.coverage.failed_count === 0 && chain.ok !== false,
+    },
+    work: {
+      observations: [
+        { id: "capability-drift", information_gain: .9, capability_gain: .7, risk_reduction: .8, cost: .2 },
+        { id: "unknown-frontier", information_gain: .8, capability_gain: .9, risk_reduction: .5, cost: .3 },
+      ],
+      independent: [
+        { id: "revalidation", information_gain: .7, capability_gain: .4, risk_reduction: .8, cost: .2 },
+      ],
+    },
+  });
+  assertUniversalEvolutionInvariant(evolution);
+
+  const learning = consolidate({
+    observations: [{
+      subject: "continuous-runtime",
+      confidence: inventory.coverage.failed_count === 0 ? 1 : .4,
+      provenance: { source: "continuous-runtime", observed_at: at },
+      evidence: { score: inventory.coverage.failed_count === 0 ? 1 : .4 },
+      measurement: { measured: true, confidence: 1 },
+      verification: { verified: inventory.coverage.failed_count === 0 },
+    }],
+    previous: [],
+    frontier: evolution.next_work || [],
+  });
+  assertLearningOrchestratorInvariant(learning);
+
+  const metabolism = metabolicCycle({
+    observations: [{
+      id: "continuous-runtime",
+      subject: "canonical organism cycle",
+      provenance: { source: "continuous-runtime", observed_at: at },
+      evidence: { score: inventory.coverage.failed_count === 0 ? 1 : .4 },
+      measurement: { measured: true, confidence: 1 },
+      verification: { verified: inventory.coverage.failed_count === 0 },
+      state: inventory.coverage.failed_count === 0 ? "VERIFIED" : "FAILED",
+    }],
+    frontier: [
+      ...learning.frontier.map(row => ({
+        ...row,
+        uncertainty: row.uncertainty ?? .5,
+        impact: row.impact ?? .5,
+        observability: row.observability ?? .8,
+        reversibility: row.reversibility ?? .8,
+      })),
+      {
+        id: "unknown-frontier",
+        subject: "unknown capability frontier",
+        uncertainty: .9,
+        impact: .9,
+        observability: .7,
+        reversibility: .9,
+      },
+    ],
+    revalidation: learning.frontier,
+    authority: "carl",
+    auto_merge: false,
+    live: false,
+  });
+  assertCognitiveMetabolismInvariant(metabolism);
+
   const result = {
     version: CONTINUOUS_RUNTIME_VERSION,
     constitution,
@@ -363,6 +457,27 @@ export async function runContinuousRuntime({
         transformation: civilizational.long_horizon.transformation.horizon,
         unknown_future: civilizational.long_horizon.unknown_future.horizon,
       },
+      live: false,
+    },
+    unified: {
+      evolution: {
+        state: evolution.state,
+        next_work: evolution.next_work,
+        verification: evolution.verification,
+      },
+      learning: {
+        metrics: learning.metrics,
+        next: learning.next,
+      },
+      metabolism: {
+        phase: metabolism.metabolism?.phase || null,
+        homeostasis: metabolism.homeostasis,
+        next: metabolism.next,
+        continue: metabolism.continue,
+      },
+      one_organism_cycle: true,
+      second_runtime: false,
+      second_cortex: false,
       live: false,
     },
     ecology: {
