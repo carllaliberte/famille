@@ -124,7 +124,7 @@ export function workState({ previous = {}, discovered = [] } = {}) {
     const prior = old.get(row.id);
     return {
       ...row,
-      state: prior?.state && !TERMINAL.has(prior.state) ? prior.state : row.state,
+      state: prior?.state || row.state,
       attempts: Number(prior?.attempts || 0),
       last_error: prior?.last_error || null,
       last_completed_at: prior?.last_completed_at || null,
@@ -264,7 +264,7 @@ export async function runContinuousWorkEngine({
     completed_count: completed.length,
     blocked_count: blocked.length,
     usage: currentUsage,
-    governor: governorSnapshot({ env, limits, usage: currentUsage }),
+    governor: governorSnapshot({ env, limits, usage: currentUsage }),\n    budget_window: { minutes: windowMinutes, started_at: budgetWindowStartedAt, reset: windowExpired },
     executor_policy: policy,
     runtime: {
       state: organism.state,
