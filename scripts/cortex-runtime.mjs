@@ -23,6 +23,7 @@ import { runIntelligenceContract } from "./intelligence-contract.mjs";
 import { learnCortexExperience } from "./cortex-learning-cycle.mjs";
 import { snapshotComputeFabric } from "./acorn-compute-fabric.mjs";
 import { snapshotOmniCore } from "./acorn-omni-core.mjs";
+import { snapshotConnector } from "./acorn-connector-flux.mjs";
 
 function readJson(path, fallback) {
   try {
@@ -187,6 +188,7 @@ export function runCortexRuntime({
 
   const compute = snapshotComputeFabric({ env, now: at });
   const omni = snapshotOmniCore({ env, now: at });
+  const connector = snapshotConnector({ env, now: at });
 
   return {
     version: "cortex-runtime.v0",
@@ -205,6 +207,7 @@ export function runCortexRuntime({
     learning,
     compute,
     omni,
+    connector,
     worker_evidence_ref: workerEvidence.v || null,
   };
 }

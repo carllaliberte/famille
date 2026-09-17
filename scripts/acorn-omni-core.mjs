@@ -25,6 +25,10 @@ import {
   runComputeProofLoop,
   snapshotComputeFabric,
 } from "./acorn-compute-fabric.mjs";
+import {
+  snapshotConnector,
+  connectorConstitution,
+} from "./acorn-connector-flux.mjs";
 
 export const OMNI_CORE_VERSION = "acorn.omni-core.v1";
 export const UNKNOWN = "UNKNOWN";
@@ -205,6 +209,7 @@ export function omniConstitution() {
     live: false,
     authority: "carl",
     compute: computeConstitution(),
+    connector: connectorConstitution(),
   });
 }
 
@@ -869,6 +874,7 @@ export function snapshotOmniCore({ env = process.env, now = new Date().toISOStri
     constitution: omniConstitution(),
     axes,
     compute,
+    connector: snapshotConnector({ env, now }),
     unknown_capabilities: unknownCaps.slice(),
     memory: memoryView(),
     knowledge: knowledgeGraphView(),
@@ -901,6 +907,7 @@ export function cortexOmniView({ snapshot = null, proof = null, env = process.en
       simulator: (snap.compute.resources || []).find((row) => row.compute_type === "simulator")?.state || "DEFINED",
     },
     unknown: snap.unknown_capabilities,
+    connector: snap.connector,
     diagnostics: snap.diagnostics,
     twins: snap.twins,
     memory: snap.memory,

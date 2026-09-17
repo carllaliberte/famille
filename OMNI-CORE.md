@@ -21,6 +21,7 @@ ACORN CORTEX
 OMNI-CORE (this contract)
   ├── intelligence
   ├── compute
+  ├── connector / flux (informational membrane)
   └── physical observation
 ```
 
