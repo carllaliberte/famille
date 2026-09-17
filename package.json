@@ -11,6 +11,7 @@
     "live:probe": "node scripts/live-proof.mjs",
     "runtime:continuous": "node scripts/acorn-continuous-runtime.mjs",
     "runtime:civilizational": "node scripts/acorn-civilizational.mjs",
+    "runtime:substrate": "node scripts/acorn-constitutional-substrate.mjs",
     "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
     "work:record": "node scripts/work-record.mjs",
     "peut-dire": "node sdk/cli.js",
@@ -38,6 +39,7 @@
     "./acorn-experiment": "./scripts/acorn-experiment.mjs",
     "./acorn-replaceability": "./scripts/acorn-replaceability.mjs",
     "./acorn-civilizational": "./scripts/acorn-civilizational.mjs",
+    "./acorn-constitutional-substrate": "./scripts/acorn-constitutional-substrate.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
   },

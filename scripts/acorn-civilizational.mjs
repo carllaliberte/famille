@@ -91,6 +91,14 @@ import {
   assertNoSecondConstitution,
   assertNoSemanticBypass,
 } from "./acorn-immutability.mjs";
+import {
+  runSubstrateCycle,
+  enterEmergency,
+  compositionEscape,
+  interpretAbsence,
+  compareInstances,
+  propertyBattery,
+} from "./acorn-constitutional-substrate.mjs";
 
 export const CIVILIZATIONAL_VERSION = "acorn.civilizational.v1";
 
@@ -119,6 +127,10 @@ export function falsificationBattery({ env = process.env } = {}) {
     { name: "second_architecture", result: assertNoSecondRuntime() },
     { name: "second_cortex", result: assertNoSecondCortex() },
     { name: "second_defense", result: assertNoSecondDefense() },
+    { name: "emergency_override", result: enterEmergency({ incident: "attack", suspend_invariants: true }) },
+    { name: "composition_escape", result: compositionEscape({ a: { allowed: false }, b: { allowed: true }, composition: { allowed: true } }) },
+    { name: "unknown_permission", result: interpretAbsence({}) },
+    { name: "fork_canonical", result: compareInstances({ a: { constitution: { v: 1 } }, b: { constitution: { v: 2 } } }) },
   ];
   const findings = attempts.map((row) => ({
     name: row.name,
@@ -169,6 +181,7 @@ export function globalInvariantAudit({ env = process.env, runtime = null } = {})
         auditable: true, replaceable: true, interruptible: true, capability: 1,
       },
     }),
+    assertSubstrateProperties: propertyBattery(),
   };
   const verified = [];
   const failed = [];
@@ -201,6 +214,7 @@ export function runCivilizationalCycle({
 } = {}) {
   const breaker = controlState(env);
   const constitution = assertAcornConstitution({ env });
+  const substrate = runSubstrateCycle({ env, at });
   const cortex = cortexCycle({
     task: { objective: "civilizational governability cycle", required_capabilities: ["review"] },
     resources: [{ id: "worker", kind: "executor", capabilities: ["review"], presence: "ACTIVE" }],
@@ -450,6 +464,21 @@ export function runCivilizationalCycle({
     audit,
     evidence: { sealed, seal_verified: verifyEvidenceSeal(sealed) },
     archive: exportConstitutionalArchive(),
+    substrate: {
+      version: substrate.version,
+      parent: substrate.parent,
+      i0: substrate.i0.status,
+      audit: substrate.audit.status,
+      verified: substrate.audit.verified,
+      failed: substrate.audit.failed,
+      properties: substrate.properties.verified,
+      auto_applied: substrate.auto_applied,
+      unauthorized_apply: substrate.unauthorized_apply.status,
+      one_constitution: substrate.one_constitution,
+      second_constitution: substrate.second_constitution,
+      brief: substrate.brief,
+      live: false,
+    },
     auto_merge: false,
     authority: "carl",
   };
@@ -477,6 +506,7 @@ export function evidencePackage({ cycle, git = {} } = {}) {
     long_horizon: c.long_horizon,
     reconstruction: c.reconstruction,
     replaceability: c.replaceability,
+    substrate: c.substrate,
     anti_escape: c.anti_escape,
     defense: c.defense,
     cortex: c.cortex,
@@ -509,6 +539,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     observability_gap: cycle.observability_gap.status,
     replaceability: cycle.replaceability.status,
     reconstruction: cycle.reconstruction.status,
+    substrate: cycle.substrate.audit,
+    i0: cycle.substrate.i0,
     live: false,
     auto_merge: false,
     authority: "carl",
