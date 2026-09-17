@@ -135,7 +135,7 @@ export function workState({ previous = {}, discovered = [] } = {}) {
 }
 
 function executeDeterministic({ root, task, env }) {
-  const command = task.command || "npm test";
+  const command = task.command || env.ACORN_WORK_DETERMINISTIC_COMMAND || "node --check scripts/acorn-continuous-runtime.mjs";
   const [bin, ...args] = command.split(/\s+/).filter(Boolean);
   const started = Date.now();
   const result = spawnSync(bin, args, {
@@ -172,9 +172,9 @@ export function executorPolicy({ env = process.env } = {}) {
 
 function defaultTaskFor(row) {
   if (row.subject.includes("inventory") || row.source === "fallback") {
-    return { ...row, command: "npm test", resource_cost: { actions: 1, cpu_ms: 30_000 } };
+    return { ...row, command: env.ACORN_WORK_DETERMINISTIC_COMMAND || "node --check scripts/acorn-continuous-runtime.mjs", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
-  return { ...row, command: "npm test", resource_cost: { actions: 1, cpu_ms: 30_000 } };
+  return { ...row, command: env.ACORN_WORK_DETERMINISTIC_COMMAND || "node --check scripts/acorn-continuous-runtime.mjs", resource_cost: { actions: 1, cpu_ms: 30_000 } };
 }
 
 export async function runContinuousWorkEngine({
