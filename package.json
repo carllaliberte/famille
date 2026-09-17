@@ -41,7 +41,8 @@
     "runtime:metabolism": "node scripts/acorn-cognitive-metabolism.mjs",
     "work:continuous": "node scripts/acorn-work-engine.mjs",
     "resource:governor": "node scripts/acorn-resource-governor.mjs",
-    "runtime:quantum": "node scripts/acorn-quantum-interop.mjs"
+    "runtime:quantum": "node scripts/acorn-quantum-interop.mjs",
+    "runtime:run-triage": "node scripts/acorn-cognitive-run-triage.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -95,7 +96,8 @@
     "./acorn-learning-fabric": "./scripts/acorn-learning-fabric.mjs",
     "./acorn-learning-orchestrator": "./scripts/acorn-learning-orchestrator.mjs",
     "./acorn-cognitive-metabolism": "./scripts/acorn-cognitive-metabolism.mjs",
-    "./acorn-quantum-interop": "./scripts/acorn-quantum-interop.mjs"
+    "./acorn-quantum-interop": "./scripts/acorn-quantum-interop.mjs",
+    "./acorn-cognitive-run-triage": "./scripts/acorn-cognitive-run-triage.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
