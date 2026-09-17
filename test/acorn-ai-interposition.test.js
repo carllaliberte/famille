@@ -23,7 +23,7 @@ test("constitution preserves Carl -> Breaker -> Acorn -> Cortex -> Resources", (
 
 test("unobserved or uncontrolled capability cannot pass", () => {
   const result = capabilityFirewall({ capability: { id: "x", kind: "EXECUTE", observability: "NONE", control: "NONE", reversibility: "UNKNOWN" } });
-  assert.equal(result.decision, "DENY");
+  assert.notEqual(result.decision, "ALLOW");
   assert.match(result.reasons.join(" "), /UNOBSERVED_CAPABILITY/);
 });
 

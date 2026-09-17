@@ -37,6 +37,7 @@
     "./acorn-cognitive-reality-fabric": "./scripts/acorn-cognitive-reality-fabric.mjs",
     "./acorn-governable-continuity": "./scripts/acorn-governable-continuity.mjs",
     "./acorn-ai-interposition": "./scripts/acorn-ai-interposition.mjs",
+    "./acorn-runtime-interposition": "./scripts/acorn-runtime-interposition.mjs",
     "./acorn-experiment": "./scripts/acorn-experiment.mjs",
     "./acorn-replaceability": "./scripts/acorn-replaceability.mjs",
     "./acorn-civilizational": "./scripts/acorn-civilizational.mjs",
