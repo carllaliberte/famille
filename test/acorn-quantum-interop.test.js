@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { routeQuantumIntelligenceTask } from "../scripts/acorn-compute-fabric.mjs";
 import {
   quantumInteropConstitution,
   classifyQuantumResource,
