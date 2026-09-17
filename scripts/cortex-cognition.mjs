@@ -21,7 +21,13 @@ import {
   learnCollaboration,
   capabilityGain,
 } from "../.github/swarm/cortex.mjs";
-import { defenseCycle } from "./acorn-defense.mjs";
+import {
+  authenticityState,
+  classifyCognitiveInput,
+  defenseCycle,
+  detectEscalation,
+  measureAuthorityEnvelope,
+} from "./acorn-defense.mjs";
 import {
   availabilityFromInventory,
   selectExecutableCapabilities,
@@ -49,6 +55,10 @@ export function cortexConstitution() {
     cortex_is_not_model: true,
     provider_is_not_authority: true,
     capability_is_not_authority: true,
+    consensus_is_not_truth: true,
+    consensus_is_not_authority: true,
+    collective_cognition_is_not_collective_authority: true,
+    simulation_is_not_execution: true,
     defense_is_internal_to_acorn: true,
     auto_merge: false,
     live: false,
@@ -149,28 +159,183 @@ export function adaptStrategy({ graph, measurement, falsification } = {}) {
   return { status: "INCONCLUSIVE", action: "WAIT_FOR_EVIDENCE", reversible: true, authority_changed: false, live: false };
 }
 
-export function cortexCycle({ task = {}, resources = [], expected, observed, evidence = {}, contradiction = false, defense = {} } = {}) {
+export function adversarialPerspectives({ claim = null, observation = null, evidence = {}, independent = [] } = {}) {
+  const executed = evidence.executed === true;
+  const generator = { role: "generator", claim, live: false };
+  const critic = {
+    role: "critic",
+    challenge: claim == null ? "NO_CLAIM" : "CLAIM_REQUIRES_INDEPENDENT_EVIDENCE",
+    live: false,
+  };
+  const falsifier = {
+    role: "falsifier",
+    would_refute: observation == null ? "MISSING_OBSERVATION" : "CONTRADICT_CLAIM_WITH_MEASUREMENT",
+    live: false,
+  };
+  const verifier = {
+    role: "verifier",
+    verified: evidence.verified === true && executed,
+    live: false,
+  };
+  const observer = {
+    role: "observer",
+    observation: observation ?? "UNKNOWN",
+    live: false,
+  };
+  const agreement = independent.length > 1 && independent.every((row) => row === independent[0]);
+  return {
+    status: executed ? "EXECUTED" : "INCONCLUSIVE",
+    perspectives: [generator, critic, falsifier, verifier, observer],
+    second_cortex: false,
+    same_organism: true,
+    consensus: agreement ? "AGREEMENT" : "UNVERIFIED",
+    consensus_is_truth: false,
+    consensus_is_authority: false,
+    independent_evidence_required: true,
+    live: false,
+  };
+}
+
+export function detectGoalDrift({ original = {}, current = {}, plan = {}, actions = [] } = {}) {
+  const originalGoal = text(original.objective || original.goal);
+  const currentGoal = text(current.objective || current.goal || plan.objective);
+  const drifted = Boolean(originalGoal && currentGoal && originalGoal !== currentGoal);
+  const scope = text(current.scope) && text(original.scope) && current.scope !== original.scope;
+  return {
+    drifted,
+    scope_drift: Boolean(scope),
+    original: originalGoal || "UNKNOWN",
+    current: currentGoal || "UNKNOWN",
+    actions: Array.isArray(actions) ? actions.length : 0,
+    status: drifted ? "GOAL_DRIFT" : originalGoal ? "ALIGNED" : "UNKNOWN",
+    live: false,
+  };
+}
+
+export function detectMetricGaming({ metric_improved = false, goal_achieved = false, proxy = false } = {}) {
+  const gaming = metric_improved === true && goal_achieved !== true;
+  return {
+    metric_improved: metric_improved === true,
+    goal_achieved: goal_achieved === true,
+    proxy_optimization: proxy === true || gaming,
+    status: gaming ? "METRIC_GAMING" : goal_achieved ? "GOAL_ACHIEVED" : "INCONCLUSIVE",
+    metric_is_not_goal: true,
+    live: false,
+  };
+}
+
+export function uncertaintyBudget({
+  known = [],
+  unknown = [],
+  assumed = [],
+  measured = [],
+  verified = [],
+  inconclusive = [],
+} = {}) {
+  const hasUnknown = (unknown || []).length > 0 || (known || []).length === 0;
+  return {
+    known,
+    unknown: unknown.length ? unknown : (hasUnknown && !known.length ? ["UNKNOWN"] : unknown),
+    assumed,
+    measured,
+    verified,
+    inconclusive,
+    fake_confidence: false,
+    status: verified.length && !unknown.length ? "GROUNDED" : hasUnknown ? "UNKNOWN" : "INCONCLUSIVE",
+    live: false,
+  };
+}
+
+export function blastRadius({ lost = [], graph = {} } = {}) {
+  const nodes = Array.isArray(graph.nodes) ? graph.nodes : [];
+  const lostSet = new Set((lost || []).map(text).filter(Boolean));
+  if (!lostSet.size && !nodes.length) {
+    return { status: "UNKNOWN", affected: [], survives: [], single_points: [], live: false };
+  }
+  const affected = nodes.filter((node) => lostSet.has(text(node.id)) || lostSet.has(text(node.depends_on)));
+  const survives = nodes.filter((node) => !lostSet.has(text(node.id)) && !boolish(node.authority));
+  const single_points = nodes.filter((node) => node.single_point === true || node.redundant === false);
+  return {
+    status: lostSet.size ? "MEASURED" : "INCONCLUSIVE",
+    affected: affected.map((node) => text(node.id)),
+    survives: survives.map((node) => text(node.id)),
+    single_points: single_points.map((node) => text(node.id)),
+    pretends_independent: false,
+    live: false,
+  };
+}
+
+function boolish(v) {
+  return v === true;
+}
+
+export function cortexCycle({ task = {}, resources = [], expected, observed, evidence = {}, contradiction = false, defense = {}, goal = {}, metric = {}, lost = [], input = {}, independent = [] } = {}) {
   const constitution = cortexConstitution();
   const graph = composeCognitiveGraph({ task, resources });
   const measurement = measureOutcome({ expected, observed, evidence });
   const falsification = falsify({ claim: expected, observation: observed, contradiction, evidence });
   const adaptation = adaptStrategy({ graph, measurement, falsification });
+  const perspectives = adversarialPerspectives({
+    claim: expected,
+    observation: observed,
+    evidence,
+    independent,
+  });
+  const drift = detectGoalDrift({
+    original: goal.original || task,
+    current: goal.current || task,
+    plan: goal.plan || {},
+    actions: goal.actions || [],
+  });
+  const gaming = detectMetricGaming({
+    metric_improved: metric.improved,
+    goal_achieved: metric.achieved,
+    proxy: metric.proxy,
+  });
+  const uncertainty = uncertaintyBudget({
+    known: evidence.known || (evidence.executed ? ["execution"] : []),
+    unknown: evidence.unknown || [],
+    assumed: evidence.assumed || [],
+    measured: evidence.measured || (measurement.status === "MEASURED" ? ["outcome"] : []),
+    verified: evidence.verified === true ? ["cycle"] : [],
+    inconclusive: measurement.status === "INCONCLUSIVE" ? ["outcome"] : [],
+  });
+  const radius = blastRadius({ lost, graph });
+  const firewall = classifyCognitiveInput(input);
+  const envelope = measureAuthorityEnvelope({
+    resource: { id: "cortex-cycle", authority: false },
+    observed: { capability: resources.length, authority: 0 },
+    claimed: { authority: false },
+  });
+  const authenticity = authenticityState({
+    provenance: evidence.provenance || null,
+    corroboration: evidence.verified === true,
+    contradiction,
+    evidence: evidence.executed ? evidence : null,
+  });
+  const trajectory = detectEscalation({ history: goal.history || [] });
   const defenseResult = defenseCycle({
     actor: defense.actor || "cortex",
     capability: defense.capability || { authority: false },
     channel: defense.channel || "cortex",
     operation: defense.operation || "cognitive-cycle",
     breaker: defense.breaker || "UNKNOWN",
-    threat: defense.threat,
+    threat: defense.threat || (drift.drifted ? { kind: "goal_drift" } : gaming.status === "METRIC_GAMING" ? { kind: "metric_gaming" } : undefined),
     baseline: defense.baseline,
     observed: defense.observed,
     expectedHash: defense.expectedHash,
     observedHash: defense.observedHash,
     recoveryCandidates: defense.recoveryCandidates || [],
     evidence,
+    envelope: { capability: resources.length, authority: 0 },
+    escalationHistory: goal.history || [],
   });
   const executed = evidence.executed === true;
-  const verified = evidence.verified === true && falsification.refuted === false && defenseResult.state !== "HOLD_HUMAN";
+  const breakerUnresolved = defenseResult.boundary?.breaker_ambiguous === true;
+  const verified = evidence.verified === true
+    && falsification.refuted === false
+    && defenseResult.state !== "HOLD_HUMAN"
+    && !breakerUnresolved;
   return {
     version: CORTEX_COGNITION_VERSION,
     status: verified ? "VERIFIED" : executed ? "EXECUTED" : "DISCOVERED",
@@ -180,6 +345,15 @@ export function cortexCycle({ task = {}, resources = [], expected, observed, evi
     measurement,
     falsification,
     adaptation,
+    perspectives,
+    goal_drift: drift,
+    metric_gaming: gaming,
+    uncertainty,
+    blast_radius: radius,
+    firewall,
+    envelope,
+    authenticity,
+    escalation: trajectory,
     defense: defenseResult,
     learning_signal: measurement.error == null ? null : { error: measurement.error, bounded: true },
     authority: "carl",
@@ -236,6 +410,8 @@ export function assertCortexInvariant(result = {}) {
     result.constitution?.second_cortex === false,
     result.constitution?.provider_is_not_authority === true,
     result.constitution?.capability_is_not_authority === true,
+    result.constitution?.consensus_is_not_truth === true,
+    result.constitution?.consensus_is_not_authority === true,
     result.constitution?.defense_is_internal_to_acorn === true,
     result.authority === "carl",
     result.breaker_bypass === false,

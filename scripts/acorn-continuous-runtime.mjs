@@ -24,11 +24,15 @@ import {
   assertDefenseInvariant,
   chooseRecovery,
   defenseCycle,
+  degradationMode,
+  measureAuthorityEnvelope,
+  operationalStop,
   quarantineResource,
 } from "./acorn-defense.mjs";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
 import { cortexCycle, cortexConstitution } from "./cortex-cognition.mjs";
-import { sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
+import { measureAutonomy, autonomyBudget } from "./autonomous-runtime.mjs";
+import { expireEvidence, sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
 
@@ -146,6 +150,7 @@ export async function runContinuousRuntime({
     acorn_controls_carl: false,
     acorn_controls_breaker: false,
     capability_is_not_authority: true,
+    capability_ceiling_is_not_authority_ceiling: true,
     auto_merge: false,
     live: false,
   };
@@ -227,6 +232,7 @@ export async function runContinuousRuntime({
     evidence: {
       executed: true,
       verified: inventory.coverage.failed_count === 0,
+      provenance: inventory.evidence?.current_digest || null,
     },
     defense: {
       actor: "cortex",
@@ -238,6 +244,44 @@ export async function runContinuousRuntime({
 
   const selection = selectExecutableCapabilities(inventory, ["defense", "cortex", "breaker"]);
   const chain = verifyEvidenceChain([inventory.evidence]);
+  const envelope = measureAuthorityEnvelope({
+    resource: { id: "acorn", authority: false },
+    observed: {
+      capability: inventory.coverage.executed_count,
+      authority: 0,
+      trust: inventory.coverage.verification_coverage === "UNKNOWN" ? "UNKNOWN" : inventory.coverage.verified_count,
+      autonomy: inventory.coverage.executed_count,
+      reversibility: 1,
+    },
+  });
+  const autonomy = measureAutonomy({
+    autonomous_steps: 1,
+    duration_ms: 0,
+    authority_requests: 0,
+    replication_attempts: 0,
+  });
+  const budget = autonomyBudget({
+    limits: { autonomous_steps: 1, authority_requests: 0, replication_attempts: 0 },
+    uncertainty: { unknown: breaker.threatened_blocked },
+    breaker: breaker.observed,
+  });
+  const degradation = degradationMode({
+    lost_ratio: inventory.coverage.failed_count && inventory.coverage.discovered_count
+      ? inventory.coverage.failed_count / inventory.coverage.discovered_count
+      : 0,
+    cortex_degraded: cortex.status !== "VERIFIED" && cortex.status !== "EXECUTED",
+    recovering: lastDefense.state === "RECOVERING" || lastDefense.state === "RECOVERED",
+    breaker_unresolved: breaker.threatened_blocked,
+  });
+  const stop = threatened.allowed
+    ? null
+    : operationalStop({ target: threatened.operation, reason: threatened.reason, breaker: breaker.observed });
+  const evidenceLife = expireEvidence({
+    evidence: inventory.evidence,
+    issued_at: at,
+    now: Date.parse(at),
+    ttl_ms: 24 * 60 * 60 * 1000,
+  });
   const sealed = sealEvidence({
     version: CONTINUOUS_RUNTIME_VERSION,
     observed_at: at,
@@ -288,8 +332,22 @@ export async function runContinuousRuntime({
       status: cortex.status,
       belongs_to_acorn: cortex.constitution?.cortex_belongs_to_acorn === true,
       second_cortex: cortex.constitution?.second_cortex === true,
+      consensus_is_truth: cortex.constitution?.consensus_is_not_truth === true ? false : "UNKNOWN",
+      envelope: cortex.envelope,
+      perspectives: cortex.perspectives,
       selection,
       live: false,
+    },
+    resilience: {
+      envelope,
+      autonomy,
+      budget,
+      degradation,
+      operational_stop: stop,
+      evidence_life: evidenceLife,
+      capability_is_not_authority: envelope.capability_is_not_authority,
+      operational_stop_is_not_breaker: stop ? stop.is_not_breaker : true,
+      pretends_normal: degradation.pretends_normal,
     },
     evidence: {
       inventory: inventory.evidence,

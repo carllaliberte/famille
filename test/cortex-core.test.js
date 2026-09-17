@@ -90,6 +90,10 @@ test("Cortex refuses verification when the defensive boundary is ambiguous", () 
     defense: { breaker: "AMBIGUOUS" },
   });
   assert.equal(result.status, "EXECUTED");
-  assert.equal(result.defense.state, "HOLD_HUMAN");
+  assert.notEqual(result.defense.state, "HOLD_HUMAN");
+  assert.equal(result.defense.state, "BLOCKED");
+  assert.equal(result.defense.defense_active, true);
+  assert.equal(result.defense.continue_defending, true);
   assert.equal(result.defense.breaker_bypass, false);
+  assert.equal(result.live, false);
 });
