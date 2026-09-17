@@ -79,6 +79,7 @@
     "./acorn-omni-core": "./scripts/acorn-omni-core.mjs",
     "./acorn-connector-flux": "./scripts/acorn-connector-flux.mjs",
     "./acorn-survival-policy": "./scripts/acorn-survival-policy.mjs",
+    "./acorn-universal-evolution": "./scripts/acorn-universal-evolution.mjs",
     "./compute-provider-adapters": "./scripts/compute-provider-adapters.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
