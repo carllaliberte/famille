@@ -426,6 +426,16 @@ export function localAdapter() {
           live: false,
         };
       }
+      if (resource.compute_type === "gpu") {
+        return {
+          status: "HOLD_HUMAN",
+          reason: "GPU_RUNTIME_NOT_IMPLEMENTED",
+          observed: false,
+          measured: false,
+          proposed: true,
+          live: false,
+        };
+      }
       const cpu = measureCpu({ now: ctx.now });
       return {
         status: "EXECUTED",
