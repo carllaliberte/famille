@@ -152,7 +152,7 @@ export function blastRadius({ graph, start, limit = 10000 } = {}) {
   const size = result.reachable.length;
   let level = "LOCAL";
   if (size > 1) level = "RESOURCE";
-  if (size > 10) level = "SYNAPSE";
+  if (size > 3) level = "SYNAPSE";
   if (size > 50) level = "INTELLIGENCE";
   if (size > 250) level = "NETWORK";
   if (size > 1000) level = "EXTERNAL_SYSTEM";

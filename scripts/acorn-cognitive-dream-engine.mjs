@@ -61,14 +61,22 @@ function valueAtPath(state, path) {
 export function discoverCrossWorldInvariants({ worlds = [], minSupport = 1 } = {}) {
   const list = Array.isArray(worlds) ? worlds : [];
   if (!list.length) return Object.freeze([]);
+  const requiredSupport = Math.min(list.length, Math.max(1, Math.floor(n(minSupport, 1))));
   const keys = [...new Set(list.flatMap((w) => Object.keys(obj(w.state))))].sort();
   return Object.freeze(keys.map((key) => {
     const values = list.map((w) => valueAtPath(w.state, key));
-    const first = JSON.stringify(values[0]);
-    const support = values.filter((v) => JSON.stringify(v) === first).length;
+    const counts = new Map();
+    for (const value of values) {
+      const signature = JSON.stringify(value);
+      const row = counts.get(signature) || { value, support: 0 };
+      row.support += 1;
+      counts.set(signature, row);
+    }
+    const mode = [...counts.values()].sort((a, b) => b.support - a.support || JSON.stringify(a.value).localeCompare(JSON.stringify(b.value)))[0];
+    const support = mode?.support || 0;
     return {
-      feature: key, value: values[0], support, total: list.length,
-      support_ratio: support / list.length, invariant: support >= Math.max(1, n(minSupport, 1)),
+      feature: key, value: mode?.value, support, total: list.length,
+      support_ratio: support / list.length, invariant: support >= requiredSupport,
       verified: false, status: support === list.length ? "CONVERGENT" : "DIVERGENT",
     };
   }).filter((x) => x.invariant));

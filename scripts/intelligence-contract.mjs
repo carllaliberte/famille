@@ -192,6 +192,11 @@ export function routeTask({
   const byCap = routeByCapability({ need }, adapters);
   const specs = byCap.map((hit) => (discovered.entries || []).find((row) => row.identity === hit.id)).filter(Boolean);
   const unpaid = preferUnpaid(specs.map((row) => ({ ...row, id: row.identity, secret: row.channel })), env);
+  // Cortex-local is an always-available keyless capability, not a provider credential.
+  if (!unpaid.selected.length) {
+    const local = specs.find((row) => row.identity === "cortex-local");
+    if (local) unpaid.selected.push(local.identity);
+  }
   let selected = unpaid.selected.length
     ? specs.filter((row) => unpaid.selected.includes(row.identity))
     : (policyMode === "PAID_FORBIDDEN" || policyMode === "FREE_ONLY" || policyMode === "LOCAL_ONLY" ? [] : specs);

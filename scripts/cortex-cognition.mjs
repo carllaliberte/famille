@@ -114,7 +114,9 @@ export function routeByCapability({ task = {}, resources = [] } = {}) {
   return {
     status: composition.ok ? "DISCOVERED" : "HOLD_HUMAN",
     required_capabilities: discovery.required,
-    candidates: discovery.discovered.map((row) => row.intelligence),
+    candidates: discovery.discovered
+      .filter((row) => row.covered.length > 0)
+      .map((row) => row.intelligence),
     selected: composition.selected,
     missing: composition.missing,
     synapse: composition.synapse,

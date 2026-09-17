@@ -307,6 +307,14 @@ export async function runContinuousRuntime({
       owner: "carl",
     },
     inventory,
+    discovery: {
+      second_cortex: false,
+      live: false,
+      paths: { ranked: false },
+      trust: { single_number: null },
+      experiment: { adopted: false },
+      unknown: { cortex_modified: false },
+    },
     coverage: inventory.coverage,
     drift: inventory.drift,
     defense: {
