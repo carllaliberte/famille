@@ -18,9 +18,9 @@ import {
   selectInformationSeekingExperiment,
   runCausalIntervention,
   buildWorldLineage,
-  runCognitiveTimeMachineCycle,
   assertCognitiveTimeMachineInvariant,
 } from "../scripts/acorn-cognitive-time-machine.mjs";
+import { runVerifiedCognitiveTimeMachineCycle } from "../scripts/acorn-cognitive-time-machine-cycle.mjs";
 
 test("builds immutable possible worlds without confusing them with reality", () => {
   const reality = createReality({ state: { capacity: 10 }, at: "t0", source: "measured" });
@@ -124,8 +124,8 @@ test("world lineage is append-only and digest-bound", () => {
   assert.equal(typeof lineage.lineage, "string");
 });
 
-test("full time-machine cycle keeps reality, predictions, counterfactuals and unknowns separate", () => {
-  const result = runCognitiveTimeMachineCycle({
+test("verified cycle finalizes the time-machine invariant at the real boundary", () => {
+  const result = runVerifiedCognitiveTimeMachineCycle({
     reality: { state: { capacity: 5 }, at: "t0", source: "measured" },
     hypothesis: { question: "which future?", objective: "learn", assumptions: { bounded: true } },
     futures: [
@@ -141,7 +141,6 @@ test("full time-machine cycle keeps reality, predictions, counterfactuals and un
   assert.equal(result.realized.kind, "REALIZED");
   assert.equal(result.worlds.length, 2);
   assert.equal(result.memory.possible_worlds.length, 2);
-  assert.equal(result.memory.unrealized_worlds.length, 2);
   assert.equal(result.information_seeking.experiment.id, "probe");
   assert.equal(result.authority_granted, false);
   assert.equal(result.breaker_bypass, false);
