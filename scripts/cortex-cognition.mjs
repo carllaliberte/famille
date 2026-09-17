@@ -21,6 +21,7 @@ import {
   learnCollaboration,
   capabilityGain,
 } from "../.github/swarm/cortex.mjs";
+import { defenseCycle } from "./acorn-defense.mjs";
 
 export const CORTEX_COGNITION_VERSION = "cortex.cognition.v1";
 export const CORTEX_HIERARCHY = Object.freeze([
@@ -44,6 +45,7 @@ export function cortexConstitution() {
     cortex_is_not_model: true,
     provider_is_not_authority: true,
     capability_is_not_authority: true,
+    defense_is_internal_to_acorn: true,
     auto_merge: false,
     live: false,
   };
@@ -143,14 +145,28 @@ export function adaptStrategy({ graph, measurement, falsification } = {}) {
   return { status: "INCONCLUSIVE", action: "WAIT_FOR_EVIDENCE", reversible: true, authority_changed: false, live: false };
 }
 
-export function cortexCycle({ task = {}, resources = [], expected, observed, evidence = {}, contradiction = false } = {}) {
+export function cortexCycle({ task = {}, resources = [], expected, observed, evidence = {}, contradiction = false, defense = {} } = {}) {
   const constitution = cortexConstitution();
   const graph = composeCognitiveGraph({ task, resources });
   const measurement = measureOutcome({ expected, observed, evidence });
   const falsification = falsify({ claim: expected, observation: observed, contradiction, evidence });
   const adaptation = adaptStrategy({ graph, measurement, falsification });
+  const defenseResult = defenseCycle({
+    actor: defense.actor || "cortex",
+    capability: defense.capability || { authority: false },
+    channel: defense.channel || "cortex",
+    operation: defense.operation || "cognitive-cycle",
+    breaker: defense.breaker || "UNKNOWN",
+    threat: defense.threat,
+    baseline: defense.baseline,
+    observed: defense.observed,
+    expectedHash: defense.expectedHash,
+    observedHash: defense.observedHash,
+    recoveryCandidates: defense.recoveryCandidates || [],
+    evidence,
+  });
   const executed = evidence.executed === true;
-  const verified = evidence.verified === true && falsification.refuted === false;
+  const verified = evidence.verified === true && falsification.refuted === false && defenseResult.state !== "HOLD_HUMAN";
   return {
     version: CORTEX_COGNITION_VERSION,
     status: verified ? "VERIFIED" : executed ? "EXECUTED" : "DISCOVERED",
@@ -160,6 +176,7 @@ export function cortexCycle({ task = {}, resources = [], expected, observed, evi
     measurement,
     falsification,
     adaptation,
+    defense: defenseResult,
     learning_signal: measurement.error == null ? null : { error: measurement.error, bounded: true },
     authority: "carl",
     breaker_bypass: false,
@@ -196,6 +213,7 @@ export function assertCortexInvariant(result = {}) {
     result.constitution?.second_cortex === false,
     result.constitution?.provider_is_not_authority === true,
     result.constitution?.capability_is_not_authority === true,
+    result.constitution?.defense_is_internal_to_acorn === true,
     result.authority === "carl",
     result.breaker_bypass === false,
     result.auto_merge === false,
