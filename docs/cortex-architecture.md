@@ -3,26 +3,26 @@
 ## Canonical hierarchy
 
 ```text
-CARL → BREAKER → CORTEX → ACORN → intelligences / tools / actions
+CARL → BREAKER → ACORN → CORTEX → intelligences / tools / actions
 ```
 
-This hierarchy is conceptual and constitutional. It does **not** grant any external provider authority over the system.
+This is the current constitutional architecture. **Cortex is a component of Acorn, not a separate system and not a sibling above Acorn.**
 
 ### Carl
 Human sovereign and sole authority over the Breaker and repository merge decisions.
 
 ### Breaker
-A human-controlled safety boundary. Carl controls the Breaker. The Breaker does not control Carl. Acorn does not control Carl or the Breaker.
-
-### Cortex
-The adaptive cognitive system. Cortex observes reality, discovers capabilities, composes cognitive strategies, routes work, coordinates intelligences, measures outcomes, learns from verified evidence, adapts topology/synapses, and repeats the cycle.
-
-Cortex is **not** a provider, model, account, or fixed roster.
+A human-controlled safety boundary. **Carl controls the Breaker. The Breaker does not control Carl. Acorn controls neither Carl nor the Breaker.**
 
 ### Acorn
-The constitutional/runtime substrate that makes Cortex governable, measurable, traceable, persistent, and executable. Acorn provides contracts, evidence, provenance, memory, governance, runtime controls, and verification around cognition.
+The system and constitutional/runtime substrate. Acorn contains the Cortex and provides contracts, evidence, provenance, memory, governance, runtime controls, persistence, and verification around cognition.
 
-Acorn is **not** the sovereign and does not acquire authority from the capabilities it exposes.
+Acorn is not the sovereign and does not acquire authority from the capabilities it exposes.
+
+### Cortex
+The central adaptive cognitive component **inside Acorn**. Cortex observes reality, discovers capabilities, composes cognitive strategies, routes work, coordinates intelligences, measures outcomes, learns from verified evidence, adapts topology/synapses, and repeats the cycle.
+
+Cortex is not a provider, model, account, or fixed roster. There is exactly one Cortex in Acorn.
 
 ### Intelligences / tools / actions
 Interchangeable resources that Cortex may discover and use when authorized. Provider identity, model identity, transport channel, and cognitive capability remain distinct.
@@ -40,6 +40,20 @@ ROSTER ≠ PRESENCE
 ```
 
 A provider may host, transport, or execute a capability without becoming the owner or controller of Cortex, Acorn, or the Breaker.
+
+## Acorn internal structure
+
+```text
+ACORN
+├── Constitution / Governance
+├── Runtime
+├── CORTEX              ← adaptive cognition
+├── Fabric / Synapses
+├── Memory / Evidence / Provenance
+└── Intelligences / Tools / Resources
+```
+
+The internal separation is functional, not constitutional: Cortex thinks and adapts; Acorn supplies the substrate, contracts, evidence, governance, execution controls, and proof.
 
 ## Cortex operating loop
 
@@ -74,11 +88,11 @@ TASK
  → ADAPTATION
 ```
 
-New intelligences may be integrated through generic adapters and capability discovery without changing the constitutional hierarchy. Dynamic routing and topology changes must remain measurable, reversible, and governed.
+New intelligences may be integrated through generic adapters and capability discovery without changing the constitutional architecture. Dynamic routing and topology changes must remain measurable, reversible, and governed.
 
 ## Self-improvement boundary
 
-Learning may propose or internally adopt bounded revisions only when they are supported by executable evidence and verification. Learning must never silently grant authority, bypass the Breaker, merge code, expose secrets, or redefine human sovereignty.
+Learning may propose or internally adopt bounded revisions only when supported by executable evidence and verification. Learning must never silently grant authority, bypass the Breaker, merge code, expose secrets, or redefine human sovereignty.
 
 ```text
 LEARNING ≠ UNVERIFIED AUTO-MODIFICATION
@@ -88,11 +102,15 @@ PREDICTION ≠ OBSERVATION
 OBSERVATION ≠ CAUSALITY
 ```
 
-## Architectural invariant
+## Architectural invariants
 
-There is one Cortex and one Acorn runtime. This chapter does not introduce a second brain, second Cortex, second Fabric, parallel mesh, or replacement governance layer.
-
-The purpose is to clarify the existing architecture so the runtime can evolve from provider-oriented orchestration toward capability-oriented adaptive cognition.
+- One Acorn system.
+- One Cortex, internal to Acorn.
+- One Acorn runtime.
+- No second brain, second Cortex, second Fabric, parallel mesh, or replacement governance layer.
+- Provider/model/channel changes never alter constitutional authority.
+- `CAPABILITY ≠ AUTHORITY`.
+- `LIVE=false` unless independently proven by runtime evidence.
 
 ## North star
 
