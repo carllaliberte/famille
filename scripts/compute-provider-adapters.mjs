@@ -13,6 +13,7 @@ import { cpus, totalmem, freemem, arch, platform, availableParallelism } from "n
 import { existsSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { probeGpuRuntime, executeGpuWork } from "./acorn-gpu-runtime.mjs";
 
 export const ADAPTER_CONTRACT_VERSION = "compute-adapter.v0";
 export const UNKNOWN = "UNKNOWN";
@@ -319,6 +320,7 @@ export function localAdapter() {
     discoverSync(ctx = {}) {
       const cpu = measureCpu({ now: ctx.now });
       const gpu = ctx.gpuProbe || probeNvidiaGpu({ allowExec: ctx.allowExec === true });
+      const gpuRuntime = ctx.gpuRuntimeProbe || probeGpuRuntime({ allowExec: ctx.allowExec === true });
       const sim = makeResource({
         provider: "local",
         resource_id: "local-statevector",
@@ -362,11 +364,11 @@ export function localAdapter() {
         compute_type: "gpu",
         location: "localhost",
         availability: gpuPresent ? "MEASURED" : UNKNOWN,
-        capabilities: gpuPresent ? ["gpu", "cuda"] : ["gpu"],
+        capabilities: gpuPresent && gpuRuntime.present ? ["gpu", "cuda", "local_gpu_execution"] : gpuPresent ? ["gpu", "cuda"] : ["gpu"],
         gpu_count: gpuPresent ? gpu.gpu_count : UNKNOWN,
         authentication_state: gpuPresent ? "PRESENT" : "MISSING",
         observed_at: iso(ctx.now),
-        state: gpuPresent ? "EXECUTABLE" : (gpu.source === "not_observed" ? "DEFINED" : "DISCOVERED"),
+        state: gpuPresent && gpuRuntime.present ? "EXECUTABLE" : (gpu.source === "not_observed" ? "DEFINED" : "DISCOVERED"),
         cost: costBlank(),
       }, { connected: gpuPresent, measured: gpuPresent });
       return {
@@ -376,6 +378,7 @@ export function localAdapter() {
         resources: [cpuRes, sim, gpuRes],
         measurement: cpu,
         gpu_probe: gpu,
+        gpu_runtime: gpuRuntime,
         live: false,
       };
     },
@@ -427,14 +430,8 @@ export function localAdapter() {
         };
       }
       if (resource.compute_type === "gpu") {
-        return {
-          status: "HOLD_HUMAN",
-          reason: "GPU_RUNTIME_NOT_IMPLEMENTED",
-          observed: false,
-          measured: false,
-          proposed: true,
-          live: false,
-        };
+        const runtimeProbe = ctx.gpuRuntimeProbe || probeGpuRuntime({ allowExec: ctx.allowExec === true });
+        return executeGpuWork({ task, runtimeProbe, allowExec: ctx.allowExec === true });
       }
       const cpu = measureCpu({ now: ctx.now });
       return {
