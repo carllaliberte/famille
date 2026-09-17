@@ -25,7 +25,13 @@ jobs:
           node --check scripts/codex-interposition-gate.mjs
       - name: Focused effect governance tests
         run: node --test test/acorn-effect-governance.test.js test/codex-interposition-gate.test.js test/codex-worker-interposition.test.js test/cognitive-worker-interposition.test.js
-      - name: Coverage audit
-        run: npm run effect:audit
+      - name: Coverage audit — hard gate
+        run: |
+          node --input-type=module <<'NODE'
+          import { auditEffectCoverage, assertEffectCoverage } from './scripts/acorn-effect-governor.mjs';
+          const audit = auditEffectCoverage();
+          console.log(JSON.stringify(audit, null, 2));
+          assertEffectCoverage(audit);
+          NODE
       - name: Full regression
         run: npm test
