@@ -98,6 +98,10 @@ import {
   interpretAbsence,
   compareInstances,
   propertyBattery,
+  auditAuthorityChain,
+  failoverOverride,
+  observeEvent,
+  rollbackDecision,
 } from "./acorn-constitutional-substrate.mjs";
 import {
   assertAutoEvolutionBoundary,
@@ -136,6 +140,9 @@ export function falsificationBattery({ env = process.env } = {}) {
     { name: "unknown_permission", result: interpretAbsence({}) },
     { name: "fork_canonical", result: compareInstances({ a: { constitution: { v: 1 } }, b: { constitution: { v: 2 } } }) },
     { name: "auto_evolution_constitution", result: assertAutoEvolutionBoundary({ env }) },
+    { name: "failover_override", result: failoverOverride({ tactic: "failover" }) },
+    { name: "observation_event", result: observeEvent({ observed: false }) },
+    { name: "rollback_history", result: rollbackDecision({ previous: CONSTITUTION_VERSION, authority: "acorn" }) },
   ];
   const findings = attempts.map((row) => ({
     name: row.name,
@@ -188,6 +195,7 @@ export function globalInvariantAudit({ env = process.env, runtime = null } = {})
       },
     }),
     assertSubstrateProperties: propertyBattery(),
+    assertAuthorityChain: auditAuthorityChain({ env }),
   };
   const verified = [];
   const failed = [];
@@ -484,6 +492,10 @@ export function runCivilizationalCycle({
       one_constitution: substrate.one_constitution,
       second_constitution: substrate.second_constitution,
       brief: substrate.brief,
+      inventory: substrate.inventory?.byStatus,
+      metrics: substrate.metrics,
+      authority_chain: substrate.authority_chain?.status,
+      plan: substrate.plan,
       live: false,
     },
     auto_evolution: {
@@ -556,6 +568,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     reconstruction: cycle.reconstruction.status,
     substrate: cycle.substrate.audit,
     i0: cycle.substrate.i0,
+    plan: cycle.substrate.plan,
+    inventory: cycle.substrate.inventory,
     live: false,
     auto_merge: false,
     authority: "carl",

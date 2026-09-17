@@ -152,6 +152,7 @@ export async function runContinuousRuntime({
     auto_applied: false,
     civilizational_cognition: true,
     constitutional_substrate: true,
+    constitutional_plan: true,
     second_constitution: false,
     auto_evolution: true,
     auto_sovereignty: false,
@@ -337,6 +338,9 @@ export async function runContinuousRuntime({
       anti_escape: civilizational.anti_escape.status,
       defense_of_defense: civilizational.defense.of_defense,
       substrate: civilizational.substrate,
+      plan: civilizational.substrate?.plan || null,
+      metrics: civilizational.substrate?.metrics || null,
+      authority_chain: civilizational.substrate?.authority_chain || null,
       long_horizon: {
         continuity: civilizational.long_horizon.continuity.horizon,
         transformation: civilizational.long_horizon.transformation.horizon,
