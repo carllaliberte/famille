@@ -13,6 +13,57 @@ const DEFAULT_EFFECT_SURFACES = [
   'github', 'calendar', 'gmail', 'drive', 'canva', 'x-ads',
 ];
 
+const GOVERNANCE_MARKERS = [
+  /\bgovernEffect\s*\(/,
+  /\binterposeExternalEffect\s*\(/,
+  /\bauthorizeRuntimeEffect\s*\(/,
+  /\bassertRuntimeInterposition\s*\(/,
+  /codex-interposition-gate/,
+];
+
+const JS_EFFECT_PATTERNS = [
+  { kind: 'fetch', re: /(?<![\w.$])fetch\s*\(/ },
+  { kind: 'http.request', re: /\b(?:https?|http)\.request\s*\(/ },
+  { kind: 'axios', re: /\baxios(?:\.[A-Za-z]+)?\s*\(/ },
+  { kind: 'spawn', re: /\bspawn(?:Sync)?\s*\(/ },
+  { kind: 'exec', re: /\bexec(?:File|Sync)?\s*\(/ },
+  { kind: 'shell', re: /\b(?:execa|crossSpawn)\s*\(/ },
+  { kind: 'git-push', re: /\bgit\s+push\b/ },
+  { kind: 'gh-api', re: /\bgh\s+api\b/ },
+  { kind: 'gh-merge', re: /\bgh\s+(?:pr\s+merge|pr\s+close)\b/ },
+  { kind: 'curl', re: /\bcurl\s+/ },
+  { kind: 'wget', re: /\bwget\s+/ },
+  { kind: 'wrangler-deploy', re: /\bwrangler\s+deploy\b/ },
+  { kind: 'npm-publish', re: /\bnpm\s+publish\b/ },
+];
+
+function stripJavaScriptNonCode(text) {
+  // Keep call syntax while removing comments and string contents so documentation
+  // URLs, examples and prose do not become false external-effect candidates.
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1')
+    .replace(/'(?:\\.|[^'\\])*'/g, "''")
+    .replace(/"(?:\\.|[^"\\])*"/g, '""')
+    .replace(/`(?:\\.|[^`\\])*`/g, '``');
+}
+
+function detectEffects(file, text) {
+  const executable = /\.(mjs|js|cjs)$/.test(file) ? stripJavaScriptNonCode(text) : text;
+  const findings = JS_EFFECT_PATTERNS.filter(({ re }) => re.test(executable)).map(({ kind }) => kind);
+
+  // Cloudflare-style inbound handlers are not outbound effects by themselves.
+  if (/\bfetch\s*\(/.test(executable) && /(?:export\s+default\s*\{|module\.exports)/.test(executable)) {
+    const inboundOnly = /(?:export\s+default\s*\{\s*(?:async\s+)?fetch\s*\([^)]*\)\s*\{|module\.exports\s*=\s*\{[^}]*fetch\s*\([^)]*\)\s*\{)/s.test(executable);
+    if (inboundOnly) {
+      const index = findings.indexOf('fetch');
+      if (index >= 0) findings.splice(index, 1);
+    }
+  }
+
+  return findings;
+}
+
 export function governEffect(input = {}) {
   const result = interposeExternalEffect(input);
   assertExternalEffectDecision(result);
@@ -36,20 +87,22 @@ export function auditEffectCoverage({ root = process.cwd(), surfaces = DEFAULT_E
     }
   };
   walk(path.join(root, 'scripts'));
+
   const source = files.map(file => ({ file, text: fs.readFileSync(file, 'utf8') }));
-  const signals = source.map(({ file, text }) => ({
-    file,
-    external_effect_signals: [
-      /gh\s+api/.test(text), /fetch\s*\(/.test(text), /https?:\/\//.test(text),
-      /spawn(?:Sync)?\s*\(/.test(text), /exec(?:File|Sync)?\s*\(/.test(text),
-    ].filter(Boolean).length,
-    interposition_signals: [
-      /interposeExternalEffect/.test(text), /authorizeRuntimeEffect/.test(text),
-      /assertRuntimeInterposition/.test(text), /codex-interposition-gate/.test(text),
-    ].filter(Boolean).length,
-  }));
+  const signals = source.map(({ file, text }) => {
+    const effects = detectEffects(file, text);
+    const governance = GOVERNANCE_MARKERS.filter(re => re.test(/\.(mjs|js|cjs)$/.test(file) ? stripJavaScriptNonCode(text) : text)).length;
+    return {
+      file,
+      external_effect_signals: effects.length,
+      effect_kinds: effects,
+      governance_signals: governance,
+    };
+  });
+
   const candidates = signals.filter(x => x.external_effect_signals > 0);
-  const uncovered = candidates.filter(x => x.interposition_signals === 0);
+  const uncovered = candidates.filter(x => x.governance_signals === 0);
+
   return {
     version: EFFECT_GOVERNOR_VERSION,
     invariant: 'NO_UNGOVERNED_CAPABILITY_PATH',
@@ -57,7 +110,7 @@ export function auditEffectCoverage({ root = process.cwd(), surfaces = DEFAULT_E
     scanned_files: files.length,
     effect_candidates: candidates.length,
     interposed_candidates: candidates.length - uncovered.length,
-    uncovered: uncovered.map(x => x.file),
+    uncovered: uncovered.map(x => ({ file: x.file, effect_kinds: x.effect_kinds })),
     status: uncovered.length === 0 ? 'COVERED' : 'GAP_DETECTED',
     authority_granted: false,
     auto_merge: false,
@@ -67,7 +120,10 @@ export function auditEffectCoverage({ root = process.cwd(), surfaces = DEFAULT_E
 }
 
 export function assertEffectCoverage(audit) {
-  if (!audit || audit.status !== 'COVERED') throw new Error(`UNGOVERNED_EFFECT_PATH:${(audit?.uncovered || []).join(',')}`);
+  if (!audit || audit.status !== 'COVERED') {
+    const paths = (audit?.uncovered || []).map(x => `${x.file}:${(x.effect_kinds || []).join('|')}`);
+    throw new Error(`UNGOVERNED_EFFECT_PATH:${paths.join(',')}`);
+  }
   if (audit.authority_granted !== false || audit.live !== false || audit.auto_merge !== false) throw new Error('EFFECT_GOVERNOR_INVARIANT_FAILED');
   return true;
 }
