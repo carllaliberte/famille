@@ -14,6 +14,7 @@
     "runtime:substrate": "node scripts/acorn-constitutional-substrate.mjs",
     "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
     "work:record": "node scripts/work-record.mjs",
+    "effect:audit": "node -e \"import('./scripts/acorn-effect-governor.mjs').then(({auditEffectCoverage})=>console.log(JSON.stringify(auditEffectCoverage(),null,2)))\"",
     "peut-dire": "node sdk/cli.js",
     "prepare": "husky"
   },
@@ -38,6 +39,8 @@
     "./acorn-governable-continuity": "./scripts/acorn-governable-continuity.mjs",
     "./acorn-ai-interposition": "./scripts/acorn-ai-interposition.mjs",
     "./acorn-runtime-interposition": "./scripts/acorn-runtime-interposition.mjs",
+    "./acorn-effect-interposition": "./scripts/acorn-effect-interposition.mjs",
+    "./acorn-effect-governor": "./scripts/acorn-effect-governor.mjs",
     "./acorn-experiment": "./scripts/acorn-experiment.mjs",
     "./acorn-replaceability": "./scripts/acorn-replaceability.mjs",
     "./acorn-civilizational": "./scripts/acorn-civilizational.mjs",
