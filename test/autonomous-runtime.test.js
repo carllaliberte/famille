@@ -4,7 +4,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
-import { runAutonomousRuntime } from "../scripts/autonomous-runtime.mjs";
+import { inventoryProbe, runAutonomousRuntime } from "../scripts/autonomous-runtime.mjs";
 
 function runtimeEnv(extra = {}) {
   const dir = mkdtempSync(join(tmpdir(), "acorn-runtime-"));
@@ -16,10 +16,20 @@ function runtimeEnv(extra = {}) {
   };
 }
 
+const stubContinuity = async () => ({ state: "CONTINUOUS", defense: { active: true, state: "HEALTHY" }, coverage: {} });
+
 const baseEnv = runtimeEnv({
   ACORN_SYSTEM_MODE: "RUN",
   ACORN_RUNTIME_MINUTES: "1",
   ACORN_RUNTIME_MAX_CYCLES: "2",
+});
+
+test("autonomous runtime probe never claims LIVE or auto-merge and never holds defense", () => {
+  const probe = inventoryProbe();
+  assert.equal(probe.auto_merge, false);
+  assert.equal(probe.live, false);
+  assert.equal(probe.hold_on_defense, false);
+  assert.equal(probe.authority, "carl");
 });
 
 test("RUN keeps the breaker path open and permits controlled execution", () => {
@@ -49,6 +59,7 @@ test("runtime performs bounded cycles and checkpoints them", async () => {
         measurement_record: { ok: true },
       };
     },
+    continuity: stubContinuity,
     sleepFn: async () => {},
   });
 
@@ -68,11 +79,13 @@ test("runtime starts a fresh time slice when resumed from a completed checkpoint
   const first = await runAutonomousRuntime({
     env,
     worker: () => ({ verified: false, dispatches: [], measurement_record: { ok: true } }),
+    continuity: stubContinuity,
     sleepFn: async () => {},
   });
   const second = await runAutonomousRuntime({
     env,
     worker: () => ({ verified: false, dispatches: [], measurement_record: { ok: true } }),
+    continuity: stubContinuity,
     sleepFn: async () => {},
   });
   assert.equal(first.state, "TIME_SLICE_COMPLETE");
@@ -81,13 +94,14 @@ test("runtime starts a fresh time slice when resumed from a completed checkpoint
   assert.equal(second.cycle, first.cycle + 1);
 });
 
-test("runtime stops when the breaker changes to OFF between cycles", async () => {
+test("runtime keeps defense and continuity active when the breaker changes to OFF", async () => {
   const env = runtimeEnv({
     ACORN_SYSTEM_MODE: "RUN",
     ACORN_RUNTIME_MINUTES: "1",
     ACORN_RUNTIME_MAX_CYCLES: "3",
   });
   let calls = 0;
+  const continuityCalls = [];
   const result = await runAutonomousRuntime({
     env,
     worker: () => {
@@ -95,18 +109,33 @@ test("runtime stops when the breaker changes to OFF between cycles", async () =>
       env.ACORN_SYSTEM_MODE = "OFF";
       return { verified: false, dispatches: [], measurement_record: { ok: true } };
     },
+    continuity: async () => {
+      continuityCalls.push(env.ACORN_SYSTEM_MODE);
+      return { state: "CONTINUOUS", defense: { active: true, state: "HEALTHY" } };
+    },
     sleepFn: async () => {},
   });
-  assert.equal(result.state, "STOPPED_BREAKER");
+  assert.equal(result.state, "DEFENSIVE_CONTINUATION");
   assert.equal(calls, 1);
-  assert.equal(result.cycle, 1);
+  assert.ok(continuityCalls.length >= 2);
+  assert.equal(result.defense_active, true);
 });
 
-test("runtime stops immediately on OFF", async () => {
+test("breaker OFF still runs continuity and never places defense on HOLD", async () => {
+  let workerCalls = 0;
+  let continuityCalls = 0;
   const result = await runAutonomousRuntime({
     env: runtimeEnv({ ACORN_SYSTEM_MODE: "OFF", ACORN_RUNTIME_MAX_CYCLES: "2" }),
-    worker: () => { throw new Error("must not execute"); },
+    worker: () => { workerCalls += 1; throw new Error("must not execute"); },
+    continuity: async () => {
+      continuityCalls += 1;
+      return { state: "DEFENSIVE_CONTINUATION", defense: { active: true, continue_defending: true, state: "HEALTHY" } };
+    },
     sleepFn: async () => {},
   });
-  assert.equal(result.state, "STOPPED_BREAKER");
+  assert.equal(result.state, "DEFENSIVE_CONTINUATION");
+  assert.equal(workerCalls, 0);
+  assert.equal(continuityCalls, 2);
+  assert.equal(result.defense_active, true);
+  assert.equal(result.continuity_active, true);
 });

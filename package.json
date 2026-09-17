@@ -9,6 +9,8 @@
     "codex:self-test": "node scripts/codex-autonomous-worker.mjs --self-test",
     "system:official-seal": "node scripts/official-seal.mjs",
     "live:probe": "node scripts/live-proof.mjs",
+    "runtime:continuous": "node scripts/acorn-continuous-runtime.mjs",
+    "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
     "work:record": "node scripts/work-record.mjs",
     "peut-dire": "node sdk/cli.js",
     "prepare": "husky"
@@ -22,6 +24,9 @@
     "./cortex": "./.github/swarm/cortex.mjs",
     "./cortex-cognition": "./scripts/cortex-cognition.mjs",
     "./acorn-defense": "./scripts/acorn-defense.mjs",
+    "./acorn-capability-inventory": "./scripts/acorn-capability-inventory.mjs",
+    "./acorn-continuous-runtime": "./scripts/acorn-continuous-runtime.mjs",
+    "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
   },
   "devDependencies": {

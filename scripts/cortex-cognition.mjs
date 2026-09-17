@@ -22,6 +22,10 @@ import {
   capabilityGain,
 } from "../.github/swarm/cortex.mjs";
 import { defenseCycle } from "./acorn-defense.mjs";
+import {
+  availabilityFromInventory,
+  selectExecutableCapabilities,
+} from "./acorn-capability-inventory.mjs";
 
 export const CORTEX_COGNITION_VERSION = "cortex.cognition.v1";
 export const CORTEX_HIERARCHY = Object.freeze([
@@ -203,6 +207,25 @@ export function measureCapabilityGain({ before = [], after = [], verified = fals
     verified,
     provenance: { method: CORTEX_COGNITION_VERSION },
   });
+}
+
+export function resourceAvailability({ resource = {}, inventoryEntry = null } = {}) {
+  if (inventoryEntry) return availabilityFromInventory(inventoryEntry);
+  return {
+    exists: Boolean(text(resource.id || resource.identity)),
+    reachable: false,
+    executable: false,
+    verified: false,
+    healthy: false,
+    lifecycle: "UNKNOWN",
+    roster_is_not_availability: true,
+    reason: "NO_INVENTORY_EVIDENCE",
+    live: false,
+  };
+}
+
+export function selectVerifiedCapabilities(inventory, required = []) {
+  return selectExecutableCapabilities(inventory, required);
 }
 
 export function assertCortexInvariant(result = {}) {

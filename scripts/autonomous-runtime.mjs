@@ -8,6 +8,9 @@
  *
  * A duration of 0 means "until externally stopped". GitHub Actions still
  * supplies the outer process timeout; the runtime itself remains portable.
+ *
+ * Breaker CLOSED / AMBIGUOUS / UNKNOWN / INVALID blocks threatened worker
+ * dispatch. Defense and the continuous inventory cycle keep running.
  */
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -20,7 +23,34 @@ const root = resolve(process.env.ACORN_RUNTIME_ROOT || ".");
 function now() { return new Date().toISOString(); }
 function sleep(ms) { return new Promise((resolveSleep) => setTimeout(resolveSleep, ms)); }
 
-export async function runAutonomousRuntime({ worker = runWorker, env = process.env, sleepFn = sleep } = {}) {
+function threatenedBlocked(state) {
+  return state.mode !== "RUN" || state.breaker_closed || state.diagnostic;
+}
+
+export function inventoryProbe() {
+  return {
+    ok: true,
+    version: "autonomous-runtime.v1",
+    auto_merge: false,
+    live: false,
+    authority: "carl",
+    continuity: true,
+    defense_never_hold: true,
+    hold_on_defense: false,
+  };
+}
+
+async function defaultContinuity(opts) {
+  const mod = await import("./acorn-continuous-runtime.mjs");
+  return mod.runContinuousRuntime(opts);
+}
+
+export async function runAutonomousRuntime({
+  worker = runWorker,
+  env = process.env,
+  sleepFn = sleep,
+  continuity = defaultContinuity,
+} = {}) {
   const evidenceDir = resolve(root, env.ACORN_RUNTIME_EVIDENCE_DIR || "evidence/autopilot/runtime");
   const checkpointPath = resolve(root, env.ACORN_RUNTIME_CHECKPOINT || "evidence/autopilot/runtime/checkpoint.json");
   const journalPath = resolve(root, env.ACORN_RUNTIME_JOURNAL || "evidence/autopilot/runtime/journal.jsonl");
@@ -37,97 +67,152 @@ export async function runAutonomousRuntime({ worker = runWorker, env = process.e
 
   ensure();
   const checkpoint = loadCheckpoint();
-  // Each process/workflow gets a fresh time slice. The checkpoint resumes the
-  // cycle counter/evidence lineage, not the previous process deadline.
   const startedAt = now();
   const previousCycle = Number(checkpoint.cycle || 0);
   let cycle = previousCycle;
   let completed = 0;
+  let lastState = "RUNNING";
   const deadline = durationMinutes > 0 ? Date.parse(startedAt) + durationMinutes * 60_000 : Number.POSITIVE_INFINITY;
 
   while (Date.now() < deadline && (maxCycles === 0 || completed < maxCycles)) {
     const state = controlState(env);
-    if (state.mode !== "RUN" || state.breaker_closed || state.diagnostic) {
-      const stopped = { state: "STOPPED_BREAKER", cycle, at: now(), mode: state.mode };
-      journal(stopped);
-      persistCheckpoint({ ...checkpoint, cycle, started_at: startedAt, last_completed_at: stopped.at, state: stopped.state });
-      return stopped;
-    }
-
     cycle += 1;
     const shouldDispatch = cycle === 1 || cycle % dispatchEvery === 0;
     const cycleDir = resolve(evidenceDir, `cycle-${String(cycle).padStart(6, "0")}`);
     mkdirSync(cycleDir, { recursive: true });
     const observedAt = now();
+    const blocked = threatenedBlocked(state);
 
+    let continuityRecord = null;
     try {
-      const evidence = worker({
+      continuityRecord = await continuity({
+        root,
         env,
-        dispatch: shouldDispatch,
-        evidencePath: resolve(cycleDir, "worker-evidence.json"),
-        memoryPath: resolve(cycleDir, "synaptic-memory.json"),
-        memoryIndexPath: resolve(cycleDir, "cognitive-memory-index.json"),
-        rankingPath: resolve(cycleDir, "measured-intelligence-ranking.json"),
-        feedbackPath: resolve(cycleDir, "measurement-feedback.json"),
-        measurementRecordPath: resolve(cycleDir, "measurement-record.json"),
-        failOnDispatchError: false,
+        at: observedAt,
+        evidencePath: resolve(cycleDir, "continuous-runtime.json"),
+        operation: blocked ? "dispatch" : "inventory",
       });
-      const record = {
+    } catch (error) {
+      continuityRecord = {
+        state: "CONTINUITY_FAILED",
+        error: String(error?.message || error),
+        defense: { active: true, continue_defending: true },
+        live: false,
+        auto_merge: false,
+      };
+    }
+
+    if (blocked) {
+      lastState = "DEFENSIVE_CONTINUATION";
+      const continuation = {
         runtime: "autonomous-runtime.v1",
+        state: lastState,
         cycle,
         started_at: startedAt,
         observed_at: observedAt,
         completed_at: now(),
-        dispatch_requested: shouldDispatch,
-        worker_executed: true,
-        worker_verified: Boolean(evidence?.verified),
+        mode: state.mode,
+        breaker_closed: true,
+        worker_executed: false,
+        threatened_blocked: true,
+        defense_active: true,
+        continue_defending: true,
+        hold_on_defense: false,
+        continuity_active: true,
+        continuity: {
+          state: continuityRecord?.state || "UNKNOWN",
+          defense: continuityRecord?.defense?.state || continuityRecord?.defense?.active || null,
+        },
         live: false,
         auto_merge: false,
-        human_decision: "PENDING_HUMAN",
         authority: "carl",
         evidence_path: cycleDir,
-        dispatches: evidence?.dispatches || [],
-        measurement: evidence?.measurement_record || null,
       };
-      writeFileSync(resolve(cycleDir, "runtime.json"), `${JSON.stringify(record, null, 2)}\n`);
-      journal(record);
-      persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: record.completed_at, state: "RUNNING", last_cycle: cycleDir });
+      writeFileSync(resolve(cycleDir, "runtime.json"), `${JSON.stringify(continuation, null, 2)}\n`);
+      journal(continuation);
+      persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: continuation.completed_at, state: lastState, last_cycle: cycleDir });
       completed += 1;
-    } catch (error) {
-      const heal = selfHealDecision({ reason: String(error?.message || error), attempt: 0, breaker: state.mode });
-      const failure = {
-        runtime: "autonomous-runtime.v1",
-        cycle,
-        observed_at: observedAt,
-        completed_at: now(),
-        state: heal.action === "HOLD_HUMAN" ? "HOLD_HUMAN" : "WORKER_FAILED",
-        error: String(error?.message || error),
-        heal,
-        live: false,
-        auto_merge: false,
-        authority: "carl",
-      };
-      if (heal.action === "RETRY" && heal.retry) {
-        try {
-          worker({
-            env,
-            dispatch: shouldDispatch,
-            evidencePath: resolve(cycleDir, "worker-evidence.json"),
-            failOnDispatchError: false,
-          });
-          failure.state = "RECOVERED";
-          failure.heal = { ...heal, recovered: true };
-        } catch (retryError) {
-          failure.error = String(retryError?.message || retryError);
+    } else {
+      try {
+        const evidence = worker({
+          env,
+          dispatch: shouldDispatch,
+          evidencePath: resolve(cycleDir, "worker-evidence.json"),
+          memoryPath: resolve(cycleDir, "synaptic-memory.json"),
+          memoryIndexPath: resolve(cycleDir, "cognitive-memory-index.json"),
+          rankingPath: resolve(cycleDir, "measured-intelligence-ranking.json"),
+          feedbackPath: resolve(cycleDir, "measurement-feedback.json"),
+          measurementRecordPath: resolve(cycleDir, "measurement-record.json"),
+          failOnDispatchError: false,
+        });
+        lastState = "RUNNING";
+        const record = {
+          runtime: "autonomous-runtime.v1",
+          cycle,
+          started_at: startedAt,
+          observed_at: observedAt,
+          completed_at: now(),
+          dispatch_requested: shouldDispatch,
+          worker_executed: true,
+          worker_verified: Boolean(evidence?.verified),
+          continuity_active: true,
+          defense_active: true,
+          live: false,
+          auto_merge: false,
+          human_decision: "PENDING_HUMAN",
+          authority: "carl",
+          evidence_path: cycleDir,
+          dispatches: evidence?.dispatches || [],
+          measurement: evidence?.measurement_record || null,
+          continuity: {
+            state: continuityRecord?.state || "UNKNOWN",
+            coverage: continuityRecord?.coverage || null,
+          },
+        };
+        writeFileSync(resolve(cycleDir, "runtime.json"), `${JSON.stringify(record, null, 2)}\n`);
+        journal(record);
+        persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: record.completed_at, state: lastState, last_cycle: cycleDir });
+        completed += 1;
+      } catch (error) {
+        const heal = selfHealDecision({ reason: String(error?.message || error), attempt: 0, breaker: state.mode });
+        const failure = {
+          runtime: "autonomous-runtime.v1",
+          cycle,
+          observed_at: observedAt,
+          completed_at: now(),
+          state: heal.action === "HOLD_HUMAN" ? "HOLD_HUMAN" : "WORKER_FAILED",
+          error: String(error?.message || error),
+          heal,
+          live: false,
+          auto_merge: false,
+          authority: "carl",
+          defense_active: true,
+          continue_defending: true,
+          continuity_active: true,
+        };
+        if (heal.action === "RETRY" && heal.retry) {
+          try {
+            worker({
+              env,
+              dispatch: shouldDispatch,
+              evidencePath: resolve(cycleDir, "worker-evidence.json"),
+              failOnDispatchError: false,
+            });
+            failure.state = "RECOVERED";
+            failure.heal = { ...heal, recovered: true };
+          } catch (retryError) {
+            failure.error = String(retryError?.message || retryError);
+          }
         }
+        writeFileSync(resolve(cycleDir, "runtime-failure.json"), `${JSON.stringify(failure, null, 2)}\n`);
+        journal(failure);
+        persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: failure.completed_at, state: failure.state, last_cycle: cycleDir });
+        if (heal.action === "HOLD_HUMAN" || heal.action === "STOP") {
+          return failure;
+        }
+        lastState = failure.state;
+        completed += 1;
       }
-      writeFileSync(resolve(cycleDir, "runtime-failure.json"), `${JSON.stringify(failure, null, 2)}\n`);
-      journal(failure);
-      persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: failure.completed_at, state: failure.state, last_cycle: cycleDir });
-      if (heal.action === "HOLD_HUMAN" || heal.action === "STOP") {
-        return failure;
-      }
-      completed += 1;
     }
 
     if (Date.now() < deadline && (maxCycles === 0 || completed < maxCycles)) {
@@ -135,7 +220,19 @@ export async function runAutonomousRuntime({ worker = runWorker, env = process.e
     }
   }
 
-  const finished = { runtime: "autonomous-runtime.v1", cycle, completed, state: "TIME_SLICE_COMPLETE", at: now(), duration_minutes: durationMinutes, live: false, auto_merge: false, authority: "carl" };
+  const finished = {
+    runtime: "autonomous-runtime.v1",
+    cycle,
+    completed,
+    state: lastState === "DEFENSIVE_CONTINUATION" ? "DEFENSIVE_CONTINUATION" : "TIME_SLICE_COMPLETE",
+    at: now(),
+    duration_minutes: durationMinutes,
+    defense_active: true,
+    continuity_active: true,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+  };
   journal(finished);
   persistCheckpoint({ cycle, started_at: startedAt, last_completed_at: finished.at, state: finished.state });
   return finished;

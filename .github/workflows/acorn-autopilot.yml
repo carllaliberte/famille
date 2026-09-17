@@ -66,6 +66,16 @@ jobs:
           }, null, 2));
           NODE
 
+      - name: Continuous runtime inventory
+        if: always()
+        env:
+          ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+          ACORN_CONTINUOUS_EVIDENCE: evidence/autopilot/continuous-runtime.json
+          ACORN_INVENTORY_SNAPSHOT: evidence/autopilot/capability-inventory.json
+        run: |
+          mkdir -p evidence/autopilot
+          node scripts/acorn-continuous-runtime.mjs
+
       - name: Run bounded cognitive worker
         if: ${{ steps.breaker.outputs.allowed == 'true' }}
         env:
