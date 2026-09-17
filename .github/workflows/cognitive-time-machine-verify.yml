@@ -5,12 +5,14 @@ on:
     branches: [main, 'feat/acorn-cognitive-time-machine']
     paths:
       - 'scripts/acorn-cognitive-time-machine.mjs'
+      - 'scripts/acorn-cognitive-time-machine-cycle.mjs'
       - 'test/acorn-cognitive-time-machine.test.js'
       - 'package.json'
       - '.github/workflows/cognitive-time-machine-verify.yml'
   pull_request:
     paths:
       - 'scripts/acorn-cognitive-time-machine.mjs'
+      - 'scripts/acorn-cognitive-time-machine-cycle.mjs'
       - 'test/acorn-cognitive-time-machine.test.js'
       - 'package.json'
       - '.github/workflows/cognitive-time-machine-verify.yml'
@@ -29,10 +31,12 @@ jobs:
         with:
           node-version: 22
       - name: Syntax
-        run: node --check scripts/acorn-cognitive-time-machine.mjs
+        run: |
+          node --check scripts/acorn-cognitive-time-machine.mjs
+          node --check scripts/acorn-cognitive-time-machine-cycle.mjs
       - name: Focused counterfactual tests
         run: node --test test/acorn-cognitive-time-machine.test.js
       - name: Real cognitive time-machine cycle
-        run: node scripts/acorn-cognitive-time-machine.mjs
+        run: node scripts/acorn-cognitive-time-machine-cycle.mjs
       - name: Full regression
         run: npm test
