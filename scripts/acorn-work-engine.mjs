@@ -19,6 +19,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { runContinuousRuntime } from "./acorn-continuous-runtime.mjs";
+import { executeComputeTask, snapshotComputeFabric } from "./acorn-compute-fabric.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
   limitsFromEnv,
@@ -67,6 +68,8 @@ export function canonicalWorkFromRuntime(runtime) {
       dependencies: Array.isArray(row.dependencies) ? row.dependencies : [],
       human_required: row.human_required === true,
       capability: text(row.capability || ""),
+      execution_kind: text(row.execution_kind || row.executor || "deterministic"),
+      task: row.task && typeof row.task === "object" ? row.task : null,
     });
   });
 
@@ -152,7 +155,38 @@ function executeDeterministic({ root, task, env }) {
     duration_ms: Date.now() - started,
     stdout_tail: text(result.stdout).slice(-4000),
     stderr_tail: text(result.stderr).slice(-4000),
+    executor: "deterministic-ci",
   };
+}
+
+export async function executeWorkTask({ root, task, env = process.env, computeDiscovery = null } = {}) {
+  const kind = text(task.execution_kind || "deterministic").toLowerCase();
+  if (kind === "compute" || kind === "quantum" || kind === "qpu" || kind === "simulator") {
+    const started = Date.now();
+    const computeTask = {
+      ...(task.task && typeof task.task === "object" ? task.task : {}),
+      type: task.task?.type || (kind === "quantum" || kind === "qpu" || kind === "simulator" ? "quantum_simulation" : "compute"),
+      allow_simulator: task.task?.allow_simulator !== false,
+    };
+    const discovery = computeDiscovery || snapshotComputeFabric({ env, now: new Date().toISOString() });
+    const result = await executeComputeTask({
+      task: computeTask,
+      discovery,
+      env,
+      human_authorization: task.human_authorization === true,
+      policy: task.policy || "FREE_FIRST",
+    });
+    return {
+      status: result.status === "VERIFIED" || result.status === "EXECUTED" ? "COMPLETED"
+        : result.status === "HOLD_HUMAN" ? "WAITING_HUMAN" : "FAILED",
+      duration_ms: Date.now() - started,
+      executor: "compute-fabric",
+      compute: result,
+      stdout_tail: "",
+      stderr_tail: result.reason || "",
+    };
+  }
+  return executeDeterministic({ root, task, env });
 }
 
 export function executorPolicy({ env = process.env } = {}) {
@@ -224,7 +258,7 @@ export async function runContinuousWorkEngine({
     }
     currentUsage = reservation.usage;
 
-    const execution = executeDeterministic({ root, task, env });
+    const execution = await executeWorkTask({ root, task, env });
     const next = {
       ...candidate,
       state: execution.status === "COMPLETED" ? "COMPLETED" : "VERIFYING",
@@ -232,7 +266,7 @@ export async function runContinuousWorkEngine({
       last_error: execution.status === "COMPLETED" ? null : execution.stderr_tail,
       last_completed_at: execution.status === "COMPLETED" ? new Date().toISOString() : null,
       execution,
-      executor: "deterministic-ci",
+      executor: execution.executor || "deterministic-ci",
       model_dispatched: false,
     };
     if (execution.status === "COMPLETED") completed.push(next);
