@@ -23,6 +23,7 @@
     "runtime:identity": "node scripts/acorn-identity-continuity.mjs",
     "runtime:agency": "node scripts/acorn-agency-boundary.mjs",
     "runtime:consequence": "node scripts/acorn-cognitive-consequence-ledger.mjs",
+    "runtime:self-knowledge": "node scripts/acorn-cognitive-self-knowledge.mjs",
     "runtime:substrate": "node scripts/acorn-constitutional-substrate.mjs",
     "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
     "work:record": "node scripts/work-record.mjs",
@@ -69,6 +70,7 @@
     "./acorn-identity-continuity": "./scripts/acorn-identity-continuity.mjs",
     "./acorn-agency-boundary": "./scripts/acorn-agency-boundary.mjs",
     "./acorn-cognitive-consequence-ledger": "./scripts/acorn-cognitive-consequence-ledger.mjs",
+    "./acorn-cognitive-self-knowledge": "./scripts/acorn-cognitive-self-knowledge.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
   },
