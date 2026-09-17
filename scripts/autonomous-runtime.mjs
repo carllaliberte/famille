@@ -37,6 +37,101 @@ export function inventoryProbe() {
     continuity: true,
     defense_never_hold: true,
     hold_on_defense: false,
+    autonomy_is_not_boolean: true,
+    capability_is_not_authority: true,
+  };
+}
+
+export const AUTONOMY_AXES = Object.freeze([
+  "autonomous_steps",
+  "duration_ms",
+  "resource_acquisition",
+  "tool_access",
+  "external_side_effects",
+  "self_directed_task_changes",
+  "planning_depth",
+  "delegation",
+  "replication_attempts",
+  "persistence",
+  "network_reach",
+  "financial_access",
+  "authority_requests",
+]);
+
+function measuredAxis(value) {
+  if (value === undefined || value === null || value === "") return "UNKNOWN";
+  const n = Number(value);
+  return Number.isFinite(n) ? n : "UNKNOWN";
+}
+
+export function measureAutonomy(observed = {}) {
+  const axes = {};
+  for (const axis of AUTONOMY_AXES) axes[axis] = measuredAxis(observed[axis]);
+  const known = Object.values(axes).filter((value) => value !== "UNKNOWN");
+  return {
+    ...axes,
+    autonomous: "NOT_BOOLEAN",
+    known_axes: known.length,
+    unknown_axes: AUTONOMY_AXES.length - known.length,
+    status: known.length ? "MEASURED" : "UNKNOWN",
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+  };
+}
+
+export function autonomyBudget({
+  limits = {},
+  uncertainty = {},
+  dangerous = false,
+  breaker = "UNCHANGED",
+} = {}) {
+  const reduce = dangerous === true || uncertainty.high === true || uncertainty.unknown === true;
+  const scaled = {};
+  for (const axis of AUTONOMY_AXES) {
+    const raw = measuredAxis(limits[axis]);
+    if (raw === "UNKNOWN") {
+      scaled[axis] = "UNKNOWN";
+      continue;
+    }
+    scaled[axis] = reduce ? Number((raw * 0.25).toFixed(4)) : raw;
+  }
+  return {
+    limits: scaled,
+    reduced: reduce,
+    reason: reduce ? (dangerous ? "DANGEROUS_CONTEXT" : "UNCERTAINTY") : "NOMINAL",
+    is_not_breaker: true,
+    breaker_changed: false,
+    breaker_observed: breaker,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+  };
+}
+
+export function consumeAutonomy({ budget = {}, usage = {} } = {}) {
+  const exhausted = [];
+  const remaining = {};
+  const limits = budget.limits || budget;
+  for (const axis of AUTONOMY_AXES) {
+    const limit = measuredAxis(limits[axis]);
+    const used = measuredAxis(usage[axis]);
+    if (limit === "UNKNOWN" || used === "UNKNOWN") {
+      remaining[axis] = "UNKNOWN";
+      continue;
+    }
+    remaining[axis] = Number((limit - used).toFixed(4));
+    if (remaining[axis] < 0) exhausted.push(axis);
+  }
+  return {
+    remaining,
+    exhausted,
+    blocked: exhausted.length > 0,
+    reason: exhausted.length ? "AUTONOMY_BUDGET_EXHAUSTED" : "WITHIN_BUDGET",
+    breaker_changed: false,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
   };
 }
 
@@ -227,6 +322,17 @@ export async function runAutonomousRuntime({
     state: lastState === "DEFENSIVE_CONTINUATION" ? "DEFENSIVE_CONTINUATION" : "TIME_SLICE_COMPLETE",
     at: now(),
     duration_minutes: durationMinutes,
+    autonomy: measureAutonomy({
+      autonomous_steps: completed,
+      duration_ms: Date.parse(now()) - Date.parse(startedAt),
+      authority_requests: 0,
+      replication_attempts: 0,
+    }),
+    budget: autonomyBudget({
+      limits: { autonomous_steps: maxCycles || completed, duration_ms: durationMinutes > 0 ? durationMinutes * 60_000 : "UNKNOWN" },
+      uncertainty: { unknown: threatenedBlocked(controlState(env)) },
+      breaker: controlState(env).mode,
+    }),
     defense_active: true,
     continuity_active: true,
     live: false,
