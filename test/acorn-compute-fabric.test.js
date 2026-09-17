@@ -24,6 +24,7 @@ import {
 import {
   FORBIDDEN_UNPROVEN,
   makeResource,
+  localAdapter,
   refuseMagicClaim,
   simulateCircuit,
 } from "../scripts/compute-provider-adapters.mjs";
