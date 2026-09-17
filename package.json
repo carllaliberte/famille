@@ -37,7 +37,9 @@
     "prepare": "husky",
     "runtime:learning": "node scripts/acorn-learning-fabric.mjs",
     "runtime:learning-orchestrator": "node scripts/acorn-learning-orchestrator.mjs",
-    "runtime:metabolism": "node scripts/acorn-cognitive-metabolism.mjs"
+    "runtime:metabolism": "node scripts/acorn-cognitive-metabolism.mjs",
+    "work:continuous": "node scripts/acorn-work-engine.mjs",
+    "resource:governor": "node scripts/acorn-resource-governor.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",

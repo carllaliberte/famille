@@ -1,0 +1,116 @@
+name: acorn-continuous-work
+
+on:
+  schedule:
+    # Offset from the top of the hour to reduce scheduler congestion.
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+    inputs:
+      allow_model_dispatch:
+        description: "Allow bounded external model dispatch for this run"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: acorn-continuous-work-main
+  cancel-in-progress: true
+
+jobs:
+  organism:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
+      ACORN_ALLOW_MODEL_DISPATCH: ${{ github.event.inputs.allow_model_dispatch || 'false' }}
+      ACORN_BUDGET_MODEL_CALLS: ${{ vars.ACORN_BUDGET_MODEL_CALLS || '0' }}
+      ACORN_BUDGET_MODEL_TOKENS: ${{ vars.ACORN_BUDGET_MODEL_TOKENS || '0' }}
+      ACORN_BUDGET_NETWORK_CALLS: ${{ vars.ACORN_BUDGET_NETWORK_CALLS || '0' }}
+      ACORN_BUDGET_EXTERNAL_SPEND: ${{ vars.ACORN_BUDGET_EXTERNAL_SPEND || '0' }}
+      ACORN_WORK_MAX_TASKS: ${{ vars.ACORN_WORK_MAX_TASKS || '3' }}
+      ACORN_BUDGET_WINDOW_MINUTES: ${{ vars.ACORN_BUDGET_WINDOW_MINUTES || '1440' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Restore latest Acorn work state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p .acorn-state
+          artifact_url="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --jq '.artifacts[] | select(.name=="acorn-continuous-state" and .expired==false) | [.created_at,.archive_download_url] | @tsv' | sort | tail -n 1 | cut -f2-)"
+          if [ -n "${artifact_url}" ]; then
+            gh api "${artifact_url}" > .acorn-state/state.zip
+            unzip -o .acorn-state/state.zip -d .acorn-state >/dev/null
+          fi
+          if [ -f .acorn-state/continuous-work-state.json ]; then
+            echo "state restored"
+          else
+            printf '%s\n' '{"queue":[],"usage":{},"history":[]}' > .acorn-state/continuous-work-state.json
+            echo "no prior state; starting clean"
+          fi
+
+      - name: Verify continuous engine contracts
+        run: |
+          node --check scripts/acorn-resource-governor.mjs
+          node --check scripts/acorn-work-engine.mjs
+          node --check scripts/acorn-continuous-runtime.mjs
+          node --test test/acorn-continuous-work-engine.test.js
+
+      - name: Run continuous organism work engine
+        run: |
+          ACORN_WORK_STATE_PATH=.acorn-state/continuous-work-state.json \
+          node --input-type=module <<'EOF'
+          import { runContinuousWorkEngine } from "./scripts/acorn-work-engine.mjs";
+          const result = await runContinuousWorkEngine({
+            root: ".",
+            statePath: ".acorn-state/continuous-work-state.json",
+            env: { ...process.env },
+          });
+          console.log(JSON.stringify({
+            state: result.state,
+            completed: result.completed_count,
+            blocked: result.blocked_count,
+            next: result.next_action?.id || null,
+            model_dispatch: result.executor_policy.model_dispatch,
+            model_calls_budget: result.governor.policy.limits.model_calls,
+            external_spend: result.governor.policy.limits.external_spend,
+          }, null, 2));
+          EOF
+
+      - name: Upload persistent work state
+        uses: actions/upload-artifact@v4
+        with:
+          name: acorn-continuous-state
+          path: .acorn-state/continuous-work-state.json
+          retention-days: 30
+          overwrite: true
+
+      - name: Emit machine-readable evidence
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync } from "node:fs";
+          const state = JSON.parse(readFileSync(".acorn-state/continuous-work-state.json", "utf8"));
+          console.log(JSON.stringify({
+            engine: state.version,
+            state: state.state,
+            queue: state.queue.length,
+            completed: state.completed_count,
+            blocked: state.blocked_count,
+            model_dispatch: state.executor_policy.model_dispatch,
+            model_calls_used: state.usage.model_calls || 0,
+            model_tokens_used: state.usage.model_tokens || 0,
+            external_spend: state.usage.external_spend || 0,
+            auto_merge: state.auto_merge,
+            live: state.live,
+            authority: state.authority,
+          }, null, 2));
+          EOF
