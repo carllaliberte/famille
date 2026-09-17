@@ -89,3 +89,13 @@ test("result verification requires measurement and evidence", () => {
   assert.equal(verifyQuantumResult({ result: { shots: 100 }, evidence: { digest: "x" } }).verified, true);
   assert.equal(verifyQuantumResult({ result: { shots: 100 }, evidence: {} }).verified, false);
 });
+
+test("compute fabric exposes the same quantum route without a second architecture", () => {
+  const route = routeQuantumIntelligenceTask({
+    task: { allow_simulator: true },
+    capabilities: [{ capability_id: "sim", quantum: true, type: "quantum_simulator", status: "VERIFIED", cost: { estimated: 0 } }],
+  });
+  assert.equal(route.selected, "sim");
+  assert.equal(route.capability_first, true);
+  assert.equal(route.authority, false);
+});
