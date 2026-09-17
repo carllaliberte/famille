@@ -24,11 +24,14 @@ const GOVERNANCE_MARKERS = [
 
 const JS_EFFECT_PATTERNS = [
   { kind: 'fetch', re: /(?<![\w.$])fetch\s*\(/ },
-  { kind: 'http.request', re: /\b(?:https?|http)\.request\s*\(/ },
-  { kind: 'axios', re: /\baxios(?:\.[A-Za-z]+)?\s*\(/ },
-  { kind: 'spawn', re: /\bspawn(?:Sync)?\s*\(/ },
-  { kind: 'exec', re: /\bexec(?:File|Sync)?\s*\(/ },
-  { kind: 'shell', re: /\b(?:execa|crossSpawn)\s*\(/ },
+  { kind: 'http.request', re: /(?<![\w.$])(?:https?|http)\.request\s*\(/ },
+  { kind: 'axios', re: /(?<![\w.$])axios(?:\.[A-Za-z]+)?\s*\(/ },
+  { kind: 'spawn', re: /(?<![\w.$])spawn(?:Sync)?\s*\(/ },
+  { kind: 'exec', re: /(?<![\w.$])exec(?:File|Sync)?\s*\(/ },
+  { kind: 'shell', re: /(?<![\w.$])(?:execa|crossSpawn)\s*\(/ },
+];
+
+const SHELL_EFFECT_PATTERNS = [
   { kind: 'git-push', re: /\bgit\s+push\b/ },
   { kind: 'gh-api', re: /\bgh\s+api\b/ },
   { kind: 'gh-merge', re: /\bgh\s+(?:pr\s+merge|pr\s+close)\b/ },
@@ -50,11 +53,13 @@ function stripJavaScriptNonCode(text) {
 }
 
 function detectEffects(file, text) {
-  const executable = /\.(mjs|js|cjs)$/.test(file) ? stripJavaScriptNonCode(text) : text;
-  const findings = JS_EFFECT_PATTERNS.filter(({ re }) => re.test(executable)).map(({ kind }) => kind);
+  const isShell = /\.sh$/.test(file);
+  const executable = isShell ? text : stripJavaScriptNonCode(text);
+  const patterns = isShell ? SHELL_EFFECT_PATTERNS : JS_EFFECT_PATTERNS;
+  const findings = patterns.filter(({ re }) => re.test(executable)).map(({ kind }) => kind);
 
   // Cloudflare-style inbound handlers are not outbound effects by themselves.
-  if (/\bfetch\s*\(/.test(executable) && /(?:export\s+default\s*\{|module\.exports)/.test(executable)) {
+  if (!isShell && /(?<![\w.$])fetch\s*\(/.test(executable) && /(?:export\s+default\s*\{|module\.exports)/.test(executable)) {
     const inboundOnly = /(?:export\s+default\s*\{\s*(?:async\s+)?fetch\s*\([^)]*\)\s*\{|module\.exports\s*=\s*\{[^}]*fetch\s*\([^)]*\)\s*\{)/s.test(executable);
     if (inboundOnly) {
       const index = findings.indexOf('fetch');
@@ -93,17 +98,11 @@ export function auditEffectCoverage({ root = process.cwd(), surfaces = DEFAULT_E
   const signals = source.map(({ file, text }) => {
     const effects = detectEffects(file, text);
     const governance = GOVERNANCE_MARKERS.filter(re => re.test(/\.(mjs|js|cjs)$/.test(file) ? stripJavaScriptNonCode(text) : text)).length;
-    return {
-      file,
-      external_effect_signals: effects.length,
-      effect_kinds: effects,
-      governance_signals: governance,
-    };
+    return { file, external_effect_signals: effects.length, effect_kinds: effects, governance_signals: governance };
   });
 
   const candidates = signals.filter(x => x.external_effect_signals > 0);
   const uncovered = candidates.filter(x => x.governance_signals === 0);
-
   return {
     version: EFFECT_GOVERNOR_VERSION,
     invariant: 'NO_UNGOVERNED_CAPABILITY_PATH',
