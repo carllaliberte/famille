@@ -1,0 +1,20 @@
+name: phase-metacognition-verify
+on:
+  push:
+    branches: [main, 'feat/acorn-phase-metacognition']
+    paths: ['scripts/acorn-phase-metacognition.mjs','test/acorn-phase-metacognition.test.js','package.json','.github/workflows/phase-metacognition-verify.yml']
+  pull_request:
+    paths: ['scripts/acorn-phase-metacognition.mjs','test/acorn-phase-metacognition.test.js','package.json','.github/workflows/phase-metacognition-verify.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node --check scripts/acorn-phase-metacognition.mjs
+      - run: node --test test/acorn-phase-metacognition.test.js
+      - run: node scripts/acorn-phase-metacognition.mjs
+      - run: npm test
