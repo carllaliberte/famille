@@ -33,6 +33,7 @@ jobs:
       ACORN_BUDGET_NETWORK_CALLS: ${{ vars.ACORN_BUDGET_NETWORK_CALLS || '0' }}
       ACORN_BUDGET_EXTERNAL_SPEND: ${{ vars.ACORN_BUDGET_EXTERNAL_SPEND || '0' }}
       ACORN_WORK_MAX_TASKS: ${{ vars.ACORN_WORK_MAX_TASKS || '3' }}
+      ACORN_BUDGET_WINDOW_MINUTES: ${{ vars.ACORN_BUDGET_WINDOW_MINUTES || '1440' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -56,6 +57,13 @@ jobs:
             printf '%s\n' '{"queue":[],"usage":{},"history":[]}' > .acorn-state/continuous-work-state.json
             echo "no prior state; starting clean"
           fi
+
+      - name: Verify continuous engine contracts
+        run: |
+          node --check scripts/acorn-resource-governor.mjs
+          node --check scripts/acorn-work-engine.mjs
+          node --check scripts/acorn-continuous-runtime.mjs
+          node --test test/acorn-continuous-work-engine.test.js
 
       - name: Run continuous organism work engine
         run: |
