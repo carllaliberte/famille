@@ -1,0 +1,25 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/connector-flux.v0.json",
+  "title": "acorn.connector-flux.v0",
+  "description": "Informational membrane around Acorn Cortex. Not schema/flux.v0.json (juge satellites). Not a second Cortex, registry, or organism. Documentation never mints LIVE.",
+  "type": "object",
+  "required": ["version", "live", "auto_merge", "authority"],
+  "properties": {
+    "format": { "const": "acorn.connector-flux.v0" },
+    "version": { "const": "acorn.connector-flux.v0" },
+    "decision": { "enum": ["ADMIT", "QUARANTINE", "REJECT", "BLOCK", "HOLD_HUMAN"] },
+    "status": {
+      "enum": [
+        "RECEIVED", "IDENTIFIED", "AUTHENTICATED", "CLASSIFIED", "ADMITTED",
+        "QUARANTINED", "REJECTED", "BLOCKED", "MEASURED", "VERIFIED",
+        "EXPIRED", "REVOKED", "HOLD_HUMAN", "FAILED", "UNKNOWN"
+      ]
+    },
+    "path": { "enum": ["FAST", "DEEP", "BLOCKED"] },
+    "reached_acorn": { "type": "boolean" },
+    "live": { "const": false },
+    "auto_merge": { "const": false },
+    "authority": { "const": "carl" },
+    "not_juge_flux": { "const": true }
+  }
+}
