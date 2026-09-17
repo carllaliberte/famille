@@ -1,0 +1,17 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/acorn-self-capability.v0.json",
+  "title": "famille.acorn-self-capability.v0",
+  "description": "Operational self-capability model. Transversal Cortex property. Not a second registry. CAPABILITY ≠ AUTHORITY. Knowledge ≠ proof. LIVE remains unminted here.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "live", "authority"],
+  "properties": {
+    "version": { "const": "acorn.self-capability-model.v0" },
+    "live": { "const": false },
+    "auto_merge": { "const": false },
+    "authority": { "const": "carl" },
+    "second_cortex": { "const": false },
+    "second_registry": { "const": false },
+    "second_breaker": { "const": false }
+  }
+}

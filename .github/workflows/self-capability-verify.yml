@@ -1,0 +1,30 @@
+name: self-capability-verify
+on:
+  push:
+    paths:
+      - 'scripts/acorn-self-capability-model.mjs'
+      - 'scripts/acorn-capability-inventory.mjs'
+      - 'scripts/acorn-cognitive-self-knowledge.mjs'
+      - 'scripts/acorn-epistemic.mjs'
+      - 'test/acorn-self-capability-model.test.js'
+      - 'SELF-CAPABILITY.md'
+      - '.github/workflows/self-capability-verify.yml'
+  pull_request:
+    paths:
+      - 'scripts/acorn-self-capability-model.mjs'
+      - 'scripts/acorn-capability-inventory.mjs'
+      - 'scripts/acorn-cognitive-self-knowledge.mjs'
+      - 'scripts/acorn-epistemic.mjs'
+      - 'test/acorn-self-capability-model.test.js'
+      - 'SELF-CAPABILITY.md'
+      - '.github/workflows/self-capability-verify.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --check scripts/acorn-self-capability-model.mjs
+      - run: node --test test/acorn-self-capability-model.test.js
