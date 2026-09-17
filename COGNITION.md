@@ -33,6 +33,7 @@ Le cycle LU tourne pour tout le roster pensant (tour 1 + tour 3). Ce n'est pas u
 LIVE VERIFIED = Carl seulement.
 
 État réel aujourd'hui : **ARCHITECTURE READY** (canaux). Le cycle LU est **COLLECTIVE COGNITION OPERATIONAL**. Pas FULL SWARM OPERATIONAL.
+Omni-Core ([OMNI-CORE.md](OMNI-CORE.md)) est le contrat d'horizon du même Cortex : CAPABILITY ≠ INTELLIGENCE ≠ COMPUTE ≠ AUTHORITY. Pas un second organisme.
 Clés Actions absentes. Donc 0 CONNECTED. 0 ACTIVE. 0 LIVE.
 Les identités keyed (review + auto) sont **BLOCKED — API CREDENTIAL REQUIRED**.
 Les autres penseurs sont **DECLARED — CHANNEL NOT PRESENT**.

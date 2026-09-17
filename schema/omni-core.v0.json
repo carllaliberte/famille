@@ -1,0 +1,40 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/omni-core.v0.json",
+  "title": "famille.omni-core.v0",
+  "description": "Future-proof Cortex-owned organism contract. Capabilities, not vendors. Unknown is legitimate. Authority stays human.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["layer", "live", "auto_merge", "authority"],
+  "not": {
+    "anyOf": [
+      { "required": ["super_brain"] },
+      { "required": ["second_brain"] },
+      { "required": ["second_cortex"] },
+      { "required": ["second_core"] },
+      { "required": ["second_organism"] },
+      { "required": ["master_ai"] },
+      { "required": ["collective_consciousness"] },
+      { "required": ["truth_model"] },
+      { "required": ["super_organism"] }
+    ]
+  },
+  "properties": {
+    "layer": { "const": "omni-core.v0" },
+    "version": { "const": "acorn.omni-core.v1" },
+    "mode": { "const": "COLLECTIVE_COGNITION" },
+    "live": { "const": false },
+    "auto_merge": { "const": false },
+    "authority": { "const": "carl" },
+    "axes": {
+      "type": "array",
+      "items": { "enum": ["CAPABILITY", "INTELLIGENCE", "COMPUTE", "AUTHORITY"] }
+    },
+    "status": {
+      "enum": [
+        "DEFINED", "DISCOVERED", "IDENTIFIED", "DESCRIBED", "CONNECTED",
+        "SANDBOXED", "MEASURED", "CLASSIFIED", "EXECUTABLE", "VERIFIED",
+        "DETECTED", "PROPOSED", "HOLD_HUMAN", "INCONCLUSIVE", "FAILED", "UNKNOWN"
+      ]
+    }
+  }
+}
