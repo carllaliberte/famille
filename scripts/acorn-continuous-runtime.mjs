@@ -30,8 +30,9 @@ import {
   quarantineResource,
 } from "./acorn-defense.mjs";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
-import { cortexCycle, cortexConstitution } from "./cortex-cognition.mjs";
+import { cortexCycle, cortexConstitution, composeOrganism, declareMeaning, diagnoseConflict, governEvolution, gradeEvidence, organismMetrics, stampTime } from "./cortex-cognition.mjs";
 import { measureAutonomy, autonomyBudget } from "./autonomous-runtime.mjs";
+import { learnCortexExperience } from "./cortex-learning-cycle.mjs";
 import { expireEvidence, sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
@@ -240,6 +241,11 @@ export async function runContinuousRuntime({
       operation: "capability-selection",
       breaker: breaker.observed,
     },
+    meaning: {
+      objective: "continuous runtime capability selection",
+      human_origin: false,
+      derived_by: "continuous-runtime",
+    },
   });
 
   const selection = selectExecutableCapabilities(inventory, ["defense", "cortex", "breaker"]);
@@ -281,6 +287,60 @@ export async function runContinuousRuntime({
     issued_at: at,
     now: Date.parse(at),
     ttl_ms: 24 * 60 * 60 * 1000,
+  });
+  const meaning = declareMeaning({
+    objective: "continuous runtime capability selection",
+    human_origin: false,
+    derived_by: "continuous-runtime",
+  });
+  const science = learnCortexExperience({
+    observation: {
+      actual: inventory.coverage.loadable_count,
+      evidence: [inventory.evidence],
+      observed_at: at,
+    },
+    prediction: {
+      hypothesis: "loadable stays aligned with discovered",
+      expected: inventory.coverage.discovered_count,
+    },
+    verification: { verified: inventory.coverage.failed_count === 0 },
+  });
+  const diagnosis = diagnoseConflict({
+    cortex: { status: cortex.status },
+    defense: lastDefense,
+    fabric: { status: "UNKNOWN" },
+    memory: { current: false },
+    runtime: { executed: true, status: "PRESENT" },
+    time: { expired: evidenceLife.status === "EXPIRED" },
+    governance: { authorized: false, denied: breaker.threatened_blocked },
+  });
+  const organism = composeOrganism({
+    meaning: cortex.meaning || meaning,
+    cortex,
+    defense: lastDefense,
+    fabric: { status: "UNKNOWN" },
+    science: { status: science.status, live: false },
+    memory: { status: "UNKNOWN" },
+    evolution: governEvolution({ verified: cortex.status === "VERIFIED", simulated: false, adopted: false }),
+    action: cortex.action,
+    time: stampTime({ at, observed_at: at }),
+    evidence: gradeEvidence({
+      observed: true,
+      measured: true,
+      verified: cortex.status === "VERIFIED",
+      live_execution: false,
+    }),
+    diagnosis,
+  });
+  const metrics = organismMetrics({
+    runtime_coverage: inventory.coverage.execution_coverage,
+    capability_discovery_rate: inventory.coverage.discovered_count,
+    capability_verification_rate: inventory.coverage.verification_coverage,
+    drift_detection: inventory.drift?.count ?? 0,
+    successful_recoveries: recoveries.filter((row) => row.status === "RECOVERED").length,
+    failed_recoveries: recoveries.filter((row) => row.status !== "RECOVERED" && row.status !== "NOT_REQUIRED").length,
+    authority_violations_prevented: envelope.collision ? 1 : 0,
+    autonomy_exposure: autonomy.autonomous_steps,
   });
   const sealed = sealEvidence({
     version: CONTINUOUS_RUNTIME_VERSION,
@@ -349,6 +409,12 @@ export async function runContinuousRuntime({
       operational_stop_is_not_breaker: stop ? stop.is_not_breaker : true,
       pretends_normal: degradation.pretends_normal,
     },
+    meaning,
+    science: { status: science.status, live: false, auto_merge: false },
+    diagnosis,
+    organism,
+    metrics,
+    time: stampTime({ at, observed_at: at }),
     evidence: {
       inventory: inventory.evidence,
       sealed,
