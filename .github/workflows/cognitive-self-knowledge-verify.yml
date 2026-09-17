@@ -1,0 +1,29 @@
+name: cognitive-self-knowledge-verify
+on:
+  push:
+    paths:
+      - 'scripts/acorn-cognitive-self-knowledge.mjs'
+      - 'scripts/acorn-governability.mjs'
+      - 'scripts/acorn-agency-boundary.mjs'
+      - 'test/acorn-cognitive-self-knowledge.test.js'
+      - '.github/workflows/cognitive-self-knowledge-verify.yml'
+      - 'package.json'
+  pull_request:
+    paths:
+      - 'scripts/acorn-cognitive-self-knowledge.mjs'
+      - 'scripts/acorn-governability.mjs'
+      - 'scripts/acorn-agency-boundary.mjs'
+      - 'test/acorn-cognitive-self-knowledge.test.js'
+      - '.github/workflows/cognitive-self-knowledge-verify.yml'
+      - 'package.json'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --check scripts/acorn-cognitive-self-knowledge.mjs
+      - run: node --test test/acorn-cognitive-self-knowledge.test.js
+      - run: npm test
