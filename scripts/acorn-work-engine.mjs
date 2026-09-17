@@ -170,7 +170,7 @@ export function executorPolicy({ env = process.env } = {}) {
   };
 }
 
-function defaultTaskFor(row) {
+function defaultTaskFor(row, env = process.env) {
   if (row.subject.includes("inventory") || row.source === "fallback") {
     return { ...row, command: env.ACORN_WORK_DETERMINISTIC_COMMAND || "node --check scripts/acorn-continuous-runtime.mjs", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
@@ -211,7 +211,7 @@ export async function runContinuousWorkEngine({
       blocked.push({ ...candidate, state: "WAITING_HUMAN", reason: "HUMAN_AUTHORITY_REQUIRED" });
       continue;
     }
-    const task = defaultTaskFor(candidate);
+    const task = defaultTaskFor(candidate, env);
     const reservation = reserve({
       limits,
       usage: currentUsage,
