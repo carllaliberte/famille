@@ -21,6 +21,7 @@
     "runtime:phase": "node scripts/acorn-phase-metacognition.mjs",
     "runtime:emergence": "node scripts/acorn-cognitive-emergence.mjs",
     "runtime:identity": "node scripts/acorn-identity-continuity.mjs",
+    "runtime:agency": "node scripts/acorn-agency-boundary.mjs",
     "runtime:substrate": "node scripts/acorn-constitutional-substrate.mjs",
     "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
     "work:record": "node scripts/work-record.mjs",
@@ -65,10 +66,9 @@
     "./acorn-phase-metacognition": "./scripts/acorn-phase-metacognition.mjs",
     "./acorn-cognitive-emergence": "./scripts/acorn-cognitive-emergence.mjs",
     "./acorn-identity-continuity": "./scripts/acorn-identity-continuity.mjs",
+    "./acorn-agency-boundary": "./scripts/acorn-agency-boundary.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
   },
-  "devDependencies": {
-    "husky": "^9.1.7"
-  }
+  "devDependencies": {"husky": "^9.1.7"}
 }
