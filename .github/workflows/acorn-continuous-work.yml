@@ -60,10 +60,17 @@ jobs:
 
       - name: Verify continuous engine contracts
         run: |
-          node --check scripts/acorn-resource-governor.mjs
-          node --check scripts/acorn-work-engine.mjs
-          node --check scripts/acorn-continuous-runtime.mjs
-          node --test test/acorn-continuous-work-engine.test.js
+          set +e
+          output="$(node --check scripts/acorn-resource-governor.mjs 2>&1 && \
+            node --check scripts/acorn-work-engine.mjs 2>&1 && \
+            node --check scripts/acorn-continuous-runtime.mjs 2>&1 && \
+            node --test test/acorn-continuous-work-engine.test.js 2>&1)"
+          code=$?
+          printf '%s\n' "$output"
+          ACORN_RUN_EXIT_CODE="$code" ACORN_RUN_STDERR="$output" \
+            node scripts/acorn-cognitive-run-triage.mjs
+          triage=$?
+          exit "$triage"
 
       - name: Run continuous organism work engine
         run: |
