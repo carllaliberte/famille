@@ -19,6 +19,7 @@
     "runtime:synaptic": "node scripts/acorn-future-synaptic-fabric.mjs",
     "runtime:beyond-plasticity": "node scripts/acorn-beyond-plasticity.mjs",
     "runtime:phase": "node scripts/acorn-phase-metacognition.mjs",
+    "runtime:emergence": "node scripts/acorn-cognitive-emergence.mjs",
     "runtime:substrate": "node scripts/acorn-constitutional-substrate.mjs",
     "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
     "work:record": "node scripts/work-record.mjs",
@@ -61,6 +62,7 @@
     "./acorn-future-synaptic-fabric": "./scripts/acorn-future-synaptic-fabric.mjs",
     "./acorn-beyond-plasticity": "./scripts/acorn-beyond-plasticity.mjs",
     "./acorn-phase-metacognition": "./scripts/acorn-phase-metacognition.mjs",
+    "./acorn-cognitive-emergence": "./scripts/acorn-cognitive-emergence.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
   },
