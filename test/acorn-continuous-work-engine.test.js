@@ -4,6 +4,7 @@ import {
   canonicalWorkFromRuntime,
   rankWork,
   runContinuousWorkEngine,
+  executeWorkTask,
 } from "../scripts/acorn-work-engine.mjs";
 import {
   DEFAULT_LIMITS,
@@ -81,4 +82,20 @@ test("continuous work engine executes bounded deterministic work without model d
   assert.equal(result.auto_spend, false);
   assert.equal(result.executor_policy.model_dispatch, false);
   assert.equal(result.completed_count, 1);
+});
+
+test("continuous work can execute a free quantum simulation through the existing compute fabric", async () => {
+  const result = await executeWorkTask({
+    root: process.cwd(),
+    env: { ...process.env, ACORN_ALLOW_REMOTE_EXECUTION: "false" },
+    task: {
+      execution_kind: "quantum",
+      task: { type: "quantum_simulation", qubits: 1, gates: [["h", 0]], shots: 16, seed: 7, allow_simulator: true },
+      policy: "FREE_FIRST",
+    },
+  });
+  assert.equal(result.executor, "compute-fabric");
+  assert.equal(result.status, "COMPLETED");
+  assert.equal(result.compute?.execution?.measurement?.measured, true);
+  assert.equal(result.compute?.execution?.cost?.actual_cost, 0);
 });
