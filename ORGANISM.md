@@ -32,6 +32,8 @@ Carte des **organes déjà présents** dans FAMILLE, plus quelques adaptateurs m
 | Environnement | externe ≠ fiable | `INTEROP-IA.md` |
 | Homéostasie | état **décomposable** | `healthState` — pas un score unique |
 | Continuité | découverte → câblage → mesure → preuve | `scripts/acorn-continuous-runtime.mjs` — pas un second runtime |
+| Constitution | invariants fondamentaux exécutables | `scripts/acorn-constitution.mjs` — pas un second cerveau |
+| Gouvernabilité | trajectoire, contrôle, observabilité, rayon | `scripts/acorn-governability.mjs` — même organisme |
 
 ## Boucle
 

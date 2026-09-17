@@ -29,6 +29,7 @@ import {
 import { controlState } from "../.github/swarm/system-breaker.mjs";
 import { cortexCycle, cortexConstitution } from "./cortex-cognition.mjs";
 import { sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
+import { runCivilizationalCycle } from "./acorn-civilizational.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
 
@@ -146,6 +147,8 @@ export async function runContinuousRuntime({
     acorn_controls_carl: false,
     acorn_controls_breaker: false,
     capability_is_not_authority: true,
+    one_constitution: true,
+    civilizational_cognition: true,
     auto_merge: false,
     live: false,
   };
@@ -259,6 +262,21 @@ export async function runContinuousRuntime({
     authority: "carl",
   });
 
+  const civilizational = runCivilizationalCycle({
+    env,
+    at,
+    previous: previous.length ? { capability: previous.length } : {},
+    current: {
+      capability: inventory.coverage.executed_count,
+      observability: inventory.coverage.verified_count > 0 ? "DIRECT" : "PARTIAL",
+      control: threatened.allowed ? 1 : 0,
+      reversibility: "UNKNOWN",
+      connectivity: inventory.coverage.wired_count,
+      autonomy: 0,
+      blast_radius: 0,
+    },
+  });
+
   const result = {
     version: CONTINUOUS_RUNTIME_VERSION,
     constitution,
@@ -298,6 +316,27 @@ export async function runContinuousRuntime({
       chain,
     },
     threatened_operation: threatened,
+    civilizational: {
+      version: civilizational.version,
+      vision: civilizational.vision,
+      constitution: civilizational.constitution.status,
+      audit: civilizational.audit.status,
+      verified: civilizational.audit.verified,
+      failed: civilizational.audit.failed,
+      unknown_space: civilizational.unknown_space.we_do_not_know,
+      control_gap: civilizational.control_gap,
+      observability_gap: civilizational.observability_gap,
+      replaceability: civilizational.replaceability.status,
+      reconstruction: civilizational.reconstruction.status,
+      anti_escape: civilizational.anti_escape.status,
+      defense_of_defense: civilizational.defense.of_defense,
+      long_horizon: {
+        continuity: civilizational.long_horizon.continuity.horizon,
+        transformation: civilizational.long_horizon.transformation.horizon,
+        unknown_future: civilizational.long_horizon.unknown_future.horizon,
+      },
+      live: false,
+    },
     state: breaker.threatened_blocked ? "DEFENSIVE_CONTINUATION" : "CONTINUOUS",
     auto_merge: false,
     live: false,
