@@ -20,6 +20,7 @@
     "./interop": "./map/interop.v0.json",
     "./agents": "./schema/agents.json",
     "./cortex": "./.github/swarm/cortex.mjs",
+    "./cortex-cognition": "./scripts/cortex-cognition.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
   },
   "devDependencies": {
