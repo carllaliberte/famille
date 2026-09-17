@@ -7,6 +7,9 @@ import { interposeExternalEffect, assertExternalEffectDecision, interpositionPol
 
 export const EFFECT_GOVERNOR_VERSION = 'acorn.effect-governor.v1';
 
+// Re-export the policy contract from the unified interposition choke point.
+export { interpositionPolicySummary };
+
 const DEFAULT_EFFECT_SURFACES = [
   'codex', 'cognitive-worker', 'autonomous-runtime', 'runtime',
   'provider', 'gateway', 'connector', 'tool', 'external-api',
