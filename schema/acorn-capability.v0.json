@@ -1,0 +1,30 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/acorn-capability.v0.json",
+  "title": "famille.acorn-capability.v0",
+  "description": "Lifecycle of an Acorn executable module. DISCOVERED ≠ DEFINED ≠ LOADABLE ≠ WIRED ≠ DEPLOYED ≠ EXECUTED ≠ MEASURED ≠ VERIFIED ≠ LIVE. Absence of proof is UNKNOWN. LIVE VERIFIED remains Carl. Not a second runtime.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["lifecycle"],
+  "properties": {
+    "lifecycle": {
+      "enum": [
+        "DISCOVERED",
+        "DEFINED",
+        "LOADABLE",
+        "WIRED",
+        "DEPLOYED",
+        "EXECUTED",
+        "MEASURED",
+        "VERIFIED",
+        "LIVE",
+        "QUARANTINED",
+        "DRIFTED",
+        "FAILED",
+        "UNKNOWN"
+      ]
+    },
+    "auto_merge": { "const": false },
+    "live": { "const": false },
+    "authority": { "const": "carl" }
+  }
+}

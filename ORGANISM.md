@@ -31,6 +31,7 @@ Carte des **organes déjà présents** dans FAMILLE, plus quelques adaptateurs m
 | Régénération | évolution datée, pas « mieux » | `evolve` |
 | Environnement | externe ≠ fiable | `INTEROP-IA.md` |
 | Homéostasie | état **décomposable** | `healthState` — pas un score unique |
+| Continuité | découverte → câblage → mesure → preuve | `scripts/acorn-continuous-runtime.mjs` — pas un second runtime |
 
 ## Boucle
 
