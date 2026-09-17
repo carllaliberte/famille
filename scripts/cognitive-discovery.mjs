@@ -8,6 +8,7 @@
  * Capability is the unit. Provider is a property of a resource.
  * DECLARED ≠ MEASURED. Ranked ≠ proved. LEARNING ≠ unverified auto-modification.
  * OBSERVED ≠ VERIFIED. EMERGENCE ≠ PROOF. EMERGENCE ≠ AUTHORITY.
+ * EXPERIMENT ≠ PROOF. PREDICTION ≠ OBSERVATION. CORRELATION ≠ CAUSATION.
  */
 import { createHash } from "node:crypto";
 import {
@@ -21,6 +22,7 @@ import {
   adversarialPerspectives,
   uncertaintyBudget,
   gradeEvidence,
+  diagnoseConflict,
 } from "./cortex-cognition.mjs";
 import {
   composeCognitiveGraph as composeAssembly,
@@ -61,6 +63,11 @@ import {
   composeCapabilities,
   storePrediction,
   comparePrediction,
+  detectContradiction,
+  hypothesizeCause,
+  falsifyCause,
+  synthesizeKnowledge,
+  uncertaintyOf,
 } from "./cortex-organism.mjs";
 
 export const DISCOVERY_VERSION = "acorn.cognitive-discovery.v1";
@@ -152,6 +159,29 @@ const MUTATION_TO_GRAPH_OP = Object.freeze({
   increase_verification: "expand",
   reduce_redundancy: "simplify",
 });
+
+export const KNOWLEDGE_STATES = Object.freeze([
+  "KNOWN", "VERIFIED", "MEASURED", "UNCERTAIN", "UNTESTED", "CONTRADICTORY", "FAILED", "EXPIRED", "UNKNOWN",
+]);
+
+export const HYPOTHESIS_STATES = Object.freeze([
+  "PROPOSED", "TESTABLE", "TESTING", "SUPPORTED", "CONTRADICTED", "FALSIFIED", "INCONCLUSIVE", "EXPIRED",
+]);
+
+export const NEGATIVE_STATES = Object.freeze([
+  "CANNOT", "FAILED", "NOT_REPRODUCED", "NOT_TESTED", "NOT_AVAILABLE", "NOT_SAFE", "NOT_ENOUGH_EVIDENCE",
+]);
+
+export const SCIENCE_EVENTS = Object.freeze([
+  "hypothesis_created", "experiment_designed", "experiment_selected", "experiment_started",
+  "experiment_completed", "observation_recorded", "measurement_recorded", "contradiction_detected",
+  "falsification_completed", "replication_completed", "knowledge_updated", "uncertainty_updated",
+  "experiment_rejected", "experiment_rolled_back",
+]);
+
+export const ATTENTION_CLASSES = Object.freeze([
+  "AUTOMATABLE", "SAFE_TO_EXECUTE", "NEEDS_EVIDENCE", "NEEDS_HUMAN",
+]);
 
 function idOf(row) {
   return String(row?.id || row?.identity || "").trim();
@@ -1541,6 +1571,627 @@ export function proposeCognitiveCuriosity({ unknown, hypothesis } = {}) {
   };
 }
 
+export function detectCommonModeRisk(nodes = [], extra = {}) {
+  return detectCommonMode(nodes, extra);
+}
+
+export function mapCognitiveKnowledge({ qualifications = [], failures = [], contradictions = [], hypotheses = [] } = {}) {
+  const entries = [];
+  for (const row of qualifications || []) {
+    let state = "UNKNOWN";
+    if (row.verified === true) state = "VERIFIED";
+    else if (row.measured === true) state = "MEASURED";
+    else if (row.expired === true) state = "EXPIRED";
+    else if (row.declared === true) state = "UNTESTED";
+    entries.push({
+      identity: row.identity || null,
+      type: "capability",
+      origin: "qualification",
+      capability: row.capability || null,
+      state,
+      timestamp: row.at || null,
+      live: false,
+    });
+  }
+  for (const row of failures || []) {
+    entries.push({ identity: row.subject || null, type: "failure", state: "FAILED", live: false });
+  }
+  for (const row of contradictions || []) {
+    entries.push({ identity: row.id || null, type: "contradiction", state: "CONTRADICTORY", live: false });
+  }
+  for (const row of hypotheses || []) {
+    entries.push({ identity: row.hypothesis_id || null, type: "hypothesis", state: row.current_state || "UNCERTAIN", live: false });
+  }
+  return { status: "EXECUTED", entries, eternal_truth: false, live: false };
+}
+
+export function createHypothesis({
+  claim, scope, context, origin, assumptions = [], predictions = [], required_evidence = [], at, expiry,
+} = {}) {
+  if (!claim) return { status: "INSUFFICIENT_EVIDENCE", hypothesis: null, live: false };
+  const time = stampTime({ at, valid_until: expiry });
+  const stored = storePrediction({ hypothesis: claim, expected: predictions[0], at: time.created_at });
+  return {
+    status: "PROPOSED",
+    hypothesis: {
+      hypothesis_id: `hyp_${genomeDigest({ claim, scope, at: time.created_at })}`,
+      claim,
+      scope: scope || null,
+      context: context || null,
+      origin: origin || "cortex",
+      assumptions,
+      predictions,
+      required_evidence,
+      current_state: "PROPOSED",
+      confidence: null,
+      created_at: time.created_at,
+      expires_at: time.valid_until,
+      prediction: stored.prediction,
+      live: false,
+    },
+    live: false,
+  };
+}
+
+export function evaluateHypothesis({
+  hypothesis, observation, executed = false, verified = false, contradiction = false,
+} = {}) {
+  const lab = runExperimentLab({
+    hypothesis: hypothesis?.claim,
+    experiment: { expected: hypothesis?.predictions },
+    observation,
+    contradiction,
+    executed,
+    measured: executed,
+    verified,
+    adopt: false,
+  });
+  let state = "PROPOSED";
+  if (executed) state = "TESTING";
+  if (executed && observation == null) state = "INCONCLUSIVE";
+  if (lab.falsification?.refuted === true) state = "FALSIFIED";
+  else if (executed && contradiction !== true && observation != null) state = "SUPPORTED";
+  return {
+    status: executed ? "EXECUTED" : "PROPOSED",
+    state,
+    universal_fact: false,
+    lab,
+    live: false,
+  };
+}
+
+export function challengeHypothesis({ hypothesis } = {}) {
+  const perspectives = adversarialPerspectives({ claim: hypothesis?.claim || null });
+  return { status: perspectives.status, perspectives, adopted: false, live: false };
+}
+
+export function invalidateHypothesis({ hypothesis, reason = "contradicted", now } = {}) {
+  const expired = expireCognitiveKnowledge({ kind: "measurement", issued_at: hypothesis?.created_at, now });
+  return {
+    status: "EXECUTED",
+    state: expired.expired ? "EXPIRED" : "FALSIFIED",
+    reason,
+    universal_fact: false,
+    live: false,
+  };
+}
+
+export function updateHypothesis({ hypothesis, observation, executed = false, contradiction = false } = {}) {
+  const evaluated = evaluateHypothesis({ hypothesis, observation, executed, contradiction });
+  return {
+    status: "PROPOSED",
+    hypothesis: hypothesis
+      ? { ...hypothesis, current_state: evaluated.state, live: false }
+      : null,
+    skipped_states: false,
+    universal_fact: false,
+    live: false,
+  };
+}
+
+export function estimateInformationGain({
+  uncertainty,
+  hypotheses_discriminated = 0,
+  risk = "LOW",
+  cost = 0,
+  latency = null,
+  reproducibility = null,
+  strategic_value = null,
+  dependency_value = null,
+} = {}) {
+  const gain = uncertainty && hypotheses_discriminated > 1
+    ? "high"
+    : (uncertainty ? "medium" : "low");
+  return {
+    status: "ESTIMATE",
+    estimate: true,
+    measurement_of_truth: false,
+    components: {
+      uncertainty_reduction: uncertainty ?? null,
+      hypotheses_discriminated,
+      expected_information_gain: gain,
+      risk,
+      cost,
+      latency,
+      reproducibility,
+      strategic_value,
+      dependency_value,
+    },
+    opaque_score: null,
+    live: false,
+  };
+}
+
+export function searchExistingScience({ hypothesis, history = [], failures = [] } = {}) {
+  const claim = hypothesis?.claim || hypothesis;
+  const prior = (history || []).find((row) => row.claim === claim || row.hypothesis === claim);
+  const failed = (failures || []).find((row) => row.subject === claim || row.claim === claim);
+  return {
+    status: "EXECUTED",
+    existing_evidence: Boolean(prior),
+    existing_failure: Boolean(failed),
+    reusable: Boolean(prior && prior.verified === true),
+    experiment: prior || null,
+    do_not_repeat_blindly: Boolean(failed),
+    live: false,
+  };
+}
+
+export function designExperiment({
+  hypothesis, uncertainty, resources = [], channels = [], budget, risk = "LOW_RISK", history = [], failures = [],
+} = {}) {
+  const reused = searchExistingScience({ hypothesis, history, failures });
+  if (reused.reusable) {
+    return { status: "REUSED", experiment: reused.experiment, reused: true, live: false };
+  }
+  const gain = estimateInformationGain({
+    uncertainty: uncertainty || "UNTESTED",
+    hypotheses_discriminated: 1,
+    risk,
+    cost: 0,
+  });
+  return {
+    status: "PROPOSED",
+    experiment: {
+      experiment_id: `exp_${genomeDigest({ claim: hypothesis?.claim, risk })}`,
+      objective: hypothesis?.claim || "reduce uncertainty",
+      hypotheses: hypothesis?.hypothesis_id ? [hypothesis.hypothesis_id] : [],
+      variables: ["resource", "channel", "architecture"],
+      controls: ["baseline"],
+      candidate_architectures: ["SIMPLE", "RECOVERY"],
+      resources: (resources || []).map(idOf).filter(Boolean),
+      channels: channels || [],
+      expected_observations: hypothesis?.predictions || [],
+      success_conditions: ["measurement_recorded"],
+      failure_conditions: ["contradiction", "unsafe"],
+      risk,
+      cost: 0,
+      latency: null,
+      reproducibility_requirements: ["repeat_when_possible"],
+      rollback_strategy: "preserve_current_genome",
+      information_gain: gain,
+      live: false,
+    },
+    reused: false,
+    live: false,
+  };
+}
+
+export function rankExperimentsByInformationValue({ candidates = [] } = {}) {
+  const ranked = prioritizeExperiments({
+    candidates: (candidates || []).map((row) => ({
+      id: row.experiment_id || row.id,
+      information_gain: row.information_gain?.components?.expected_information_gain || row.information_gain,
+      risk: row.risk,
+      cost: row.cost,
+      latency: row.latency,
+      uncertainty: row.uncertainty,
+      strategic_value: row.strategic_value,
+    })),
+  });
+  return { ...ranked, estimate: true, magic_score: false, live: false };
+}
+
+export function buildExperimentPortfolio({
+  designed, unknowns, contradiction, architectures, budget,
+} = {}) {
+  const items = [];
+  if (designed) {
+    items.push({
+      ...designed,
+      experiment_id: designed.experiment_id || "E_designed",
+      tag: "E_designed",
+      risk: designed.risk || budget?.risk || "LOW_RISK",
+      cost: designed.cost ?? 0,
+      uncertainty: "UNTESTED",
+    });
+  }
+  if ((unknowns?.unknowns || []).length) {
+    items.push({
+      experiment_id: "E_untested",
+      objective: "probe never-tested declared capability",
+      risk: "LOW_RISK",
+      cost: 0,
+      uncertainty: "UNTESTED",
+      information_gain: estimateInformationGain({ uncertainty: "UNTESTED", hypotheses_discriminated: 1, risk: "LOW", cost: 0 }),
+    });
+  }
+  if (contradiction?.status === "CONTRADICTION") {
+    items.push({
+      experiment_id: "E_contradiction",
+      objective: "discriminate contradictory results",
+      risk: "AMBIGUOUS",
+      cost: 0,
+      uncertainty: "CONTRADICTORY",
+      information_gain: estimateInformationGain({ uncertainty: "CONTRADICTORY", hypotheses_discriminated: 2, risk: "MEDIUM", cost: 0 }),
+    });
+  }
+  if (!((architectures || []).some((row) => row.kind === "ADVERSARIAL"))) {
+    items.push({
+      experiment_id: "E_adversarial",
+      objective: "explore unexplored adversarial configuration",
+      risk: "IMPORTANT",
+      cost: 0,
+      uncertainty: "UNEXPLORED",
+      information_gain: estimateInformationGain({ uncertainty: "UNEXPLORED", risk: "HIGH", cost: 0 }),
+    });
+  }
+  items.push({
+    experiment_id: "E_unknown",
+    objective: "admit unknown intelligence without rewriting Cortex",
+    risk: "LOW_RISK",
+    cost: 0,
+    uncertainty: "UNKNOWN",
+    information_gain: estimateInformationGain({ uncertainty: "UNKNOWN", risk: "LOW", cost: 0 }),
+  });
+  return { status: "PROPOSED", experiments: items, magic_score: false, live: false };
+}
+
+export function selectNextExperiment({ portfolio = [], budget, callable = false, needs_human = false } = {}) {
+  const items = Array.isArray(portfolio) ? portfolio : (portfolio.experiments || []);
+  const ranked = rankExperimentsByInformationValue({ candidates: items });
+  const preferred = items.find((row) => row.experiment_id === "E_untested")
+    || items.find((row) => row.risk === "LOW_RISK" || row.risk === "LOW")
+    || items[0]
+    || null;
+  let attention = "NEEDS_EVIDENCE";
+  if (needs_human === true) attention = "NEEDS_HUMAN";
+  else if (callable === true && preferred && (preferred.risk === "LOW_RISK" || preferred.risk === "LOW")) attention = "SAFE_TO_EXECUTE";
+  return {
+    status: "PROPOSED",
+    selected: preferred,
+    why_this_experiment: {
+      uncertainty_target: preferred?.uncertainty || "UNTESTED",
+      hypotheses_affected: preferred?.hypotheses || [],
+      expected_information_gain: preferred?.information_gain?.components?.expected_information_gain || "medium",
+      risk: preferred?.risk || budget?.risk || "LOW_RISK",
+      cost: preferred?.cost ?? 0,
+      dependencies: preferred?.dependencies || [],
+      alternatives_considered: items
+        .map((row) => row.experiment_id)
+        .filter((id) => id && id !== preferred?.experiment_id),
+      selection_reason: "lowest-risk reduction of never-tested uncertainty",
+      causal_claim: false,
+    },
+    attention,
+    ranked,
+    adopted: false,
+    executed: false,
+    live: false,
+  };
+}
+
+export function analyzeCausality({
+  observation, cause, intervention = false, control = false, counterfactual = false, repetition = false,
+} = {}) {
+  const hypothesized = hypothesizeCause({ observation, cause });
+  const falsified = falsifyCause({
+    causal: hypothesized.causal,
+    counterexample: intervention !== true,
+  });
+  return {
+    status: "INCONCLUSIVE",
+    causality: "INCONCLUSIVE",
+    correlation_is_not_causation: true,
+    sufficient_design: intervention === true && control === true && counterfactual === true && repetition === true,
+    required: ["intervention", "control", "counterfactual", "repetition"],
+    present: { intervention, control, counterfactual, repetition },
+    hypothesized,
+    falsified,
+    live: false,
+  };
+}
+
+export function analyzeCognitiveContradiction({ results = [] } = {}) {
+  const values = (results || []).map((row) => JSON.stringify(row.value ?? row.result));
+  const conflicted = values.length >= 2 && new Set(values).size > 1;
+  const entries = (results || []).map((row, i) => ({
+    knowledge_id: row.id || `r${i}`,
+    kind: "result",
+    what: row.value ?? row.result,
+    channel: row.channel,
+    context: row.context || "same",
+  }));
+  const detected = detectContradiction(entries);
+  const synthesized = synthesizeKnowledge(entries);
+  let source = "UNKNOWN";
+  if (conflicted) {
+    const channels = new Set(results.map((row) => row.channel).filter(Boolean));
+    const resources = new Set(results.map((row) => row.resource).filter(Boolean));
+    if (results.some((row) => row.measured !== true)) source = "insufficient_evidence";
+    else if (channels.size > 1) source = "channel_difference";
+    else if (resources.size > 1) source = "resource_difference";
+  }
+  return {
+    status: conflicted ? "CONTRADICTION" : "ALIGNED",
+    conflicts: detected.conflicts,
+    synthesized,
+    source,
+    arbitrary_resolution: false,
+    consensus_is_truth: false,
+    live: false,
+  };
+}
+
+export function designResolutionExperiment({ results = [], resources = [], budget } = {}) {
+  const analysis = analyzeCognitiveContradiction({ results });
+  const hyp = createHypothesis({
+    claim: "contradictory results are context-dependent, not a resolved fact",
+    scope: "contradiction",
+    origin: analysis.source,
+    predictions: ["discriminating experiment remains INCONCLUSIVE until measured"],
+  });
+  const designed = designExperiment({
+    hypothesis: hyp.hypothesis,
+    uncertainty: "CONTRADICTORY",
+    resources,
+    budget,
+    risk: "AMBIGUOUS",
+  });
+  return { ...designed, analysis, arbitrary_resolution: false, live: false };
+}
+
+export function mapCognitiveUncertainty({ self_knowledge, blind_spots, contradictions } = {}) {
+  const budget = uncertaintyBudget({
+    known: self_knowledge?.can_do || [],
+    unknown: self_knowledge?.never_tested || ["UNKNOWN"],
+    verified: self_knowledge?.verified_i_can_do || [],
+  });
+  return {
+    status: "EXECUTED",
+    KNOWN: self_knowledge?.can_do || [],
+    UNKNOWN: ["UNKNOWN"],
+    UNTESTED: self_knowledge?.never_tested || [],
+    UNCERTAIN: self_knowledge?.think_i_can_do || [],
+    CONTRADICTORY: contradictions || [],
+    HIGH_VALUE_UNKNOWN: (self_knowledge?.never_tested || []).slice(0, 3),
+    HIGH_RISK_UNKNOWN: (blind_spots?.findings || []).includes("single_provider_dependency")
+      ? ["single_provider_dependency"]
+      : [],
+    budget,
+    live: false,
+  };
+}
+
+export function discoverUnknowns({ qualifications = [], predictions = [], observations = [], assumptions = [] } = {}) {
+  const unknowns = [];
+  for (const row of qualifications || []) {
+    if (row.declared === true && row.measured !== true) {
+      unknowns.push({ kind: "declared_unobserved", identity: row.identity, capability: row.capability });
+    }
+  }
+  for (const prediction of predictions || []) {
+    const observed = (observations || []).find((row) => row.id === prediction.id);
+    if (observed && JSON.stringify(prediction.expected) !== JSON.stringify(observed.actual)) {
+      unknowns.push({
+        kind: "UNKNOWN_PHENOMENON",
+        identity: prediction.id,
+        prediction: prediction.expected,
+        observation: observed.actual,
+      });
+    }
+  }
+  for (const row of assumptions || []) {
+    if (row.verified !== true) unknowns.push({ kind: "unverified_assumption", identity: row.id || row.claim });
+  }
+  return { status: "EXECUTED", unknowns, live: false };
+}
+
+export function rankUnknowns({ unknowns = [] } = {}) {
+  const high = (unknowns || []).filter((row) => row.kind === "UNKNOWN_PHENOMENON");
+  const rest = (unknowns || []).filter((row) => row.kind !== "UNKNOWN_PHENOMENON");
+  return { status: "PROPOSED", ranked: [...high, ...rest], opaque_score: false, live: false };
+}
+
+export function selectExplorationTarget({ unknowns = [] } = {}) {
+  const ranked = rankUnknowns({ unknowns });
+  return {
+    status: "PROPOSED",
+    target: ranked.ranked[0] || { kind: "UNKNOWN" },
+    adopted: false,
+    live: false,
+  };
+}
+
+export function measureExperimentDimensions({
+  quality, accuracy, reliability, latency, cost, resource_usage, failure_rate, recovery_rate,
+  security, robustness, reproducibility, diversity, independence, complexity, information_gain,
+} = {}) {
+  return {
+    status: "EXECUTED",
+    dimensions: {
+      quality: quality ?? null,
+      accuracy: accuracy ?? null,
+      reliability: reliability ?? null,
+      latency: latency ?? null,
+      cost: cost ?? null,
+      resource_usage: resource_usage ?? null,
+      failure_rate: failure_rate ?? null,
+      recovery_rate: recovery_rate ?? null,
+      security: security ?? null,
+      robustness: robustness ?? null,
+      reproducibility: reproducibility ?? null,
+      diversity: diversity ?? null,
+      independence: independence ?? null,
+      complexity: complexity ?? null,
+      information_gain: information_gain ?? null,
+    },
+    score: null,
+    live: false,
+  };
+}
+
+export function replicateExperiment({ experiment, observations = [], independent = false } = {}) {
+  const reproduced = reproduceEmergence({ observations, independent });
+  return { ...reproduced, experiment_id: experiment?.experiment_id || null, live: false };
+}
+
+export function compareReplications({ replications = [] } = {}) {
+  const states = new Set((replications || []).map((row) => row.status));
+  let stability = "SINGLE_OBSERVATION";
+  if ((replications || []).length >= 2 && states.size === 1 && replications[0].reproduced === true) stability = "REPLICATED";
+  else if (states.has("FALSIFIED") && states.has("REPRODUCED")) stability = "CONTRADICTORY";
+  else if ((replications || []).length >= 2) stability = "UNSTABLE";
+  return { status: "EXECUTED", stability, verified: false, live: false };
+}
+
+export function measureStability({ replications = [] } = {}) {
+  return compareReplications({ replications });
+}
+
+export function rememberNegativeKnowledge({ kind = "NOT_TESTED", subject, at } = {}) {
+  const recorded = rememberCognitiveFailure({
+    kind: kind === "FAILED" ? "strategy_failed" : "verification_failed",
+    subject,
+    at,
+  });
+  return {
+    ...recorded,
+    negative: NEGATIVE_STATES.includes(kind) ? kind : "NOT_ENOUGH_EVIDENCE",
+    erased: false,
+    live: false,
+  };
+}
+
+export function recordScienceEvent({ kind, payload, at } = {}) {
+  return {
+    status: "RECORDED",
+    event: {
+      kind: SCIENCE_EVENTS.includes(kind) ? kind : "knowledge_updated",
+      payload: payload || null,
+      at: at || new Date().toISOString(),
+      provenance: "cortex",
+      live: false,
+    },
+    live: false,
+  };
+}
+
+export function scienceAuthority() {
+  return {
+    can_modify_breaker: false,
+    can_merge: false,
+    can_change_governance: false,
+    can_bypass_defense: false,
+    experiment_creates_authority: false,
+    discovery_creates_authority: false,
+    capability_is_not_authority: true,
+    auto_merge: false,
+    live: false,
+  };
+}
+
+export function activeScienceCycle({
+  qualifications = [],
+  resources = [],
+  architectures = [],
+  budget,
+  measurements = {},
+  results = [],
+  history = [],
+  callable = false,
+  hypothesis,
+  now,
+} = {}) {
+  const at = now || new Date().toISOString();
+  const self_knowledge = describeSelfKnowledge({ qualifications });
+  const blinds = discoverCognitiveBlindSpots({ qualifications, resources, architectures });
+  const knowledge = mapCognitiveKnowledge({ qualifications });
+  const hyp = hypothesis?.claim
+    ? createHypothesis({ ...hypothesis, at })
+    : createHypothesis({
+        claim: "declared capabilities are not thereby measured",
+        scope: "capability",
+        origin: "self-knowledge",
+        predictions: ["untested remains untested until executed"],
+        required_evidence: ["execution"],
+        at,
+      });
+  const evaluation = evaluateHypothesis({
+    hypothesis: hyp.hypothesis,
+    observation: measurements.observation,
+    executed: measurements.executed === true,
+    verified: false,
+  });
+  const challenged = challengeHypothesis({ hypothesis: hyp.hypothesis });
+  const designed = designExperiment({
+    hypothesis: hyp.hypothesis,
+    uncertainty: "UNTESTED",
+    resources,
+    budget,
+    risk: budget?.risk || "LOW_RISK",
+    history,
+  });
+  const unknowns = discoverUnknowns({ qualifications });
+  const contradiction = analyzeCognitiveContradiction({ results });
+  const causality = analyzeCausality({ observation: measurements.observation, cause: hyp.hypothesis?.claim });
+  const uncertainty = mapCognitiveUncertainty({
+    self_knowledge,
+    blind_spots: blinds,
+    contradictions: contradiction.status === "CONTRADICTION" ? results : [],
+  });
+  const portfolio = buildExperimentPortfolio({
+    designed: designed.experiment,
+    unknowns,
+    contradiction,
+    architectures,
+    budget,
+  });
+  const selected = selectNextExperiment({ portfolio, budget, callable });
+  const events = [
+    recordScienceEvent({ kind: "hypothesis_created", payload: hyp.hypothesis?.hypothesis_id, at }),
+    recordScienceEvent({ kind: "experiment_designed", payload: designed.experiment?.experiment_id, at }),
+    recordScienceEvent({ kind: "experiment_selected", payload: selected.selected?.experiment_id, at }),
+  ];
+  const diagnosis = diagnoseConflict({
+    cortex: { status: "DISCOVERED" },
+    defense: { state: "HEALTHY" },
+    runtime: { executed: measurements.executed === true, status: measurements.executed ? "PRESENT" : "ABSENT" },
+  });
+  return {
+    status: "PROPOSED",
+    knowledge,
+    hypothesis: hyp.hypothesis,
+    evaluation,
+    challenge: challenged,
+    experiment: designed.experiment,
+    portfolio,
+    selected,
+    unknowns,
+    uncertainty,
+    contradiction,
+    causality,
+    diagnosis,
+    events,
+    authority: scienceAuthority(),
+    executed: measurements.executed === true,
+    verified: false,
+    live: false,
+    auto_merge: false,
+    capability_is_not_authority: true,
+  };
+}
+
 export function discoveryMetrics(cycle = {}) {
   const intel = cycle.intelligence || {};
   const counts = intel.counts || {};
@@ -1581,6 +2232,12 @@ export function discoveryMetrics(cycle = {}) {
     mutations_verified: 0,
     cognitive_blind_spots: (cycle.blind_spots?.findings || []).length,
     negative_knowledge_entries: cycle.memory?.categorized?.kind === "FAILURE" ? 1 : 0,
+    hypotheses_proposed: cycle.science?.hypothesis ? 1 : 0,
+    hypotheses_falsified: cycle.science?.evaluation?.state === "FALSIFIED" ? 1 : 0,
+    experiments_selected: cycle.science?.selected?.selected ? 1 : 0,
+    contradictions_open: cycle.science?.contradiction?.status === "CONTRADICTION" ? 1 : 0,
+    unknowns_discovered: (cycle.science?.unknowns?.unknowns || []).length,
+    information_gain: cycle.science?.selected?.why_this_experiment?.expected_information_gain || "NOT_MEASURED",
     invented: false,
     live: false,
   };
@@ -1753,6 +2410,15 @@ export function cognitiveDiscoveryCycle({
     verified: false,
     simulated: true,
   });
+  const science = activeScienceCycle({
+    qualifications,
+    resources: discoveredResources,
+    architectures: architectures.candidates,
+    budget,
+    measurements,
+    callable: discoveredResources.some((row) => row.callable === true),
+    now: at,
+  });
   const cycle = {
     version: DISCOVERY_VERSION,
     status: "EXECUTED",
@@ -1790,6 +2456,7 @@ export function cognitiveDiscoveryCycle({
     blind_spots,
     curiosity,
     evolution,
+    science,
     second_cortex: false,
     second_mesh: false,
     second_governance: false,

@@ -49,6 +49,19 @@ import {
   selectCognitiveStrategy,
   synapticFitness,
   watchEvolution,
+  activeScienceCycle,
+  analyzeCausality,
+  analyzeCognitiveContradiction,
+  createHypothesis,
+  designExperiment,
+  designResolutionExperiment,
+  estimateInformationGain,
+  evaluateHypothesis,
+  mapCognitiveKnowledge,
+  mapCognitiveUncertainty,
+  searchExistingScience,
+  selectNextExperiment,
+  scienceAuthority,
 } from "../scripts/cognitive-discovery.mjs";
 import { describeArchitecture } from "../scripts/cortex-ecosystem.mjs";
 
@@ -327,6 +340,11 @@ test("cognitiveDiscoveryCycle composes organs without a second Cortex", () => {
   assert.equal(cycle.emergence.candidates.length, 0);
   assert.equal(cycle.evolution.adopted, false);
   assert.equal(cycle.genome.digest.length, 16);
+  assert.equal(cycle.science.executed, false);
+  assert.equal(cycle.science.live, false);
+  assert.equal(cycle.science.hypothesis.current_state, "PROPOSED");
+  assert.equal(cycle.science.causality.causality, "INCONCLUSIVE");
+  assert.equal(cycle.science.selected.executed, false);
 });
 
 test("discovery engine does not branch Cortex on NVIDIA or OpenAI names", () => {
@@ -347,8 +365,12 @@ test("discovery engine does not branch Cortex on NVIDIA or OpenAI names", () => 
   assert.match(discovery, /composeCapabilities\(/);
   assert.match(discovery, /safeEvolve\(/);
   assert.match(discovery, /governEvolution\(/);
+  assert.match(discovery, /detectContradiction\(/);
+  assert.match(discovery, /storePrediction\(/);
+  assert.match(discovery, /falsifyCause\(/);
   assert.equal(/function composeCapabilities\s*\(/.test(discovery), false);
   assert.equal(/function safeEvolve\s*\(/.test(discovery), false);
+  assert.equal(/function detectContradiction\s*\(/.test(discovery), false);
 });
 
 const matrix = [
@@ -813,4 +835,149 @@ test("unknown capability is admitted without rewriting Cortex", () => {
   const unknown = admitUnknownIntelligence({ id: "newcap", provider: "UNKNOWN", env: {} });
   assert.equal(unknown.cortex_modified, false);
   assert.equal(curiosity.live, false);
+});
+
+test("a supported hypothesis is never a universal fact", () => {
+  const created = createHypothesis({ claim: "local review is sufficient", predictions: ["ok"] });
+  assert.equal(created.status, "PROPOSED");
+  const supported = evaluateHypothesis({
+    hypothesis: created.hypothesis,
+    observation: { actual: created.hypothesis.predictions[0] },
+    executed: true,
+  });
+  assert.equal(supported.state, "SUPPORTED");
+  assert.equal(supported.universal_fact, false);
+  assert.equal(supported.live, false);
+});
+
+test("an unexecuted experiment stays PROPOSED and is not LIVE", () => {
+  const hyp = createHypothesis({ claim: "declared is not measured" });
+  const designed = designExperiment({ hypothesis: hyp.hypothesis, uncertainty: "UNTESTED", risk: "LOW_RISK" });
+  assert.equal(designed.status, "PROPOSED");
+  assert.equal(designed.experiment.live, false);
+  assert.equal(designed.experiment.information_gain.status, "ESTIMATE");
+  assert.equal(designed.experiment.information_gain.measurement_of_truth, false);
+});
+
+test("information gain is an estimate with components, not a magic score", () => {
+  const gain = estimateInformationGain({ uncertainty: "UNTESTED", hypotheses_discriminated: 2, risk: "LOW", cost: 0 });
+  assert.equal(gain.status, "ESTIMATE");
+  assert.equal(gain.opaque_score, null);
+  assert.equal(gain.measurement_of_truth, false);
+  const science = activeScienceCycle({
+    qualifications: [{ identity: "local", capability: "review", declared: true, measured: false, state: "DECLARED" }],
+    architectures: [{ kind: "SIMPLE" }],
+    budget: { risk: "LOW_RISK" },
+    callable: false,
+  });
+  assert.ok(science.portfolio.experiments.length >= 2);
+  assert.equal(science.portfolio.magic_score, false);
+  assert.equal(science.selected.selected.experiment_id, "E_untested");
+  assert.equal(science.selected.why_this_experiment.causal_claim, false);
+  assert.equal(science.selected.attention, "NEEDS_EVIDENCE");
+  assert.equal(science.executed, false);
+});
+
+test("contradictory results are not arbitrarily resolved", () => {
+  const analysis = analyzeCognitiveContradiction({
+    results: [
+      { id: "a", resource: "model-a", value: "X", measured: true, context: "review" },
+      { id: "b", resource: "model-b", value: "NOT-X", measured: true, context: "review" },
+    ],
+  });
+  assert.equal(analysis.status, "CONTRADICTION");
+  assert.equal(analysis.arbitrary_resolution, false);
+  assert.equal(analysis.consensus_is_truth, false);
+  const resolution = designResolutionExperiment({
+    results: [
+      { resource: "model-a", value: "X", measured: true },
+      { resource: "model-b", value: "NOT-X", measured: true },
+    ],
+  });
+  assert.equal(resolution.arbitrary_resolution, false);
+  assert.equal(resolution.status, "PROPOSED");
+});
+
+test("correlation is not causation", () => {
+  const causal = analyzeCausality({ observation: "improved", cause: "added verifier", intervention: false });
+  assert.equal(causal.causality, "INCONCLUSIVE");
+  assert.equal(causal.correlation_is_not_causation, true);
+  const designed = analyzeCausality({
+    observation: "improved",
+    cause: "added verifier",
+    intervention: true,
+    control: true,
+    counterfactual: true,
+    repetition: true,
+  });
+  assert.equal(designed.causality, "INCONCLUSIVE");
+  assert.equal(designed.sufficient_design, true);
+});
+
+test("A+B with verification is still not automatic emergence in the science loop", () => {
+  const science = activeScienceCycle({
+    qualifications: [
+      { identity: "a", capability: "reasoning", declared: true, measured: false, state: "DECLARED" },
+      { identity: "b", capability: "memory", declared: true, measured: false, state: "DECLARED" },
+    ],
+    measurements: { combined: 1 },
+  });
+  const emergence = discoverEmergentCapabilities({
+    capabilities: ["reasoning", "memory"],
+    measurements: { measured: true, synergy: 0 },
+  });
+  assert.equal(emergence.classified.class, "COMPOSITION");
+  assert.equal(science.hypothesis.current_state, "PROPOSED");
+  assert.equal(science.verified, false);
+});
+
+test("existing failures are reused instead of repeating the same experiment blindly", () => {
+  const hyp = createHypothesis({ claim: "paid channel without credentials" });
+  const search = searchExistingScience({
+    hypothesis: hyp.hypothesis,
+    failures: [{ claim: "paid channel without credentials" }],
+  });
+  assert.equal(search.do_not_repeat_blindly, true);
+  assert.equal(search.reusable, false);
+});
+
+test("an experiment cannot mint authority", () => {
+  const authority = scienceAuthority();
+  assert.equal(authority.experiment_creates_authority, false);
+  assert.equal(authority.discovery_creates_authority, false);
+  assert.equal(authority.can_modify_breaker, false);
+  assert.equal(authority.can_merge, false);
+  assert.equal(authority.auto_merge, false);
+});
+
+test("unknown intelligence enters the science loop without rewriting Cortex", () => {
+  const unknown = admitUnknownIntelligence({ id: "tomorrowx", provider: "UNKNOWN", env: {} });
+  const science = activeScienceCycle({
+    qualifications: [{ identity: "tomorrowx", capability: "UNKNOWN", declared: true, measured: false, state: "DECLARED" }],
+    callable: false,
+  });
+  assert.equal(unknown.cortex_modified, false);
+  assert.ok(science.portfolio.experiments.some((row) => row.experiment_id === "E_unknown"));
+  assert.equal(science.live, false);
+  assert.equal(science.authority.capability_is_not_authority, true);
+});
+
+test("knowledge map keeps categories distinct and never eternal", () => {
+  const map = mapCognitiveKnowledge({
+    qualifications: [
+      { identity: "a", capability: "review", declared: true, measured: false },
+      { identity: "b", capability: "code", declared: true, measured: true, verified: true },
+    ],
+    failures: [{ subject: "xai" }],
+  });
+  const states = new Set(map.entries.map((row) => row.state));
+  assert.ok(states.has("UNTESTED"));
+  assert.ok(states.has("VERIFIED"));
+  assert.ok(states.has("FAILED"));
+  assert.equal(map.eternal_truth, false);
+  const uncertainty = mapCognitiveUncertainty({
+    self_knowledge: { can_do: [], think_i_can_do: ["review"], never_tested: ["review"], verified_i_can_do: [] },
+  });
+  assert.deepEqual(uncertainty.UNTESTED, ["review"]);
+  assert.ok(uncertainty.UNKNOWN.includes("UNKNOWN"));
 });

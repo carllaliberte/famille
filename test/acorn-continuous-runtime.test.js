@@ -197,4 +197,6 @@ test("real Acorn organs remain a single organism", async () => {
   assert.equal(result.discovery.strategy.adopted, false);
   assert.equal(result.discovery.emergence.emergent, false);
   assert.equal(result.discovery.evolution.adopted, false);
+  assert.equal(result.discovery.science.executed, false);
+  assert.equal(result.discovery.science.causality, "INCONCLUSIVE");
 });

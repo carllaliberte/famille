@@ -534,6 +534,17 @@ export async function runContinuousRuntime({
         adopted: discovery.evolution?.adopted === true,
         reversible: discovery.evolution?.reversible === true,
       },
+      science: {
+        hypothesis: discovery.science?.hypothesis?.current_state || "PROPOSED",
+        selected: discovery.science?.selected?.selected?.experiment_id || null,
+        why: discovery.science?.selected?.why_this_experiment?.selection_reason || null,
+        attention: discovery.science?.selected?.attention || null,
+        executed: discovery.science?.executed === true,
+        contradiction: discovery.science?.contradiction?.status || "ALIGNED",
+        causality: discovery.science?.causality?.causality || "INCONCLUSIVE",
+        portfolio: (discovery.science?.portfolio?.experiments || []).map((row) => row.experiment_id),
+        unknowns: (discovery.science?.unknowns?.unknowns || []).length,
+      },
       unknown: { cortex_modified: discovery.unknown.cortex_modified, live: false },
       synapses: {
         active: discovery.metrics.synapses_active,
