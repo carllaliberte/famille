@@ -14,6 +14,11 @@ const isExec = args[0] === "exec";
 
 if (!isExec) process.exit(0);
 
+if (String(env.ACORN_SYSTEM_MODE || "").trim().toUpperCase() !== "RUN") {
+  process.stderr.write("ACORN_CODEX_INTERPOSITION decision=DENY reason=BREAKER_NOT_RUN authority_granted=false live=false\n");
+  process.exit(126);
+}
+
 const result = authorizeRuntimeEffect({
   actor: "acorn.codex-worker",
   capability: {
@@ -31,7 +36,7 @@ const result = authorizeRuntimeEffect({
     verified: true,
     known_executor: true,
     known_entrypoint: true,
-    breaker_state: env.ACORN_SYSTEM_MODE || "UNKNOWN",
+    breaker_state: "RUN",
   },
   policy: { requireMeasured: true, requireVerified: true },
 });
