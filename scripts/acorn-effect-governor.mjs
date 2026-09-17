@@ -6,6 +6,7 @@ import path from 'node:path';
 import { interposeExternalEffect, assertExternalEffectDecision, interpositionPolicySummary } from './acorn-effect-interposition.mjs';
 
 export const EFFECT_GOVERNOR_VERSION = 'acorn.effect-governor.v1';
+export { interpositionPolicySummary };
 
 const DEFAULT_EFFECT_SURFACES = [
   'codex', 'cognitive-worker', 'autonomous-runtime', 'runtime',
