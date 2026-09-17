@@ -31,9 +31,9 @@ on:
         default: false
         type: boolean
       provider:
-        description: "Codex provider: openrouter (default) or openai"
+        description: "Codex provider: auto, openrouter, or openai"
         required: false
-        default: "openrouter"
+        default: "auto"
         type: string
       continue_runtime:
         description: "Allow one bounded continuation after this explicit wake"
@@ -119,11 +119,22 @@ jobs:
         env:
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          CODEX_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || vars.CODEX_PROVIDER || 'openrouter' }}
+          CODEX_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || vars.CODEX_PROVIDER || 'auto' }}
         run: |
           mkdir -p "$HOME/.codex"
-          REQ="$(printf '%s' "${CODEX_PROVIDER:-}" | tr '[:upper:]' '[:lower:]')"
-          echo "provider_requested=${REQ:-empty}"
+          REQ="$(printf '%s' "${CODEX_PROVIDER:-auto}" | tr '[:upper:]' '[:lower:]')"
+          echo "provider_requested=${REQ:-auto}"
+          if [ "$REQ" = "auto" ] || [ -z "$REQ" ]; then
+            if [ -n "$CODEX_AUTH_JSON" ]; then
+              REQ="openai"
+              echo "provider_auto_selected=openai reason=CODEX_AUTH_JSON_present"
+            elif [ -n "$OPENROUTER_API_KEY" ]; then
+              REQ="openrouter"
+              echo "provider_auto_selected=openrouter reason=OPENROUTER_API_KEY_present"
+            else
+              echo "provider_auto_selected=none reason=no_authentication"
+            fi
+          fi
           case "$REQ" in
             openai|chatgpt|codex)
               if [ -n "$CODEX_AUTH_JSON" ]; then
@@ -134,8 +145,11 @@ jobs:
                 echo "auth_present=false auth_mode=openai-auth-missing"
               fi
               ;;
-            *)
+            openrouter)
               echo "auth_present=false auth_mode=openrouter-path-no-session-file"
+              ;;
+            *)
+              echo "auth_present=false auth_mode=unknown-provider"
               ;;
           esac
           if [ -n "$OPENROUTER_API_KEY" ]; then
@@ -158,7 +172,7 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
           ACORN_SYSTEM_MODE: ${{ vars.ACORN_SYSTEM_MODE }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          CODEX_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || vars.CODEX_PROVIDER || 'openrouter' }}
+          CODEX_PROVIDER: ${{ github.event_name == 'workflow_dispatch' && inputs.provider || vars.CODEX_PROVIDER || 'auto' }}
           CODEX_MODEL: ${{ vars.CODEX_MODEL }}
           CODEX_MAX_OUTPUT_TOKENS: "1024"
           CODEX_OPENROUTER_PROXY_PORT: "17891"
