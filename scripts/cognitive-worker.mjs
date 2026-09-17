@@ -10,6 +10,7 @@ import { pathToFileURL } from "node:url";
 import { cycle } from "./discover-cycle.mjs";
 import { composeFabric } from "./cognitive-fabric.mjs";
 import { assertSystemMayProceed, controlState } from "../.github/swarm/system-breaker.mjs";
+import { authorizeRuntimeEffect, assertRuntimeInterposition } from "./acorn-runtime-interposition.mjs";
 import { loadMemory, rankSources, updateMemory, memorySummary } from "./synaptic-memory.mjs";
 import { loadCollaborationMemory } from "./collaboration-memory.mjs";
 import { loadModelExecutionMemory } from "./model-execution-memory.mjs";
@@ -91,16 +92,32 @@ export function executeDispatch(fronts, run = execFileSync, env = process.env) {
   for (const front of fronts) {
     try {
       assertSystemMayProceed({ env, origin: "cognitive-worker", action: `dispatch PR #${front.number}` });
+      const interposition = authorizeRuntimeEffect({
+        actor: "acorn.cognitive-worker",
+        capability: {
+          id: `github.issue.comment:${front.number}`,
+          kind: "github.issue.comment",
+          resource: `PR#${front.number}`,
+          observability: "DIRECT",
+          control: "DIRECT",
+          reversibility: "PARTIAL",
+          epistemic: "MEASURED",
+        },
+        operation: `POST /repos/${env.GITHUB_REPOSITORY}/issues/${front.number}/comments`,
+        risk: 0,
+        blastRadius: 0,
+        evidence: { measured: true, verified: false, source: "known-github-api-path" },
+        policy: { requireMeasured: true },
+      });
+      assertRuntimeInterposition(interposition);
+      if (!interposition.allowed) {
+        results.push({ number: front.number, sha: front.sha, state: "BLOCKED_INTERPOSITION", phase: "BLOCKED", interposition });
+        continue;
+      }
       const raw = run("gh", ["api", `repos/${env.GITHUB_REPOSITORY}/issues/${front.number}/comments`, "--method", "POST", "-f", "body=/swarm"], { stdio: "pipe", encoding: "utf8" });
       const created = parseCommentPayload(raw);
       if (!created?.id) {
-        results.push({
-          number: front.number,
-          sha: front.sha,
-          state: "DISPATCH_FAILED",
-          phase: "ATTEMPTED",
-          error: "no comment id in response",
-        });
+        results.push({ number: front.number, sha: front.sha, state: "DISPATCH_FAILED", phase: "ATTEMPTED", error: "no comment id in response", interposition });
         continue;
       }
       const row = {
@@ -110,6 +127,7 @@ export function executeDispatch(fronts, run = execFileSync, env = process.env) {
         phase: "ACCEPTED",
         comment_id: created.id,
         url: created.html_url || created.url || null,
+        interposition,
       };
       try {
         const read = run("gh", ["api", `repos/${env.GITHUB_REPOSITORY}/issues/comments/${created.id}`], { stdio: "pipe", encoding: "utf8" });
@@ -185,6 +203,7 @@ export function buildEvidence(observation, plan, routing, dispatches, state = co
     dispatched: succeeded,
     dispatch_failed: failed,
     breaker_blocked: blocked,
+    interposition_blocked: rows.filter((x) => x.state === "BLOCKED_INTERPOSITION").length,
     no_action: noAction,
     dispatches: rows,
     routing: args.routing,
