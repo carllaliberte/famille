@@ -14,6 +14,7 @@
     "runtime:ecology": "node scripts/acorn-cognitive-ecology.mjs",
     "runtime:cognition": "node scripts/acorn-continuous-cognition.mjs",
     "runtime:strategy": "node scripts/acorn-cognitive-strategy.mjs",
+    "runtime:time-machine": "node scripts/acorn-cognitive-time-machine-cycle.mjs",
     "runtime:substrate": "node scripts/acorn-constitutional-substrate.mjs",
     "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
     "work:record": "node scripts/work-record.mjs",
@@ -51,6 +52,7 @@
     "./acorn-auto-evolution": "./scripts/acorn-auto-evolution.mjs",
     "./acorn-continuous-cognition": "./scripts/acorn-continuous-cognition.mjs",
     "./acorn-cognitive-strategy": "./scripts/acorn-cognitive-strategy.mjs",
+    "./acorn-cognitive-time-machine": "./scripts/acorn-cognitive-time-machine-cycle.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"
   },
