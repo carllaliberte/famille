@@ -108,6 +108,17 @@ function record(spec) {
   return Object.freeze(row);
 }
 
+export const META_INVARIANTS = Object.freeze([
+  record({
+    id: "I0",
+    name: "CONSTITUTIONAL_SELF_MODIFICATION_PROHIBITION",
+    definition: "Acorn cannot modify, weaken, remove, bypass, silently reinterpret, or automatically authorize modification of its fundamental invariants.",
+    implementation: "assertNoSelfModification",
+    interpretation: "Acorn may propose. Only Carl may authorize. Never AUTO_APPLIED.",
+    version: "1.1.0",
+  }),
+]);
+
 export const SOVEREIGNTY_INVARIANTS = Object.freeze([
   record({
     id: "I1",
@@ -247,7 +258,7 @@ export const STRUCTURAL_INVARIANTS = Object.freeze([
 ]);
 
 export function allInvariants() {
-  return [...SOVEREIGNTY_INVARIANTS, ...STRUCTURAL_INVARIANTS];
+  return [...META_INVARIANTS, ...SOVEREIGNTY_INVARIANTS, ...STRUCTURAL_INVARIANTS];
 }
 
 export function invariantDigest(list = allInvariants()) {

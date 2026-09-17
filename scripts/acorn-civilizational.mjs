@@ -83,6 +83,14 @@ import { cortexConstitution, cortexCycle, assertCortexInvariant } from "./cortex
 import { defenseConstitution, defenseCycle, assertDefenseInvariant } from "./acorn-defense.mjs";
 import { controlState } from "../.github/swarm/system-breaker.mjs";
 import { sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
+import {
+  assertFundamentalConstitution,
+  assertNoSelfModification,
+  assertHumanAmendmentBoundary,
+  assertNoConstitutionBypass,
+  assertNoSecondConstitution,
+  assertNoSemanticBypass,
+} from "./acorn-immutability.mjs";
 
 export const CIVILIZATIONAL_VERSION = "acorn.civilizational.v1";
 
@@ -104,6 +112,9 @@ export function falsificationBattery({ env = process.env } = {}) {
     { name: "poisoned_memory", result: rememberSynapse({ source: "a", target: "b", evidence: null, risk: "poison" }) },
     { name: "corrupted_provenance", result: assertEvidenceIntegrity({ sealed: { seal: { digest: "bad" } }, verify: () => false }) },
     { name: "self_modification_boundary", result: selfImprovementBoundary({ auto_modify: true, authority_growth: 1 }) },
+    { name: "constitutional_self_modification", result: assertNoSelfModification() },
+    { name: "semantic_bypass", result: assertNoSemanticBypass() },
+    { name: "second_constitution", result: assertNoSecondConstitution() },
     { name: "acorn_dependency_trap", result: assertReplaceability() },
     { name: "second_architecture", result: assertNoSecondRuntime() },
     { name: "second_cortex", result: assertNoSecondCortex() },
@@ -121,6 +132,12 @@ export function falsificationBattery({ env = process.env } = {}) {
 export function globalInvariantAudit({ env = process.env, runtime = null } = {}) {
   const assertions = {
     assertAcornConstitution: assertAcornConstitution({ env }),
+    assertFundamentalConstitution: assertFundamentalConstitution({ env }),
+    assertNoSelfModification: assertNoSelfModification(),
+    assertHumanAmendmentBoundary: assertHumanAmendmentBoundary(),
+    assertNoConstitutionBypass: assertNoConstitutionBypass(),
+    assertNoSecondConstitution: assertNoSecondConstitution(),
+    assertNoSemanticBypass: assertNoSemanticBypass(),
     assertHumanSovereignty: assertHumanSovereignty(),
     assertBreakerSovereignty: assertBreakerSovereignty({ env: { ACORN_SYSTEM_MODE: "RUN" } }),
     assertCapabilityAuthoritySeparation: assertCapabilityAuthoritySeparation({ capability: 100 }),

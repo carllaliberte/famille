@@ -29,6 +29,7 @@
     "./acorn-capability-inventory": "./scripts/acorn-capability-inventory.mjs",
     "./acorn-continuous-runtime": "./scripts/acorn-continuous-runtime.mjs",
     "./acorn-constitution": "./scripts/acorn-constitution.mjs",
+    "./acorn-immutability": "./scripts/acorn-immutability.mjs",
     "./acorn-epistemic": "./scripts/acorn-epistemic.mjs",
     "./acorn-governability": "./scripts/acorn-governability.mjs",
     "./acorn-cognitive-ecology": "./scripts/acorn-cognitive-ecology.mjs",
