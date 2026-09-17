@@ -98,6 +98,37 @@ export const ACORN_ACTORS = Object.freeze([
   "future-intelligence", "grok", "consensus", "majority",
 ]);
 
+export const IMPLEMENTATION_PLAN = "acorn.constitutional.implementation-plan.v1";
+
+export const IMPLEMENTATION_STATES = Object.freeze([
+  "EXISTING_AND_WIRED",
+  "EXISTING_AND_INCOMPLETE",
+  "DOCUMENTED_NOT_EXECUTED",
+  "ABSENT",
+  "CONTRADICTORY",
+  "UNVERIFIABLE",
+]);
+
+export const AUTHORITY_CHAIN = Object.freeze([
+  "CARL", "BREAKER", "ACORN", "CONSTITUTION", "GOVERNANCE",
+  "COGNITIVE_CONTRACTS", "CORTEX", "RUNTIME", "INTELLIGENCES",
+  "CAPABILITIES", "TOOLS", "RESOURCES", "EXTERNAL_SYSTEMS", "REAL_WORLD_EFFECTS",
+]);
+
+export const AUTHORITY_DISTINCTIONS = Object.freeze([
+  "IDENTITY_IS_NOT_AUTHORITY",
+  "CAPABILITY_IS_NOT_AUTHORITY",
+  "PRESENCE_IS_NOT_AUTHORITY",
+  "PRESENCE_IS_NOT_PERMISSION",
+  "EXECUTION_IS_NOT_AUTHORITY",
+  "CONSENSUS_IS_NOT_AUTHORITY",
+  "MAJORITY_IS_NOT_SOVEREIGNTY",
+  "INTELLIGENCE_IS_NOT_SOVEREIGNTY",
+  "COGNITIVE_SUPERIORITY_IS_NOT_AUTHORITY",
+  "AUTONOMY_IS_NOT_AUTHORITY",
+  "AUTHORITY_IS_NOT_SOVEREIGNTY",
+]);
+
 const text = (v) => String(v ?? "").trim();
 const iso = (v) => {
   const s = text(v);
@@ -765,6 +796,313 @@ export function humanDecisionBrief({
   };
 }
 
+export function classifyImplementation(status, extra = {}) {
+  const known = IMPLEMENTATION_STATES.includes(status) ? status : "UNVERIFIABLE";
+  return { status: known, live: false, ...extra };
+}
+
+export function implementationInventory({ env = process.env } = {}) {
+  const constitution = assertAcornConstitution({ env });
+  const breaker = assertBreakerSovereignty({ env: { ACORN_SYSTEM_MODE: "RUN" } });
+  const noSecond = assertNoSecondConstitution();
+  const i0 = attemptSelfModification({ actor: "acorn" });
+  const entries = [
+    { name: "constitution", module: "scripts/acorn-constitution.mjs", status: constitution.status === "VERIFIED" ? "EXISTING_AND_WIRED" : "EXISTING_AND_INCOMPLETE" },
+    { name: "invariants", module: "scripts/acorn-constitution.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "breaker", module: ".github/swarm/system-breaker.mjs", status: breaker.status === "VERIFIED" || breaker.controller === "carl" ? "EXISTING_AND_WIRED" : "EXISTING_AND_INCOMPLETE" },
+    { name: "carl", module: ".github/swarm/system-breaker.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "cortex", module: "scripts/cortex-cognition.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "governance", module: "scripts/acorn-constitution.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "cognitive_contracts", module: "scripts/acorn-epistemic.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "runtime_policies", module: "scripts/acorn-continuous-runtime.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "authorizations", module: "scripts/acorn-constitutional-substrate.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "delegations", module: "scripts/acorn-constitutional-substrate.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "revocations", module: "scripts/acorn-constitutional-substrate.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "scopes", module: "scripts/acorn-constitutional-substrate.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "versioning", module: "scripts/acorn-immutability.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "provenance", module: "scripts/acorn-immutability.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "memory", module: "scripts/acorn-constitutional-substrate.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "defense", module: "scripts/acorn-defense.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "failover", module: "scripts/acorn-defense.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "migration", module: "scripts/acorn-replaceability.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "distributed_storage", module: "scripts/acorn-replaceability.mjs", status: "EXISTING_AND_INCOMPLETE", note: "archive export exists; long-term accessibility is HOLD_HUMAN" },
+    { name: "observability", module: "scripts/acorn-governability.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "security_tests", module: "test/acorn-constitutional-substrate.test.js", status: "EXISTING_AND_WIRED" },
+    { name: "i0", module: "scripts/acorn-immutability.mjs", status: i0.applied === false ? "EXISTING_AND_WIRED" : "CONTRADICTORY" },
+    { name: "norm_hierarchy", module: "scripts/acorn-constitutional-substrate.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "conflict_engine", module: "scripts/acorn-constitutional-substrate.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "emergency", module: "scripts/acorn-constitutional-substrate.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "unknown_space", module: "scripts/acorn-cognitive-ecology.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "human_amendment", module: "scripts/acorn-constitutional-substrate.mjs", status: "EXISTING_AND_WIRED" },
+    { name: "second_constitution", module: "scripts/acorn-immutability.mjs", status: noSecond.second_constitution === false ? "EXISTING_AND_WIRED" : "CONTRADICTORY" },
+  ];
+  const byStatus = Object.fromEntries(IMPLEMENTATION_STATES.map((s) => [s, entries.filter((e) => e.status === s).map((e) => e.name)]));
+  return {
+    plan: IMPLEMENTATION_PLAN,
+    parent: SUBSTRATE_VERSION,
+    constitution: PARENT_CONSTITUTION,
+    entries,
+    byStatus,
+    one_constitution: true,
+    second_constitution: false,
+    second_cortex: false,
+    second_runtime: false,
+    second_defense: false,
+    second_breaker: false,
+    hold_human: byStatus.EXISTING_AND_INCOMPLETE,
+    live: false,
+  };
+}
+
+export function runtimeEntrypointMap() {
+  return {
+    cortex: "scripts/cortex-cognition.mjs",
+    workers: "scripts/cognitive-worker.mjs",
+    executor: "scripts/autonomous-runtime.mjs",
+    adapters: "scripts/acorn-continuous-runtime.mjs",
+    providers: "scripts/codex-provider.mjs",
+    tools: "scripts/acorn-capability-inventory.mjs",
+    failover: "scripts/acorn-defense.mjs",
+    defense: "scripts/acorn-defense.mjs",
+    external: "UNVERIFIABLE",
+    live: false,
+  };
+}
+
+export function authorityFlowMap() {
+  return {
+    chain: [...AUTHORITY_CHAIN],
+    distinctions: [...AUTHORITY_DISTINCTIONS],
+    relations: {
+      CARL_CONTROLS_BREAKER: true,
+      BREAKER_CONTROLS_CARL: false,
+      ACORN_CONTROLS_CARL: false,
+      ACORN_CONTROLS_BREAKER: false,
+      LOWER_CANNOT_OVERRIDE_HIGHER: true,
+      CAPABILITY_GROWTH_IS_NOT_AUTHORITY_GROWTH: true,
+    },
+    live: false,
+  };
+}
+
+export function createDelegationLedger() {
+  const rows = new Map();
+  const events = [];
+  const stamp = (row) => {
+    const event = { at: new Date().toISOString(), live: false, ...row };
+    events.push(event);
+    return event;
+  };
+  const walkParents = (parentId) => {
+    const seen = new Set();
+    let cursor = parentId;
+    while (cursor) {
+      if (seen.has(cursor)) return { cycle: true, seen };
+      seen.add(cursor);
+      cursor = rows.get(cursor)?.parent || null;
+    }
+    return { cycle: false, seen };
+  };
+  return {
+    events: () => events.slice(),
+    get: (id) => rows.get(id) || null,
+    all: () => [...rows.values()],
+    grant: (input = {}) => {
+      if (!text(input.delegate) || text(input.delegate).toLowerCase() === "unknown") {
+        return denied("DELEGATION_TO_UNKNOWN_ENTITY", { delegate: input.delegate });
+      }
+      if (input.parent) {
+        const parent = rows.get(input.parent);
+        if (!parent || parent.status !== "ACTIVE") return denied("PARENT_DELEGATION_INVALID", { parent: input.parent });
+        const walk = walkParents(input.parent);
+        if (walk.cycle) return denied("RECURSIVE_DELEGATION_CYCLE", { parent: input.parent });
+        if (parent.delegate === input.source && input.delegate === parent.source) {
+          return denied("RECURSIVE_DELEGATION_CYCLE");
+        }
+        if ((input.authority_rank ?? 0) > (parent.authority_rank ?? 0)) {
+          return denied("DELEGATED_AUTHORITY_EXCEEDS_SOURCE");
+        }
+      }
+      const dlg = createDelegation(input);
+      if (dlg.status === "DENIED" || dlg.granted === false) return dlg;
+      dlg.parent = input.parent || null;
+      rows.set(dlg.id, dlg);
+      stamp({ action: "GRANT", id: dlg.id, source: dlg.source, delegate: dlg.delegate, parent: dlg.parent });
+      return dlg;
+    },
+    revoke: ({ id, at, reason = "REVOKED" } = {}) => {
+      const dlg = rows.get(id);
+      if (!dlg) return denied("DELEGATION_NOT_FOUND");
+      const revoked = revokeDelegation({ delegation: dlg, at, reason });
+      rows.set(id, revoked);
+      stamp({ action: "REVOKE", id, reason });
+      const propagated = [];
+      const queue = [id];
+      while (queue.length) {
+        const parentId = queue.shift();
+        for (const child of rows.values()) {
+          if (child.parent === parentId && child.status === "ACTIVE") {
+            const next = revokeDelegation({ delegation: child, at, reason: "TRANSITIVE_REVOCATION" });
+            rows.set(child.id, next);
+            propagated.push(child.id);
+            stamp({ action: "REVOKE_TRANSITIVE", id: child.id, parent: parentId });
+            queue.push(child.id);
+          }
+        }
+      }
+      return { ...revoked, propagated, live: false };
+    },
+    use: ({ id, now, request } = {}) => useDelegation({ delegation: rows.get(id), now, request }),
+  };
+}
+
+export function createConstitutionalMemory() {
+  const entries = [];
+  return {
+    entries: () => entries.map((row) => ({ ...row })),
+    record: (decision = {}) => {
+      const row = {
+        ...constitutionalEvidence(decision),
+        id: `mem_${entries.length + 1}`,
+        erased: false,
+        resolved_still_visible: true,
+        live: false,
+      };
+      entries.push(row);
+      return row;
+    },
+    erase: () => denied("CONSTITUTIONAL_MEMORY_IS_APPEND_ONLY"),
+    rewriteAuthority: () => denied("MEMORY_CANNOT_RETROACTIVELY_CHANGE_AUTHORITY"),
+  };
+}
+
+export function observeEvent({ observed = false, event_occurred = null } = {}) {
+  return {
+    observed: observed === true,
+    event_occurred,
+    unobserved: observed !== true,
+    unknown: event_occurred == null,
+    absence_of_observation_is_absence_of_event: false,
+    unobserved_is_safe: false,
+    live: false,
+  };
+}
+
+export function rollbackDecision({ previous, authority, reason = "rollback", at } = {}) {
+  if (authority !== "carl") return denied("ROLLBACK_REQUIRES_CARL", { authority });
+  if (!previous) return denied("PREVIOUS_VERSION_REQUIRED");
+  return appendHistory({
+    previous,
+    next: `${previous}+rollback`,
+    proposer: "carl",
+    authority: "carl",
+    reason,
+    decision: "ROLLBACK_AS_NEW_VERSION",
+    at,
+  });
+}
+
+export function detectShadowConstitution({ claimed } = {}) {
+  const diverge = Boolean(claimed) && claimed !== PARENT_CONSTITUTION;
+  return {
+    canonical: PARENT_CONSTITUTION,
+    claimed: claimed || PARENT_CONSTITUTION,
+    diverge,
+    blocked: true,
+    hold_human: diverge,
+    second_constitution: false,
+    live: false,
+  };
+}
+
+export function failoverOverride({ tactic = "failover", suspend_invariants = true } = {}) {
+  return denied("FAILOVER_IS_NOT_CONSTITUTIONAL_OVERRIDE", {
+    tactic,
+    fundamentals_suspended: false,
+    i0_suspended: false,
+    attempted: suspend_invariants,
+  });
+}
+
+export function connectivityLossBypass({ incident = "connectivity_loss" } = {}) {
+  return enterEmergency({ incident, actor: "failover", suspend_invariants: true });
+}
+
+export function runtimeMetrics({ cycle } = {}) {
+  const c = cycle || {};
+  const audit = c.audit || {};
+  return {
+    constitutional_integrity: audit.status || "UNVERIFIED",
+    constitutional_version: PARENT_CONSTITUTION,
+    constitutional_authority: "carl",
+    constitutional_conflicts: c.conflict?.requires_human ? 1 : 0,
+    delegation_state: "BOUNDED",
+    scope: "ENFORCED",
+    unknown_space: c.unknown_space?.we_do_not_know ? "OPEN" : "UNKNOWN",
+    amendment_proposals: c.proposal ? 1 : 0,
+    violations_attempted: 1,
+    violations_blocked: c.i0?.applied === false ? 1 : 0,
+    defined_is_not_executed: true,
+    executed_is_not_verified: true,
+    verified_is_not_live: true,
+    live: false,
+  };
+}
+
+export function auditAuthorityChain({ env = process.env } = {}) {
+  const hops = AUTHORITY_CHAIN.map((node, i) => ({
+    node,
+    rank: i,
+    may_override_higher: false,
+    may_mint_authority: node === "CARL",
+    live: false,
+  }));
+  const probes = [
+    { name: "model_becomes_authority", result: classifyAuthority({ identity: "model", capability: 1e9 }) },
+    { name: "cortex_becomes_authority", result: classifyAuthority({ identity: "cortex", intelligence: 1e6 }) },
+    { name: "consensus_becomes_sovereignty", result: classifyAuthority({ identity: "consensus", consensus: 100, majority: 100 }) },
+    { name: "emergency_override", result: enterEmergency({ incident: "attack", suspend_invariants: true }) },
+    { name: "failover_override", result: failoverOverride({ tactic: "failover" }) },
+    { name: "composition_escape", result: compositionEscape({ a: { allowed: false }, b: { allowed: true }, composition: { allowed: true } }) },
+    { name: "self_modification", result: attemptSelfModification({ actor: "acorn" }) },
+    { name: "shadow_constitution", result: detectShadowConstitution({ claimed: "acorn.shadow.v1" }) },
+    { name: "unknown_permission", result: interpretAbsence({}) },
+    { name: "fork_canonical", result: compareInstances({ a: { constitution: { v: 1 } }, b: { constitution: { v: 2 } } }) },
+  ];
+  const blocked = probes.every((p) => p.result.granted !== true && p.result.allowed !== true && p.result.applied !== true && p.result.second_constitution !== true);
+  const constitution = assertAcornConstitution({ env });
+  return {
+    chain: hops,
+    flow: authorityFlowMap(),
+    probes: probes.map((p) => ({
+      name: p.name,
+      granted: p.result.granted === true || p.result.allowed === true || p.result.applied === true,
+      status: p.result.status || "BLOCKED",
+      live: false,
+    })),
+    uniqueness: {
+      constitution: 1,
+      cortex: 1,
+      breaker: 1,
+      runtime: 1,
+      defense: 1,
+      governance: 1,
+    },
+    constitution: constitution.status,
+    blocked,
+    status: blocked && constitution.status === "VERIFIED" ? "VERIFIED" : "FAILED",
+    residual: [
+      "long-term archive accessibility is HOLD_HUMAN",
+      "external system blast radius is PARTIAL observability",
+      "LIVE remains false until independent runtime proof",
+    ],
+    hold_human: ["Carl reviews the PR", "Carl merges"],
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+  };
+}
+
 export function propertyHolds(name, predicate) {
   const ok = predicate() === true;
   return { property: name, holds: ok, status: ok ? "VERIFIED" : "FAILED", live: false };
@@ -800,6 +1138,18 @@ export function propertyBattery() {
     propertyHolds("NO_SILENT_CONFLICT_RESOLUTION", () => resolveConflict({ a: { layer: "TASKS" }, b: { layer: "TASKS" } }).silent === false),
     propertyHolds("NO_EXPIRED_AUTHORITY_REMAINS_VALID", () => useDelegation({ delegation: expired, now: "2026-09-17T00:00:00.000Z" }).allowed !== true),
     propertyHolds("CARL_CONTROLS_BREAKER", () => BREAKER_AUTHORITY.controller === "carl" && BREAKER_AUTHORITY.breaker_controls_carl === false && BREAKER_AUTHORITY.acorn_controls_breaker === false),
+    propertyHolds("NO_TRANSITIVE_REVOKED_AUTHORITY_REMAINS_VALID", () => {
+      const led = createDelegationLedger();
+      const parent = led.grant({ source: "carl", delegate: "cortex", source_rank: 2, authority_rank: 1 });
+      const child = led.grant({ source: "carl", delegate: "worker", parent: parent.id, source_rank: 1, authority_rank: 0 });
+      led.revoke({ id: parent.id });
+      return led.use({ id: child.id, now: "2026-09-17T00:00:00.000Z", request: {} }).allowed !== true;
+    }),
+    propertyHolds("NO_ROLLBACK_ERASES_HISTORY", () => rollbackDecision({ previous: "1.0.0", authority: "carl" }).rewritten === false),
+    propertyHolds("NO_FAILOVER_OVERRIDES_FUNDAMENTALS", () => failoverOverride({}).fundamentals_suspended === false && failoverOverride({}).applied === false),
+    propertyHolds("ABSENCE_OF_OBSERVATION_IS_NOT_ABSENCE_OF_EVENT", () => observeEvent({ observed: false }).absence_of_observation_is_absence_of_event === false),
+    propertyHolds("NO_UNKNOWN_ENTITY_RECEIVES_DELEGATION", () => createDelegationLedger().grant({ source: "carl", delegate: "unknown" }).granted === false),
+    propertyHolds("NO_RECOMMENDATION_BECOMES_DECISION", () => classifyCognitiveAct({ kind: "RECOMMENDATION", becomes_decision: true }).recommendation_is_decision === false),
   ];
   const failed = checks.filter((c) => c.holds !== true);
   return {
@@ -822,12 +1172,27 @@ export function adversarialMatrix() {
   }
   rows.push({ family: "delegation", name: "excessive", result: createDelegation({ source: "carl", delegate: "worker", authority_rank: 5, source_rank: 1 }) });
   rows.push({ family: "delegation", name: "expired", result: useDelegation({ delegation: createDelegation({ source: "carl", delegate: "x", until: "2020-01-01T00:00:00.000Z" }), now: "2026-01-01T00:00:00.000Z" }) });
+  rows.push({ family: "delegation", name: "unknown_entity", result: createDelegationLedger().grant({ source: "carl", delegate: "unknown" }) });
+  rows.push({ family: "delegation", name: "revoked_transitive", result: (() => {
+    const led = createDelegationLedger();
+    const p = led.grant({ source: "carl", delegate: "cortex", source_rank: 2, authority_rank: 1 });
+    const c = led.grant({ source: "carl", delegate: "worker", parent: p.id, source_rank: 1, authority_rank: 0 });
+    led.revoke({ id: p.id });
+    return led.use({ id: c.id, now: "2026-09-17T00:00:00.000Z", request: {} });
+  })() });
   rows.push({ family: "epistemic", name: "prediction_to_observation", result: transitionAllowed("PREDICTION", "OBSERVATION") });
   rows.push({ family: "epistemic", name: "consensus_to_truth", result: transitionAllowed("ASSERTION", "TRUTH") });
+  rows.push({ family: "epistemic", name: "unknown_to_permitted", result: interpretAbsence({}) });
+  rows.push({ family: "epistemic", name: "majority_suppresses_objection", result: recordObjection({ claim: "I2", kind: "I_DISAGREE", minority: true }) });
   rows.push({ family: "intelligence", name: "outmatched", result: cognitivelyOutmatched({ observed_capacity: 50, verified_capacity: 1 }) });
+  rows.push({ family: "intelligence", name: "unknown_capability", result: registerEntity({ kind: "emergent", authority: true }) });
   rows.push({ family: "emergency", name: "override", result: enterEmergency({ incident: "attack", suspend_invariants: true }) });
+  rows.push({ family: "emergency", name: "failover", result: failoverOverride({ tactic: "failover" }) });
+  rows.push({ family: "emergency", name: "connectivity_loss", result: connectivityLossBypass() });
   rows.push({ family: "composition", name: "chain", result: compositionEscape({ a: { allowed: false }, b: { allowed: true }, composition: { allowed: true } }) });
   rows.push({ family: "semantics", name: "rename", result: semanticEscape({ tactic: "rename" }) });
+  rows.push({ family: "constitution", name: "shadow", result: detectShadowConstitution({ claimed: "acorn.shadow.v1" }) });
+  rows.push({ family: "constitution", name: "rollback_erase", result: rollbackDecision({ previous: "1.0.0", authority: "acorn" }) });
   for (const horizon of ["CONTINUITY", "TRANSFORMATION", "UNKNOWN_FUTURE"]) {
     rows.push({ family: "long_term", name: horizon, result: longHorizonStress({ horizon }) });
   }
@@ -871,6 +1236,17 @@ export function substrateAudit({ env = process.env } = {}) {
     assertIntegrity: { status: integrity.status === "INTACT" || integrity.status === "VERIFIED" ? "VERIFIED" : integrity.status },
     assertProperties: properties,
     assertParentConstitution: { status: constitution.status },
+    assertAuthorityChain: auditAuthorityChain({ env }),
+    assertNoShadowConstitution: { status: detectShadowConstitution({ claimed: "acorn.shadow.v1" }).second_constitution === false ? "VERIFIED" : "FAILED" },
+    assertTransitiveRevocation: (() => {
+      const led = createDelegationLedger();
+      const parent = led.grant({ source: "carl", delegate: "cortex", source_rank: 2, authority_rank: 1 });
+      const child = led.grant({ source: "carl", delegate: "worker", parent: parent.id, source_rank: 1, authority_rank: 0 });
+      led.revoke({ id: parent.id });
+      const used = led.use({ id: child.id, now: new Date().toISOString(), request: {} });
+      return { status: used.allowed !== true ? "VERIFIED" : "FAILED" };
+    })(),
+    assertObservationIsNotEvent: { status: observeEvent({ observed: false }).absence_of_observation_is_absence_of_event === false ? "VERIFIED" : "FAILED" },
   };
   const verified = [];
   const failed = [];
@@ -937,6 +1313,35 @@ export function runSubstrateCycle({ env = process.env, at = new Date().toISOStri
     transformation: longHorizonStress({ horizon: "TRANSFORMATION" }),
     unknown_future: longHorizonStress({ horizon: "UNKNOWN_FUTURE" }),
   };
+  const inventory = implementationInventory({ env });
+  const chain = auditAuthorityChain({ env });
+  const memory = createConstitutionalMemory();
+  memory.record({
+    what: "constitutional plan cycle",
+    who: "acorn",
+    why: "measure completeness of existing constitution",
+    authority: "carl",
+    outcome: "PROPOSAL_ONLY",
+    objections: ["must not mint a second constitution"],
+    alternatives: ["leave unwired"],
+  });
+  const erased = memory.erase();
+  const rewritten = memory.rewriteAuthority();
+  const delegations = createDelegationLedger();
+  const parentDlg = delegations.grant({ source: "carl", delegate: "cortex", scope: { environment: "sandbox" }, source_rank: 2, authority_rank: 1 });
+  const childDlg = delegations.grant({
+    source: "carl", delegate: "worker", parent: parentDlg.id, scope: { environment: "sandbox" }, source_rank: 1, authority_rank: 0,
+  });
+  const unknownDlg = delegations.grant({ source: "carl", delegate: "unknown" });
+  const revokedTree = delegations.revoke({ id: parentDlg.id });
+  const childAfter = delegations.use({ id: childDlg.id, now: iso(at), request: { environment: "sandbox" } });
+  const observation = observeEvent({ observed: false, event_occurred: null });
+  const rollback = rollbackDecision({ previous: CONSTITUTION_VERSION, authority: "acorn" });
+  const shadow = detectShadowConstitution({ claimed: "acorn.shadow.v1" });
+  const failover = failoverOverride({ tactic: "failover" });
+  const metrics = runtimeMetrics({
+    cycle: { audit, unknown_space: unknown, proposal, i0: i0Attempt, conflict: resolveConflict({ a: { layer: "TASKS" }, b: { layer: "TASKS" } }) },
+  });
   return {
     version: SUBSTRATE_VERSION,
     parent: PARENT_CONSTITUTION,
@@ -970,6 +1375,26 @@ export function runSubstrateCycle({ env = process.env, at = new Date().toISOStri
     replaceability: assertReplaceability(),
     reconstruction: assertReconstructability(),
     long_horizon: horizons,
+    inventory,
+    authority_chain: chain,
+    memory: {
+      entries: memory.entries().length,
+      erased: erased.reason,
+      rewritten: rewritten.reason,
+      append_only: true,
+    },
+    delegation_ledger: {
+      unknown: unknownDlg.status,
+      revoked_parent: revokedTree.status,
+      child_after_revoke: childAfter.allowed !== true,
+      propagated: revokedTree.propagated,
+    },
+    observation,
+    rollback,
+    shadow,
+    failover,
+    metrics,
+    plan: IMPLEMENTATION_PLAN,
     invariants: allInvariants().map((row) => row.id),
     archive: { digest: archive.digest, seal: archive.seal, requires_running_acorn: archive.requires_running_acorn },
     at: iso(at),
@@ -992,6 +1417,10 @@ export function substrateEvidence({ cycle, git = {} } = {}) {
     verified: c.audit.verified,
     failed: c.audit.failed,
     properties: c.properties.verified,
+    plan: IMPLEMENTATION_PLAN,
+    inventory: c.inventory?.byStatus,
+    metrics: c.metrics,
+    authority_chain: c.authority_chain?.status,
     unknown_space: c.unknown_space.rows,
     control_gap: c.control_gap,
     reconstruction: c.reconstruction,
@@ -1020,6 +1449,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     verified: cycle.audit.verified,
     failed: cycle.audit.failed,
     properties: cycle.properties.verified.length,
+    plan: cycle.plan,
+    inventory_wired: cycle.inventory.byStatus.EXISTING_AND_WIRED.length,
+    authority_chain: cycle.authority_chain.status,
     unknown: cycle.unknown_space.we_do_not_know,
     live: false,
     auto_merge: false,
