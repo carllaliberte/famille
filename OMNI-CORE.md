@@ -67,6 +67,7 @@ QPU held, breaker denied, constitution denied.
 
 Schema: [`schema/omni-core.v0.json`](schema/omni-core.v0.json).
 Contract: [`scripts/acorn-omni-core.mjs`](scripts/acorn-omni-core.mjs).
+Registry: [`CAPABILITY.md`](CAPABILITY.md).
 
 UN GRAND CHANTIER N'EST PAS TERMINÉ PARCE QUE LE CODE EXISTE.
 DEFINED ≠ CODE VERIFIED ≠ TEST VERIFIED ≠ EXECUTED ≠ MEASURED ≠ LIVE VERIFIED.
