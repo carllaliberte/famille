@@ -79,6 +79,8 @@ export function cortexConstitution() {
     connector_belongs_to_cortex: true,
     no_direct_external_to_acorn: true,
     no_direct_acorn_to_external: true,
+    acorn_may_request_survival: true,
+    acorn_may_redefine_survival: false,
     auto_merge: false,
     live: false,
   };

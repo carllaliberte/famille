@@ -28,6 +28,7 @@
     "runtime:compute": "node scripts/acorn-compute-fabric.mjs",
     "runtime:omni": "node scripts/acorn-omni-core.mjs",
     "runtime:connector": "node scripts/acorn-connector-flux.mjs",
+    "runtime:survival": "node scripts/acorn-survival-policy.mjs",
     "runtime:autonomous": "node scripts/autonomous-runtime.mjs",
     "work:record": "node scripts/work-record.mjs",
     "effect:audit": "node -e \"import('./scripts/acorn-effect-governor.mjs').then(({auditEffectCoverage})=>console.log(JSON.stringify(auditEffectCoverage(),null,2)))\"",
@@ -77,6 +78,7 @@
     "./acorn-compute-fabric": "./scripts/acorn-compute-fabric.mjs",
     "./acorn-omni-core": "./scripts/acorn-omni-core.mjs",
     "./acorn-connector-flux": "./scripts/acorn-connector-flux.mjs",
+    "./acorn-survival-policy": "./scripts/acorn-survival-policy.mjs",
     "./compute-provider-adapters": "./scripts/compute-provider-adapters.mjs",
     "./autonomous-runtime": "./scripts/autonomous-runtime.mjs",
     "./cognitive-contract": "./.github/swarm/cognitive-contract.mjs"

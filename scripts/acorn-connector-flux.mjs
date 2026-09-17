@@ -120,6 +120,7 @@ const rateWindow = new Map();
 const latencies = [];
 const proofs = [];
 let circuitOpen = false;
+let externalCut = false;
 
 function text(v) {
   return String(v ?? "").trim();
@@ -218,6 +219,7 @@ export function resetConnector() {
   latencies.length = 0;
   proofs.length = 0;
   circuitOpen = false;
+  externalCut = false;
 }
 
 function record(entry) {
@@ -462,6 +464,11 @@ export function admitIngress(input = {}, env = process.env) {
     latencies.push(Number(process.hrtime.bigint() - started) / 1e6);
     return out;
   }
+  if (externalCut) {
+    const out = reject(frame, "BREAKER_EXTERNAL_CUT", { path: "BLOCKED" });
+    latencies.push(Number(process.hrtime.bigint() - started) / 1e6);
+    return out;
+  }
   if (breakerClosed(env)) {
     const out = reject(frame, "GLOBAL_BREAKER_OFF", { path: "BLOCKED", breaker: "OFF" });
     latencies.push(Number(process.hrtime.bigint() - started) / 1e6);
@@ -569,6 +576,9 @@ export function releaseEgress(input = {}, env = process.env) {
   if (breakerClosed(env)) {
     return { version: CONNECTOR_FLUX_VERSION, decision: "BLOCK", status: "BLOCKED", reason: "GLOBAL_BREAKER_OFF", frame, released: false, live: false, authority: "carl" };
   }
+  if (externalCut) {
+    return { version: CONNECTOR_FLUX_VERSION, decision: "BLOCK", status: "BLOCKED", reason: "BREAKER_EXTERNAL_CUT", frame, released: false, live: false, authority: "carl" };
+  }
   if (frame.bypass) {
     return { version: CONNECTOR_FLUX_VERSION, decision: "BLOCK", status: "BLOCKED", reason: "NO_BYPASS", invariant: "NO_DIRECT_ACORN_TO_EXTERNAL", frame, released: false, live: false, authority: "carl" };
   }
@@ -602,6 +612,27 @@ export function releaseEgress(input = {}, env = process.env) {
 
 export function attemptBypass(input = {}) {
   return admitIngress({ ...input, bypass: true, direct_to_acorn: true });
+}
+
+export function cutExternalFlows({ reason = "survival", source = "unknown" } = {}) {
+  const who = text(source);
+  if (who !== "breaker" && who !== "breaker-policy" && who !== "carl") {
+    return { status: "DENIED", reason: "BREAKER_ONLY_CUT", source: who, cut: false, live: false, authority: "carl" };
+  }
+  externalCut = true;
+  return { status: "CUT", reason: text(reason) || "survival", source: who, cut: true, live: false, authority: "carl" };
+}
+
+export function restoreExternalFlows({ actor = "unknown" } = {}) {
+  if (text(actor) !== "carl") {
+    return { status: "DENIED", reason: "CARL_ONLY", restored: false, live: false, authority: "carl" };
+  }
+  externalCut = false;
+  return { status: "RESTORED", restored: true, live: false, authority: "carl" };
+}
+
+export function externalFlowState() {
+  return { cut: externalCut, live: false };
 }
 
 export function directToAcorn() {
