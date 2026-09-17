@@ -10,6 +10,7 @@
     "system:official-seal": "node scripts/official-seal.mjs",
     "live:probe": "node scripts/live-proof.mjs",
     "runtime:continuous": "node scripts/acorn-continuous-runtime.mjs",
+    "runtime:organism": "node scripts/acorn-continuous-runtime.mjs",
     "runtime:civilizational": "node scripts/acorn-civilizational.mjs",
     "runtime:ecology": "node scripts/acorn-cognitive-ecology.mjs",
     "runtime:cognition": "node scripts/acorn-continuous-cognition.mjs",
