@@ -263,7 +263,7 @@ export function runWorker(opts = {}) {
   return { ...evidence, cycle_state: { memory: nextMemory, ranking, record: measurementRecord, feedback } };
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const evidence = runWorker({
     evidencePath: process.env.WORKER_EVIDENCE || "worker-evidence.json",
     memoryPath: process.env.SYNAPTIC_MEMORY || "synaptic-memory.json",
