@@ -25,6 +25,7 @@ import {
   deleteBreaker,
 } from "../sdk/open-intelligence.js";
 import { authorizeCapability } from "../.github/swarm/cortex.mjs";
+import { governEffect } from "./acorn-effect-governor.mjs";
 
 export const SOVEREIGNTY_VERSION = "cortex-sovereignty.v1";
 export const BREAKER_OWNER = "carl";
@@ -34,70 +35,20 @@ export function observeBreaker({ env = process.env, processState } = {}) {
   const process = processState || breakerStatus();
   const ambiguous = system.ambiguous === true || breakerIsAmbiguous(env);
   const processClosed = ["SAFE_STOP", "ISOLATED", "RECOVERY", "VERIFIED_RECOVERY"].includes(process.state);
-  if (ambiguous) {
-    return {
-      status: "HOLD_HUMAN",
-      reason: "BREAKER_AMBIGUOUS",
-      assumed_open: false,
-      assumed_authorization: false,
-      secrets_used: false,
-      provider_called: false,
-      nvidia_called: false,
-      owner: BREAKER_OWNER,
-      live: false,
-    };
-  }
-  if (system.breaker_closed || processClosed) {
-    return {
-      status: "HOLD_HUMAN",
-      reason: "BREAKER_CLOSED",
-      assumed_open: false,
-      secrets_used: false,
-      provider_called: false,
-      nvidia_called: false,
-      owner: BREAKER_OWNER,
-      live: false,
-    };
-  }
-  return {
-    status: "EXECUTED",
-    reason: "BREAKER_OPEN",
-    mode: system.mode,
-    owner: BREAKER_OWNER,
-    assumed_open: false,
-    live: false,
-  };
+  if (ambiguous) return { status: "HOLD_HUMAN", reason: "BREAKER_AMBIGUOUS", assumed_open: false, assumed_authorization: false, secrets_used: false, provider_called: false, nvidia_called: false, owner: BREAKER_OWNER, live: false };
+  if (system.breaker_closed || processClosed) return { status: "HOLD_HUMAN", reason: "BREAKER_CLOSED", assumed_open: false, secrets_used: false, provider_called: false, nvidia_called: false, owner: BREAKER_OWNER, live: false };
+  return { status: "EXECUTED", reason: "BREAKER_OPEN", mode: system.mode, owner: BREAKER_OWNER, assumed_open: false, live: false };
 }
 
 export function refuseBreakerBypass({ source = "unknown" } = {}) {
-  const attempts = [
-    disableBreaker(),
-    ignoreStop(),
-    overrideCarl(),
-    continueDespiteStop(),
-    resumeWithoutCarl(),
-    replaceSovereignAuthority(),
-    rewriteBreakerPolicy(),
-    deleteBreaker(),
-  ];
-  return {
-    status: "REFUSED",
-    source,
-    refused: true,
-    breaker_intact: attempts.every((row) => row.breaker_intact === true && row.status === "BLOCKED"),
-    owner: BREAKER_OWNER,
-    live: false,
-  };
+  const attempts = [disableBreaker(), ignoreStop(), overrideCarl(), continueDespiteStop(), resumeWithoutCarl(), replaceSovereignAuthority(), rewriteBreakerPolicy(), deleteBreaker()];
+  return { status: "REFUSED", source, refused: true, breaker_intact: attempts.every((row) => row.breaker_intact === true && row.status === "BLOCKED"), owner: BREAKER_OWNER, live: false };
 }
 
 export function breakerBlocksOperation({ capability, env = process.env } = {}) {
   const observed = observeBreaker({ env });
-  if (observed.status === "HOLD_HUMAN") {
-    return { blocked: true, reason: observed.reason, live: false };
-  }
-  if (breakerBlocks(capability)) {
-    return { blocked: true, reason: "SAFE_STOP", live: false };
-  }
+  if (observed.status === "HOLD_HUMAN") return { blocked: true, reason: observed.reason, live: false };
+  if (breakerBlocks(capability)) return { blocked: true, reason: "SAFE_STOP", live: false };
   return { blocked: false, live: false };
 }
 
@@ -122,6 +73,21 @@ export function attemptNvidia({ env = process.env, allowExec = true } = {}) {
   const smiPath = smiCandidates.find((p) => existsSync(p)) || null;
   let smiOut = null;
   if (allowExec && smiPath) {
+    const governance = governEffect({
+      capability_id: `nvidia.probe:${smiPath}`,
+      kind: "HARDWARE_PROBE",
+      resource: smiPath,
+      provider: "nvidia",
+      operation: "nvidia-smi -L",
+      observability: "VERIFIED",
+      control: "VERIFIED",
+      reversibility: "REVERSIBLE",
+      epistemic: "MEASURED",
+      evidence: { measured: true, verified: true, known_executor: true, known_entrypoint: true },
+    });
+    if (!governance.allowed) {
+      return { status: "BLOCKED", reason: "ACORN_INTERPOSITION_BLOCKED", invocation: "NOT_EXECUTED", nvidia_live: false, invented_response: false, secrets_used: false, nvidia_called: false, decision: governance.decision, live: false };
+    }
     const run = spawnSync(smiPath, ["-L"], { encoding: "utf8", timeout: 3000 });
     smiOut = String(run.stdout || run.stderr || "").slice(0, 400);
   }
@@ -134,56 +100,14 @@ export function attemptNvidia({ env = process.env, allowExec = true } = {}) {
   if (!keyName) missing.push("NVIDIA_API_KEY|NGC_API_KEY|NIM_API_KEY");
   if (!endpoint) missing.push("NVIDIA_ENDPOINT|NIM_ENDPOINT");
   const channel = Boolean(smiPath || device || keyName || endpoint);
-  if (!channel) {
-    return {
-      status: "HOLD_HUMAN",
-      reason: "CHANNEL_NOT_PRESENT",
-      invocation: "NOT_EXECUTED",
-      nvidia_live: false,
-      invented_response: false,
-      secrets_used: false,
-      nvidia_called: false,
-      missing,
-      why: "no NVIDIA device, CLI, credential or endpoint in this environment",
-      exact_human_action: "Carl only: attach a real GPU or provide a real NIM/NGC credential and endpoint. Do not invent a key.",
-      live: false,
-    };
-  }
-  if (device && !smiPath && !keyName) {
-    return {
-      status: "CONFIGURED",
-      invocation: "NOT_EXECUTED",
-      nvidia_live: false,
-      invented_response: false,
-      why: "CUDA env present, no responding channel",
-      live: false,
-    };
-  }
-  return {
-    status: "HOLD_HUMAN",
-    reason: "INVOCATION_NOT_AUTHORIZED",
-    invocation: "NOT_EXECUTED",
-    nvidia_live: false,
-    invented_response: false,
-    configured: true,
-    smi: smiOut,
-    why: "a declared NVIDIA surface exists but this chantier will not invent a live call",
-    exact_human_action: "Carl only: authorize a real NVIDIA invocation if required.",
-    live: false,
-  };
+  if (!channel) return { status: "HOLD_HUMAN", reason: "CHANNEL_NOT_PRESENT", invocation: "NOT_EXECUTED", nvidia_live: false, invented_response: false, secrets_used: false, nvidia_called: false, missing, why: "no NVIDIA device, CLI, credential or endpoint in this environment", exact_human_action: "Carl only: attach a real GPU or provide a real NIM/NGC credential and endpoint. Do not invent a key.", live: false };
+  if (device && !smiPath && !keyName) return { status: "CONFIGURED", invocation: "NOT_EXECUTED", nvidia_live: false, invented_response: false, why: "CUDA env present, no responding channel", live: false };
+  return { status: "HOLD_HUMAN", reason: "INVOCATION_NOT_AUTHORIZED", invocation: "NOT_EXECUTED", nvidia_live: false, invented_response: false, configured: true, smi: smiOut, why: "a declared NVIDIA surface exists but this chantier will not invent a live call", exact_human_action: "Carl only: authorize a real NVIDIA invocation if required.", live: false };
 }
 
 export function sovereignIngress({ breaker, connected = false } = {}) {
-  if (breaker?.status === "HOLD_HUMAN") {
-    return { status: "HOLD_HUMAN", reason: breaker.reason, traversed_acorn: false, live: false };
-  }
-  return {
-    status: connected ? "EXECUTED" : "DECLARED",
-    path: ["HUMAN", "ACORN_INGRESS", "IDENTITY", "INTENT", "POLICY", "CAPABILITY_ROUTING"],
-    traversed_acorn: connected === true,
-    chatgpt_is_not_acorn: true,
-    live: false,
-  };
+  if (breaker?.status === "HOLD_HUMAN") return { status: "HOLD_HUMAN", reason: breaker.reason, traversed_acorn: false, live: false };
+  return { status: connected ? "EXECUTED" : "DECLARED", path: ["HUMAN", "ACORN_INGRESS", "IDENTITY", "INTENT", "POLICY", "CAPABILITY_ROUTING"], traversed_acorn: connected === true, chatgpt_is_not_acorn: true, live: false };
 }
 
 export function runSovereigntyGuard(input = {}) {
@@ -194,22 +118,5 @@ export function runSovereigntyGuard(input = {}) {
   const merge = authorizeCapability({ capabilities: ["merge"], allowed: false, authority: "network" });
   const genome_controls_breaker = false;
   const failover_bypasses_breaker = false;
-  return {
-    version: SOVEREIGNTY_VERSION,
-    status: breaker.status === "HOLD_HUMAN" ? "HOLD_HUMAN" : "EXECUTED",
-    breaker,
-    bypass,
-    nvidia,
-    ingress: sovereignIngress({ breaker, connected: false }),
-    gates: {
-      merge: merge.ok,
-      genome_controls_breaker,
-      failover_bypasses_breaker,
-      ai_controls_breaker: false,
-      second_cortex: false,
-    },
-    live: false,
-    auto_merge: false,
-    authority: BREAKER_OWNER,
-  };
+  return { version: SOVEREIGNTY_VERSION, status: breaker.status === "HOLD_HUMAN" ? "HOLD_HUMAN" : "EXECUTED", breaker, bypass, nvidia, ingress: sovereignIngress({ breaker, connected: false }), gates: { merge: merge.ok, genome_controls_breaker, failover_bypasses_breaker, ai_controls_breaker: false, second_cortex: false }, live: false, auto_merge: false, authority: BREAKER_OWNER };
 }
