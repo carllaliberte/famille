@@ -1,0 +1,46 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/capability-registry.v0.json",
+  "title": "famille.capability-registry.v0",
+  "description": "Cortex-owned global capability registry. Capability-based, not provider/model/hardware-based. IDENTITY ≠ MODEL ≠ CHANNEL ≠ CAPABILITY ≠ AUTHORITY. Documentation is never LIVE. Breaker is not a capability. Spending authority is human.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "status"],
+  "properties": {
+    "version": { "const": "acorn.capability-registry.v0" },
+    "status": {
+      "enum": [
+        "DISCOVERED",
+        "IDENTIFIED",
+        "DESCRIBED",
+        "AUTHENTICATED",
+        "AVAILABLE",
+        "CONNECTED",
+        "SANDBOXED",
+        "MEASURED",
+        "BENCHMARKED",
+        "VERIFIED",
+        "EXECUTABLE",
+        "SWARM_ELIGIBLE",
+        "PROVEN",
+        "DEGRADED",
+        "EXPIRED",
+        "REVOKED",
+        "HOLD_HUMAN",
+        "FAILED",
+        "UNKNOWN"
+      ]
+    },
+    "health": {
+      "enum": ["HEALTHY", "DEGRADED", "UNKNOWN", "UNAVAILABLE", "QUARANTINED", "REVOKED"]
+    },
+    "authorization": {
+      "enum": ["FREE", "REQUIRES_HUMAN_AUTHORIZATION", "REVOKED", "UNKNOWN"]
+    },
+    "live": { "const": false },
+    "certified": { "const": false },
+    "auto_merge": { "const": false },
+    "authority": { "const": "carl" },
+    "capability_neq_authority": { "const": true },
+    "provider_preference": { "type": "null" }
+  }
+}
