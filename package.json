@@ -34,6 +34,7 @@
     "./acorn-governability": "./scripts/acorn-governability.mjs",
     "./acorn-cognitive-ecology": "./scripts/acorn-cognitive-ecology.mjs",
     "./acorn-cognitive-reality-fabric": "./scripts/acorn-cognitive-reality-fabric.mjs",
+    "./acorn-governable-continuity": "./scripts/acorn-governable-continuity.mjs",
     "./acorn-experiment": "./scripts/acorn-experiment.mjs",
     "./acorn-replaceability": "./scripts/acorn-replaceability.mjs",
     "./acorn-civilizational": "./scripts/acorn-civilizational.mjs",

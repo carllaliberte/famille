@@ -1,0 +1,27 @@
+name: governable-continuity-verify
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/acorn-governable-continuity.mjs'
+      - 'test/acorn-governable-continuity.test.js'
+      - 'package.json'
+      - '.github/workflows/governable-continuity-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax
+        run: node --check scripts/acorn-governable-continuity.mjs
+      - name: Focused governable continuity tests
+        run: node --test test/acorn-governable-continuity.test.js
