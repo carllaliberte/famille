@@ -90,6 +90,8 @@ Isolation client : `client` dans [schema/cognition.v0.json](schema/cognition.v0.
 Appel : `node .github/swarm/cognition.mjs --client demo "problème réel"`.
 CONNECTED reste 0 sans clé. HOLD_HUMAN. Jamais LIVE depuis le code.
 
+Compute (CPU, GPU, QPU, accélérateurs futurs) est une **ressource** du Cortex, pas une intelligence et pas un second cerveau. Voir [COMPUTE.md](COMPUTE.md). CAPABILITY ≠ AUTHORITY. Non mesuré = UNKNOWN.
+
 ---
 
 ## Ce que ce n'est pas

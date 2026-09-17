@@ -63,6 +63,11 @@ export function cortexConstitution() {
     objective_is_not_authorization: true,
     learning_is_not_unverified_auto_modification: true,
     defense_is_internal_to_acorn: true,
+    compute_is_resource: true,
+    compute_is_not_intelligence: true,
+    qpu_is_not_intelligence: true,
+    gpu_is_not_intelligence: true,
+    provider_is_not_intelligence: true,
     auto_merge: false,
     live: false,
   };

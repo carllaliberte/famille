@@ -21,6 +21,7 @@ import {
 import { presenceFromRuntime, runOrganismCycle } from "./cortex-organism.mjs";
 import { runIntelligenceContract } from "./intelligence-contract.mjs";
 import { learnCortexExperience } from "./cortex-learning-cycle.mjs";
+import { snapshotComputeFabric } from "./acorn-compute-fabric.mjs";
 
 function readJson(path, fallback) {
   try {
@@ -181,7 +182,9 @@ export function runCortexRuntime({
     model: { version: 1 },
     verification: { verified: evolution.verification?.verdict === "VERIFIED_SUCCESS" },
   });
-  session = stage(session, "DONE", "Cortex observation + evolution + organism + intelligence contract completed");
+  session = stage(session, "DONE", "Cortex observation + evolution + organism + intelligence + compute fabric completed");
+
+  const compute = snapshotComputeFabric({ env, now: at });
 
   return {
     version: "cortex-runtime.v0",
@@ -198,6 +201,7 @@ export function runCortexRuntime({
     organism,
     intelligence,
     learning,
+    compute,
     worker_evidence_ref: workerEvidence.v || null,
   };
 }

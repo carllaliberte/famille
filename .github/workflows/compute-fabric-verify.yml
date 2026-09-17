@@ -1,0 +1,21 @@
+name: compute-fabric-verify
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run compute fabric contract
+        run: node --test test/acorn-compute-fabric.test.js
+      - name: Honest local proof loop
+        run: node scripts/acorn-compute-fabric.mjs
