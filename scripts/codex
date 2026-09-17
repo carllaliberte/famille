@@ -24,6 +24,16 @@ case "${1:-}" in
     ;;
 esac
 
+GATE_FILE="${GITHUB_WORKSPACE:-$SELF_DIR}/scripts/codex-interposition-gate.mjs"
+if [ ! -f "$GATE_FILE" ]; then
+  GATE_FILE="$SELF_DIR/codex-interposition-gate.mjs"
+fi
+if [ ! -f "$GATE_FILE" ]; then
+  echo "ACORN_CODEX_INTERPOSITION missing gate; refusing execution" >&2
+  exit 126
+fi
+node "$GATE_FILE" "$@"
+
 PROVIDER="$(printf '%s' "${CODEX_PROVIDER:-}" | tr '[:upper:]' '[:lower:]')"
 case "$PROVIDER" in
   openai|chatgpt|codex)
