@@ -10,9 +10,11 @@ import {
   assertCortexInvariant,
 } from "../scripts/cortex-cognition.mjs";
 
-test("Cortex hierarchy places cognition before Acorn substrate", () => {
+test("Cortex is the adaptive cognitive component inside Acorn", () => {
   const c = cortexConstitution();
-  assert.deepEqual(c.hierarchy, ["CARL", "BREAKER", "CORTEX", "ACORN", "RESOURCES"]);
+  assert.deepEqual(c.hierarchy, ["CARL", "BREAKER", "ACORN", "CORTEX", "RESOURCES"]);
+  assert.equal(c.cortex_belongs_to_acorn, true);
+  assert.equal(c.acorn_owns_cortex, true);
   assert.equal(c.one_cortex, true);
   assert.equal(c.second_cortex, false);
   assert.equal(c.capability_is_not_authority, true);
@@ -57,7 +59,7 @@ test("falsification blocks an explicitly contradicted claim", () => {
   assert.equal(result.verified, false);
 });
 
-test("full Cortex cycle preserves sovereignty and does not auto-merge", () => {
+test("full Cortex cycle preserves Acorn containment and sovereignty", () => {
   const result = cortexCycle({
     task: { id: "integration", required_capabilities: ["review"] },
     resources: [{ id: "local-review", provider: "acorn", capabilities: ["review"], presence: "CONNECTED" }],
@@ -66,6 +68,8 @@ test("full Cortex cycle preserves sovereignty and does not auto-merge", () => {
     evidence: { executed: true, verified: true },
   });
   assert.equal(result.status, "VERIFIED");
+  assert.equal(result.constitution.cortex_belongs_to_acorn, true);
+  assert.equal(result.constitution.acorn_owns_cortex, true);
   assert.equal(result.authority, "carl");
   assert.equal(result.breaker_bypass, false);
   assert.equal(result.auto_merge, false);
