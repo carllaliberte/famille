@@ -19,6 +19,7 @@ test("Cortex is the adaptive cognitive component inside Acorn", () => {
   assert.equal(c.second_cortex, false);
   assert.equal(c.capability_is_not_authority, true);
   assert.equal(c.provider_is_not_authority, true);
+  assert.equal(c.defense_is_internal_to_acorn, true);
 });
 
 test("routing is capability-oriented and provider-neutral", () => {
@@ -59,13 +60,14 @@ test("falsification blocks an explicitly contradicted claim", () => {
   assert.equal(result.verified, false);
 });
 
-test("full Cortex cycle preserves Acorn containment and sovereignty", () => {
+test("full Cortex cycle preserves Acorn containment, defense and sovereignty", () => {
   const result = cortexCycle({
     task: { id: "integration", required_capabilities: ["review"] },
     resources: [{ id: "local-review", provider: "acorn", capabilities: ["review"], presence: "CONNECTED" }],
     expected: 10,
     observed: 9,
     evidence: { executed: true, verified: true },
+    defense: { breaker: "OPEN" },
   });
   assert.equal(result.status, "VERIFIED");
   assert.equal(result.constitution.cortex_belongs_to_acorn, true);
@@ -73,6 +75,21 @@ test("full Cortex cycle preserves Acorn containment and sovereignty", () => {
   assert.equal(result.authority, "carl");
   assert.equal(result.breaker_bypass, false);
   assert.equal(result.auto_merge, false);
+  assert.equal(result.defense.state, "HEALTHY");
   assert.equal(result.live, false);
   assert.equal(assertCortexInvariant(result).status, "VERIFIED");
+});
+
+test("Cortex refuses verification when the defensive boundary is ambiguous", () => {
+  const result = cortexCycle({
+    task: { id: "protected", required_capabilities: ["review"] },
+    resources: [{ id: "reviewer", provider: "resource", capabilities: ["review"], presence: "CONNECTED" }],
+    expected: 1,
+    observed: 1,
+    evidence: { executed: true, verified: true },
+    defense: { breaker: "AMBIGUOUS" },
+  });
+  assert.equal(result.status, "EXECUTED");
+  assert.equal(result.defense.state, "HOLD_HUMAN");
+  assert.equal(result.defense.breaker_bypass, false);
 });
