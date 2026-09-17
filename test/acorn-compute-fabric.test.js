@@ -477,3 +477,15 @@ test("Cortex runtime snapshot includes compute fabric without inventing LIVE", (
   assert.equal(result.compute.live, false);
   assert.equal(result.compute.version, COMPUTE_FABRIC_VERSION);
 });
+
+
+test("GPU discovery never falls back to CPU execution", async () => {
+  const adapter = localAdapter();
+  const found = adapter.discoverSync({ now: "2026-09-17T18:00:00.000Z", allowExec: false, gpuProbe: { present: true, gpu_count: 1, source: "test" } });
+  const gpu = found.resources.find((r) => r.compute_type === "gpu");
+  assert.ok(gpu);
+  const result = await adapter.execute(gpu, { type: "compute" }, { now: "2026-09-17T18:00:00.000Z" });
+  assert.equal(result.status, "HOLD_HUMAN");
+  assert.equal(result.reason, "GPU_RUNTIME_NOT_IMPLEMENTED");
+  assert.equal(result.result, undefined);
+});
