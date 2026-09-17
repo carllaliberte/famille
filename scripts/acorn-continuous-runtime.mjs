@@ -34,6 +34,7 @@ import { cortexCycle, cortexConstitution, composeOrganism, declareMeaning, diagn
 import { measureAutonomy, autonomyBudget } from "./autonomous-runtime.mjs";
 import { learnCortexExperience } from "./cortex-learning-cycle.mjs";
 import { expireEvidence, sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
+import { intelligenceDiscoveryLoop, measureWorld } from "./intelligence-ecosystem.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
 
@@ -332,6 +333,11 @@ export async function runContinuousRuntime({
     }),
     diagnosis,
   });
+  const intelligence = intelligenceDiscoveryLoop({
+    world: measureWorld({ env: process.env, root }),
+    need: "review",
+    env: process.env,
+  });
   const metrics = organismMetrics({
     runtime_coverage: inventory.coverage.execution_coverage,
     capability_discovery_rate: inventory.coverage.discovered_count,
@@ -412,6 +418,32 @@ export async function runContinuousRuntime({
     meaning,
     science: { status: science.status, live: false, auto_merge: false },
     diagnosis,
+    intelligence: {
+      version: intelligence.version,
+      status: intelligence.status,
+      closed_list: false,
+      allowlist: false,
+      named_is_not_connected: true,
+      api_is_not_required: true,
+      second_cortex: false,
+      counts: intelligence.counts,
+      nvidia: intelligence.nvidia
+        ? { state: intelligence.nvidia.state, missing: intelligence.nvidia.missing, live: false }
+        : null,
+      families: intelligence.discoveries.map((row) => ({
+        id: row.identity,
+        family: row.family,
+        state: row.state,
+        authenticated: row.authenticated,
+        callable: row.callable,
+        executed: row.executed,
+        verified: row.verified,
+        live: false,
+        missing: row.missing,
+      })),
+      unknown: { state: intelligence.unknown.state, cortex_modified: intelligence.admitted.cortex_modified, live: false },
+      live: false,
+    },
     organism,
     metrics,
     time: stampTime({ at, observed_at: at }),

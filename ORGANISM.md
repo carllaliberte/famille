@@ -34,6 +34,7 @@ Carte des **organes déjà présents** dans FAMILLE, plus quelques adaptateurs m
 | Continuité | découverte → câblage → mesure → preuve | `scripts/acorn-continuous-runtime.mjs` — pas un second runtime |
 | Souveraineté cognitive | capability ≠ authority, autonomie mesurable | `measureAuthorityEnvelope` · `autonomyBudget` — pas un second organe |
 | Sens / action / diagnostic | purpose humain ≠ objectif dérivé ; décision ≠ action | `declareMeaning` · `authorizeAction` · `diagnoseConflict` |
+| Écosystème d’intelligences | découvrir des canaux, pas des marques | `discoverIntelligenceChannels` · `connectionOpportunity` |
 
 ## Boucle
 
