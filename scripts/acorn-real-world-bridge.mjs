@@ -64,12 +64,12 @@ export function buildExternalCall({connector,path="",method="GET",body=null,huma
     idempotency_key:idempotency_key||uid("idem"),human_authorized:Boolean(human_authorized),
     authority:false,external_effect:false,created_at:ISO()};
 }
-export async function executeExternalCall(call,{fetchImpl=globalThis.fetch}={}){
+export async function executeExternalCall(call,{fetchImpl=globalThis.fetch,credential=null}={}){
   if(call?.state!=="AUTHORIZED") return {...call,completed_at:ISO()};
   if(typeof fetchImpl!=="function") return {...call,state:"BLOCKED",reason:"FETCH_UNAVAILABLE",completed_at:ISO()};
   const started=ISO(),headers={"accept":"application/json",...(call.body?{"content-type":"application/json"}:{}),
     "x-acorn-execution-id":call.id,"idempotency-key":call.idempotency_key};
-  // The secret itself never enters the call record. It is read only at execution time.
+  if(credential) headers.authorization=`Bearer ${credential}`;
   const response=await fetchImpl(call.url,{method:call.method,headers,body:call.body?JSON.stringify(call.body):undefined});
   const text=await response.text();
   let output=text; try{output=JSON.parse(text)}catch{}
