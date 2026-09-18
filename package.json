@@ -152,7 +152,8 @@
     "./acorn-first-enterprise-proof": "./scripts/acorn-first-enterprise-proof.mjs",
     "./acorn-intelligence-fabric": "./scripts/acorn-intelligence-fabric.mjs",
     "./acorn-connector-registry": "./scripts/acorn-connector-registry.mjs",
-    "./acorn-runtime-orchestrator": "./scripts/acorn-runtime-orchestrator.mjs"
+    "./acorn-runtime-orchestrator": "./scripts/acorn-runtime-orchestrator.mjs",
+    "./acorn-execution-evidence-loop": "./scripts/acorn-execution-evidence-loop.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
