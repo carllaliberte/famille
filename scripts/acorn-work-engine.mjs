@@ -24,6 +24,8 @@ import { executeComputeTask, snapshotComputeFabric } from "./acorn-compute-fabri
 import { runUniversalComputeSweep } from "./acorn-universal-compute-sweep.mjs";
 import { runValueOpportunityCycle } from "./acorn-value-opportunity-fabric.mjs";
 import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
+import { humanAttentionBudget } from "./acorn-human-attention-fabric.mjs";
+import { settlementPolicy } from "./acorn-settlement-fabric.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
   limitsFromEnv,
@@ -104,6 +106,30 @@ export function canonicalWorkFromRuntime(runtime) {
     cost: 0.1,
     execution_kind: "connection-sweep",
   }, "connections");
+
+  push({
+    id: "human-attention-sweep",
+    subject: "minimize human attention and surface only actionable decisions",
+    information_gain: 1,
+    capability_gain: 0.9,
+    risk_reduction: 0.95,
+    uncertainty: 0.5,
+    reversibility: 1,
+    cost: 0.05,
+    execution_kind: "human-attention",
+  }, "human-attention");
+
+  push({
+    id: "settlement-readiness",
+    subject: "discover verified payment settlement readiness without custody or auto-spend",
+    information_gain: 1,
+    capability_gain: 0.8,
+    risk_reduction: 0.9,
+    uncertainty: 0.9,
+    reversibility: 1,
+    cost: 0.05,
+    execution_kind: "settlement-readiness",
+  }, "settlement");
 
   push({
     id: "universal-compute-sweep",
@@ -208,6 +234,16 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
     const result = runValueOpportunityCycle({ opportunities: task.opportunities || [], observations: task.observations || [] });
     return { status:"COMPLETED", duration_ms:Date.now()-started, executor:"value-opportunity-fabric", value:result, stdout_tail:"", stderr_tail:"" };
   }
+  if (kind === "human-attention") {
+    const started = Date.now();
+    const result = humanAttentionBudget({ items: task.items || [], budget: task.budget || 3 });
+    return { status: "COMPLETED", duration_ms: Date.now() - started, executor: "human-attention-fabric", attention: result, stdout_tail: "", stderr_tail: "" };
+  }
+  if (kind === "settlement-readiness") {
+    const started = Date.now();
+    const result = settlementPolicy();
+    return { status: "COMPLETED", duration_ms: Date.now() - started, executor: "settlement-fabric", settlement: result, stdout_tail: "", stderr_tail: "" };
+  }
   if (kind === "connection-sweep") {
     const started = Date.now();
     const result = await runConnectionSweep({ env, now: new Date().toISOString() });
@@ -277,6 +313,8 @@ export function executorPolicy({ env = process.env } = {}) {
 
 function defaultTaskFor(row, env = process.env) {
   if (row.execution_kind === "value-opportunity") return { ...row, execution_kind:"value-opportunity", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "human-attention") return { ...row, execution_kind: "human-attention", resource_cost: { actions: 1, cpu_ms: 10000 } };
+  if (row.execution_kind === "settlement-readiness") return { ...row, execution_kind: "settlement-readiness", resource_cost: { actions: 1, cpu_ms: 10000 } };
   if (row.execution_kind === "connection-sweep") {
     return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
