@@ -377,14 +377,21 @@ export function assertContinuousEvolutionContract(result = {}) {
   return true;
 }
 
-if (import.meta.url === "file://" + process.argv[1]) {
-  const result = runContinuousEvolution({
+function loadEvolutionInput(path) {
+  if (path) return JSON.parse(require("node:fs").readFileSync(path, "utf8"));
+  if (process.env.ACORN_EVOLUTION_SNAPSHOT) return JSON.parse(process.env.ACORN_EVOLUTION_SNAPSHOT);
+  return {
     repository: process.env.GITHUB_REPOSITORY || "carllaliberte/famille",
     main_sha: process.env.GITHUB_SHA || "UNKNOWN",
-    observations: [
-      { id: "runtime:unknown", domain: "UNKNOWN", status: "UNKNOWN", unknown: true, value_potential: 0.7, capability_gain: 0.8 }
-    ]
-  });
+    observations: []
+  };
+}
+
+if (import.meta.url === "file://" + process.argv[1]) {
+  const input = process.argv[2] ? loadEvolutionInput(process.argv[2]) : loadEvolutionInput(null);
+  const result = runContinuousEvolution(input);
   assertContinuousEvolutionContract(result);
+  const output = process.env.ACORN_EVOLUTION_OUTPUT;
+  if (output) require("node:fs").writeFileSync(output, JSON.stringify(result, null, 2) + "\\n");
   console.log(JSON.stringify(result, null, 2));
 }
