@@ -1,6 +1,7 @@
 name: ACORN Parabolic Universal Reality Convergence
 on:
   workflow_dispatch:
+  pull_request:
   push:
     paths:
       - scripts/acorn-parabolic-universal-reality-convergence.mjs
