@@ -1,0 +1,11 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {assertRealityContract,createIntent,compileIntentToRealityPlan,registerCapabilityOutcome,benchmarkOutcome,chooseRoute,authorizeAction,closeRealityLoop} from "../scripts/acorn-universal-reality-engine.mjs";
+test("constitutional boundaries",()=>assert.equal(assertRealityContract(),true));
+test("intent compiles",()=>{const i=createIntent({id:"i:1",objective:"deliver x",requirements:["a"],constraints:["b"]});const p=compileIntentToRealityPlan(i);assert.equal(p.ok,true);assert.equal(p.tasks.length,2);});
+test("unmeasured cannot register",()=>assert.equal(registerCapabilityOutcome({measured:false,verified:true,evidence:["e"]}).registered,false));
+test("verified measured evidence registers",()=>assert.equal(registerCapabilityOutcome({capability_id:"c:1",measured:true,verified:true,evidence:["e"]}).registered,true));
+test("best known is scoped",()=>{const r=benchmarkOutcome({id:"a",scope:"code",verified:true,measured:true,quality:.9,cost:2,latency:3},[{id:"b",scope:"code",verified:true,measured:true,quality:.8,cost:1,latency:2}]);assert.equal(r.best_known_in_scope,true);});
+test("routing requires evidence",()=>{const r=chooseRoute([{id:"bad",available:true,authorized:true,evidence:false,quality:1,cost:0,latency:1,reliability:1},{id:"good",available:true,authorized:true,evidence:true,evidence_score:1,quality:.9,cost:1,latency:1,reliability:1}]);assert.equal(r.route.id,"good");});
+test("terminal authority remains human",()=>assert.equal(authorizeAction({kind:"MONEY",human_authorized:true,server_authorized:true}).authorized,false));
+test("safe execution needs explicit authorization",()=>{assert.equal(authorizeAction({kind:"READ"}).authorized,false);assert.equal(authorizeAction({kind:"READ",human_authorized:true,server_authorized:true}).authorized,true);});
+test("reality loop only closes with evidence",()=>{const r=closeRealityLoop({intent:{id:"i"},outcome:{id:"o",executed:true,measured:true,verified:true,evidence:["e"],capability_id:"c"}});assert.equal(r.state,"VALUE_LOOP_CLOSED");});
