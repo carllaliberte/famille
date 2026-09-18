@@ -12,6 +12,7 @@ import {
 } from "../scripts/cortex-evolution-governor.mjs";
 
 const base = {
+  id: "base",
   objective: "reduce prediction error",
   hypothesis: "add an independent verifier",
   expected_information_gain: 0.9,
