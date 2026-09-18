@@ -1,0 +1,76 @@
+name: acorn-continuous-evolution
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: acorn-continuous-evolution
+  cancel-in-progress: true
+
+jobs:
+  evolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Snapshot current MAIN and maintenance state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          MAIN_SHA="$(git rev-parse HEAD)"
+          gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 100             --json number,title,state,draft,mergeable,headRefName,baseRefName,headRefOid,baseRefOid,labels,url             > /tmp/prs.json
+          gh run list --repo "$GITHUB_REPOSITORY" --limit 50             --json databaseId,name,status,conclusion,headSha,url,displayTitle             > /tmp/runs.json
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const snapshot = {
+            repository: process.env.GITHUB_REPOSITORY,
+            main_sha: process.env.MAIN_SHA,
+            pull_requests: JSON.parse(readFileSync("/tmp/prs.json","utf8")),
+            workflow_runs: JSON.parse(readFileSync("/tmp/runs.json","utf8")),
+            observations: []
+          };
+          writeFileSync("/tmp/acorn-evolution-snapshot.json", JSON.stringify(snapshot,null,2));
+          EOF
+
+      - name: Build continuous evolution portfolio
+        env:
+          ACORN_EVOLUTION_OUTPUT: /tmp/acorn-continuous-evolution.json
+        run: |
+          node scripts/acorn-continuous-evolution.mjs /tmp/acorn-evolution-snapshot.json > /tmp/evolution.stdout.json
+          cat /tmp/evolution.stdout.json
+
+      - name: Hand one coherent evolution portfolio to existing worker
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ACTION="$(node -e 'const x=JSON.parse(require("fs").readFileSync("/tmp/evolution.stdout.json")); console.log(x.action)')
+          "
+          if [ "$ACTION" != "EVOLVE_PORTFOLIO" ] && [ "$ACTION" != "REPAIR_PORTFOLIO" ]; then
+            echo "ACORN evolution action: $ACTION"
+            exit 0
+          fi
+          MARKER="<!-- ACORN_CONTINUOUS_EVOLUTION_PORTFOLIO"
+          EXISTING="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number,body --jq '.[] | select(.body | contains("'"$MARKER"'")) | .number' | head -n1)"
+          if [ -n "$EXISTING" ]; then
+            echo "Existing evolution portfolio issue #$EXISTING"
+            exit 0
+          fi
+          BODY="$(node -e 'const x=JSON.parse(require("fs").readFileSync("/tmp/evolution.stdout.json")); process.stdout.write(x.mandate)')"
+          gh issue create --repo "$GITHUB_REPOSITORY"             --title "ACORN — continuous evolution portfolio"             --label "codex-task"             --body "$MARKER
+$BODY"
