@@ -1,0 +1,11 @@
+import test from "node:test";import assert from "node:assert/strict";
+import{PRINCIPLES,PIPELINE,scoreWork,buildGrandScope,detectFragmentation,convergenceDecision,assertDevelopmentConstitution}from"../scripts/acorn-maximal-development-convergence.mjs";
+test("constitution",()=>assert.equal(assertDevelopmentConstitution(),true));
+test("maximal scope is explicit",()=>assert.ok(PRINCIPLES.includes("MAXIMIZE_COHERENT_SCOPE")));
+test("verification cannot be removed",()=>assert.ok(PIPELINE.includes("FALSIFY")&&PIPELINE.includes("VERIFY")));
+test("coherent work scores",()=>assert.ok(scoreWork({coherence:10,reuse:10,value:10,integration:10})>0));
+test("shared primitives are detected",()=>assert.equal(detectFragmentation([{shared_primitives:["x"]},{shared_primitives:["x"]}])[0].count,2));
+test("grand scope consolidates coherent work",()=>assert.equal(buildGrandScope([{coherent:true},{coherent:true}]).max_coherent_scope,true));
+test("single coherent change when appropriate",()=>assert.equal(convergenceDecision([{coherent:true}]).action,"SINGLE_COHERENT_CHANGE"));
+test("multiple coherent work items consolidate",()=>assert.equal(convergenceDecision([{coherent:true},{coherent:true}]).action,"CONSOLIDATE"));
+test("human authority remains required",()=>assert.equal(buildGrandScope([{coherent:true}]).human_authority_required,true));
