@@ -18,6 +18,7 @@ import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futurePr
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
 import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject, loadCommercialCycle } from "./commercial.mjs";
 import { buildRealitySnapshot, customerNextAction, assertTruthContract } from "../scripts/acorn-real-world-turnkey.mjs";
+import { primitiveIdentity, represent, derive, pinVersion, canReuse, assetize, adapt, compound, generalizeLearning } from "../scripts/acorn-compounding.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -721,6 +722,104 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       }
       if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
         return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/compounding") {
+        const related = await loadTenantState(database, cid);
+        const caps = related.filter((s) => s.entity === "CAPABILITY");
+        const identities = caps.map((s) => primitiveIdentity({ key: s.data?.key || s.data?.name || s.id, version: String(s.data?.version || s.version || 1) }));
+        const derivations = related.filter((s) => s.entity === "DERIVATION").map((s) => s.data);
+        return send(200, {
+          identities,
+          representations: identities.flatMap((id) => ["CAPABILITY", "API", "PRODUCT"].map((as) => represent(id, as))),
+          derivations,
+          composition_is_not_authority: true,
+          live: false
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/primitives/represent") {
+        const b = await readBody(req);
+        const identity = primitiveIdentity({ kind: b.kind || "CAPABILITY", key: b.key || b.capability || "analysis", version: b.version || "1" });
+        const form = represent(identity, b.as || "API");
+        const packed = compound({ identity });
+        await persistState(database, {
+          entity: "CAPABILITY",
+          id: identity.id,
+          tenant_id: cid,
+          state: "REPRESENTED",
+          version: Number(identity.version) || 1,
+          data: { ...identity, name: identity.key, representations: packed.representations, duplicated: false, live: false }
+        });
+        return await sendPersist(201, {
+          identity,
+          representation: form,
+          compound: packed,
+          client_authorization_ignored: b.human_authorized === true || b.published === true,
+          proof: { live: false, published: false, duplicated: false }
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/primitives/derive") {
+        const b = await readBody(req);
+        const from = primitiveIdentity({ key: b.from || b.key || "analysis", version: b.version || "1" });
+        const derived = derive({ from, into: b.into || "ASSET", transform: b.transform || "COMPOSED" });
+        await persistState(database, {
+          entity: "DERIVATION",
+          id: derived.id,
+          tenant_id: cid,
+          state: "PROPOSED",
+          data: { ...derived, live: false }
+        });
+        return await sendPersist(201, {
+          derivation: derived,
+          client_authorization_ignored: b.human_authorized === true,
+          proof: { live: false, composition_is_not_authority: true }
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/assets/from-result") {
+        const b = await readBody(req);
+        const rights = Array.isArray(b.rights) ? b.rights : [];
+        const reuse = canReuse({ rights, purpose: b.purpose || "PRODUCT" });
+        const asset = assetize({
+          result: { ...b.result, verified: b.result?.verified === true, project_id: b.project_id || null },
+          rights,
+          evidence: Array.isArray(b.evidence) ? b.evidence : []
+        });
+        if (asset.state === "ASSET") {
+          await persistState(database, {
+            entity: "ASSET",
+            id: asset.asset.asset_id || ("asset_" + cid),
+            tenant_id: cid,
+            state: asset.asset.state,
+            data: { ...asset.asset, published: false, live: false }
+          });
+        }
+        return await sendPersist(asset.state === "ASSET" ? 201 : 200, {
+          asset,
+          reuse,
+          client_authorization_ignored: b.human_authorized === true || b.public === true,
+          proof: { live: false, public: false, published: false }
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/primitives/adapt") {
+        const b = await readBody(req);
+        const identity = primitiveIdentity({ key: b.key || "analysis" });
+        return send(200, {
+          adaptation: adapt({ identity, market: b.market, country: b.country, currency: b.currency, language: b.language }),
+          learning: generalizeLearning({ outcome: b.outcome || null, customer_data: b.customer_data || null }),
+          proof: { live: false, core_unchanged: true, leaked: false }
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/primitives/pin") {
+        const b = await readBody(req);
+        const identity = primitiveIdentity({ key: b.key || "analysis", version: b.current_version || "2" });
+        const pin = pinVersion({ projectId: b.project_id, identity, version: b.version || "1" });
+        await persistState(database, {
+          entity: "DERIVATION",
+          id: "pin_" + (pin.project_id || cid) + "_" + identity.key,
+          tenant_id: cid,
+          state: "PINNED",
+          data: { ...pin, transform: "VERSIONED", live: false }
+        });
+        return await sendPersist(201, { pin, proof: { live: false, silent_upgrade: false } });
       }
       const commercialHandled = await handleAuthedCommercial({
         method: req.method,
