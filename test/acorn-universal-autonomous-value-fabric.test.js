@@ -1,0 +1,12 @@
+import test from"node:test";import assert from"node:assert/strict";
+import{PLANES,LOOP,qualifyValue,composeValue,chooseValueRoute,authorizeValueAction,compoundValue,buildValueFabric,assertValueFabric}from"../scripts/acorn-universal-autonomous-value-fabric.mjs";
+const proof={verified:true,measured:true,evidence:["e"],expired:false};
+test("constitution",()=>assert.equal(assertValueFabric(),true));
+test("broad fabric",()=>assert.ok(PLANES.length>=25&&LOOP.length>=20));
+test("unverified outcome cannot compound",()=>assert.equal(compoundValue({verified:false,measured:true,evidence:["e"]}).state,"NOT_REUSABLE"));
+test("verified outcome compounds",()=>assert.equal(compoundValue(proof).state,"REUSABLE"));
+test("only verified capabilities compose",()=>assert.equal(composeValue(["x"],[{state:"DISCOVERED",capabilities:["x"]}]).state,"GAP_DETECTED"));
+test("verified route is scoped",()=>assert.equal(chooseValueRoute([{...proof,q:1}],{q:1}).global_optimum,false));
+test("money remains human gated",()=>assert.equal(authorizeValueAction("MONEY",{server_authorized:true}).authorized,false));
+test("merge remains human gated",()=>assert.equal(authorizeValueAction("MERGE",{server_authorized:true}).authorized,false));
+test("full fabric preserves authority",()=>assert.equal(buildValueFabric({}).authority,"HUMAN_SERVER"));
