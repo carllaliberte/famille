@@ -30,6 +30,12 @@ export const PORTES = Object.freeze([
  * A NEW root .md that is in neither list fails the suite.
  */
 export const GRAISSE_CONNUE = Object.freeze([
+  "CAPABILITY.md",
+  "COMPUTE.md",
+  "CONNECTOR.md",
+  "OMNI-CORE.md",
+  "PROTECTION.md",
+  "SURVIVAL.md",
   "ACTES.md",
   "ADOPTION.md",
   "ALIMENTATION.md",

@@ -153,7 +153,7 @@ test("ultimate 25-step experiment stays one Cortex, no extra authority", () => {
 });
 
 test("security: accelerator discovery never becomes merge/write", () => {
-  const fabric = runAccelerationFabric({ env: {}, workerEvidence: { v: "cognitive-worker.v14" } });
+  const fabric = runAccelerationFabric({ env: { ACORN_SYSTEM_MODE: "RUN" }, workerEvidence: { v: "cognitive-worker.v14" } });
   assert.equal(fabric.gates.merge, false);
   assert.equal(fabric.paid_forbidden, true);
   assert.equal(fabric.invoke.reason, "CHANNEL_NOT_PRESENT");
@@ -206,6 +206,7 @@ test("intelligence contract carries optional fields without inventing measuremen
 test("organism wires futures without a second Cortex or LIVE", () => {
   const organism = runOrganismCycle({
     workerEvidence: { v: "cognitive-worker.v14" },
+    env: { ACORN_SYSTEM_MODE: "RUN" },
     agents: [{ id: "worker", capabilities: ["review"] }],
     fluidity: { state: "FLOWING", property: { silent_stop: false } },
   });
@@ -218,6 +219,7 @@ test("organism wires futures without a second Cortex or LIVE", () => {
   assert.equal(organism.acceleration.gates.nvidia_is_architecture, false);
   assert.equal(organism.live, false);
   const runtime = runCortexRuntime({
+    env: { ACORN_SYSTEM_MODE: "RUN" },
     workerEvidence: {
       v: "cognitive-worker.v14",
       verified: true,
