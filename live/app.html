@@ -82,6 +82,15 @@
     .err { color: var(--danger); font-size: .92rem; }
     .hidden { display: none !important; }
     footer.note { margin-top: 28px; color: var(--fg-subtle); font-size: .85rem; }
+    .nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .tab { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--fg-muted); font: inherit; font-weight: 600; }
+    .tab[aria-selected="true"] { background: var(--bg-subtle); color: var(--fg); border-color: var(--border-strong); }
+    .money { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+    .stats { display: grid; gap: 16px; }
+    .stat { display: grid; gap: 4px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--bg); }
+    .stat strong { font-size: 1.15rem; }
+    @media (min-width: 720px) { .stats { grid-template-columns: repeat(3, 1fr); } }
+
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   </style>
 </head>
@@ -129,6 +138,12 @@
     </section>
 
     <section id="work" class="hidden stack">
+      <div class="nav" role="tablist" aria-label="Workspace">
+        <button class="tab" id="tab-work" type="button" role="tab" aria-selected="true">Project</button>
+        <button class="tab" id="tab-account" type="button" role="tab" aria-selected="false">Account</button>
+      </div>
+
+      <div id="workpane" class="stack">
       <div>
         <h1>What do you need solved?</h1>
         <p class="lede">Acorn will qualify the request, persist a project, and show the real state: planned, blocked, or awaiting authorization. Delivery and live proof only appear with evidence.</p>
@@ -147,8 +162,9 @@
           <ol class="steps">
             <li><span class="dot">1</span><div><strong>Qualify</strong><div class="quiet">Acorn reads the problem and names required capabilities. Missing is not existing.</div></div></li>
             <li><span class="dot">2</span><div><strong>Plan</strong><div class="quiet">A task graph and intelligence routes are persisted. No execution yet.</div></div></li>
-            <li><span class="dot">3</span><div><strong>Hold</strong><div class="quiet">Real-world action waits for an explicit human authorization. Acorn may propose a sandbox build for a missing capability. It cannot authorize itself.</div></div></li>
-            <li><span class="dot">4</span><div><strong>Evidence</strong><div class="quiet">Every step is dated. Expired evidence is expired, not false.</div></div></li>
+            <li><span class="dot">3</span><div><strong>Offer</strong><div class="quiet">Acorn proposes a priced project. You never type the amount.</div></div></li>
+            <li><span class="dot">4</span><div><strong>Pay</strong><div class="quiet">Checkout is hosted by Stripe. This screen is never a receipt.</div></div></li>
+            <li><span class="dot">5</span><div><strong>Hold</strong><div class="quiet">Payment does not authorize real-world action. Carl remains the authority.</div></div></li>
           </ol>
         </aside>
       </div>
@@ -160,9 +176,36 @@
         <p class="quiet">Isolation is enforced in the runtime, not the browser. Another account cannot read these.</p>
         <div id="list" class="stack" style="margin-top:16px"></div>
       </div>
+      </div>
+
+      <div id="accountpane" class="hidden stack">
+        <div>
+          <h1>Account, offers, and observed money</h1>
+          <p class="lede">Prices are set by Acorn. Stripe is only the rail. Observed payment is not execution authority. Missing amounts stay empty — never zero.</p>
+        </div>
+        <div class="grid stats" id="stats"></div>
+        <div class="panel stack">
+          <h3>Catalog</h3>
+          <p class="quiet">Server-priced. The browser cannot choose the amount.</p>
+          <div id="catalog" class="stack"></div>
+        </div>
+        <div class="panel stack">
+          <h3>Orders</h3>
+          <div id="orders" class="stack"></div>
+        </div>
+        <div class="panel stack">
+          <h3>Usage rights</h3>
+          <div id="rights" class="stack"></div>
+        </div>
+        <div class="panel stack">
+          <h3>Ledger</h3>
+          <p class="quiet">Not tax advice. Not accounting advice. Net only when gross and fees were both observed.</p>
+          <div id="ledger" class="stack"></div>
+        </div>
+      </div>
     </section>
 
-    <footer class="note">Aperçu — pas une quittance. HTTP availability is not LIVE. Plans are not delivery. Capability is not authority.</footer>
+    <footer class="note">Aperçu — pas une quittance. Checkout créé n'est pas un paiement. Test Stripe n'est pas Stripe Live. Capability is not authority. Payment is not execution.</footer>
   </div>
   <script>
     let token = localStorage.acornToken || "";
@@ -197,15 +240,100 @@
       return json;
     }
 
+    async function loadAccount() {
+      try {
+        const [cat, ords, rights, led] = await Promise.all([
+          call("/api/v1/catalog"),
+          call("/api/v1/orders"),
+          call("/api/v1/usage-rights"),
+          call("/api/v1/ledger")
+        ]);
+        const items = cat.catalog?.items || [];
+        $("catalog").innerHTML = items.map((i) => `
+          <article class="req" style="cursor:default">
+            <h4>${esc(i.name)}</h4>
+            <p class="money">${i.amount_cents == null ? "Human quote — no silent price" : money(i.amount_cents, i.currency)}</p>
+            <p class="quiet">${esc(i.model)}${i.interval ? " · " + esc(i.interval) : ""}${i.metered_activated === false && i.model === "USAGE" ? " · metered billing not activated" : ""}</p>
+          </article>
+        `).join("");
+        const orders = ords.orders || [];
+        $("orders").innerHTML = orders.length ? orders.map((o) => `
+          <article class="req" style="cursor:default">
+            <h4>${esc(o.product_name || o.model)}</h4>
+            <p class="money">${money(o.amount_cents, o.currency)} · ${esc(o.state)}</p>
+            <p class="quiet">paid=false · live=false · checkout is not a receipt</p>
+            <p class="mono">${esc(o.id)}</p>
+          </article>
+        `).join("") : `<p class="quiet">No orders yet.</p>`;
+        const rightsRows = rights.rights || [];
+        $("rights").innerHTML = rightsRows.length ? rightsRows.map((r) => `
+          <article class="req" style="cursor:default">
+            <h4>${esc(r.product)}</h4>
+            <p>${esc((r.rights || []).join(" · ") || "explicit rights pending")}</p>
+            <p class="quiet">${esc(r.state)} · ${r.duration === "PERPETUAL_VERSIONED" ? "perpetual is a versioned commercial right, not inferred" : esc(r.duration || "term unset")}</p>
+          </article>
+        `).join("") : `<p class="quiet">No usage rights granted. Payment observed is required.</p>`;
+        const snap = led.snapshot || {};
+        $("ledger").innerHTML = `
+          <p class="money">Gross observed: ${snap.gross_observed_cents == null ? "not observed" : money(snap.gross_observed_cents, snap.currency)}</p>
+          <p class="money">Fees: ${snap.fees_cents == null ? "not observed" : money(snap.fees_cents, snap.currency)}</p>
+          <p class="money">Net: ${snap.net_cents == null ? "not calculable" : money(snap.net_cents, snap.currency)}</p>
+          <p class="quiet">${(led.entries || []).length} entries · tax advice=${led.tax_advice === true} · live=${led.live === true}</p>
+        `;
+        $("stats").innerHTML = `
+          <div class="stat"><h3>Orders</h3><strong>${orders.length}</strong><span class="quiet">Durable. Not paid by existing.</span></div>
+          <div class="stat"><h3>Rights granted</h3><strong>${rightsRows.filter((r) => r.state === "GRANTED").length}</strong><span class="quiet">Never inferred as perpetual.</span></div>
+          <div class="stat"><h3>Rail</h3><strong>${esc(cat.rail?.mode || "UNCONFIGURED")}</strong><span class="quiet">Key present is not live.</span></div>
+        `;
+      } catch (e) {
+        $("catalog").innerHTML = `<p class="err">${esc(e.error || "Could not load account")}</p>`;
+      }
+    }
+
+    function showTab(which) {
+      const work = which === "work";
+      $("tab-work").setAttribute("aria-selected", work ? "true" : "false");
+      $("tab-account").setAttribute("aria-selected", work ? "false" : "true");
+      show($("workpane"), work);
+      show($("accountpane"), !work);
+      if (!work) loadAccount();
+    }
+
+    $("tab-work").addEventListener("click", () => showTab("work"));
+    $("tab-account").addEventListener("click", () => showTab("account"));
+
     function enterWork() {
       show($("gate"), false);
       show($("work"), true);
       show($("signout"), true);
+      showTab("work");
       loadRequests();
     }
 
     function chips(items) {
-      return (items || []).map((x) => `<span class="chip">${String(x.name || x.id || x)}</span>`).join(" ");
+      return (items || []).map((x) => `<span class="chip">${esc(String(x.name || x.id || x))}</span>`).join(" ");
+    }
+
+    function money(cents, currency) {
+      if (cents == null) return "Quote — human hold";
+      const n = Number(cents) / 100;
+      return new Intl.NumberFormat("en-CA", { style: "currency", currency: (currency || "CAD").toUpperCase() }).format(n);
+    }
+
+    async function acceptOffer(projectId, offerId) {
+      const orderRes = await call("/api/v1/orders", "POST", { project_id: projectId, offer_id: offerId });
+      const pay = await call("/api/v1/checkout", "POST", { order_id: orderRes.order.id });
+      if (pay.checkout && pay.checkout.url) {
+        window.location = pay.checkout.url;
+        return;
+      }
+      renderCurrent({
+        request: { id: projectId, status: "CHECKOUT_CREATED", request: "Checkout created locally." },
+        proof: { billed: false, live: false, paid: false },
+        offers: [],
+        checkout: pay.checkout,
+        order: pay.order
+      });
     }
 
     function renderCurrent(data) {
@@ -216,11 +344,14 @@
       const tasks = (execution.tasks || []).map((t) => t.title + " · " + (t.state || "PLANNED"));
       const routes = data.intelligence_routes || [];
       const evidence = data.evidence || [];
+      const offers = data.offers || [];
+      const order = data.order || null;
+      const checkout = data.checkout || null;
       $("current").innerHTML = `
         <div class="row">
           <span class="chip hold">${label(req.status || data.cycle?.stage)}</span>
           <span class="chip">Not live</span>
-          <span class="chip">Not delivered</span>
+          <span class="chip">Not a receipt</span>
         </div>
         <div>
           <h2>What Acorn will do</h2>
@@ -229,7 +360,7 @@
         <div>
           <h3>Capabilities named</h3>
           <div class="row">${chips(data.capabilities) || '<span class="quiet">General analysis, planning, verification</span>'}</div>
-          <p class="quiet" style="margin-top:8px">Named is not authorized. Authorized is not executed. Missing is not existing.</p>
+          <p class="quiet" style="margin-top:8px">Named is not authorized. Authorized is not executed. Missing is not existing. Paid is not executed.</p>
         </div>
         ${Array.isArray(data.gaps) && data.gaps.length ? `<div>
           <h3>Missing capabilities</h3>
@@ -241,6 +372,19 @@
           <h3>Human hold</h3>
           <div class="row">${data.holds.map((h) => `<span class="chip hold">${esc(h.capability || h.reason || "hold")}</span>`).join(" ")}</div>
         </div>` : ""}
+        <div>
+          <h3>Offer</h3>
+          ${offers.length ? offers.map((o) => `
+            <article class="req" style="cursor:default;margin-bottom:8px">
+              <h4>${esc(o.product || o.name || "Offer")}</h4>
+              <p>${esc(o.model || "")} · ${esc(money(o.amount_cents, o.currency))}</p>
+              <p class="quiet">Server-priced. The browser cannot change the amount.</p>
+              ${o.amount_cents ? `<button class="btn btn-primary" type="button" data-offer="${esc(o.id)}" data-project="${esc(req.id || o.project_id || "")}">Accept and continue to payment</button>` : `<span class="chip hold">Enterprise quote — human hold</span>`}
+            </article>
+          `).join("") : `<p class="quiet">No priced offer yet.</p>`}
+          ${checkout ? `<p class="quiet">Checkout ${checkout.configured === false ? "rail is not connected" : "created"}. This is not a receipt.</p>` : ""}
+          ${order ? `<p class="mono">order ${esc(order.id)} · ${esc(order.state)} · paid=false</p>` : ""}
+        </div>
         <div>
           <h3>Task graph</h3>
           <div class="stack">${(tasks.length ? tasks : ["Qualify", "Plan", "Verify"]).map((t) => `<div class="chip">${t}</div>`).join("")}</div>
@@ -278,6 +422,13 @@
           }
         });
       }
+      $("current").querySelectorAll("[data-offer]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          try { await acceptOffer(btn.dataset.project, btn.dataset.offer); }
+          catch (e) { btn.disabled = false; $("workerr").textContent = e.error || "The offer could not be accepted."; show($("workerr"), true); }
+        });
+      });
     }
 
     async function loadRequests() {

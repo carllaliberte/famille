@@ -21,8 +21,22 @@ Production customer runtime for FAMILLE.
 - `GET /api/v1/self-build` self-build constitution, howAcornBuilds transfer contract, autonomy ceiling L2, implemented-now, and not-yet-implemented. Never LIVE.
 - `POST /api/v1/self-build/observe` detect capability gaps for a task in the BUILD zone. LEARN records observations and does not promote. Does not write production, merge, or authorize.
 - `POST /api/v1/self-build/repair` propose a repair. Never deploys, never merges.
+- `POST /api/v1/billing/webhook` Stripe webhook. Raw body, signature verification, event-id idempotence. Unknown events are retained. Never grants Acorn authority.
+- `GET /pay/success` and `GET /pay/cancel` return pages. Preview ≠ receipt.
+- `GET /api/v1/catalog` server-priced catalog. Clients cannot set amounts.
+- `POST /api/v1/orders` accept a server offer. Client amount/currency/paid/human_authorized are ignored.
+- `POST /api/v1/checkout` Stripe-hosted Checkout. Amount and currency locked server-side. Checkout created ≠ paid.
+- `POST /api/v1/billing/portal` Stripe Customer Portal. Portal is not Acorn authority.
+- `POST /api/v1/billing/refund` human authority token only (`x-acorn-human-authority`).
+- `POST /api/v1/quotes` and `POST /api/v1/invoices` human hold. AI cannot sign.
+- `POST /api/v1/usage` usage-based abstraction. Metered billing is not activated.
+- `GET /api/v1/ledger` ASSERTED/OBSERVED/MEASURED/VERIFIED. Missing is not 0. Not tax advice.
+- `GET /api/v1/usage-rights` explicit sold rights. Perpetual is a versioned commercial right.
+- `GET /api/v1/commercial` and `GET /api/v1/developer` commercial truth and developer surface. Never LIVE.
 - `Idempotency-Key` on authenticated POSTs
 - Rate limit (default 180/min/IP; `/healthz` and `/readyz` excluded)
+
+Stripe is a replaceable financial rail (`scripts/acorn-stripe-adapter.mjs`). Acorn remains the cognitive, operational, and economic brain. Payment observed ≠ execution authorized. Test Stripe ≠ Stripe Live. `sk_live_` present ≠ Acorn LIVE. CAPABILITY ≠ AUTHORITY. Carl remains human authority.
 
 Production durable state is PostgreSQL via `DATABASE_URL`. Schema is applied by `live/migrate.mjs` from `db/migrations/`, not by ad-hoc CREATE TABLE in route handlers. SQLite is an explicit local/test adapter (`ACORN_DB_ADAPTER=sqlite`) and is refused as a silent production fallback.
 

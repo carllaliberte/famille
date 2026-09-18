@@ -164,7 +164,11 @@
     "./acorn-total-operating-system": "./scripts/acorn-total-operating-system.mjs",
     "./acorn-real-world-bridge": "./scripts/acorn-real-world-bridge.mjs",
     "./acorn-operational-fabric": "./scripts/acorn-operational-fabric.mjs",
-    "./acorn-self-build": "./scripts/acorn-self-build.mjs"
+    "./acorn-self-build": "./scripts/acorn-self-build.mjs",
+    "./acorn-stripe-adapter": "./scripts/acorn-stripe-adapter.mjs",
+    "./acorn-economic-ledger": "./scripts/acorn-economic-ledger.mjs",
+    "./acorn-usage-rights": "./scripts/acorn-usage-rights.mjs",
+    "./acorn-commercial-runtime": "./scripts/acorn-commercial-runtime.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
