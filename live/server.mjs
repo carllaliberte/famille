@@ -66,7 +66,7 @@ const server=http.createServer(async(req,res)=>{
    event(rid,"REQUEST_CREATED",{stage:cycle.stage});
    return json(res,201,{request:publicRequest(db.prepare("SELECT * FROM requests WHERE id=?").get(rid)),proof:{live:true,measured_at:t}});
   }
-  const m=url.pathname.match(/^\\/api\\/v1\\/requests\\/([^/]+)$/);
+  const m=url.pathname.match(/^\/api\/v1\/requests\/([^/]+)$/);
   if(req.method==="GET"&&m){const row=db.prepare("SELECT * FROM requests WHERE id=? AND customer_id=?").get(m[1],customerId);if(!row)return json(res,404,{error:"NOT_FOUND"});const events=db.prepare("SELECT type,payload,created_at FROM events WHERE request_id=? ORDER BY id").all(row.id).map(e=>({...e,payload:JSON.parse(e.payload)}));return json(res,200,{request:publicRequest(row),events})}
   if(req.method==="GET"&&url.pathname==="/api/v1/requests"){const rows=db.prepare("SELECT * FROM requests WHERE customer_id=? ORDER BY created_at DESC").all(customerId);return json(res,200,{requests:rows.map(publicRequest)})}
   return json(res,404,{error:"NOT_FOUND"});
