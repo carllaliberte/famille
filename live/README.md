@@ -21,6 +21,9 @@ Production customer runtime for FAMILLE.
 - `GET /api/v1/self-build` self-build constitution, howAcornBuilds transfer contract, autonomy ceiling L2, implemented-now, and not-yet-implemented. Never LIVE.
 - `POST /api/v1/self-build/observe` detect capability gaps for a task in the BUILD zone. LEARN records observations and does not promote. Does not write production, merge, or authorize.
 - `POST /api/v1/self-build/repair` propose a repair. Never deploys, never merges.
+- `GET /api/v1/infrastructure` universal primitive relations, architectural answers, honest truth matrix. Never LIVE.
+- `POST /api/v1/infrastructure/diagnose` gap + impact + proposed change + risk + test plan. Never applies protected changes.
+- `POST /api/v1/infrastructure/admit` admit an unknown intelligence, rail, machine, or market. Never authorized. HTTP `human_authorized` ignored.
 - `POST /api/v1/billing/webhook` Stripe webhook. Raw body, signature verification, event-id idempotence. Unknown events are retained. Never grants Acorn authority.
 - `GET /pay/success` and `GET /pay/cancel` return pages. Preview ≠ receipt.
 - `GET /api/v1/catalog` server-priced catalog. Clients cannot set amounts.

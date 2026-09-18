@@ -1,0 +1,61 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/acorn-universal-infrastructure.v0.json",
+  "title": "famille.acorn-universal-infrastructure.v0",
+  "description": "Coordinator of relations between existing Acorn primitives. Not a second runtime, market, connector system, or economic engine. Stripe is an ECONOMIC_RAIL implementation. CAPABILITY ≠ AUTHORITY. UNKNOWN is first-class. LIVE is const false. CARL = MERGE.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "live", "auto_merge", "authority"],
+  "properties": {
+    "version": { "const": "acorn.universal-infrastructure.v0" },
+    "live": { "const": false },
+    "auto_merge": { "const": false },
+    "authorized": { "const": false },
+    "authority": { "const": "carl" },
+    "capability_neq_authority": { "const": true },
+    "second_architecture": { "const": false },
+    "second_runtime": { "const": false },
+    "stripe_is_not_acorn_core": { "const": true },
+    "unknown_is_first_class": { "const": true },
+    "power_does_not_grant_authority": { "const": true },
+    "simulation_neq_execution": { "const": true },
+    "hypothesis_neq_fact": { "const": true },
+    "status": {
+      "enum": [
+        "UNKNOWN",
+        "DISCOVERED",
+        "GAP_DETECTED",
+        "NO_GAP",
+        "PLANNED",
+        "SIMULATED",
+        "WAITING_HUMAN",
+        "HUMAN_HOLD",
+        "INSUFFICIENT_EVIDENCE",
+        "CYCLE_DETECTED",
+        "SECURITY_BLOCK"
+      ]
+    },
+    "primitives": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "IDENTITY", "ORGANIZATION", "CAPABILITY", "INTELLIGENCE", "RESOURCE",
+          "DATA", "TOOL", "CONNECTOR", "TASK", "PROJECT", "GRAPH", "EXECUTION",
+          "EVENT", "MEMORY", "EVIDENCE", "MEASUREMENT", "POLICY", "AUTHORITY",
+          "DECISION", "OFFER", "ORDER", "ECONOMIC_EVENT", "RIGHT", "CONTRACT"
+        ]
+      }
+    },
+    "trust": {
+      "enum": [
+        "ASSERTED", "OBSERVED", "TESTED", "MEASURED", "VERIFIED", "LIVE",
+        "EXPIRED", "REVOKED", "BLOCKED", "UNKNOWN"
+      ]
+    },
+    "memory_class": {
+      "enum": [
+        "FACT", "OBSERVATION", "HYPOTHESIS", "PROPOSAL", "DECISION",
+        "EVIDENCE", "MEASUREMENT", "OBJECTION", "LESSON"
+      ]
+    }
+  }
+}

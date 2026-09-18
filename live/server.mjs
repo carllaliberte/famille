@@ -16,6 +16,17 @@ import { assessRuntimeStatus } from "./runtime-status.mjs";
 import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadTenantAsOf } from "./enterprise-store.mjs";
 import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt, proposeCapabilities } from "../scripts/acorn-operational-fabric.mjs";
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
+import {
+  infrastructureSnapshot,
+  diagnoseSystem,
+  admitUnknown,
+  capabilityGraphFromCapabilities,
+  universalConstitution,
+  truthMatrix,
+  runArchitecturalQuestions,
+  implementedNow as universalImplemented,
+  notYetImplemented as universalNotYet,
+} from "../scripts/acorn-universal-infrastructure.mjs";
 import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject } from "./commercial.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
@@ -497,6 +508,15 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         });
         const operated = commercial;
         const cycle = operated.cycle;
+        const graph = capabilityGraphFromCapabilities(
+          (operated.capabilities || []).map((c) => ({
+            id: c.name || c.id,
+            name: c.name,
+            exists: c.exists === true,
+            available: c.available === true
+          })),
+          { tenant_id: cid, project_id: rid }
+        );
         const persisted = await database.tx(async (tx) => {
           await tx.run(
             "INSERT INTO requests(id,customer_id,body,status,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6)",
@@ -522,6 +542,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           await persistState(tx, { entity: "MONEY_CLAIM", id: operated.economic.id, tenant_id: cid, state: "ESTIMATED", data: { ...operated.economic, billed: false, paid: false, live: false } });
           await persistState(tx, { entity: "TEMPORAL", id: "tmp_" + rid, tenant_id: cid, state: "OBSERVED", data: operated.temporal[0] || { epistemic: "OBSERVED", request_id: rid } });
           await persistState(tx, { entity: "EXECUTION", id: operated.execution.id, tenant_id: cid, state: operated.execution.state, data: { request_id: rid, mode: "PLAN", human_authorized: false, external_effect: false } });
+          await persistState(tx, { entity: "GRAPH", id: graph.id, tenant_id: cid, state: "OBSERVED", data: { request_id: rid, nodes: graph.nodes, edges: graph.edges, missing: graph.missing, live: false } });
           await persistCommercialProject(tx, commercial, { tenantId: cid, requestId: rid });
           await persistEnterpriseEvent(tx, { tenantId: cid, entityId: rid, type: "REQUEST_CREATED", payload: { stage: cycle.stage, mode: "PLAN" }, actor: "acorn-live", authority: "none" });
           const horizon = new Date(Date.now() + 86400000).toISOString();
@@ -545,6 +566,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           capabilities: operated.capabilities,
           gaps: operated.gaps,
           holds: operated.holds,
+          graph,
           intelligence_routes: operated.intelligence_routes,
           execution: { id: operated.execution.id, mode: "PLAN", state: operated.execution.state, tasks: operated.execution.tasks, snapshot: operated.execution.snapshot },
           economic: operated.economic,
@@ -566,6 +588,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           project: state ? { id: state.id, entity: state.entity, state: state.state } : null,
           capabilities: related.filter((s) => s.entity === "CAPABILITY" && s.data?.request_id === row.id),
           gaps: related.filter((s) => s.entity === "CAPABILITY" && s.data?.request_id === row.id && s.data?.exists !== true).map((s) => ({ capability: s.data?.name, status: s.state, reason: s.data?.reason || "GAP_DETECTED", exists: false, available: false })),
+          graph: related.filter((s) => s.entity === "GRAPH" && s.data?.request_id === row.id).map((s) => ({ id: s.id, nodes: s.data?.nodes || [], edges: s.data?.edges || [], missing: s.data?.missing || [], live: false }))[0] || null,
           intelligence_routes: related.filter((s) => s.entity === "INTELLIGENCE" && s.data?.request_id === row.id).map((s) => ({ ...s.data, authority: false })),
           execution: related.find((s) => s.entity === "EXECUTION" && s.data?.request_id === row.id) || null,
           tasks: related.filter((s) => s.entity === "TASK" && s.data?.project_id === row.id),
@@ -659,6 +682,52 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         const repair = proposeRepair({ failure: b.failure || b.error || "", failure_class: b.failure_class || null, attempt: b.attempt || 0 });
         await persistEnterpriseEvent(database, { tenantId: cid, entityId: cid, type: "SELF_REPAIR_PROPOSED", payload: { status: repair.status, deploy: false, live: false }, actor: "acorn-live", authority: "none" });
         return await sendPersist(200, { repair, proof: { live: false, deploy: false, auto_merge: false, authorized: false } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/infrastructure") {
+        const snap = infrastructureSnapshot();
+        return send(200, {
+          version: snap.version,
+          constitution: universalConstitution(),
+          primitives: snap.primitives,
+          architectural_questions: runArchitecturalQuestions().answers,
+          truth: truthMatrix(),
+          implemented_now: universalImplemented(),
+          not_yet_implemented: universalNotYet(),
+          live: false,
+          auto_merge: false,
+          authority: "carl",
+          proof: { live: false, verified: false, authorized: false, auto_merge: false }
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/infrastructure/diagnose") {
+        const b = await readBody(req);
+        const task = String(b.task || b.request || "").trim();
+        if (!task) return send(400, { error: "TASK_REQUIRED" });
+        const required = Array.isArray(b.required) && b.required.length ? b.required.map(String) : proposeCapabilities(task);
+        const known = [
+          { name: "analysis", exists: true, available: false, reason: "CODE_PRESENT" },
+          { name: "planning", exists: true, available: false, reason: "CODE_PRESENT" },
+          { name: "verification", exists: true, available: false, reason: "CODE_PRESENT" },
+          { name: "general", exists: true, available: false, reason: "CODE_PRESENT" }
+        ];
+        const diagnosis = diagnoseSystem({ task, required, known });
+        await persistEnterpriseEvent(database, { tenantId: cid, entityId: cid, type: "SELF_DIAGNOSIS", payload: { task, apply: false, gaps: (diagnosis.gaps || []).map((g) => g.capability), live: false }, actor: "acorn-live", authority: "none" });
+        return await sendPersist(200, { diagnosis, proof: { live: false, apply: false, authorized: false, auto_merge: false } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/infrastructure/admit") {
+        const b = await readBody(req);
+        const result = admitUnknown({
+          kind: b.kind,
+          id: b.id,
+          provider: b.provider,
+          model: b.model,
+          capabilities: b.capabilities
+        });
+        await persistEnterpriseEvent(database, { tenantId: cid, entityId: cid, type: "UNKNOWN_ADMITTED", payload: { kind: result.kind, admitted: result.admitted, authorized: false, live: false, core_modified: false }, actor: "acorn-live", authority: "none" });
+        if (result.admitted && result.family === "INTELLIGENCE" && result.intelligence) {
+          await persistState(database, { entity: "INTELLIGENCE", id: result.intelligence.id, tenant_id: cid, state: result.intelligence.state || "DISCOVERED", data: { ...result.intelligence, authority: false, authorized: false, live: false } });
+        }
+        return await sendPersist(200, { result: { ...result, authorized: false, live: false }, proof: { live: false, authorized: false, used: false, auto_merge: false, client_authorization_ignored: true } });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
         return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });

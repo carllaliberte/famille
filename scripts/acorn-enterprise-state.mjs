@@ -5,14 +5,42 @@ const ISO=()=>new Date().toISOString();
 const uid=p=>`${p}_${crypto.randomUUID?.()||Math.random().toString(36).slice(2)}`;
 export const STATE_ENTITIES=Object.freeze([
   "CUSTOMER","ORGANIZATION","PROJECT","OFFER","TASK","EXECUTION","CONNECTION","INTELLIGENCE",
-  "CAPABILITY","EVIDENCE","MONEY_CLAIM","ASSET","PRODUCT","EVENT","TEMPORAL"
+  "CAPABILITY","EVIDENCE","MONEY_CLAIM","ASSET","PRODUCT","EVENT","TEMPORAL",
+  "IDENTITY","GRAPH","POLICY","DECISION","CONTRACT","DATA","TOOL","MEMORY","MEASUREMENT","AUTHORITY","RIGHT"
 ]);
 export function stateRecord(entity,data={}){
  if(!STATE_ENTITIES.includes(entity)) throw new Error("UNKNOWN_STATE_ENTITY");
- return {id:data.id||uid(entity.toLowerCase()),entity,version:Number(data.version||1),state:data.state||"PROPOSED",tenant_id:data.tenant_id||null,provenance:data.provenance||"acorn",data,created_at:data.created_at||ISO(),updated_at:ISO()};
+ return {
+  id:data.id||uid(entity.toLowerCase()),
+  entity,
+  version:Number(data.version||1),
+  state:data.state||"PROPOSED",
+  tenant_id:data.tenant_id||null,
+  provenance:data.provenance||"acorn",
+  data,
+  valid_from:data.valid_from||data.created_at||ISO(),
+  valid_until:data.valid_until||null,
+  created_at:data.created_at||ISO(),
+  updated_at:ISO()
+ };
 }
-export function eventRecord({tenantId,entityId,type,payload={},actor="system",authority="none"}={}){
- return {id:uid("event"),tenant_id:tenantId||null,entity_id:entityId||null,type,payload,actor,authority,measured_at:ISO()};
+export function eventRecord({tenantId,entityId,type,payload={},actor="system",authority="none",correlationId=null,causationId=null,previousState=null,nextState=null,provenance="acorn",evidenceId=null}={}){
+ return {
+  id:uid("event"),
+  tenant_id:tenantId||null,
+  entity_id:entityId||null,
+  type,
+  payload,
+  actor,
+  authority,
+  measured_at:ISO(),
+  correlation_id:correlationId||null,
+  causation_id:causationId||null,
+  previous_state:previousState||null,
+  next_state:nextState||null,
+  provenance,
+  evidence_id:evidenceId||null
+ };
 }
 export function evidenceRecord({tenantId,claim,source,kind="OBSERVATION",strength=0,margin=0,validUntil=null,epistemic="OBSERVED",version=1,context=null,dependencies=[]}={}){
  const measured=Number.isFinite(strength)&&strength>0&&Number.isFinite(margin)&&margin>0;

@@ -25,7 +25,12 @@ build:
 	node --check live/runtime-status.mjs
 	node --check scripts/acorn-operational-fabric.mjs
 	node --check scripts/acorn-self-build.mjs
-	node --check examples/self-build-extension.mjs
+	node --check scripts/acorn-universal-infrastructure.mjs
+	node --check scripts/acorn-stripe-adapter.mjs
+	node --check scripts/acorn-economic-ledger.mjs
+	node --check scripts/acorn-usage-rights.mjs
+	node --check scripts/acorn-commercial-runtime.mjs
+	node --check live/commercial.mjs
 
 test:
 	npm test

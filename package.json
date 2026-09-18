@@ -73,7 +73,8 @@
     "runtime:infinite-economy": "node scripts/acorn-infinite-economic-engine.mjs",
     "runtime:total-os": "node scripts/acorn-total-operating-system.mjs",
     "runtime:real-world": "node -e \"import('./scripts/acorn-real-world-bridge.mjs').then(({realWorldBridgeSnapshot,loadRealWorldConnectors})=>console.log(JSON.stringify(realWorldBridgeSnapshot(loadRealWorldConnectors()),null,2)))\"",
-    "runtime:self-build": "node scripts/acorn-self-build.mjs"
+    "runtime:self-build": "node scripts/acorn-self-build.mjs",
+    "runtime:universal": "node scripts/acorn-universal-infrastructure.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -165,6 +166,7 @@
     "./acorn-real-world-bridge": "./scripts/acorn-real-world-bridge.mjs",
     "./acorn-operational-fabric": "./scripts/acorn-operational-fabric.mjs",
     "./acorn-self-build": "./scripts/acorn-self-build.mjs",
+    "./acorn-universal-infrastructure": "./scripts/acorn-universal-infrastructure.mjs",
     "./acorn-stripe-adapter": "./scripts/acorn-stripe-adapter.mjs",
     "./acorn-economic-ledger": "./scripts/acorn-economic-ledger.mjs",
     "./acorn-usage-rights": "./scripts/acorn-usage-rights.mjs",

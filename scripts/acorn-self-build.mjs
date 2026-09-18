@@ -83,6 +83,26 @@ export const EXTENSION_KINDS = Object.freeze([
   "PROJECT",
   "PRODUCT",
   "INTELLIGENCE",
+  "MACHINE",
+  "DEVICE",
+  "SENSOR",
+  "ROBOT",
+  "PROTOCOL",
+  "MARKET",
+  "ECONOMIC_RAIL",
+  "ORGANISM",
+  "PHYSICAL",
+  "FEDERATION",
+  "UNKNOWN",
+]);
+
+export const PROTECTED_EXTENSION_KINDS = Object.freeze([
+  "CONSTITUTION",
+  "AUTHORITY",
+  "MERGE",
+  "BREAKER",
+  "LIVE",
+  "CARL",
 ]);
 
 export const STOP_REASONS = Object.freeze([
@@ -1050,25 +1070,27 @@ export function registerQualified(record = {}, { evidence = [], now = Date.now()
 
 export function admitExtension({ kind, id: extId, adapter = {} } = {}) {
   const k = text(kind).toUpperCase();
-  if (!EXTENSION_KINDS.includes(k)) {
+  if (PROTECTED_EXTENSION_KINDS.includes(k)) {
     return {
       admitted: false,
-      reason: "UNKNOWN_KIND",
-      kind: k || "UNKNOWN",
+      reason: "PROTECTED_MODIFICATION",
+      kind: k,
       core_modified: false,
       live: false,
       auto_merge: false,
       authority: "carl",
     };
   }
-  const identity = text(extId, k.toLowerCase() + ".unnamed");
+  const known = EXTENSION_KINDS.includes(k);
+  const identity = text(extId, (known ? k : "UNKNOWN").toLowerCase() + ".unnamed");
   const contract = ["detect", "propose", "test", "measure"];
   const present = contract.filter((name) => typeof adapter[name] === "function");
   const row = {
     id: identity,
-    kind: k,
+    kind: known ? k : "UNKNOWN",
+    requested_kind: k || "UNKNOWN",
     adapter_methods: present,
-    lifecycle: "DISCOVERED",
+    lifecycle: known ? "DISCOVERED" : "UNKNOWN",
     authorized: false,
     live: false,
     core_modified: false,
@@ -1080,7 +1102,7 @@ export function admitExtension({ kind, id: extId, adapter = {} } = {}) {
     ...row,
     auto_merge: false,
     authority: "carl",
-    status: present.length === contract.length ? "DISCOVERED" : "DISCOVERED",
+    status: known ? "DISCOVERED" : "UNKNOWN",
     knowledge: "UNKNOWN",
   };
 }

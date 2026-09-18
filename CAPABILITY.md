@@ -35,6 +35,13 @@ architecture: [self-build](scripts/acorn-self-build.mjs) detects a
 `CAPABILITY_GAP`, runs the existing loop in a safe zone, and never treats a
 gap as an existing capability. GAP DETECTED ≠ EXISTS. READY ≠ AUTHORIZED.
 
+Relations between primitives — capability graph, unknown admission, economic
+rail as a replaceable implementation, federation over existing contracts —
+live in [universal infrastructure](scripts/acorn-universal-infrastructure.mjs).
+That module is a coordinator of relations, not a second runtime.
+Stripe is an ECONOMIC_RAIL implementation. A more powerful intelligence does
+not receive more authority.
+
 ## Honest states
 
 `DISCOVERED` `IDENTIFIED` `DESCRIBED` `AUTHENTICATED` `AVAILABLE`

@@ -141,6 +141,7 @@
       <div class="nav" role="tablist" aria-label="Workspace">
         <button class="tab" id="tab-work" type="button" role="tab" aria-selected="true">Project</button>
         <button class="tab" id="tab-account" type="button" role="tab" aria-selected="false">Account</button>
+        <button class="tab" id="tab-infra" type="button" role="tab" aria-selected="false">Foundations</button>
       </div>
 
       <div id="workpane" class="stack">
@@ -201,6 +202,19 @@
           <h3>Ledger</h3>
           <p class="quiet">Not tax advice. Not accounting advice. Net only when gross and fees were both observed.</p>
           <div id="ledger" class="stack"></div>
+        </div>
+      </div>
+
+      <div id="infrapane" class="hidden stack">
+        <div>
+          <h1>Built to last</h1>
+          <p class="lede">Acorn is built so new tools, models, machines, and markets can join without rebuilding it. Missing is not existing. Unknown is not invented. Nothing here is live, certified, or a receipt.</p>
+        </div>
+        <div class="panel stack" id="infra-holds"></div>
+        <div class="panel stack">
+          <h3>What is actually proven</h3>
+          <p class="quiet">Code present is not executed. Executed is not verified. Verified is not live. Carl remains the authority.</p>
+          <div id="infra-truth" class="stack" style="margin-top:12px"></div>
         </div>
       </div>
     </section>
@@ -290,17 +304,47 @@
       }
     }
 
+    async function loadInfra() {
+      try {
+        const j = await call("/api/v1/infrastructure");
+        const q = j.architectural_questions || {};
+        const truth = j.truth || {};
+        $("infra-truth").innerHTML = (truth.domains || []).map((d) => `
+          <article class="req" style="cursor:default">
+            <h4>${esc(d.domain)}</h4>
+            <p class="quiet">Code=${d.code === true} · Tested=${d.tested === true} · Executed=${esc(String(d.executed))} · Measured=${esc(String(d.measured))}</p>
+            <p class="mono">verified=false · live=false</p>
+          </article>
+        `).join("");
+        $("infra-holds").innerHTML = `
+          <div class="row">
+            <span class="chip">${q.intelligence ? "New intelligence: core unchanged" : "Blocked"}</span>
+            <span class="chip">${q.rail ? "New rail: domain unchanged" : "Blocked"}</span>
+            <span class="chip">${q.machine ? "New machine: no parallel architecture" : "Blocked"}</span>
+            <span class="chip">${q.power ? "More power ≠ more authority" : "Blocked"}</span>
+            <span class="chip hold">Not live</span>
+          </div>
+          <p class="quiet" style="margin-top:12px">Missing stays missing. Unknown stays unknown. Carl remains the authority.</p>
+        `;
+      } catch (e) {
+        $("infra-truth").innerHTML = `<p class="err">${esc(e.error || "Could not load foundations")}</p>`;
+      }
+    }
+
     function showTab(which) {
-      const work = which === "work";
-      $("tab-work").setAttribute("aria-selected", work ? "true" : "false");
-      $("tab-account").setAttribute("aria-selected", work ? "false" : "true");
-      show($("workpane"), work);
-      show($("accountpane"), !work);
-      if (!work) loadAccount();
+      $("tab-work").setAttribute("aria-selected", which === "work" ? "true" : "false");
+      $("tab-account").setAttribute("aria-selected", which === "account" ? "true" : "false");
+      $("tab-infra").setAttribute("aria-selected", which === "infra" ? "true" : "false");
+      show($("workpane"), which === "work");
+      show($("accountpane"), which === "account");
+      show($("infrapane"), which === "infra");
+      if (which === "account") loadAccount();
+      if (which === "infra") loadInfra();
     }
 
     $("tab-work").addEventListener("click", () => showTab("work"));
     $("tab-account").addEventListener("click", () => showTab("account"));
+    $("tab-infra").addEventListener("click", () => showTab("infra"));
 
     function enterWork() {
       show($("gate"), false);
@@ -367,6 +411,10 @@
           <div class="row">${data.gaps.map((g) => `<span class="chip warn">${esc(g.capability || g.name || "unknown")}</span>`).join(" ")}</div>
           <p class="quiet" style="margin-top:8px">A gap is a detected absence. It is not a working capability and it is not permission to build in production.</p>
           <div class="row" style="margin-top:12px"><button class="btn btn-ghost" type="button" id="proposebuild">Propose a sandbox build</button></div>
+        </div>` : ""}
+        ${data.graph && Array.isArray(data.graph.missing) ? `<div>
+          <h3>Capability graph</h3>
+          <p class="quiet">${(data.graph.nodes || []).length} named · ${(data.graph.edges || []).length} relations · missing ${data.graph.missing.length}. Named is not existing.</p>
         </div>` : ""}
         ${Array.isArray(data.holds) && data.holds.length ? `<div>
           <h3>Human hold</h3>
