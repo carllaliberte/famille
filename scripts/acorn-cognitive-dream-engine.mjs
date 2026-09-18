@@ -33,7 +33,7 @@ export function dreamWorld({ reality, hypothesis, id = "", transition = {}, prob
   if (!hypothesis?.fingerprint) throw new Error("HYPOTHESIS_REQUIRED");
   const world = {
     id: str(id) || digest({ parent: reality.fingerprint, hypothesis: hypothesis.fingerprint, transition }),
-    kind: "PREDICTION", state: Object.fromEntries(new Set([...Object.keys(obj(reality.state)), ...Object.keys(transition.delta || {})]).map((key) => [key, Number.isFinite(Number(obj(reality.state)[key])) && Number.isFinite(Number(transition.delta || {})[key]) ? Number(obj(reality.state)[key]) + Number((transition.delta || {})[key]) : (key in (transition.delta || {}) ? (transition.delta || {})[key] : obj(reality.state)[key])])),
+    kind: "PREDICTION", state: Object.fromEntries(Array.from(new Set([...Object.keys(obj(reality.state)), ...Object.keys(transition.delta || {})])).map((key) => [key, Number.isFinite(Number(obj(reality.state)[key])) && Number.isFinite(Number(transition.delta || {})[key]) ? Number(obj(reality.state)[key]) + Number((transition.delta || {})[key]) : (key in (transition.delta || {}) ? (transition.delta || {})[key] : obj(reality.state)[key])])),
     parent: reality.fingerprint, hypothesis: hypothesis.fingerprint,
     transition: { action: str(transition.action), delta: { ...obj(transition.delta) } },
     probability: probability === null ? null : c01(probability), utility: utility === null ? null : n(utility),
