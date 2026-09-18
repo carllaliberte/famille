@@ -24,6 +24,8 @@ import { runUniversalComputeSweep } from "./acorn-universal-compute-sweep.mjs";
 import { runValueOpportunityCycle } from "./acorn-value-opportunity-fabric.mjs";
 import { privacyPolicy, privacyAudit } from "./acorn-privacy-process.mjs";
 import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
+import { snapshotFreeFirstCloud, createResource, buildFreeFirstPlan } from "./acorn-free-first-cloud-fabric.mjs";
+import { economicPolicy, measureUnitEconomics, economicAllocation } from "./acorn-economic-optimizer.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
   limitsFromEnv,
@@ -85,6 +87,9 @@ export function canonicalWorkFromRuntime(runtime) {
 
   push({ id:"connection-sweep", subject:"discover, authenticate, measure and verify all available connection adapters", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:0.9, reversibility:1, cost:0.1, execution_kind:"connection-sweep" }, "connections");
   push({ id:"privacy-process-audit", subject:"minimize data, redact secrets, enforce retention and reduce human administration", information_gain:1, capability_gain:0.9, risk_reduction:1, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"privacy-audit" }, "privacy");
+
+  push({ id:"free-first-cloud-sweep", subject:"discover, classify, verify and measure free-first cloud resources", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:1, reversibility:1, cost:0.1, execution_kind:"free-first-cloud" }, "cloud");
+  push({ id:"economic-optimization-cycle", subject:"maximize verified net value and crypto yield per unit of resource", information_gain:1, capability_gain:0.8, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.05, execution_kind:"economic-optimization" }, "economy");
 
   // Compute is part of the organism metabolism: execute every currently
   // executable safe resource, while keeping remote/paid/unknown work gated.
@@ -204,6 +209,23 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
       stderr_tail: result.proof?.status === "VERIFIED" ? "" : "CONNECTION_SWEEP_NOT_VERIFIED",
     };
   }
+  if (kind === "economic-optimization") {
+    const started = Date.now();
+    const economics = measureUnitEconomics(task.economics || {});
+    const allocation = economicAllocation({resources:task.resources || [], opportunities:task.opportunities || [], budget:task.budget || 0});
+    return { status:"COMPLETED", duration_ms:Date.now()-started, executor:"economic-optimizer", economy:{policy:economicPolicy(),measurement:economics,allocation}, stdout_tail:"", stderr_tail:"" };
+  }
+  if (kind === "free-first-cloud") {
+    const started = Date.now();
+    const resources = [
+      createResource({ id:"github:public-actions", provider:"github", name:"GitHub public repository Actions", resource_class:"FREE_PERMANENT", state:"DISCOVERED", capabilities:["ci","compute","test"], metadata:{verification_required:true} }),
+      createResource({ id:"oracle:always-free", provider:"oracle", name:"Oracle Cloud Always Free", resource_class:"FREE_PERMANENT", state:"DISCOVERED", capabilities:["compute","storage","database","network"], metadata:{verification_required:true} }),
+      createResource({ id:"cloudflare:free", provider:"cloudflare", name:"Cloudflare Free services", resource_class:"FREE_QUOTA", state:"DISCOVERED", capabilities:["edge","worker","network","storage"], metadata:{verification_required:true} })
+    ];
+    const snapshot = snapshotFreeFirstCloud({ resources });
+    const plan = buildFreeFirstPlan(resources);
+    return { status:"COMPLETED", duration_ms:Date.now()-started, executor:"free-first-cloud-fabric", cloud:{snapshot,plan}, stdout_tail:"", stderr_tail:"" };
+  }
   if (kind === "compute-sweep") {
     const started = Date.now();
     const result = await runUniversalComputeSweep({ env, human_authorization: task.human_authorization === true, policy: task.policy || "FREE_FIRST" });
@@ -262,6 +284,7 @@ export function executorPolicy({ env = process.env } = {}) {
 function defaultTaskFor(row, env = process.env) {
   if (row.execution_kind === "value-opportunity") return { ...row, execution_kind:"value-opportunity", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "privacy-audit") return { ...row, execution_kind:"privacy-audit", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "economic-optimization") return { ...row, execution_kind:"economic-optimization", resource_cost:{actions:1,cpu_ms:5000} };
   if (row.execution_kind === "connection-sweep") {
     return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
