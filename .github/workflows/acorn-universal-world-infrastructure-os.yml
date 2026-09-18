@@ -1,0 +1,23 @@
+name: ACORN Universal World Infrastructure OS
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/acorn-universal-world-infrastructure-os.mjs"
+      - "scripts/acorn-world-infrastructure-conductor.mjs"
+      - "test/acorn-universal-world-infrastructure-os.test.js"
+      - ".github/workflows/acorn-universal-world-infrastructure-os.yml"
+permissions:
+  contents: read
+jobs:
+  constitution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test test/acorn-universal-world-infrastructure-os.test.js
+      - run: node --input-type=module -e "import('./scripts/acorn-universal-world-infrastructure-os.mjs').then(({assertWorldConstitution})=>assertWorldConstitution())"
