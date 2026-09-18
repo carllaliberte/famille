@@ -149,7 +149,7 @@ export function workState({ previous = {}, discovered = [] } = {}) {
       priority: scoreWork(row),
     };
   });
-  return { queue: rankWork(queue), updated_at: new Date().toISOString() };
+  return { queue: rankWork(queue, { history }), updated_at: new Date().toISOString() };
 }
 
 function executeDeterministic({ root, task, env }) {
