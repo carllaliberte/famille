@@ -1,6 +1,8 @@
 name: acorn-continuous-work
 
 on:
+  pull_request:
+    branches: ["main"]
   schedule:
     # Offset from the top of the hour to reduce scheduler congestion.
     - cron: "17,47 * * * *"
