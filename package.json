@@ -59,7 +59,8 @@
     "runtime:customer-experience": "node scripts/acorn-customer-experience.mjs",
     "runtime:asset-product-factory": "node scripts/acorn-asset-product-factory.mjs",
     "runtime:client-ready": "node scripts/acorn-client-ready.mjs",
-    "runtime:customer-service": "node scripts/acorn-customer-service.mjs"
+    "runtime:customer-service": "node scripts/acorn-customer-service.mjs",
+    "live:server": "node live/server.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -136,5 +137,8 @@
   },
   "devDependencies": {
     "husky": "^9.1.7"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   }
 }
