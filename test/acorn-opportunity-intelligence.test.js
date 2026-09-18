@@ -1,0 +1,8 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {createOpportunity,qualifyOpportunity,rankOpportunities,buildOpportunityPortfolio,deriveReusableOpportunity,snapshotOpportunityIntelligence} from "../scripts/acorn-opportunity-intelligence.mjs";
+test("discovers without inventing verification",()=>{const x=createOpportunity({id:"x",type:"API",provider:"future",name:"Future API",capabilities:["search"]}); assert.equal(x.status,"DISCOVERED"); assert.equal(x.authority,false);});
+test("expiry is enforced",()=>{const x=createOpportunity({id:"x",type:"CREDIT",expires_at:"2000-01-01T00:00:00Z"}); assert.equal(qualifyOpportunity(x).status,"EXPIRED");});
+test("free-first opportunity ranking",()=>{const a=createOpportunity({id:"paid",type:"API",capabilities:["search"],cost:1}); const b=createOpportunity({id:"free",type:"API",capabilities:["search"],cost:0}); assert.equal(rankOpportunities({opportunities:[a,b],required_capabilities:["search"]})[0].id,"free");});
+test("portfolio is bounded and non-authoritative",()=>{const p=buildOpportunityPortfolio({opportunities:[createOpportunity({id:"a",type:"OPEN_SOURCE"})],limit:1}); assert.equal(p.count,1); assert.equal(p.authority,false);});
+test("measured outcome becomes reusable candidate, not authority",()=>{const x=deriveReusableOpportunity({outcome:{id:"project-1"},capabilities:["automation"],evidence:{id:"e1"}}); assert.equal(x.type,"PROJECT_TEMPLATE"); assert.equal(x.status,"QUALIFIED"); assert.equal(x.authority,false);});
+test("snapshot distinguishes observed states",()=>{const s=snapshotOpportunityIntelligence({opportunities:[createOpportunity({id:"a",type:"FREE_TIER",cost:0})]}); assert.equal(s.free_candidates,1); assert.equal(typeof s.measured_at,"string");});
