@@ -84,6 +84,7 @@
     "runtime:opportunity-intelligence": "node scripts/acorn-opportunity-intelligence.mjs",
     "runtime:developer-hall": "node scripts/acorn-developer-hall.mjs",
     "runtime:connection-mesh": "node scripts/acorn-universal-connection-mesh.mjs",
+    "runtime:capability-router": "node scripts/acorn-universal-capability-router.mjs",
     "runtime:developer-access": "node scripts/acorn-universal-developer-access.mjs"
   },
   "exports": {
@@ -192,6 +193,7 @@
     "./acorn-opportunity-intelligence": "./scripts/acorn-opportunity-intelligence.mjs",
     "./acorn-developer-hall": "./scripts/acorn-developer-hall.mjs",
     "./acorn-universal-connection-mesh": "./scripts/acorn-universal-connection-mesh.mjs",
+    "./acorn-universal-capability-router": "./scripts/acorn-universal-capability-router.mjs",
     "./acorn-universal-developer-access": "./scripts/acorn-universal-developer-access.mjs"
   },
   "devDependencies": {
