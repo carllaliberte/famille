@@ -7,6 +7,7 @@ import { createTask, buildExecutionPlan, executionSnapshot, runSyntheticExecutio
 import { createLiveDatabase, now, makeId } from "./database.mjs";
 import { buildRuntimePlan, verifyRuntimePlan } from "../scripts/acorn-runtime-orchestrator.mjs";
 import { createExecutionRun, executionLoopSnapshot } from "../scripts/acorn-execution-evidence-loop.mjs";
+import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot } from "../scripts/acorn-real-world-bridge.mjs";
 const PORT=Number(process.env.PORT||10000),HOST=process.env.HOST||"0.0.0.0",db=await createLiveDatabase();
 const MAX_BODY=Number(process.env.MAX_BODY_BYTES||262144);
 const json=(res,status,body)=>{const data=JSON.stringify(body);res.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-frame-options":"DENY","content-length":Buffer.byteLength(data)});res.end(data)};
@@ -37,6 +38,20 @@ if(req.method==="GET"&&u.pathname==="/api/v1/intelligences")return json(res,200,
 if(req.method==="POST"&&u.pathname==="/api/v1/connections/measure"){const b=await readBody(req),c=createConnection(b),m=measureConnection(c,{reachable:Boolean(b.reachable),capabilities:Array.isArray(b.capabilities)?b.capabilities:[]});return json(res,200,{connection:{...m,credentials_present:false,secret_custody:false},proof:{measured_at:m.measured_at}})}
 if(req.method==="POST"&&u.pathname==="/api/v1/runtime/plan"){const b=await readBody(req);const plan=buildRuntimePlan({requestId:String(b.request_id||""),problem:String(b.problem||""),requiredCapabilities:Array.isArray(b.required_capabilities)?b.required_capabilities:[],intelligences:intelligences(),connectors:connections()});return json(res,201,{plan,verification:verifyRuntimePlan(plan),proof:{measured_at:now(),external_effect:false,human_authorization_required:true}})}
 if(req.method==="POST"&&u.pathname==="/api/v1/runtime/run"){const b=await readBody(req);const plan=buildRuntimePlan({requestId:String(b.request_id||""),problem:String(b.problem||""),requiredCapabilities:Array.isArray(b.required_capabilities)?b.required_capabilities:[],intelligences:intelligences(),connectors:connections()});const run=createExecutionRun({requestId:String(b.request_id||""),plan,authorized:Boolean(b.human_authorized)});return json(res,201,{run,snapshot:executionLoopSnapshot(run),proof:{planning_measured:true,execution_performed:false,external_effect:false}})}
+if(req.method==="GET"&&u.pathname==="/api/v1/real-world")return json(res,200,{bridge:realWorldBridgeSnapshot(loadRealWorldConnectors()),measured_at:now()});
+if(req.method==="POST"&&u.pathname==="/api/v1/runtime/external"){
+ const b=await readBody(req),requestId=String(b.request_id||""),row=requestId?await db.get("SELECT id FROM requests WHERE id=$1 AND customer_id=$2",[requestId,cid]):null;
+ if(!row)return json(res,404,{error:"REQUEST_NOT_FOUND"});
+ const connectors=loadRealWorldConnectors(),connector=connectors.find(x=>x.id===String(b.connector_id||""));
+ if(!connector)return json(res,404,{error:"CONNECTOR_NOT_CONFIGURED"});
+ const call=buildExternalCall({connector,path:String(b.path||""),method:String(b.method||"GET"),body:b.body??null,human_authorized:Boolean(b.human_authorized),idempotency_key:b.idempotency_key||null});
+ const credential=connector.credential_env?process.env[connector.credential_env]||null:null;
+ const result=await executeExternalCall(call,{credential});
+ const evidence=result.evidence?{id:makeId("ev"),request_id:requestId,kind:"EXTERNAL_EXECUTION",status:result.state==="SUCCEEDED"?"MEASURED":"FAILED",origin:"external_http",measured_at:result.measured_at||now(),valid_until:null,confidence:result.evidence.confidence||0,margin:result.evidence.margin||0,payload:JSON.stringify({execution_id:result.id,connector_id:connector.id,provider:connector.provider,http_status:result.http_status,output_hash:result.output_hash,effect:connector.effect,external_effect:result.external_effect})}:null;
+ if(evidence)await db.run("INSERT INTO acorn_evidence(id,request_id,kind,status,origin,measured_at,valid_until,confidence,margin,payload) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",[evidence.id,evidence.request_id,evidence.kind,evidence.status,evidence.origin,evidence.measured_at,evidence.valid_until,evidence.confidence,evidence.margin,evidence.payload]);
+ await event(requestId,"REAL_WORLD_EXECUTION",{execution_id:result.id,connector_id:connector.id,state:result.state,effect:connector.effect,external_effect:result.external_effect,measured_at:result.measured_at||now()});
+ return json(res,result.state==="SUCCEEDED"?200:result.state==="BLOCKED"?403:502,{result:{...result,output:result.output},proof:{external_call_measured:result.state!=="BLOCKED",evidence_persisted:Boolean(evidence),secret_custody:false,measured_at:now()}});
+}
 if(req.method==="GET"&&u.pathname==="/api/v1/runtime"){
  const jobs=await db.all("SELECT state,COUNT(*) AS count FROM acorn_jobs GROUP BY state").catch(()=>[]);
  const evidence=await db.all("SELECT id,request_id,kind,status,origin,measured_at,valid_until,confidence,margin FROM acorn_evidence WHERE request_id IN (SELECT id FROM requests WHERE customer_id=$1) ORDER BY measured_at DESC LIMIT 100",[cid]).catch(()=>[]);
