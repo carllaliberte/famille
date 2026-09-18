@@ -13,7 +13,7 @@ import { createExecutionRun, executionLoopSnapshot } from "../scripts/acorn-exec
 import { createConnectorExecutor, executeConnector } from "../scripts/acorn-connector-execution-fabric.mjs";
 import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot, isConsequentialEffect, publicExternalResult } from "../scripts/acorn-real-world-bridge.mjs";
 import { assessRuntimeStatus } from "./runtime-status.mjs";
-import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadTenantAsOf } from "./enterprise-store.mjs";
+import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadTenantAsOf, loadIdempotentResult, persistIdempotentResult } from "./enterprise-store.mjs";
 import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt, proposeCapabilities } from "../scripts/acorn-operational-fabric.mjs";
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
 import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject, loadCommercialCycle, humanMoneyAuthorized } from "./commercial.mjs";
@@ -372,6 +372,28 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         if (!connector) return send(404, { error: "CONNECTOR_NOT_CONFIGURED" });
         const effect = String(connector.effect || "UNKNOWN").toUpperCase();
         const clientTriedAuthority = b.human_authorized === true || b.authorized === true || Boolean(b.authority);
+        const idempotencyKey = typeof b.idempotency_key === "string" ? b.idempotency_key : null;
+        if (idempotencyKey) {
+          const cached = await loadIdempotentResult(database, { tenantId: cid, connectorId: connector.id, idempotencyKey });
+          if (cached) {
+            return send(cached.state === "SUCCEEDED" ? 200 : (cached.state === "BLOCKED" ? 403 : 502), {
+              result: publicExternalResult(cached),
+              proof: {
+                live: false,
+                verified: false,
+                secret_custody: false,
+                human_authorization_required: true,
+                client_authorization_ignored: true,
+                http_cannot_grant_authority: true,
+                untrusted_client_fields: ["base_url", "path", "method", "human_authorized", "authority", "authorized"],
+                idempotent_replay: true,
+                external_call_measured: cached.state === "SUCCEEDED",
+                external_effect: cached.external_effect === true,
+                measured_at: now()
+              }
+            });
+          }
+        }
         const locked = isConsequentialEffect(effect);
         const call = locked ? {
           id: makeId("ext"),
@@ -394,6 +416,15 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         const credential = (!locked && connector.credential_env) ? env[connector.credential_env] || process.env[connector.credential_env] || null : null;
         const result = locked ? call : await executeExternalCall(call, { credential });
         const publicResult = publicExternalResult(result);
+        if (idempotencyKey) {
+          await persistIdempotentResult(database, {
+            tenantId: cid,
+            connectorId: connector.id,
+            idempotencyKey,
+            requestHash: `${connector.id}:${String(b.method || "GET")}:${String(b.path || "")}`,
+            result: publicResult
+          });
+        }
         await persistEnterpriseEvent(database, {
           tenantId: cid,
           entityId: requestId,

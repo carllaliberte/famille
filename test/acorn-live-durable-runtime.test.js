@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { selectLiveDatabaseAdapter, createLiveDatabase, now } from "../live/database.mjs";
 import { applyMigrations, listMigrations } from "../live/migrate.mjs";
 import { assessRuntimeStatus, localFactsCannotProve, RUNTIME_STATES } from "../live/runtime-status.mjs";
-import { persistState, persistEvidence, loadTenantState, loadTenantEvidence, getTenantState } from "../live/enterprise-store.mjs";
+import { persistState, persistEvidence, loadTenantState, loadTenantEvidence, getTenantState, loadIdempotentResult, persistIdempotentResult } from "../live/enterprise-store.mjs";
 import { registerEvidence, evidenceIsCurrent, proofGate } from "../scripts/acorn-evidence-registry.mjs";
 import { createConnectorExecutor, executeConnector } from "../scripts/acorn-connector-execution-fabric.mjs";
 import { createLiveServer } from "../live/server.mjs";
@@ -250,11 +250,57 @@ test("migrations are deterministic and repeatable", async () => {
   await withDb(async (db) => {
     const listed = listMigrations("sqlite");
     assert.ok(listed.some((row) => row.id === "0001_init"));
+    assert.ok(listed.some((row) => row.id === "0005_connector_idempotency"));
     const rows = await db.all("SELECT id FROM schema_migrations");
     assert.ok(rows.some((row) => row.id === "0001_init"));
+    assert.ok(rows.some((row) => row.id === "0005_connector_idempotency"));
     const second = await applyMigrations(db);
     assert.deepEqual(second.applied, []);
   });
+});
+
+test("connector idempotency persists the public result and does not mint authority", async () => {
+  await withDb(async (db) => {
+    const stored = await persistIdempotentResult(db, {
+      tenantId: "t1",
+      connectorId: "read",
+      idempotencyKey: "k1",
+      requestHash: "read:GET:health",
+      result: { state: "SUCCEEDED", live: false, verified: false, output: "secret" }
+    });
+    assert.equal(stored.state, "SUCCEEDED");
+    assert.equal(stored.live, false);
+    const again = await loadIdempotentResult(db, { tenantId: "t1", connectorId: "read", idempotencyKey: "k1" });
+    assert.equal(again.state, "SUCCEEDED");
+    assert.equal(again.verified, false);
+    assert.equal(await loadIdempotentResult(db, { tenantId: "t2", connectorId: "read", idempotencyKey: "k1" }), null);
+  });
+});
+
+test("HTTP external idempotency replays without granting client authority", async () => {
+  const connectors = JSON.stringify([{ id: "read", provider: "example", base_url: "https://example.test/api/", effect: "READ" }]);
+  await withServer(async ({ base }) => {
+    const auth = await jsonReq(base, "/api/v1/register", { method: "POST", body: { name: "Idem", email: "idem@example.com", password: "correct-horse" } });
+    const created = await jsonReq(base, "/api/v1/requests", { method: "POST", token: auth.json.token, body: { request: "observe twice" } });
+    const first = await jsonReq(base, "/api/v1/runtime/external", {
+      method: "POST",
+      token: auth.json.token,
+      body: { request_id: created.json.request.id, connector_id: "read", path: "https://169.254.169.254/", method: "GET", idempotency_key: "same", human_authorized: true }
+    });
+    assert.equal(first.status, 403);
+    assert.equal(first.json.result.reason, "URL_OUT_OF_SCOPE");
+    assert.equal(first.json.proof.http_cannot_grant_authority, true);
+    const replay = await jsonReq(base, "/api/v1/runtime/external", {
+      method: "POST",
+      token: auth.json.token,
+      body: { request_id: created.json.request.id, connector_id: "read", path: "health", method: "GET", idempotency_key: "same", human_authorized: true }
+    });
+    assert.equal(replay.status, 403);
+    assert.equal(replay.json.proof.idempotent_replay, true);
+    assert.equal(replay.json.result.reason, "URL_OUT_OF_SCOPE");
+    assert.equal(replay.json.proof.live, false);
+    assert.equal(replay.json.proof.verified, false);
+  }, { ACORN_REAL_WORLD_CONNECTORS: connectors });
 });
 
 test("logout revokes the session", async () => {

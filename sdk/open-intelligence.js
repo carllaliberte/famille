@@ -146,6 +146,7 @@ export function intelligenceAdapter(partial = {}) {
         authority: false,
         live: false,
         identity_is_not_model: this.id !== (this.model || this.id),
+        provider_is_not_foundation: true,
       };
     },
     handshake() {
@@ -181,7 +182,7 @@ export function routeByCapability(task, adapters) {
       return !task.need || task.need === "CAPABILITY_UNKNOWN" || task.need === "CAPABILITY_NEW";
     }
     return !task.need || caps.includes(task.need);
-  }).map((a) => ({ id: a.id, authority: false, live: false, role: a.role || "node" }));
+  }).map((a) => ({ id: a.id, authority: false, live: false, selection_is_not_authority: true, role: a.role || "node" }));
 }
 export function executionRequest(p = {}) {
   return { request_id: p.request_id || "req-1", requester: p.requester, capability: p.capability, input: p.input, context: p.context || "fabric", permissions: p.permissions || ["READ"], risk: p.risk || "low", provenance: p.provenance || { source: p.requester }, timestamp: p.timestamp || new Date().toISOString() };
