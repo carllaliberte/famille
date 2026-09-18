@@ -6,7 +6,7 @@ import { intelligenceSnapshot, validateIntelligenceParity } from "./acorn-intell
 import { connectorSnapshot } from "./acorn-connector-registry.mjs";
 import { executionLoopSnapshot } from "./acorn-execution-evidence-loop.mjs";
 import { buildCommercialCommandCenter } from "./acorn-commercial-control-plane.mjs";
-import { universalProjectContract, createUniversalProject, validateUniversalProject, canTransition, projectTruth } from "./acorn-universal-project-contract.mjs";
+import { universalProjectContract, createUniversalProject, validateUniversalProject, canTransition, projectTruth, composeExistingFabrics, proofMatrix, connectProvidersIfPresent } from "./acorn-universal-project-contract.mjs";
 
 const ISO=()=>new Date().toISOString();
 const uid=p=>p+"_"+crypto.randomUUID();
@@ -62,6 +62,8 @@ export function universalProjectRuntime(input = {}) {
   const project = createUniversalProject({
     id: input.projectId || uid("project"),
     tenantId: input.tenantId || null,
+    kind: input.kind,
+    scale: input.scale,
     problem: input.problem || "UNSPECIFIED_PROJECT",
     requirements: input.requirements || [],
     constraints: input.constraints || [],
@@ -71,17 +73,31 @@ export function universalProjectRuntime(input = {}) {
     connectors: input.connectors || [],
     tasks: input.tasks || []
   });
+  const composed = composeExistingFabrics({
+    ...input,
+    id: project.id,
+    tenantId: input.tenantId || null,
+    problem: project.problem,
+    capabilities: project.capabilities,
+    intelligences: input.intelligences || [],
+    connectors: input.connectors || []
+  });
   return {
     contract: universalProjectContract(),
     project,
     validation: validateUniversalProject(project),
     truth: projectTruth(project),
     transition: canTransition(project.execution_state, input.nextState || project.execution_state, input.transitionContext || {}),
+    composed,
+    providers: connectProvidersIfPresent({ env: input.env || process.env }),
+    proof: proofMatrix(input.proofObservations || {}),
     composed_with_existing_runtime: true,
     second_runtime: false,
     second_graph: false,
     second_market_engine: false,
     second_execution_fabric: false,
+    second_evidence_engine: false,
+    second_self_build: false,
     authority: "carl",
     live: false,
     measured_at: ISO()
