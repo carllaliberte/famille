@@ -73,7 +73,8 @@
     "runtime:infinite-economy": "node scripts/acorn-infinite-economic-engine.mjs",
     "runtime:total-os": "node scripts/acorn-total-operating-system.mjs",
     "runtime:real-world": "node -e \"import('./scripts/acorn-real-world-bridge.mjs').then(({realWorldBridgeSnapshot,loadRealWorldConnectors})=>console.log(JSON.stringify(realWorldBridgeSnapshot(loadRealWorldConnectors()),null,2)))\"",
-    "runtime:self-build": "node scripts/acorn-self-build.mjs"
+    "runtime:self-build": "node scripts/acorn-self-build.mjs",
+    "runtime:quality": "node scripts/acorn-quality-fabric.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -170,7 +171,8 @@
     "./acorn-usage-rights": "./scripts/acorn-usage-rights.mjs",
     "./acorn-commercial-runtime": "./scripts/acorn-commercial-runtime.mjs",
     "./acorn-real-world-turnkey": "./scripts/acorn-real-world-turnkey.mjs",
-    "./acorn-quality-trace": "./scripts/acorn-quality-trace.mjs"
+    "./acorn-quality-trace": "./scripts/acorn-quality-trace.mjs",
+    "./acorn-quality-fabric": "./scripts/acorn-quality-fabric.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
