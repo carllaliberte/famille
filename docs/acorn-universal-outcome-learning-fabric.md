@@ -1,0 +1,4 @@
+# ACORN — UNIVERSAL OUTCOME LEARNING FABRIC
+Reality becomes learning only after measurement, evidence and verification. Verified outcomes update capability, routing, offers and project templates while never creating authority.
+Loop: OBSERVE → COLLECT EVIDENCE → NORMALIZE → MEASURE → VERIFY → BENCHMARK → COMPARE → EXPLAIN → LEARN → UPDATE CAPABILITY → UPDATE ROUTE → UPDATE OFFER → UPDATE PROJECT → RETEST → REVERIFY → REUSE → RECOMPOSE → REOBSERVE.
+Best-known remains scoped and temporal. No claim of global optimum. Learning never authorizes money, contracts, signing, deletion, publication, production or merge.

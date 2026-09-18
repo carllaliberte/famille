@@ -86,7 +86,8 @@
     "runtime:connection-mesh": "node scripts/acorn-universal-connection-mesh.mjs",
     "runtime:capability-router": "node scripts/acorn-universal-capability-router.mjs",
     "runtime:developer-access": "node scripts/acorn-universal-developer-access.mjs",
-    "runtime:monetization": "node scripts/acorn-monetization-operating-system.mjs"
+    "runtime:monetization": "node scripts/acorn-monetization-operating-system.mjs",
+    "runtime:network-convergence": "node scripts/acorn-network-convergence.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -198,7 +199,10 @@
     "./acorn-universal-developer-access": "./scripts/acorn-universal-developer-access.mjs",
     "./acorn-parabolic-universal-reality-convergence": "./scripts/acorn-parabolic-universal-reality-convergence.mjs",
     "./acorn-parabolic-convergence-conductor": "./scripts/acorn-parabolic-convergence-conductor.mjs",
-    "./acorn-monetization-operating-system": "./scripts/acorn-monetization-operating-system.mjs"
+    "./acorn-monetization-operating-system": "./scripts/acorn-monetization-operating-system.mjs",
+    "./acorn-network-convergence": "./scripts/acorn-network-convergence.mjs",
+    "./acorn-universal-outcome-learning-fabric": "./scripts/acorn-universal-outcome-learning-fabric.mjs",
+    "./acorn-outcome-learning-conductor": "./scripts/acorn-outcome-learning-conductor.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"

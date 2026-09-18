@@ -1,0 +1,1 @@
+import{buildLearningFabric,assertLearningConstitution}from"./acorn-universal-outcome-learning-fabric.mjs";export const conductOutcomeLearning=buildLearningFabric;export const assertOutcomeLearning=assertLearningConstitution;
