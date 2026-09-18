@@ -22,6 +22,10 @@ import { runContinuousRuntime } from "./acorn-continuous-runtime.mjs";
 import { executeComputeTask, snapshotComputeFabric } from "./acorn-compute-fabric.mjs";
 import { runUniversalComputeSweep } from "./acorn-universal-compute-sweep.mjs";
 import { runValueOpportunityCycle } from "./acorn-value-opportunity-fabric.mjs";
+import { gatewayPolicy, buildDeveloperConnectManifest } from "./acorn-developer-gateway.mjs";
+import { runMarketCycle } from "./acorn-market-engine.mjs";
+import { contributionSettlementReadiness, economyPolicy } from "./acorn-contribution-economy.mjs";
+import { revenuePolicy, measureRevenueEconomics, chooseRevenueOpportunities, consolidateBilling, consolidateCryptoSettlement, buildTaxReadyLedger } from "./acorn-revenue-maximizer.mjs";
 import { privacyPolicy, privacyAudit } from "./acorn-privacy-process.mjs";
 import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
 import { snapshotFreeFirstCloud, createResource, buildFreeFirstPlan } from "./acorn-free-first-cloud-fabric.mjs";
@@ -87,6 +91,10 @@ export function canonicalWorkFromRuntime(runtime) {
 
   push({ id:"connection-sweep", subject:"discover, authenticate, measure and verify all available connection adapters", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:0.9, reversibility:1, cost:0.1, execution_kind:"connection-sweep" }, "connections");
   push({ id:"privacy-process-audit", subject:"minimize data, redact secrets, enforce retention and reduce human administration", information_gain:1, capability_gain:0.9, risk_reduction:1, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"privacy-audit" }, "privacy");
+  push({ id:"developer-gateway-sweep", subject:"keep universal developer onboarding and connection readiness measured", information_gain:1, capability_gain:1, risk_reduction:0.8, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"developer-gateway" }, "developer");
+  push({ id:"market-engine-cycle", subject:"detect demand, diversify verified offers, and prepare measured commercial collection", information_gain:1, capability_gain:1, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.08, execution_kind:"market" }, "market");
+  push({ id:"contribution-economy-cycle", subject:"allocate measured contribution rewards only through verified settlement rails", information_gain:0.8, capability_gain:0.8, risk_reduction:0.9, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"contribution-economy" }, "economy");
+  push({ id:"revenue-maximization-cycle", subject:"maximize verified net revenue while preserving Acorn essence and open access", information_gain:1, capability_gain:1, risk_reduction:0.8, uncertainty:0.9, reversibility:1, cost:0.06, execution_kind:"revenue-maximization" }, "revenue");
 
   push({ id:"free-first-cloud-sweep", subject:"discover, classify, verify and measure free-first cloud resources", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:1, reversibility:1, cost:0.1, execution_kind:"free-first-cloud" }, "cloud");
   push({ id:"economic-optimization-cycle", subject:"maximize verified net value and crypto yield per unit of resource", information_gain:1, capability_gain:0.8, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.05, execution_kind:"economic-optimization" }, "economy");
@@ -197,6 +205,10 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
     return { status:"COMPLETED", duration_ms:Date.now()-started, executor:"value-opportunity-fabric", value:result, stdout_tail:"", stderr_tail:"" };
   }
   if (kind === "privacy-audit") { const started=Date.now(); const result=privacyAudit({events:task.events||[],records:task.records||[]}); return {status:result.status==="PASS"?"COMPLETED":"FAILED",duration_ms:Date.now()-started,executor:"privacy-process-fabric",privacy:{policy:privacyPolicy(),audit:result},stdout_tail:"",stderr_tail:result.status==="PASS"?"":"PRIVACY_AUDIT_FAILED"}; }
+  if (kind === "developer-gateway") { const started=Date.now(); const manifest=buildDeveloperConnectManifest({capabilities:task.capabilities||[],protocols:["connector-flux"]}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"developer-gateway-fabric",developer:{policy:gatewayPolicy(),manifest},stdout_tail:"",stderr_tail:""}; }
+  if (kind === "market") { const started=Date.now(); const result=runMarketCycle({signals:task.signals||[],capabilityIndex:task.capabilityIndex||[]}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"market-engine",market:result,stdout_tail:"",stderr_tail:""}; }
+  if (kind === "contribution-economy") { const started=Date.now(); const readiness=contributionSettlementReadiness({paymentRail:task.paymentRail||null,destination:task.destination||null}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"contribution-economy",economy:{policy:economyPolicy(),settlement:readiness},stdout_tail:"",stderr_tail:""}; }
+  if (kind === "revenue-maximization") { const started=Date.now(); const economics=measureRevenueEconomics(task.economics||{}); const opportunities=chooseRevenueOpportunities(task.opportunities||[],{max:Number(task.max_opportunities||10)}); const billing=consolidateBilling({customer_id:task.customer_id||null,period:task.period||null,events:task.billing_events||[],currency:task.currency||"USD",settlement_threshold:task.settlement_threshold||0}); const crypto=consolidateCryptoSettlement({customer_id:task.customer_id||null,period:task.period||null,invoices:task.crypto_invoices||[],rail:task.payment_rail||null,minimum_threshold:task.crypto_threshold||0}); const tax=buildTaxReadyLedger({customer_id:task.customer_id||null,period:task.period||null,invoices:task.billing_events||[],settlements:task.crypto_invoices||[],costs:task.costs||[]}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"revenue-maximizer",revenue:{policy:revenuePolicy(),economics,opportunities,billing,crypto_settlement:crypto,tax_ready:tax},stdout_tail:"",stderr_tail:""}; }
   if (kind === "connection-sweep") {
     const started = Date.now();
     const result = await runConnectionSweep({ env, now: new Date().toISOString() });
@@ -285,6 +297,10 @@ function defaultTaskFor(row, env = process.env) {
   if (row.execution_kind === "value-opportunity") return { ...row, execution_kind:"value-opportunity", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "privacy-audit") return { ...row, execution_kind:"privacy-audit", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "economic-optimization") return { ...row, execution_kind:"economic-optimization", resource_cost:{actions:1,cpu_ms:5000} };
+  if (row.execution_kind === "developer-gateway") return { ...row, execution_kind:"developer-gateway", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "market") return { ...row, execution_kind:"market", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "contribution-economy") return { ...row, execution_kind:"contribution-economy", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "revenue-maximization") return { ...row, execution_kind:"revenue-maximization", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "connection-sweep") {
     return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
