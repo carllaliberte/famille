@@ -52,7 +52,7 @@ test("failover without fencing is refused", () => {
   const primary = describeContinuityNode({ id: "p", role: "PRIMARY" });
   const warm = describeContinuityNode({ id: "w", role: "WARM_STANDBY", ready_for_failover: true, host: "alt" });
   const fail = detectFailure({ kind: "NODE_DOWN", processAlive: false, evidence: { v: 1 } });
-  const refused = runFailover({ failure: fail, primary, standbys: [warm], fenced: false });
+  const refused = runFailover({ failure: fail, primary, standbys: [warm], fenced: false, env: { ACORN_SYSTEM_MODE: "RUN" } });
   assert.equal(refused.status, "REFUSED");
   assert.equal(refused.reason, "FAILOVER_WITHOUT_FENCING");
   assert.equal(refused.promoted, false);
@@ -67,7 +67,7 @@ test("fencing plus verified standby can fail over without transferring authority
   const fail = detectFailure({ kind: "NODE_DOWN", processAlive: false, evidence: { v: 1 } });
   const fo = runFailover({
     failure: fail, lease: lease.lease, primary, standbys: [warm],
-    fenced: true, workerEvidence: { v: "cognitive-worker.v14" },
+    fenced: true, workerEvidence: { v: "cognitive-worker.v14" }, env: { ACORN_SYSTEM_MODE: "RUN" },
   });
   assert.equal(fo.status, "EXECUTED");
   assert.equal(fo.authority_transferred, false);
