@@ -83,6 +83,7 @@
     "runtime:openai-bridge": "node scripts/acorn-openai-developer-bridge.mjs",
     "runtime:opportunity-intelligence": "node scripts/acorn-opportunity-intelligence.mjs",
     "runtime:developer-hall": "node scripts/acorn-developer-hall.mjs",
+    "runtime:connection-mesh": "node scripts/acorn-universal-connection-mesh.mjs",
     "runtime:developer-access": "node scripts/acorn-universal-developer-access.mjs"
   },
   "exports": {
@@ -190,6 +191,7 @@
     "./acorn-openai-developer-bridge": "./scripts/acorn-openai-developer-bridge.mjs",
     "./acorn-opportunity-intelligence": "./scripts/acorn-opportunity-intelligence.mjs",
     "./acorn-developer-hall": "./scripts/acorn-developer-hall.mjs",
+    "./acorn-universal-connection-mesh": "./scripts/acorn-universal-connection-mesh.mjs",
     "./acorn-universal-developer-access": "./scripts/acorn-universal-developer-access.mjs"
   },
   "devDependencies": {
