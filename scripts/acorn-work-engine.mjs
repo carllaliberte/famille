@@ -13,6 +13,7 @@
  * EXECUTOR: replaceable.
  * CAPABILITY != AUTHORITY.
  * NO AUTO-MERGE.
+ * CONNECTION SWEEP IS A CANONICAL WORK ITEM, NOT A SECOND RUNTIME.
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
