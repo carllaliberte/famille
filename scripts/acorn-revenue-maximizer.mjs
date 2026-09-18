@@ -280,6 +280,25 @@ export function scoreCommercialGrowth({
   ).toFixed(6));
 }
 
+function maximizeCapabilityReuse(opportunities = []) {
+  const groups = new Map();
+  for (const opportunity of opportunities) {
+    for (const capability of Array.isArray(opportunity?.capability_ids) ? opportunity.capability_ids : []) {
+      const list = groups.get(String(capability)) || [];
+      list.push(opportunity.id || null);
+      groups.set(String(capability), list);
+    }
+  }
+  return [...groups.entries()]
+    .map(([capability_id, opportunity_ids]) => ({
+      capability_id,
+      opportunity_count: opportunity_ids.length,
+      opportunity_ids,
+      reuse_score: Math.min(1, opportunity_ids.length / 10),
+    }))
+    .sort((a, b) => b.opportunity_count - a.opportunity_count);
+}
+
 export function buildCommercialActionPlan({
   opportunities=[],
   capabilities=[],
