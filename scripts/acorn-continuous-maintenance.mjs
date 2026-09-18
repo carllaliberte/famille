@@ -49,7 +49,7 @@ export function normalizePullRequest(pr = {}, mainSha = null) {
   const state = text(pr.state).toLowerCase() || "unknown";
   const draft = pr.draft === true;
   const merged = pr.merged === true;
-  const mergeable = pr.mergeable === true;
+  const mergeable = pr.mergeable === false ? false : (pr.mergeable === true ? true : null);
   const head = text(pr.head_sha || pr.headSha || "");
   const base = text(pr.base_sha || pr.baseSha || mainSha || "");
   const divergent = ahead > 0 && behind > 0;
@@ -59,7 +59,7 @@ export function normalizePullRequest(pr = {}, mainSha = null) {
     title: text(pr.title) || "untitled",
     state, draft, merged, mergeable, ahead, behind, divergent, stale,
     head_sha: head || null, base_sha: base || null,
-    source: text(pr.head?.ref || pr.head_ref || pr.head || "unknown"),
+    source: text(pr.head?.ref || pr.head_ref || pr.headRefName || pr.head || "unknown"),
     base: text(pr.base?.ref || pr.base_ref || pr.base || "main"),
     labels: Array.isArray(pr.labels) ? pr.labels.map(x => text(x?.name || x)).filter(Boolean) : [],
     author: text(pr.user?.login || pr.author || ""),
