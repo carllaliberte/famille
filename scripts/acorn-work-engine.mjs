@@ -26,6 +26,7 @@ import { privacyPolicy, privacyAudit } from "./acorn-privacy-process.mjs";
 import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
 import { snapshotFreeFirstCloud, createResource, buildFreeFirstPlan } from "./acorn-free-first-cloud-fabric.mjs";
 import { economicPolicy, measureUnitEconomics, economicAllocation } from "./acorn-economic-optimizer.mjs";
+import { commercialFunnel, rankRevenuePipeline, maximizeCapabilityReuse } from "./acorn-revenue-maximization.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
   limitsFromEnv,
@@ -90,6 +91,7 @@ export function canonicalWorkFromRuntime(runtime) {
 
   push({ id:"free-first-cloud-sweep", subject:"discover, classify, verify and measure free-first cloud resources", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:1, reversibility:1, cost:0.1, execution_kind:"free-first-cloud" }, "cloud");
   push({ id:"economic-optimization-cycle", subject:"maximize verified net value and crypto yield per unit of resource", information_gain:1, capability_gain:0.8, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.05, execution_kind:"economic-optimization" }, "economy");
+  push({ id:"revenue-maximization-cycle", subject:"discover, package, price and prioritize the highest-value commercial opportunities", information_gain:1, capability_gain:1, risk_reduction:0.7, uncertainty:0.95, reversibility:1, cost:0.05, execution_kind:"revenue-maximization" }, "revenue");
 
   // Compute is part of the organism metabolism: execute every currently
   // executable safe resource, while keeping remote/paid/unknown work gated.
@@ -215,6 +217,14 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
     const allocation = economicAllocation({resources:task.resources || [], opportunities:task.opportunities || [], budget:task.budget || 0});
     return { status:"COMPLETED", duration_ms:Date.now()-started, executor:"economic-optimizer", economy:{policy:economicPolicy(),measurement:economics,allocation}, stdout_tail:"", stderr_tail:"" };
   }
+  if (kind === "revenue-maximization") {
+    const started = Date.now();
+    const opportunities = Array.isArray(task.opportunities) ? task.opportunities : [];
+    const funnel = commercialFunnel({ opportunities, active_customers: task.active_customers || 0, recurring_customers: task.recurring_customers || 0 });
+    const pipeline = rankRevenuePipeline(opportunities);
+    const reuse = maximizeCapabilityReuse(opportunities);
+    return { status:"COMPLETED", duration_ms:Date.now()-started, executor:"revenue-maximization-engine", revenue:{policy:revenuePolicy(), funnel, pipeline, capability_reuse:reuse}, stdout_tail:"", stderr_tail:"" };
+  }
   if (kind === "free-first-cloud") {
     const started = Date.now();
     const resources = [
@@ -285,6 +295,7 @@ function defaultTaskFor(row, env = process.env) {
   if (row.execution_kind === "value-opportunity") return { ...row, execution_kind:"value-opportunity", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "privacy-audit") return { ...row, execution_kind:"privacy-audit", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "economic-optimization") return { ...row, execution_kind:"economic-optimization", resource_cost:{actions:1,cpu_ms:5000} };
+  if (row.execution_kind === "revenue-maximization") return { ...row, execution_kind:"revenue-maximization", resource_cost:{actions:1,cpu_ms:5000} };
   if (row.execution_kind === "connection-sweep") {
     return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
