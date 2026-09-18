@@ -5,7 +5,8 @@
  * The record is integrity-checked on readback before prior measurement evidence is reused.
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { evidenceDigest, sealEvidence, verifyEvidenceSeal } from "./evidence-seal.mjs";
 import { emptyRanking, readRunRanking } from "./measured-ranking.mjs";
@@ -104,8 +105,7 @@ function findPredecessorRecord(runs, startIndex, digest, dir, runCommand) {
 export function loadMeasurementRecord(run = execFileSync, env = process.env) {
   const fallback = emptyMeasurementRecord();
   if (!env.GITHUB_REPOSITORY) return fallback;
-  const dir = join(process.cwd(), ".measurement-record-readback");
-  mkdirSync(dir, { recursive: true });
+  const dir = mkdtempSync(join(tmpdir(), "measurement-record-readback-"));
   try {
     const raw = run("gh", ["run", "list", "--workflow", "cognitive-worker.yml", "--repo", env.GITHUB_REPOSITORY, "--status", "success", "--limit", "10", "--json", "databaseId,headSha"], { encoding: "utf8", stdio: "pipe" });
     const runs = JSON.parse(raw || "[]")
@@ -154,10 +154,8 @@ export function loadPriorMeasuredCycle(run = execFileSync, env = process.env) {
     runId: null,
   };
   if (!env.GITHUB_REPOSITORY) return empty;
-  const recordDir = join(process.cwd(), ".measurement-record-readback");
-  const rankingDir = join(process.cwd(), ".acorn-measured-ranking");
-  mkdirSync(recordDir, { recursive: true });
-  mkdirSync(rankingDir, { recursive: true });
+  const recordDir = mkdtempSync(join(tmpdir(), "measurement-record-readback-"));
+  const rankingDir = mkdtempSync(join(tmpdir(), "acorn-measured-ranking-"));
   try {
     const raw = run("gh", ["run", "list", "--workflow", "cognitive-worker.yml", "--repo", env.GITHUB_REPOSITORY, "--status", "success", "--limit", "10", "--json", "databaseId,headSha"], { encoding: "utf8", stdio: "pipe" });
     const runs = JSON.parse(raw || "[]")
