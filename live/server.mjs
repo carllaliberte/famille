@@ -5,6 +5,7 @@ import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { customerServiceCycle } from "../scripts/acorn-customer-service.mjs";
+import { createConnection, createIntelligenceAdapter, createEnterpriseCycle, enterpriseSnapshot, measureConnection } from "../scripts/acorn-real-world-enterprise-os.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -25,6 +26,9 @@ const id=prefix=>prefix+"_"+crypto.randomUUID();
 const requireAuth=req=>{const h=req.headers.authorization||"";if(!h.startsWith("Bearer "))return null;const t=h.slice(7),row=db.prepare("SELECT customer_id,expires_at FROM sessions WHERE token_hash=?").get(tokenHash(t));if(!row||Date.parse(row.expires_at)<=Date.now())return null;return row.customer_id};
 const event=(requestId,type,payload)=>db.prepare("INSERT INTO events(request_id,type,payload,created_at) VALUES(?,?,?,?)").run(requestId,type,JSON.stringify(payload),now());
 const publicRequest=row=>row?{id:row.id,status:row.status,created_at:row.created_at,updated_at:row.updated_at,...JSON.parse(row.body)}:null;
+const configuredConnections=()=>{try{return JSON.parse(process.env.ACORN_CONNECTIONS||"[]").map(createConnection)}catch{return[]}};
+const configuredIntelligences=()=>{try{return JSON.parse(process.env.ACORN_INTELLIGENCES||"[]").map(createIntelligenceAdapter)}catch{return[]}};
+const enterpriseData=()=>({projects:db.prepare("SELECT id,status,created_at,updated_at FROM requests").all().map(r=>({id:r.id,stage:r.status,created_at:r.created_at,updated_at:r.updated_at})),offers:[],ledger:{currency_default:"CAD",entries:[],balance:0,reserved:0,available:0},connections:configuredConnections(),intelligences:configuredIntelligences(),assets:[],products:[]});
 
 async function register(body){
  const email=String(body.email||"").trim().toLowerCase(),name=String(body.name||"").trim(),password=String(body.password||"");
@@ -57,6 +61,15 @@ const server=http.createServer(async(req,res)=>{
   if(req.method==="POST"&&url.pathname==="/api/v1/login"){const r=await login(await readBody(req));return json(res,r.status,r.body)}
   const customerId=requireAuth(req);if(!customerId)return json(res,401,{error:"UNAUTHORIZED"});
   if(req.method==="GET"&&url.pathname==="/api/v1/me"){return json(res,200,{customer:db.prepare("SELECT id,email,name,created_at FROM customers WHERE id=?").get(customerId)})}
+  if(req.method==="GET"&&url.pathname==="/api/v1/enterprise"){return json(res,200,enterpriseSnapshot(enterpriseData()))}
+  if(req.method==="GET"&&url.pathname==="/api/v1/connections"){return json(res,200,{connections:configuredConnections().map(c=>({...c,secret_custody:false,credentials_present:false}))})}
+  if(req.method==="GET"&&url.pathname==="/api/v1/intelligences"){return json(res,200,{intelligences:configuredIntelligences().map(i=>({...i,authority:false}))})}
+  if(req.method==="POST"&&url.pathname==="/api/v1/connections/measure"){
+   const body=await readBody(req); const c=createConnection(body); const measured=measureConnection(c,{reachable:Boolean(body.reachable),capabilities:Array.isArray(body.capabilities)?body.capabilities:[]}); return json(res,200,{connection:{...measured,credentials_present:false,secret_custody:false},proof:{measured_at:measured.measured_at}});
+  }
+  if(req.method==="POST"&&url.pathname==="/api/v1/enterprise/cycle"){
+   const body=await readBody(req); const cycle=createEnterpriseCycle({...body,customer:customerId}); return json(res,201,{cycle,proof:{live:false,reason:"cycle_is_a_plan_until_human_authorization_and_external_evidence"}});
+  }
   if(req.method==="POST"&&url.pathname==="/api/v1/requests"){
    const body=await readBody(req),request=String(body.request||"").trim();if(!request)return json(res,400,{error:"REQUEST_REQUIRED"});
    const rid=id("req"),t=now();
