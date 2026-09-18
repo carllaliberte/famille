@@ -168,7 +168,8 @@
     "./acorn-stripe-adapter": "./scripts/acorn-stripe-adapter.mjs",
     "./acorn-economic-ledger": "./scripts/acorn-economic-ledger.mjs",
     "./acorn-usage-rights": "./scripts/acorn-usage-rights.mjs",
-    "./acorn-commercial-runtime": "./scripts/acorn-commercial-runtime.mjs"
+    "./acorn-commercial-runtime": "./scripts/acorn-commercial-runtime.mjs",
+    "./acorn-universal-project-contract": "./scripts/acorn-universal-project-contract.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
