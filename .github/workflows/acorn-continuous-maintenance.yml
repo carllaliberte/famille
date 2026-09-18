@@ -1,0 +1,83 @@
+name: acorn-continuous-maintenance
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: acorn-continuous-maintenance
+  cancel-in-progress: true
+
+jobs:
+  audit-and-handoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Snapshot main, PRs and recent workflow failures
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          MAIN_SHA="$(git rev-parse HEAD)"
+          gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 100             --json number,title,state,draft,mergeable,headRefName,baseRefName,headRefOid,baseRefOid,labels,url             > /tmp/prs.json
+          gh run list --repo "$GITHUB_REPOSITORY" --limit 50             --json databaseId,name,status,conclusion,headSha,url,displayTitle             > /tmp/runs.json
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync } from "node:fs";
+          const snapshot = {
+            repository: process.env.GITHUB_REPOSITORY,
+            main_sha: process.env.MAIN_SHA,
+            pull_requests: JSON.parse(readFileSync("/tmp/prs.json","utf8")),
+            workflow_runs: JSON.parse(readFileSync("/tmp/runs.json","utf8"))
+          };
+          writeFileSync("/tmp/acorn-maintenance-snapshot.json", JSON.stringify(snapshot,null,2));
+          EOF
+
+      - name: Build one maintenance portfolio
+        id: plan
+        env:
+          MAIN_SHA: ${{ github.sha }}
+          ACORN_MAINTENANCE_OUTPUT: /tmp/continuous-maintenance.json
+        run: |
+          node scripts/acorn-continuous-maintenance.mjs /tmp/acorn-maintenance-snapshot.json
+          cat /tmp/continuous-maintenance.json
+          ACTION="$(node -e 'console.log(JSON.parse(require("fs").readFileSync("/tmp/continuous-maintenance.json")).action)')"
+          echo "action=$ACTION" >> "$GITHUB_OUTPUT"
+
+      - name: Hand one coherent repair mandate to the existing autonomous worker
+        if: steps.plan.outputs.action == 'REPAIR_PORTFOLIO'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BODY="$(node -e 'const x=require("/tmp/continuous-maintenance.json"); process.stdout.write(x.mandate)')"
+          MARKER="<!-- ACORN_CONTINUOUS_MAINTENANCE_PORTFOLIO"
+          EXISTING="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number,body --jq '.[] | select(.body | contains("'"$MARKER"'")) | .number' | head -n1)"
+          if [ -n "$EXISTING" ]; then
+            echo "Existing maintenance portfolio issue #$EXISTING; worker can continue it."
+            exit 0
+          fi
+          gh issue create             --repo "$GITHUB_REPOSITORY"             --title "ACORN — continuous maintenance portfolio"             --label "codex-task"             --body "$MARKER"'
+          '">/dev/null
+          gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 1 --json number --jq '.[0].number' >/dev/null || true
+
+      - name: Record no-work cycle
+        if: steps.plan.outputs.action == 'OBSERVE'
+        run: echo "ACORN maintenance: no actionable finding."
+
+      - name: Record human boundary
+        if: steps.plan.outputs.action == 'HOLD_HUMAN'
+        run: echo "ACORN maintenance: WAITING_HUMAN; no autonomous authority granted."
