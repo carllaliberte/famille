@@ -81,7 +81,7 @@ jobs:
             "node --check scripts/acorn-revenue-maximizer.mjs",
             "node --check scripts/acorn-work-engine.mjs",
             "node --check scripts/acorn-continuous-runtime.mjs",
-            "node --test test/acorn-continuous-work-engine.test.js test/acorn-cognitive-run-triage.test.js test/acorn-free-first-cloud-fabric.test.js test/acorn-cloud-runner.test.js test/acorn-economic-optimizer.test.js test/acorn-revenue-maximizer.test.js"
+            "node --test test/acorn-continuous-work-engine.test.js test/acorn-cognitive-run-triage.test.js test/acorn-free-first-cloud-fabric.test.js test/acorn-cloud-runner.test.js test/acorn-economic-optimizer.test.js test/acorn-developer-market-engine.test.js test/acorn-contribution-economy.test.js test/acorn-revenue-maximizer.test.js"
           ];
           const result = runBoundedVerification({
             command: "bash",

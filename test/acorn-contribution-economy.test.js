@@ -30,3 +30,20 @@ test("unverified payment rail cannot be reported as settled",()=>{
  assert.equal(c.verified,false);
  assert.equal(c.custody,false);
 });
+test("unverified contributor is discovered only and receives no allocation",()=>{
+ const c=registerContributor({id:"model-y",provider:"future-provider",capabilities:["reasoning"]});
+ assert.equal(c.state,"DISCOVERED");
+ assert.equal(c.proof,"UNVERIFIED");
+ const measured=measureContribution({contributorId:"model-y",usage:100,successfulOperations:90,verifiedOutcomes:0});
+ assert.equal(measured.verified,false);
+ const out=allocateRevenue({grossRevenue:1000,contributions:[measured]});
+ assert.equal(out.allocations.length,0);
+ assert.equal(out.total_allocated,0);
+ assert.equal(out.settled,false);
+});
+test("verified rail without a public destination stays HOLD_HUMAN",()=>{
+ const ready=contributionSettlementReadiness({paymentRail:{verified:true},destination:{type:"PRIVATE_WALLET"}});
+ assert.equal(ready.ready,false);
+ assert.equal(ready.state,"HOLD_HUMAN");
+ assert.equal(ready.private_keys_in_acorn,false);
+});

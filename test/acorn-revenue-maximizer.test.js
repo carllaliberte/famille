@@ -97,3 +97,44 @@ test("action plan prioritizes expansion and reusable capabilities without auto-c
   assert.ok(plan.actions.some(x=>x.action==="PACKAGE_REUSABLE_CAPABILITIES"));
   assert.equal(plan.no_auto_contract,true);
 });
+
+test("missing or false verification cannot be selected as a revenue opportunity",()=>{
+  const rows=chooseRevenueOpportunities([
+    {id:"claimed",audience:"MULTINATIONAL",gross_revenue:50000,measured_value:90000,incremental_cost:100,verified:false},
+    {id:"silent",audience:"ENTERPRISE",gross_revenue:40000,measured_value:80000,incremental_cost:100},
+    {id:"proven",audience:"DEVELOPER",gross_revenue:10,measured_value:20,incremental_cost:1,verified:true},
+  ],{max:10});
+  assert.equal(rows.length,1);
+  assert.equal(rows[0].id,"proven");
+  const plan=buildCommercialActionPlan({
+    opportunities:[
+      {id:"claimed",audience:"MULTINATIONAL",gross_revenue:50000,measured_value:90000,incremental_cost:100,verified:false},
+      {id:"silent",audience:"ENTERPRISE",gross_revenue:40000,measured_value:80000,incremental_cost:100},
+    ],
+  });
+  assert.equal(plan.actions.filter((row)=>row.action!=="PACKAGE_REUSABLE_CAPABILITIES").length,0);
+  assert.equal(plan.no_auto_contract,true);
+  assert.equal(plan.no_auto_spend,true);
+});
+
+test("unverified crypto rail and unverified invoices invent neither settlement nor revenue",()=>{
+  const crypto=consolidateCryptoSettlement({
+    customer_id:"enterprise:1",
+    period:"2026-09",
+    invoices:[{amount:90,verified:true}],
+    rail:{verified:false,type:"PUBLIC_ADDRESS"},
+    minimum_threshold:1,
+  });
+  assert.equal(crypto.eligible,false);
+  assert.equal(crypto.state,"HOLD_HUMAN");
+  assert.equal(crypto.custody,false);
+  const bill=consolidateBilling({
+    customer_id:"enterprise:1",
+    period:"2026-09",
+    events:[{id:"ghost",verified:false,amount_due:999}],
+  });
+  assert.equal(bill.event_count,0);
+  assert.equal(bill.gross_amount,0);
+  assert.equal(bill.auto_contract,false);
+  assert.equal(bill.auto_spend,false);
+});

@@ -111,7 +111,7 @@ export function rankRevenueOpportunity({
 
 export function chooseRevenueOpportunities(opportunities=[], {max=10}={}) {
   return opportunities
-    .filter(x=>x && x.enabled!==false && x.verified!==false)
+    .filter(x=>x && x.enabled!==false && x.verified===true)
     .map(x=>({...x,revenue_score:rankRevenueOpportunity(x)}))
     .sort((a,b)=>b.revenue_score-a.revenue_score)
     .slice(0,Math.max(0,Number(max)||0));
@@ -308,8 +308,7 @@ export function buildCommercialActionPlan({
   const actions=[];
   for(const opportunity of ranked){
     const segment=String(opportunity.audience||"BUSINESS").toUpperCase();
-    const verified=opportunity.verified!==false;
-    if(!verified) continue;
+    if(opportunity.verified!==true) continue;
     actions.push({
       action: existing_customers.some(c=>c?.id===opportunity.customer_id) ? "EXPAND_EXISTING_CUSTOMER" : "QUALIFY_HIGH_VALUE_DEMAND",
       opportunity_id:opportunity.id||null,

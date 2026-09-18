@@ -63,12 +63,11 @@ function evidenceIsVerified(evidence = []) {
 }
 
 export function qualifyDemand({ demand = [], capabilityIndex = [] } = {}) {
-  const known = new Set(capabilityIndex.map((x) => str(x.id || x.name)));
   return demand.map((row) => ({
     ...row,
     matched_capabilities: matchedIdsFor(row, capabilityIndex),
     capability_proven: matchedCapabilitiesHaveProof({ matchedCapabilities: capabilityIndex, matchedIds: matchedIdsFor(row, capabilityIndex) }),
-    qualification: row.observed && row.evidence.length > 0 ? "EVIDENCE_BACKED" : "EXPLORATORY",
+    qualification: row.observed && evidenceIsVerified(row.evidence) ? "EVIDENCE_BACKED" : "EXPLORATORY",
   }));
 }
 
