@@ -397,6 +397,34 @@ export function universalProjectValueCycle(input = {}) {
     subscription: input.subscription || null,
   });
   const growth = buildGrowthPlan(input.growth || {});
+  const economicLedger = buildProjectValueLedger({
+    project_id: intake.id,
+    records: input.value_records || [],
+    projected_revenue: input.projected_revenue || 0,
+    realized_revenue: input.realized_revenue || 0,
+    delivery_cost: input.delivery_cost || 0,
+    measured_value: input.measured_value || 0,
+    evidence_verified: delivery.verified,
+    currency: input.currency || "USD",
+  });
+  const assetEconomics = buildAssetEconomics({
+    asset_id: input.asset_id || null,
+    project_id: intake.id,
+    verified: delivery.verified,
+    reusable_uses: input.reusable_uses || input.similar_projects || 0,
+    similar_demand: input.similar_projects || 0,
+    measured_value: input.measured_value || 0,
+    creation_cost: input.delivery_cost || 0,
+    realized_revenue: input.realized_revenue || 0,
+    currency: input.currency || "USD",
+    usage_right: input.usage_right || "PERPETUAL_USE",
+  });
+  const economicProof = buildEconomicProof({
+    ledger: economicLedger,
+    asset: assetEconomics,
+    evidence: input.evidence || {},
+    payment_rail: input.payment_rail || null,
+  });
   const readiness = launchReadiness({ intake, plan, delivery, offer, payment_rail: input.payment_rail || null });
   return {
     version: UNIVERSAL_PROJECT_VALUE_VERSION,
@@ -407,6 +435,9 @@ export function universalProjectValueCycle(input = {}) {
     product,
     offer,
     growth,
+    economic_ledger: economicLedger,
+    asset_economics: assetEconomics,
+    economic_proof: economicProof,
     readiness,
     policy: ENGINE_POLICY,
     live: false,
