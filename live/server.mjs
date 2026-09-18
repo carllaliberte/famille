@@ -1,97 +1,44 @@
 #!/usr/bin/env node
 import http from "node:http";
 import crypto from "node:crypto";
-import { mkdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import { customerServiceCycle } from "../scripts/acorn-customer-service.mjs";
 import { createConnection, createIntelligenceAdapter, createEnterpriseCycle, enterpriseSnapshot, measureConnection } from "../scripts/acorn-real-world-enterprise-os.mjs";
 import { createTask, buildExecutionPlan, executionSnapshot, runSyntheticExecution } from "../scripts/acorn-execution-fabric.mjs";
-
-const PORT = Number(process.env.PORT || 10000);
-const HOST = process.env.HOST || "0.0.0.0";
-const DB_PATH = resolve(process.env.ACORN_DB || "./live/acorn-live.db");
-mkdirSync(dirname(DB_PATH), { recursive: true });
-
-const db = new DatabaseSync(DB_PATH);
-db.exec("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS customers(id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,name TEXT NOT NULL,password_hash TEXT NOT NULL,created_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY,customer_id TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,expires_at TEXT NOT NULL,created_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS requests(id TEXT PRIMARY KEY,customer_id TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,body TEXT NOT NULL,status TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY AUTOINCREMENT,request_id TEXT NOT NULL REFERENCES requests(id) ON DELETE CASCADE,type TEXT NOT NULL,payload TEXT NOT NULL,created_at TEXT NOT NULL); CREATE INDEX IF NOT EXISTS idx_sessions_customer ON sessions(customer_id); CREATE INDEX IF NOT EXISTS idx_requests_customer ON requests(customer_id); CREATE INDEX IF NOT EXISTS idx_events_request ON events(request_id);");
-
-const now=()=>new Date().toISOString();
-const json=(res,status,body)=>{const data=JSON.stringify(body);res.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","content-length":Buffer.byteLength(data)});res.end(data)};
-const readBody=async req=>{const chunks=[];for await(const c of req)chunks.push(c);if(!chunks.length)return{};return JSON.parse(Buffer.concat(chunks).toString("utf8"))};
-const hashPassword=(password,salt=crypto.randomBytes(16))=>new Promise((ok,bad)=>crypto.scrypt(password,salt,64,(e,k)=>e?bad(e):ok(salt.toString("hex")+":"+k.toString("hex"))));
-const verifyPassword=(password,stored)=>new Promise((ok,bad)=>{const [s,h]=String(stored).split(":");if(!s||!h)return ok(false);crypto.scrypt(password,Buffer.from(s,"hex"),64,(e,k)=>{if(e)return bad(e);const a=Buffer.from(h,"hex"),b=Buffer.from(k);ok(a.length===b.length&&crypto.timingSafeEqual(a,b))})});
-const token=()=>crypto.randomBytes(32).toString("base64url");
-const tokenHash=t=>crypto.createHash("sha256").update(t).digest("hex");
-const id=prefix=>prefix+"_"+crypto.randomUUID();
-const requireAuth=req=>{const h=req.headers.authorization||"";if(!h.startsWith("Bearer "))return null;const t=h.slice(7),row=db.prepare("SELECT customer_id,expires_at FROM sessions WHERE token_hash=?").get(tokenHash(t));if(!row||Date.parse(row.expires_at)<=Date.now())return null;return row.customer_id};
-const event=(requestId,type,payload)=>db.prepare("INSERT INTO events(request_id,type,payload,created_at) VALUES(?,?,?,?)").run(requestId,type,JSON.stringify(payload),now());
-const publicRequest=row=>row?{id:row.id,status:row.status,created_at:row.created_at,updated_at:row.updated_at,...JSON.parse(row.body)}:null;
-const configuredConnections=()=>{try{return JSON.parse(process.env.ACORN_CONNECTIONS||"[]").map(createConnection)}catch{return[]}};
-const configuredIntelligences=()=>{try{return JSON.parse(process.env.ACORN_INTELLIGENCES||"[]").map(createIntelligenceAdapter)}catch{return[]}};
-const enterpriseData=()=>({projects:db.prepare("SELECT id,status,created_at,updated_at FROM requests").all().map(r=>({id:r.id,stage:r.status,created_at:r.created_at,updated_at:r.updated_at})),offers:[],ledger:{currency_default:"CAD",entries:[],balance:0,reserved:0,available:0},connections:configuredConnections(),intelligences:configuredIntelligences(),assets:[],products:[]});
-
-async function register(body){
- const email=String(body.email||"").trim().toLowerCase(),name=String(body.name||"").trim(),password=String(body.password||"");
- if(!email.includes("@")||!name||password.length<10)return{status:400,body:{error:"VALIDATION",message:"name, valid email and password >= 10 characters are required"}};
- if(db.prepare("SELECT id FROM customers WHERE email=?").get(email))return{status:409,body:{error:"ACCOUNT_EXISTS"}};
- const customerId=id("cus"),passwordHash=await hashPassword(password),created=now();
- db.prepare("INSERT INTO customers(id,email,name,password_hash,created_at) VALUES(?,?,?,?,?)").run(customerId,email,name,passwordHash,created);
- const t=token(),expires=new Date(Date.now()+2592000000).toISOString();
- db.prepare("INSERT INTO sessions(token_hash,customer_id,expires_at,created_at) VALUES(?,?,?,?)").run(tokenHash(t),customerId,expires,created);
- return{status:201,body:{customer:{id:customerId,email,name},token:t,expires_at:expires}};
-}
-async function login(body){
- const email=String(body.email||"").trim().toLowerCase(),password=String(body.password||""),c=db.prepare("SELECT * FROM customers WHERE email=?").get(email);
- if(!c||!(await verifyPassword(password,c.password_hash)))return{status:401,body:{error:"INVALID_CREDENTIALS"}};
- const t=token(),expires=new Date(Date.now()+2592000000).toISOString();
- db.prepare("INSERT INTO sessions(token_hash,customer_id,expires_at,created_at) VALUES(?,?,?,?)").run(tokenHash(t),c.id,expires,now());
- return{status:200,body:{customer:{id:c.id,email:c.email,name:c.name},token:t,expires_at:expires}};
-}
-
-const APP_HTML=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ACORN LIVE</title><style>body{font-family:system-ui;margin:0;background:#0d0d0d;color:#f4ead7}main{max-width:760px;margin:auto;padding:32px}h1{letter-spacing:.08em}section{background:#171717;padding:22px;border-radius:16px;margin:16px 0}input,textarea,button{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:9px;border:1px solid #555;background:#111;color:#fff}button{cursor:pointer;background:#c9a86a;color:#111;font-weight:700}pre{white-space:pre-wrap}.muted{color:#aaa}</style></head><body><main><h1>ACORN LIVE</h1><p class="muted">Collective cognition infrastructure — customer self-service entry.</p><section id="auth"><h2>Start</h2><input id="name" placeholder="Name"><input id="email" placeholder="Email"><input id="password" type="password" placeholder="Password (10+ characters)"><button onclick="register()">Create account</button><button onclick="login()">Sign in</button><pre id="authout"></pre></section><section id="work" style="display:none"><h2>New request</h2><textarea id="request" rows="6" placeholder="Describe the problem you want Acorn to solve…"></textarea><button onclick="submitRequest()">Send to Acorn</button><button onclick="loadRequests()">Refresh</button><pre id="out"></pre></section><script>let T=localStorage.acornToken||"";const out=x=>document.getElementById("out").textContent=JSON.stringify(x,null,2);async function call(path,method="GET",body){const r=await fetch(path,{method,headers:{"content-type":"application/json",...(T?{authorization:"Bearer "+T}:{})},body:body?JSON.stringify(body):undefined});const j=await r.json();if(!r.ok)throw j;return j}async function register(){try{const j=await call("/api/v1/register","POST",{name:name.value,email:email.value,password:password.value});T=j.token;localStorage.acornToken=T;auth.style.display="none";work.style.display="block";loadRequests()}catch(e){authout.textContent=JSON.stringify(e,null,2)}}async function login(){try{const j=await call("/api/v1/login","POST",{email:email.value,password:password.value});T=j.token;localStorage.acornToken=T;auth.style.display="none";work.style.display="block";loadRequests()}catch(e){authout.textContent=JSON.stringify(e,null,2)}}async function submitRequest(){try{out(await call("/api/v1/requests","POST",{request:document.getElementById("request").value}))}catch(e){out(e)}}async function loadRequests(){try{out(await call("/api/v1/requests"))}catch(e){out(e)}}if(T){auth.style.display="none";work.style.display="block";loadRequests()}</script></main></body></html>`;
-
-const server=http.createServer(async(req,res)=>{
- try{
-  const url=new URL(req.url,"http://"+(req.headers.host||"localhost"));
-  if(req.method==="GET"&&url.pathname==="/")return json(res,200,{service:"ACORN LIVE",version:"acorn.live.v1",status:"LIVE",customer_entry:"/app",health:"/healthz",api:"/api/v1",sovereignty:"human_authority_preserved",proof:"measured_only"});
-  if(req.method==="GET"&&url.pathname==="/healthz")return json(res,200,{ok:true,status:"LIVE",service:"acorn-live",time:now()});
-  if(req.method==="GET"&&url.pathname==="/readyz")return json(res,200,{ok:true,db:true,api:true,time:now()});
-  if(req.method==="GET"&&url.pathname==="/app"){res.writeHead(200,{"content-type":"text/html; charset=utf-8","cache-control":"no-store"});return res.end(APP_HTML)}
-  if(req.method==="POST"&&url.pathname==="/api/v1/register"){const r=await register(await readBody(req));return json(res,r.status,r.body)}
-  if(req.method==="POST"&&url.pathname==="/api/v1/login"){const r=await login(await readBody(req));return json(res,r.status,r.body)}
-  const customerId=requireAuth(req);if(!customerId)return json(res,401,{error:"UNAUTHORIZED"});
-  if(req.method==="GET"&&url.pathname==="/api/v1/me"){return json(res,200,{customer:db.prepare("SELECT id,email,name,created_at FROM customers WHERE id=?").get(customerId)})}
-  if(req.method==="GET"&&url.pathname==="/api/v1/enterprise/execution"){
-   return json(res,200,{fabric:"ACORN_EXECUTION_FABRIC",policy:"HUMAN_AUTHORIZATION_REQUIRED",synthetic:runSyntheticExecution({projectId:"live-probe",authorized:false})});
-  }
-  if(req.method==="POST"&&url.pathname==="/api/v1/enterprise/execution/plan"){
-   const body=await readBody(req); const tasks=(Array.isArray(body.tasks)?body.tasks:[]).map(t=>createTask({...t,projectId:t.projectId||body.project_id}));
-   const plan=buildExecutionPlan({projectId:body.project_id,tasks,authorized:Boolean(body.human_authorized)});
-   return json(res,201,{execution:plan,snapshot:executionSnapshot(plan)});
-  }
-  if(req.method==="GET"&&url.pathname==="/api/v1/enterprise"){return json(res,200,enterpriseSnapshot(enterpriseData()))}
-  if(req.method==="GET"&&url.pathname==="/api/v1/connections"){return json(res,200,{connections:configuredConnections().map(c=>({...c,secret_custody:false,credentials_present:false}))})}
-  if(req.method==="GET"&&url.pathname==="/api/v1/intelligences"){return json(res,200,{intelligences:configuredIntelligences().map(i=>({...i,authority:false}))})}
-  if(req.method==="POST"&&url.pathname==="/api/v1/connections/measure"){
-   const body=await readBody(req); const c=createConnection(body); const measured=measureConnection(c,{reachable:Boolean(body.reachable),capabilities:Array.isArray(body.capabilities)?body.capabilities:[]}); return json(res,200,{connection:{...measured,credentials_present:false,secret_custody:false},proof:{measured_at:measured.measured_at}});
-  }
-  if(req.method==="POST"&&url.pathname==="/api/v1/enterprise/cycle"){
-   const body=await readBody(req); const cycle=createEnterpriseCycle({...body,customer:customerId}); return json(res,201,{cycle,proof:{live:false,reason:"cycle_is_a_plan_until_human_authorization_and_external_evidence"}});
-  }
-  if(req.method==="POST"&&url.pathname==="/api/v1/requests"){
-   const body=await readBody(req),request=String(body.request||"").trim();if(!request)return json(res,400,{error:"REQUEST_REQUIRED"});
-   const rid=id("req"),t=now();
-   const cycle=customerServiceCycle({customer:{customer_id:customerId},request,capabilities:["general"],solution:"Acorn intake and qualification",deliverables:["qualified request","execution plan"],evidence_plan:["runtime evidence","automated tests"],usage_rights:["CUSTOMER_USE_PENDING_HUMAN_AUTHORIZATION"],tasks:["qualify","plan","verify"],intelligence:["acorn"],human_authorized:false});
-   const stored={...body,request,customer_id:customerId};
-   db.prepare("INSERT INTO requests(id,customer_id,body,status,created_at,updated_at) VALUES(?,?,?,?,?,?)").run(rid,customerId,JSON.stringify(stored),cycle.stage,t,t);
-   event(rid,"REQUEST_CREATED",{stage:cycle.stage});
-   return json(res,201,{request:publicRequest(db.prepare("SELECT * FROM requests WHERE id=?").get(rid)),proof:{live:true,measured_at:t}});
-  }
-  const m=url.pathname.match(/^\/api\/v1\/requests\/([^/]+)$/);
-  if(req.method==="GET"&&m){const row=db.prepare("SELECT * FROM requests WHERE id=? AND customer_id=?").get(m[1],customerId);if(!row)return json(res,404,{error:"NOT_FOUND"});const events=db.prepare("SELECT type,payload,created_at FROM events WHERE request_id=? ORDER BY id").all(row.id).map(e=>({...e,payload:JSON.parse(e.payload)}));return json(res,200,{request:publicRequest(row),events})}
-  if(req.method==="GET"&&url.pathname==="/api/v1/requests"){const rows=db.prepare("SELECT * FROM requests WHERE customer_id=? ORDER BY created_at DESC").all(customerId);return json(res,200,{requests:rows.map(publicRequest)})}
-  return json(res,404,{error:"NOT_FOUND"});
- }catch(e){console.error(e);return json(res,500,{error:"INTERNAL_ERROR"})}
-});
+import { createLiveDatabase, now, makeId } from "./database.mjs";
+const PORT=Number(process.env.PORT||10000),HOST=process.env.HOST||"0.0.0.0",db=await createLiveDatabase();
+const MAX_BODY=Number(process.env.MAX_BODY_BYTES||262144);
+const json=(res,status,body)=>{const data=JSON.stringify(body);res.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-frame-options":"DENY","content-length":Buffer.byteLength(data)});res.end(data)};
+const readBody=async req=>{let n=0;const chunks=[];for await(const c of req){n+=c.length;if(n>MAX_BODY)throw Object.assign(new Error("BODY_TOO_LARGE"),{status:413});chunks.push(c)}if(!chunks.length)return{};return JSON.parse(Buffer.concat(chunks).toString("utf8"))};
+const hashPassword=(p,s=crypto.randomBytes(16))=>new Promise((ok,bad)=>crypto.scrypt(p,s,64,(e,k)=>e?bad(e):ok(s.toString("hex")+":"+k.toString("hex"))));
+const verifyPassword=(p,v)=>new Promise((ok,bad)=>{const [s,h]=String(v).split(":");if(!s||!h)return ok(false);crypto.scrypt(p,Buffer.from(s,"hex"),64,(e,k)=>{if(e)return bad(e);const a=Buffer.from(h,"hex"),b=Buffer.from(k);ok(a.length===b.length&&crypto.timingSafeEqual(a,b))})});
+const token=()=>crypto.randomBytes(32).toString("base64url"),tokenHash=t=>crypto.createHash("sha256").update(t).digest("hex");
+const requireAuth=async req=>{const h=req.headers.authorization||"";if(!h.startsWith("Bearer "))return null;const row=await db.get("SELECT customer_id,expires_at FROM sessions WHERE token_hash=$1",[tokenHash(h.slice(7))]);return row&&Date.parse(row.expires_at)>Date.now()?row.customer_id:null};
+const event=async(id,type,payload)=>db.run("INSERT INTO events(request_id,type,payload,created_at) VALUES($1,$2,$3,$4)",[id,type,JSON.stringify(payload),now()]);
+const publicRequest=r=>r?{id:r.id,status:r.status,created_at:r.created_at,updated_at:r.updated_at,...(typeof r.body==="string"?JSON.parse(r.body):r.body)}:null;
+const connections=()=>{try{return JSON.parse(process.env.ACORN_CONNECTIONS||"[]").map(createConnection)}catch{return[]}},intelligences=()=>{try{return JSON.parse(process.env.ACORN_INTELLIGENCES||"[]").map(createIntelligenceAdapter)}catch{return[]}};
+const enterpriseData=async()=>({projects:(await db.all("SELECT id,status,created_at,updated_at FROM requests")).map(r=>({id:r.id,stage:r.status,created_at:r.created_at,updated_at:r.updated_at})),offers:[],ledger:{currency_default:"CAD",entries:[],balance:0,reserved:0,available:0},connections:connections(),intelligences:intelligences(),assets:[],products:[]});
+async function register(b){const email=String(b.email||"").trim().toLowerCase(),name=String(b.name||"").trim(),password=String(b.password||"");if(!email.includes("@")||!name||password.length<10)return{status:400,body:{error:"VALIDATION"}};if(await db.get("SELECT id FROM customers WHERE email=$1",[email]))return{status:409,body:{error:"ACCOUNT_EXISTS"}};const cid=makeId("cus"),ph=await hashPassword(password),created=now(),t=token(),expires=new Date(Date.now()+2592000000).toISOString();await db.run("INSERT INTO customers(id,email,name,password_hash,created_at) VALUES($1,$2,$3,$4,$5)",[cid,email,name,ph,created]);await db.run("INSERT INTO sessions(token_hash,customer_id,expires_at,created_at) VALUES($1,$2,$3,$4)",[tokenHash(t),cid,expires,created]);return{status:201,body:{customer:{id:cid,email,name},token:t,expires_at:expires}}}
+async function login(b){const email=String(b.email||"").trim().toLowerCase(),c=await db.get("SELECT * FROM customers WHERE email=$1",[email]);if(!c||!(await verifyPassword(String(b.password||""),c.password_hash)))return{status:401,body:{error:"INVALID_CREDENTIALS"}};const t=token(),expires=new Date(Date.now()+2592000000).toISOString();await db.run("INSERT INTO sessions(token_hash,customer_id,expires_at,created_at) VALUES($1,$2,$3,$4)",[tokenHash(t),c.id,expires,now()]);return{status:200,body:{customer:{id:c.id,email:c.email,name:c.name},token:t,expires_at:expires}}}
+const APP_HTML="<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>ACORN LIVE</title><style>body{font-family:system-ui;margin:0;background:#0d0d0d;color:#f4ead7}main{max-width:760px;margin:auto;padding:32px}section{background:#171717;padding:22px;border-radius:16px;margin:16px 0}input,textarea,button{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:9px;border:1px solid #555;background:#111;color:#fff}button{cursor:pointer;background:#c9a86a;color:#111;font-weight:700}pre{white-space:pre-wrap}</style></head><body><main><h1>ACORN LIVE</h1><section id='auth'><h2>Start</h2><input id='name' placeholder='Name'><input id='email' placeholder='Email'><input id='password' type='password' placeholder='Password (10+ characters)'><button onclick='register()'>Create account</button><button onclick='login()'>Sign in</button><pre id='authout'></pre></section><section id='work' style='display:none'><h2>New request</h2><textarea id='request' rows='6' placeholder='Describe the problem you want Acorn to solve…'></textarea><button onclick='submitRequest()'>Send to Acorn</button><button onclick='loadRequests()'>Refresh</button><pre id='out'></pre></section><script>let T=localStorage.acornToken||'';const out=x=>document.getElementById('out').textContent=JSON.stringify(x,null,2);async function call(path,method='GET',body){const r=await fetch(path,{method,headers:{'content-type':'application/json',...(T?{authorization:'Bearer '+T}:{})},body:body?JSON.stringify(body):undefined});const j=await r.json();if(!r.ok)throw j;return j}async function register(){try{const j=await call('/api/v1/register','POST',{name:name.value,email:email.value,password:password.value});T=j.token;localStorage.acornToken=T;auth.style.display='none';work.style.display='block';loadRequests()}catch(e){authout.textContent=JSON.stringify(e,null,2)}}async function login(){try{const j=await call('/api/v1/login','POST',{email:email.value,password:password.value});T=j.token;localStorage.acornToken=T;auth.style.display='none';work.style.display='block';loadRequests()}catch(e){authout.textContent=JSON.stringify(e,null,2)}}async function submitRequest(){try{out(await call('/api/v1/requests','POST',{request:document.getElementById('request').value}))}catch(e){out(e)}}async function loadRequests(){try{out(await call('/api/v1/requests'))}catch(e){out(e)}}if(T){auth.style.display='none';work.style.display='block';loadRequests()}</script></main></body></html>";
+const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,"http://localhost");
+if(req.method==="GET"&&u.pathname==="/")return json(res,200,{service:"ACORN LIVE",status:"LIVE",storage:db.mode,customer_entry:"/app",health:"/healthz",ready:"/readyz",proof:"measured_only"});
+if(req.method==="GET"&&u.pathname==="/healthz"){try{await db.health();return json(res,200,{ok:true,status:"LIVE",storage:db.mode,time:now()})}catch{return json(res,503,{ok:false,status:"DEGRADED",storage:db.mode})}}
+if(req.method==="GET"&&u.pathname==="/readyz"){try{await db.health();return json(res,200,{ok:true,db:true,storage:db.mode,time:now()})}catch{return json(res,503,{ok:false,db:false})}}
+if(req.method==="GET"&&u.pathname==="/app"){res.writeHead(200,{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","x-frame-options":"DENY"});return res.end(APP_HTML)}
+if(req.method==="POST"&&u.pathname==="/api/v1/register"){const r=await register(await readBody(req));return json(res,r.status,r.body)}
+if(req.method==="POST"&&u.pathname==="/api/v1/login"){const r=await login(await readBody(req));return json(res,r.status,r.body)}
+const cid=await requireAuth(req);if(!cid)return json(res,401,{error:"UNAUTHORIZED"});
+if(req.method==="GET"&&u.pathname==="/api/v1/me")return json(res,200,{customer:await db.get("SELECT id,email,name,created_at FROM customers WHERE id=$1",[cid])});
+if(req.method==="GET"&&u.pathname==="/api/v1/enterprise")return json(res,200,enterpriseSnapshot(await enterpriseData()));
+if(req.method==="GET"&&u.pathname==="/api/v1/connections")return json(res,200,{connections:connections().map(c=>({...c,secret_custody:false,credentials_present:false}))});
+if(req.method==="GET"&&u.pathname==="/api/v1/intelligences")return json(res,200,{intelligences:intelligences().map(i=>({...i,authority:false}))});
+if(req.method==="POST"&&u.pathname==="/api/v1/connections/measure"){const b=await readBody(req),c=createConnection(b),m=measureConnection(c,{reachable:Boolean(b.reachable),capabilities:Array.isArray(b.capabilities)?b.capabilities:[]});return json(res,200,{connection:{...m,credentials_present:false,secret_custody:false},proof:{measured_at:m.measured_at}})}
+if(req.method==="GET"&&u.pathname==="/api/v1/enterprise/execution")return json(res,200,{fabric:"ACORN_EXECUTION_FABRIC",policy:"HUMAN_AUTHORIZATION_REQUIRED",synthetic:runSyntheticExecution({projectId:"live-probe",authorized:false})});
+if(req.method==="POST"&&u.pathname==="/api/v1/enterprise/execution/plan"){const b=await readBody(req),tasks=(Array.isArray(b.tasks)?b.tasks:[]).map(t=>createTask({...t,projectId:t.projectId||b.project_id})),plan=buildExecutionPlan({projectId:b.project_id,tasks,authorized:Boolean(b.human_authorized)});return json(res,201,{execution:plan,snapshot:executionSnapshot(plan)})}
+if(req.method==="POST"&&u.pathname==="/api/v1/enterprise/cycle"){const b=await readBody(req),cycle=createEnterpriseCycle({...b,customer:cid});return json(res,201,{cycle,proof:{live:false,reason:"cycle_is_a_plan_until_human_authorization_and_external_evidence"}})}
+if(req.method==="POST"&&u.pathname==="/api/v1/requests"){const b=await readBody(req),request=String(b.request||"").trim();if(!request)return json(res,400,{error:"REQUEST_REQUIRED"});const rid=makeId("req"),t=now(),cycle=customerServiceCycle({customer:{customer_id:cid},request,capabilities:["general"],solution:"Acorn intake and qualification",deliverables:["qualified request","execution plan"],evidence_plan:["runtime evidence","automated tests"],usage_rights:["CUSTOMER_USE_PENDING_HUMAN_AUTHORIZATION"],tasks:["qualify","plan","verify"],intelligence:["acorn"],human_authorized:false});await db.run("INSERT INTO requests(id,customer_id,body,status,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6)",[rid,cid,JSON.stringify({...b,request,customer_id:cid}),cycle.stage,t,t]);await event(rid,"REQUEST_CREATED",{stage:cycle.stage});return json(res,201,{request:publicRequest(await db.get("SELECT * FROM requests WHERE id=$1",[rid])),proof:{live:true,storage:db.mode,measured_at:t}})}
+const m=u.pathname.match(/^\/api\/v1\/requests\/([^/]+)$/);if(req.method==="GET"&&m){const row=await db.get("SELECT * FROM requests WHERE id=$1 AND customer_id=$2",[m[1],cid]);if(!row)return json(res,404,{error:"NOT_FOUND"});const events=await db.all("SELECT type,payload,created_at FROM events WHERE request_id=$1 ORDER BY id",[row.id]);return json(res,200,{request:publicRequest(row),events:events.map(e=>({...e,payload:typeof e.payload==="string"?JSON.parse(e.payload):e.payload}))})}
+if(req.method==="GET"&&u.pathname==="/api/v1/requests"){const rows=await db.all("SELECT * FROM requests WHERE customer_id=$1 ORDER BY created_at DESC",[cid]);return json(res,200,{requests:rows.map(publicRequest)})}
+return json(res,404,{error:"NOT_FOUND"})}catch(e){console.error(e);return json(res,e.status||500,{error:e.status===413?"BODY_TOO_LARGE":"INTERNAL_ERROR"})}});
 server.listen(PORT,HOST,()=>console.log("ACORN LIVE listening on "+HOST+":"+PORT));
+async function shutdown(){server.close();await db.close();process.exit(0)}process.on("SIGTERM",shutdown);process.on("SIGINT",shutdown);
