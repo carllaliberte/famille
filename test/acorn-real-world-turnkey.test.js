@@ -22,6 +22,7 @@ test("one universal reality card keeps capability and authority separate", () =>
   assert.equal(card.connected, true);
   assert.equal(card.authority, false);
   assert.equal(card.live, false);
+  assert.equal(card.proof.executed, false);
 });
 
 test("external consequential execution stays blocked until both human and execution authorization exist", () => {
