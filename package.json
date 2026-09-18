@@ -85,7 +85,8 @@
     "runtime:developer-hall": "node scripts/acorn-developer-hall.mjs",
     "runtime:connection-mesh": "node scripts/acorn-universal-connection-mesh.mjs",
     "runtime:capability-router": "node scripts/acorn-universal-capability-router.mjs",
-    "runtime:developer-access": "node scripts/acorn-universal-developer-access.mjs"
+    "runtime:developer-access": "node scripts/acorn-universal-developer-access.mjs",
+    "runtime:monetization": "node scripts/acorn-monetization-operating-system.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -196,7 +197,8 @@
     "./acorn-universal-capability-router": "./scripts/acorn-universal-capability-router.mjs",
     "./acorn-universal-developer-access": "./scripts/acorn-universal-developer-access.mjs",
     "./acorn-parabolic-universal-reality-convergence": "./scripts/acorn-parabolic-universal-reality-convergence.mjs",
-    "./acorn-parabolic-convergence-conductor": "./scripts/acorn-parabolic-convergence-conductor.mjs"
+    "./acorn-parabolic-convergence-conductor": "./scripts/acorn-parabolic-convergence-conductor.mjs",
+    "./acorn-monetization-operating-system": "./scripts/acorn-monetization-operating-system.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
