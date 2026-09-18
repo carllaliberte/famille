@@ -1,0 +1,16 @@
+name: ACORN — Opportunity Intelligence
+on:
+  schedule:
+    - cron: "29 */6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: node --test test/acorn-opportunity-intelligence.test.js test/acorn-developer-hall.test.js
+      - run: node -e "import('./scripts/acorn-opportunity-intelligence.mjs').then(({snapshotOpportunityIntelligence})=>console.log(JSON.stringify(snapshotOpportunityIntelligence({opportunities:[]}),null,2)))"

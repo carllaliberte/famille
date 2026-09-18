@@ -1,0 +1,4 @@
+import test from "node:test"; import assert from "node:assert/strict"; import {createDeveloperContribution,buildDeveloperHall,spotlightMeasuredCapabilities} from "../scripts/acorn-developer-hall.mjs";
+test("hall credits evidence without inventing partnership",()=>{const x=createDeveloperContribution({id:"1",developer:"Developer",ecosystem:"Example",capabilities:["tool"],evidence:["e1"]}); assert.equal(x.endorsement,false); assert.equal(x.partnership,false); assert.equal(x.authority,false);});
+test("hall only spotlights evidenced contributions",()=>{const a=createDeveloperContribution({id:"a",developer:"A",ecosystem:"E"}); const b=createDeveloperContribution({id:"b",developer:"B",ecosystem:"E",evidence:["e"]}); assert.deepEqual(spotlightMeasuredCapabilities({contributions:[a,b]}).map(x=>x.id),["b"]);});
+test("hall is a measured attribution surface",()=>{const h=buildDeveloperHall({contributions:[]}); assert.equal(h.claims,"ATTRIBUTION_ONLY");});
