@@ -97,7 +97,8 @@
     "./acorn-learning-orchestrator": "./scripts/acorn-learning-orchestrator.mjs",
     "./acorn-cognitive-metabolism": "./scripts/acorn-cognitive-metabolism.mjs",
     "./acorn-quantum-interop": "./scripts/acorn-quantum-interop.mjs",
-    "./acorn-cognitive-run-triage": "./scripts/acorn-cognitive-run-triage.mjs"
+    "./acorn-cognitive-run-triage": "./scripts/acorn-cognitive-run-triage.mjs",
+    "./acorn-continuous-optimization": "./docs/acorn-continuous-optimization.md"
   },
   "devDependencies": {
     "husky": "^9.1.7"
