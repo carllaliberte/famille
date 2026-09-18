@@ -1,0 +1,6 @@
+import test from"node:test";import assert from"node:assert/strict";import{seedConnectionMesh,registerFutureSurface,buildConnectionPlan,authorizeConnectionAction,snapshotConnectionMesh}from"../scripts/acorn-universal-connection-mesh.mjs";
+test("seeds broad provider-neutral mesh",()=>{const x=seedConnectionMesh();assert.ok(x.length>=50);assert.ok(new Set(x.map(a=>a.type)).size>=8);});
+test("future providers are discoverable without trust",()=>{const x=registerFutureSurface({id:"future:x",provider:"tomorrow",capabilities:["new-capability"]});assert.equal(x.state,"DISCOVERED");assert.equal(x.authority,false);});
+test("connection planning prefers capability/protocol fit",()=>{const x=buildConnectionPlan({surfaces:seedConnectionMesh(),required_capabilities:["discover"]});assert.ok(x.length>0);});
+test("dangerous actions stay human gated",()=>{const x=seedConnectionMesh()[0];assert.equal(authorizeConnectionAction({surface:x,action:"WRITE"}).allowed,false);assert.equal(authorizeConnectionAction({surface:x,action:"WRITE",human_authorized:true}).allowed,true);});
+test("snapshot does not turn discovery into connection",()=>{const s=snapshotConnectionMesh({surfaces:seedConnectionMesh()});assert.equal(s.connected,0);assert.equal(s.verified,0);assert.equal(s.authority,false);});
