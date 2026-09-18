@@ -1,0 +1,5 @@
+import test from "node:test";import assert from "node:assert/strict";import {normalizeKnowledge,validateKnowledge,buildCortexSnapshot,assertCortexRepairConstitution} from "../scripts/acorn-cortex-convergence-repair.mjs";
+test("missing evidence stays observed",()=>{const k=validateKnowledge({subject:"x",predicate:"p",value:1,source:"a",evidence:[]});assert.equal(k.state,"OBSERVED");});
+test("evidence enables verification",()=>{const k=validateKnowledge({subject:"x",predicate:"p",value:1,source:"a",evidence:["e"]});assert.equal(k.state,"VERIFIED");});
+test("snapshot is canonical and traceable",()=>{const s=buildCortexSnapshot({knowledge:[{subject:"x",predicate:"p",source:"a",evidence:["e"]}]});assert.equal(s.knowledge_count,1);assert.equal(s.authority,false);});
+test("Breaker and authority stay protected",()=>{assert.equal(assertCortexRepairConstitution(),true);assert.throws(()=>assertCortexRepairConstitution({breaker_touched:true}),/BREAKER/);assert.throws(()=>assertCortexRepairConstitution({auto_merge:true}),/AUTHORITY/);});
