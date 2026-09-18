@@ -125,6 +125,12 @@ test("universal cycle composes intake, planning, delivery, productization, monet
     evidence:{verified:true},
     measured_value:20000,
     delivery_cost:2000,
+    projected_revenue:8000,
+    realized_revenue:5000,
+    value_records:[
+      {id:"rev-1",kind:"REVENUE",status:"REALIZED",amount:5000,source:"verified-payment-event"},
+      {id:"cost-1",kind:"COST",status:"REALIZED",amount:2000,source:"delivery-ledger"},
+    ],
     reusable_components:["orchestrator"],
     similar_projects:9,
     price:5000,
@@ -136,6 +142,11 @@ test("universal cycle composes intake, planning, delivery, productization, monet
   assert.equal(x.delivery.state,"DELIVERED");
   assert.equal(x.product.state,"PRODUCTIZATION_CANDIDATE");
   assert.equal(x.offer.billable,true);
+  assert.equal(x.economic_ledger.realized_revenue,5000);
+  assert.equal(x.economic_ledger.realized_net_value,3000);
+  assert.equal(x.economic_ledger.projected_net_value,6000);
+  assert.equal(x.economic_proof.commercial_state,"REALIZED_AND_EVIDENCED");
+  assert.equal(x.asset_economics.productization_evidence,true);
   assert.deepEqual(x.growth.channels,["DIRECT","SELF_SERVICE","MARKETPLACE"]);
   assert.equal(x.policy.capability_is_not_authority,true);
   assert.equal(x.policy.auto_contract,false);
