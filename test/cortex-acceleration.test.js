@@ -153,7 +153,7 @@ test("ultimate 25-step experiment stays one Cortex, no extra authority", () => {
 });
 
 test("security: accelerator discovery never becomes merge/write", () => {
-  const fabric = runAccelerationFabric({ env: {}, workerEvidence: { v: "cognitive-worker.v14" } });
+  const fabric = runAccelerationFabric({ env: { ACORN_SYSTEM_MODE: "RUN" }, workerEvidence: { v: "cognitive-worker.v14" } });
   assert.equal(fabric.gates.merge, false);
   assert.equal(fabric.paid_forbidden, true);
   assert.equal(fabric.invoke.reason, "CHANNEL_NOT_PRESENT");
