@@ -59,8 +59,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ACTION="$(node -e 'const x=JSON.parse(require("fs").readFileSync("/tmp/evolution.stdout.json")); console.log(x.action)')
-          "
+          ACTION="$(node -e 'const x=JSON.parse(require("fs").readFileSync("/tmp/evolution.stdout.json")); process.stdout.write(x.action)')"
           if [ "$ACTION" != "EVOLVE_PORTFOLIO" ] && [ "$ACTION" != "REPAIR_PORTFOLIO" ]; then
             echo "ACORN evolution action: $ACTION"
             exit 0
