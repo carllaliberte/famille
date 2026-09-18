@@ -1,0 +1,13 @@
+import test from "node:test";import assert from "node:assert/strict";
+import {assertConstitution,createRealityIntent,compileReality,composeCapabilities,qualifyOutcome,benchmarkOutcome,authorize,economicState,learnFromReality,createOpportunity,closeLoop} from "../scripts/acorn-universal-reality-os.mjs";
+test("constitution",()=>assert.equal(assertConstitution(),true));
+test("intent compiles only with objective",()=>{assert.equal(compileReality({}).state,"BLOCKED");const p=compileReality(createRealityIntent({objective:"x",requirements:["r"],constraints:["c"]}),{capabilities:[{id:"c",verified:true,evidence:["e"]}]});assert.equal(p.state,"COMPILED");assert.equal(p.candidates.length,1);});
+test("composition is evidence gated",()=>assert.equal(composeCapabilities([{id:"x",verified:false,evidence:["e"]}]).state,"NO_VERIFIED_CAPABILITIES"));
+test("outcome requires measurement verification evidence",()=>assert.equal(qualifyOutcome({measured:true,verified:true,evidence:[]}).state,"NOT_VERIFIED"));
+test("benchmark is scoped",()=>{const r=benchmarkOutcome({id:"a",scope:"x",verified:true,measured:true,quality:.9,cost:2,latency:2},[{id:"b",scope:"x",verified:true,measured:true,quality:.8,cost:1,latency:2}]);assert.equal(r.best_known_in_scope,true);});
+test("terminal actions remain human gated",()=>assert.equal(authorize("MONEY",{human_authorized:true,server_authorized:true}).authorized,false));
+test("safe actions still need explicit authority",()=>assert.equal(authorize("READ").authorized,false));
+test("economic claims need measured inputs",()=>{assert.equal(economicState({revenue:100,cost:30}).margin,70);assert.equal(economicState({revenue:"100",cost:30}).state,"NOT_MEASURED");});
+test("learning creates candidate only from verified outcome",()=>assert.equal(learnFromReality({measured:true,verified:true,evidence:["e"],capability_id:"c"}).state,"CAPABILITY_CANDIDATE"));
+test("opportunity stays exploratory without verified demand",()=>assert.equal(createOpportunity({id:"c",verified:true},{id:"d",verified:false}).state,"EXPLORATORY"));
+test("full loop closes only on verified outcome",()=>assert.equal(closeLoop({intent:{id:"i"},outcome:{id:"o",measured:true,verified:true,evidence:["e"],scope:"x",quality:.9,cost:1,latency:1}}).state,"LOOP_CLOSED"));
