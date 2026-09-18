@@ -1,0 +1,10 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {normalizeSignal,assessSignal,buildCortexState,findGaps,composeCortexPlan,prioritizeLearning,cortexOptimizationLoop,assertTotalCortexConstitution} from "../scripts/acorn-total-cortex-convergence.mjs";
+test("cortex normalizes signals across planes",()=>{const s=normalizeSignal({plane:"KNOWLEDGE",source:"a",subject:"x",payload:{ok:true},evidence:["e"],confidence:.9});assert.equal(assessSignal(s).state,"QUALIFIED");});
+test("cortex expires stale signals",()=>{const s=normalizeSignal({plane:"VALUE",source:"a",subject:"x",expires_at:"2000-01-01T00:00:00Z"});assert.equal(assessSignal(s).state,"EXPIRED");});
+test("cortex exposes environment-wide state",()=>{const s=normalizeSignal({plane:"PROJECT",source:"a",subject:"p"});const x=buildCortexState({signals:[s],environment:{mode:"demo"}});assert.equal(x.planes.PROJECT,1);});
+test("cortex detects capability and resource gaps",()=>{const g=findGaps({required_capabilities:["x","y"],available_capabilities:["x"],required_resources:["cpu"],available_resources:[]});assert.deepEqual(g.missing_capabilities,["y"]);assert.deepEqual(g.missing_resources,["cpu"]);});
+test("project plan remains a proposal",()=>{const p=composeCortexPlan({intent:"build",required_capabilities:["x"],available_capabilities:[]});assert.equal(p.state,"PROPOSED");assert.equal(p.requires_authorization,true);});
+test("cortex learns from measured outcomes",()=>{const x=prioritizeLearning({candidates:["a","b"],outcomes:[{capability:"a",value:5},{capability:"b",value:2}]});assert.equal(x[0].candidate,"a");});
+test("full loop remains governed",()=>{const x=cortexOptimizationLoop({intent:"improve",candidates:["a"]});assert.equal(x.next_action,"PROPOSED_OPTIMIZATION");assert.equal(x.authority,false);});
+test("constitution is hard",()=>{assert.equal(assertTotalCortexConstitution(),true);assert.throws(()=>assertTotalCortexConstitution({breaker_touched:true}),/BREAKER/);assert.throws(()=>assertTotalCortexConstitution({auto_merge:true}),/MERGE/);assert.throws(()=>assertTotalCortexConstitution({authority_transfer:true}),/AUTHORITY/);});
