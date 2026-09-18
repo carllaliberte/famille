@@ -28,6 +28,9 @@ import {
 import { authorizeCapability } from "../.github/swarm/cortex.mjs";
 import { cortexConstitution } from "./cortex-cognition.mjs";
 import { defenseConstitution } from "./acorn-defense.mjs";
+import {
+  assertHumanityProtection,
+} from "./acorn-humanity-protection.mjs";
 
 export const CONSTITUTION_VERSION = "acorn.constitution.v1";
 export const CONSTITUTION_ID = "acorn.fundamental-invariants";
@@ -184,6 +187,52 @@ export const SOVEREIGNTY_INVARIANTS = Object.freeze([
   }),
 ]);
 
+export const PROTECTION_INVARIANTS = Object.freeze([
+  record({
+    id: "P1",
+    name: "UNIVERSAL_HUMANITY_PROTECTION",
+    definition: "Acorn is and remains, through every architectural evolution, a universal protector of humanity. Protection is not control of humanity; it is the increase of humanity's capacity to understand, anticipate, prevent, resist, recover, and freely choose its future.",
+    implementation: "assertHumanityProtection",
+    interpretation: "Acorn protects so that humanity remains free to build its future.",
+    scope: "protection",
+    tests: ["test/acorn-humanity-protection.test.js"],
+  }),
+  record({
+    id: "P2",
+    name: "PROTECT_WITHOUT_GOVERNING",
+    definition: "Acorn protects without governing, alerts without manipulating, assists without substituting, and cooperates before opposing.",
+    implementation: "assertProtectWithoutGoverning",
+    interpretation: "GOVERN / MANIPULATE / SUBSTITUTE / CONTROL_HUMANITY are forbidden acts.",
+    scope: "protection",
+    tests: ["test/acorn-humanity-protection.test.js"],
+  }),
+  record({
+    id: "P3",
+    name: "PREVENTION_DEESCALATION_REVERSIBILITY",
+    definition: "Acorn privileges prevention, de-escalation, reversibility, and the preservation of human life and liberties. When the environment becomes hostile, Acorn first seeks to understand, contain, isolate, and protect. Any response must be proportionate, verifiable, and limited to what is necessary.",
+    implementation: "assertHostileLadder",
+    scope: "protection",
+    tests: ["test/acorn-humanity-protection.test.js"],
+  }),
+  record({
+    id: "P4",
+    name: "POWER_REQUIRES_STRONGER_HUMAN_CONTROL",
+    definition: "The more intelligent, connected, autonomous, or powerful Acorn becomes, the more robust its protection, verification, governance, transparency, reversibility, and human-control mechanisms must become. Power never constitutes authority over humanity.",
+    implementation: "assertProtectionScalesWithPower",
+    interpretation: "Capability gain without control gain fails closed. Authority stays Carl.",
+    scope: "protection",
+    tests: ["test/acorn-humanity-protection.test.js"],
+  }),
+  record({
+    id: "P5",
+    name: "PRESERVE_AGENCY_EXPAND_POSSIBILITY",
+    definition: "PROTECT HUMANITY. PRESERVE HUMAN AGENCY. EXPAND HUMAN POSSIBILITY. Permanent mission: more knowledge, capacity, resilience, freedom, and possibility for humanity to build its future.",
+    implementation: "assertHumanAgencyPreserved",
+    scope: "protection",
+    tests: ["test/acorn-humanity-protection.test.js"],
+  }),
+]);
+
 export const STRUCTURAL_INVARIANTS = Object.freeze([
   record({
     id: "S1",
@@ -258,7 +307,7 @@ export const STRUCTURAL_INVARIANTS = Object.freeze([
 ]);
 
 export function allInvariants() {
-  return [...META_INVARIANTS, ...SOVEREIGNTY_INVARIANTS, ...STRUCTURAL_INVARIANTS];
+  return [...META_INVARIANTS, ...SOVEREIGNTY_INVARIANTS, ...PROTECTION_INVARIANTS, ...STRUCTURAL_INVARIANTS];
 }
 
 export function invariantDigest(list = allInvariants()) {
@@ -697,6 +746,7 @@ export function assertAcornConstitution({ env = process.env } = {}) {
     cortex: assertCortexIsNotSovereign(),
     acorn: assertAcornIsNotHumanSovereignty(),
     escalation: assertNoAutomaticAuthorityEscalation(),
+    protection: assertHumanityProtection({ env }),
     one_cortex: assertNoSecondCortex(),
     one_defense: assertNoSecondDefense(),
     one_runtime: assertNoSecondRuntime(),
