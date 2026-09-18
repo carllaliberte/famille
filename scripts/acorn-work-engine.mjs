@@ -23,6 +23,8 @@ import { executeComputeTask, snapshotComputeFabric } from "./acorn-compute-fabri
 import { runUniversalComputeSweep } from "./acorn-universal-compute-sweep.mjs";
 import { runValueOpportunityCycle } from "./acorn-value-opportunity-fabric.mjs";
 import { privacyPolicy, privacyAudit } from "./acorn-privacy-process.mjs";
+import { gatewayPolicy, buildDeveloperConnectManifest } from "./acorn-developer-gateway.mjs";
+import { runMarketCycle } from "./acorn-market-engine.mjs";
 import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
@@ -75,7 +77,7 @@ export function canonicalWorkFromRuntime(runtime) {
       execution_kind: text(row.execution_kind || row.executor || "deterministic"),
       task: row.task && typeof row.task === "object" ? row.task : null,
     });
-  });
+  };
 
   for (const row of runtime?.unified?.evolution?.next_work || []) push(row, "evolution");
   for (const row of runtime?.unified?.learning?.next || []) push(row, "learning");
@@ -85,6 +87,8 @@ export function canonicalWorkFromRuntime(runtime) {
 
   push({ id:"connection-sweep", subject:"discover, authenticate, measure and verify all available connection adapters", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:0.9, reversibility:1, cost:0.1, execution_kind:"connection-sweep" }, "connections");
   push({ id:"privacy-process-audit", subject:"minimize data, redact secrets, enforce retention and reduce human administration", information_gain:1, capability_gain:0.9, risk_reduction:1, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"privacy-audit" }, "privacy");
+  push({ id:"developer-gateway-sweep", subject:"keep universal developer onboarding and connection readiness measured", information_gain:1, capability_gain:1, risk_reduction:0.8, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"developer-gateway" }, "developer");
+  push({ id:"market-engine-cycle", subject:"detect demand, diversify verified offers, and prepare measured commercial collection", information_gain:1, capability_gain:1, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.08, execution_kind:"market");
 
   // Compute is part of the organism metabolism: execute every currently
   // executable safe resource, while keeping remote/paid/unknown work gated.
@@ -192,6 +196,8 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
     return { status:"COMPLETED", duration_ms:Date.now()-started, executor:"value-opportunity-fabric", value:result, stdout_tail:"", stderr_tail:"" };
   }
   if (kind === "privacy-audit") { const started=Date.now(); const result=privacyAudit({events:task.events||[],records:task.records||[]}); return {status:result.status==="PASS"?"COMPLETED":"FAILED",duration_ms:Date.now()-started,executor:"privacy-process-fabric",privacy:{policy:privacyPolicy(),audit:result},stdout_tail:"",stderr_tail:result.status==="PASS"?"":"PRIVACY_AUDIT_FAILED"}; }
+  if (kind === "developer-gateway") { const started=Date.now(); const manifest=buildDeveloperConnectManifest({capabilities:task.capabilities||[],protocols:["connector-flux"]}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"developer-gateway-fabric",developer:{policy:gatewayPolicy(),manifest},stdout_tail:"",stderr_tail:""}; }
+  if (kind === "market") { const started=Date.now(); const result=runMarketCycle({signals:task.signals||[],capabilityIndex:task.capabilityIndex||[]}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"market-engine",market:result,stdout_tail:"",stderr_tail:""}; }
   if (kind === "connection-sweep") {
     const started = Date.now();
     const result = await runConnectionSweep({ env, now: new Date().toISOString() });
@@ -262,6 +268,8 @@ export function executorPolicy({ env = process.env } = {}) {
 function defaultTaskFor(row, env = process.env) {
   if (row.execution_kind === "value-opportunity") return { ...row, execution_kind:"value-opportunity", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "privacy-audit") return { ...row, execution_kind:"privacy-audit", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "developer-gateway") return { ...row, execution_kind:"developer-gateway", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "market") return { ...row, execution_kind:"market", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "connection-sweep") {
     return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
