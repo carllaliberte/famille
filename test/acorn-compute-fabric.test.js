@@ -487,7 +487,7 @@ test("GPU discovery never falls back to CPU execution", async () => {
   assert.ok(gpu);
   const result = await adapter.execute(gpu, { type: "compute" }, { now: "2026-09-17T18:00:00.000Z" });
   assert.equal(result.status, "HOLD_HUMAN");
-  assert.equal(result.reason, "GPU_RUNTIME_NOT_IMPLEMENTED");
+  assert.equal(result.reason, "GPU_EXECUTION_NOT_ENABLED");
   assert.equal(result.result, undefined);
 });
 
