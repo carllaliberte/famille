@@ -8,9 +8,9 @@ if(!fs.existsSync(tracePath)) failures.push("QUALITY_TRACE_MISSING");
 else {
   const trace=JSON.parse(fs.readFileSync(tracePath,"utf8"));
   if(trace.contract!=="acorn.quality-trace.v1") failures.push("QUALITY_TRACE_CONTRACT_MISMATCH");
-  if(!trace.valid_until) failures.push("QUALITY_TRACE_EXPIRY_MISSING");
+  if(trace.expiry_required!==true) failures.push("QUALITY_TRACE_EXPIRY_REQUIREMENT_MISSING");
   if(trace.auto_merge===true) failures.push("QUALITY_TRACE_AUTO_MERGE_FORBIDDEN");
-  if(trace.authority!=="human") failures.push("QUALITY_TRACE_AUTHORITY_MISMATCH");
+  if(trace.principles?.authority!=="CAPABILITY != AUTHORITY") failures.push("QUALITY_TRACE_AUTHORITY_RULE_MISSING");
 }
 if(VISIONARY_BENCHMARKS.length < 8) failures.push("VISIONARY_BENCHMARK_SET_TOO_SMALL");
 if(REQUIRED_QUALITY_DIMENSIONS.length < 20) failures.push("QUALITY_DIMENSIONS_INCOMPLETE");
