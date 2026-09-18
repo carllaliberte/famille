@@ -1,0 +1,4 @@
+import test from "node:test";import assert from "node:assert/strict";import {runFirstEnterpriseProof} from "../scripts/acorn-first-enterprise-proof.mjs";
+test("proof stops before authority",()=>{const p=runFirstEnterpriseProof();assert.equal(p.live_external_claim,false);assert.equal(p.execution.state,"AWAITING_AUTHORIZATION");assert.equal(p.value.status,"UNMEASURED")});
+test("authorized synthetic journey reaches measured delivery/value",()=>{const p=runFirstEnterpriseProof({humanAuthorized:true,repeatDemand:true});assert.equal(p.verification.ready,true);assert.equal(p.value.status,"MEASURED");assert.equal(p.asset.state,"VALIDATED_ASSET");assert.equal(p.product.state,"PRODUCT_READY")});
+test("external settlement is never inferred",()=>{const p=runFirstEnterpriseProof({humanAuthorized:true,externalSettlement:false});assert.equal(p.external_settlement_measured,false)});
