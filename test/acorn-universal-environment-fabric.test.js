@@ -1,0 +1,13 @@
+import test from "node:test";import assert from "node:assert/strict";
+import {ENVIRONMENTS,GATES,createEnvironment,environmentBoundary,dataPolicy,gateEnvironment,promotionDecision,deploymentPlan,recoveryPlan,truthState,optimizationVector,assertEnvironmentConstitution} from "../scripts/acorn-universal-environment-fabric.mjs";
+test("constitution covers complete environment family",()=>assert.equal(assertEnvironmentConstitution(),true));
+test("environment catalog is broad",()=>assert.ok(ENVIRONMENTS.length>=20));
+test("production is isolated",()=>assert.equal(environmentBoundary({kind:"PRODUCTION"}).isolated,true));
+test("all critical gates exist",()=>assert.ok(GATES.includes("SECURITY")&&GATES.includes("OBSERVABILITY")&&GATES.includes("TRUTH")));
+test("production data cannot flow to weaker target",()=>assert.equal(dataPolicy({kind:"PRODUCTION",data_class:"RESTRICTED"},{kind:"DEVELOPMENT",data_class:"PUBLIC"}).allowed,false));
+test("nonproduction cannot self-authorize production",()=>assert.equal(promotionDecision({from:{kind:"STAGING"},to:{kind:"PRODUCTION"},gates:{},human_authorized:false}).allowed,false));
+test("production can only promote with gates and human authorization",()=>assert.equal(promotionDecision({from:{kind:"STAGING"},to:{kind:"PRODUCTION"},gates:Object.fromEntries(GATES.map(x=>[x,true])),human_authorized:true}).allowed,true));
+test("deployment never auto-produces",()=>assert.equal(deploymentPlan([createEnvironment({id:"p",kind:"PRODUCTION"})]).no_auto_production,true));
+test("recovery is explicit",()=>assert.equal(recoveryPlan({id:"p",kind:"PRODUCTION"}).strategy,"ROLLBACK_OR_RESTORE"));
+test("live requires measurement and verification",()=>assert.equal(truthState({kind:"PRODUCTION"},{executed:true,measured:true,verified:false,live:true}).live,false));
+test("optimization vector is deterministic",()=>assert.equal(optimizationVector({COST:3}).COST,3));
