@@ -23,6 +23,7 @@ build:
 	node --check live/worker.mjs
 	node --check live/enterprise-store.mjs
 	node --check live/runtime-status.mjs
+	node --check scripts/acorn-operational-fabric.mjs
 
 test:
 	npm test

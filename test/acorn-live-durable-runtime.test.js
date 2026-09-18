@@ -64,7 +64,7 @@ test("production configuration does not silently fall back to local SQLite", () 
   assert.throws(() => selectLiveDatabaseAdapter({ NODE_ENV: "production" }), /DATABASE_URL_REQUIRED/);
   assert.throws(() => selectLiveDatabaseAdapter({ NODE_ENV: "production", ACORN_DB: "./live/acorn-live.db" }), /DATABASE_URL_REQUIRED/);
   assert.throws(() => selectLiveDatabaseAdapter({ ACORN_DB_ADAPTER: "postgres" }), /DATABASE_URL_REQUIRED/);
-  assert.equal(selectLiveDatabaseAdapter({ NODE_ENV: "production", ACORN_DB_ADAPTER: "sqlite" }).mode, "sqlite");
+  assert.throws(() => selectLiveDatabaseAdapter({ NODE_ENV: "production", ACORN_DB_ADAPTER: "sqlite" }), /SQLITE_FORBIDDEN_IN_PRODUCTION/);
 });
 
 test("postgres connection failure does not fall back to sqlite", async () => {
@@ -154,8 +154,22 @@ test("HTTP cannot authorize a consequential real-world effect", async () => {
     assert.equal(spoof.status, 403);
     assert.equal(spoof.json.result.state, "BLOCKED");
     assert.equal(spoof.json.result.reason, "HUMAN_AUTHORIZATION_REQUIRED");
+    assert.equal(spoof.json.proof.http_cannot_grant_authority, true);
     assert.equal(JSON.stringify(spoof.json).includes("not-a-real-secret"), false);
   }, { ACORN_REAL_WORLD_CONNECTORS: connectors, ACORN_TEST_SECRET: "not-a-real-secret" });
+});
+
+test("HTTP cannot reroute a READ connector off its configured origin", async () => {
+  const connectors = JSON.stringify([{ id: "read", provider: "example", base_url: "https://example.test/api/", effect: "READ" }]);
+  await withServer(async ({ base }) => {
+    const auth = await jsonReq(base, "/api/v1/register", { method: "POST", body: { name: "Read", email: "read-ssrf@example.com", password: "correct-horse" } });
+    const created = await jsonReq(base, "/api/v1/requests", { method: "POST", token: auth.json.token, body: { request: "observe something" } });
+    const spoof = await jsonReq(base, "/api/v1/runtime/external", { method: "POST", token: auth.json.token, body: { request_id: created.json.request.id, connector_id: "read", path: "https://169.254.169.254/", method: "GET" } });
+    assert.equal(spoof.status, 403);
+    assert.equal(spoof.json.result.state, "BLOCKED");
+    assert.equal(spoof.json.result.reason, "URL_OUT_OF_SCOPE");
+    assert.equal(spoof.json.proof.live, false);
+  }, { ACORN_REAL_WORLD_CONNECTORS: connectors });
 });
 
 test("authorized execution produces a measured record but does not claim external effect", async () => {

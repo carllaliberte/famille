@@ -113,4 +113,4 @@ export function economicEngineSnapshot(input={}) {
   productization_count:c.stages.productization.length,portfolio:c.stages.portfolio,policy:INFINITE_ECONOMIC_POLICY};
 }
 
-if(import.meta.url===\`file://\${process.argv[1]}\`)console.log(JSON.stringify(economicEngineSnapshot(),null,2));
+if (import.meta.url === `file://${process.argv[1]}`) console.log(JSON.stringify(economicEngineSnapshot(), null, 2));

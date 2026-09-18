@@ -26,3 +26,15 @@ test("environment connector discovery is provider-neutral",()=>{
  assert.equal(xs[0].provider,"future-provider");
  assert.equal(realWorldBridgeSnapshot(xs).policy.secret_custody,false);
 });
+test("absolute and private paths stay URL_OUT_OF_SCOPE",()=>{
+ const c={id:"read-api",provider:"test",base_url:"https://example.test/",effect:"READ"};
+ const abs=buildExternalCall({connector:c,path:"https://169.254.169.254/latest/meta-data"});
+ assert.equal(abs.state,"BLOCKED");
+ assert.equal(abs.reason,"URL_OUT_OF_SCOPE");
+ const proto=buildExternalCall({connector:c,path:"//127.0.0.1/"});
+ assert.equal(proto.state,"BLOCKED");
+ assert.equal(proto.reason,"URL_OUT_OF_SCOPE");
+ const post=buildExternalCall({connector:c,path:"health",method:"POST"});
+ assert.equal(post.state,"BLOCKED");
+ assert.equal(post.reason,"READ_METHOD_REQUIRED");
+});

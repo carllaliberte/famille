@@ -106,7 +106,7 @@ export function buildOfferReady({
 }
 
 export function authorizeOrder({ order = null, offer = null, human_authorized = false, authorized_by = null } = {}) {
-  const authorized = yes(human_authorized) && Boolean(order?.valid) && offer?.stage === "OFFER_READY" && str(authorized_by);
+  const authorized = yes(human_authorized) && Boolean(order?.valid) && offer?.stage === "OFFER_READY" && Boolean(str(authorized_by));
   return {
     order_id: order?.order_id || null,
     authorized,

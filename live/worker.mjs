@@ -8,8 +8,16 @@ if (db.mode !== "postgres" || !db.pool) throw new Error("DATABASE_URL_REQUIRED")
 const pool = db.pool;
 const WORKER_ID = process.env.WORKER_ID || ("acorn-worker-" + crypto.randomUUID());
 const POLL_MS = Math.max(250, Number(process.env.WORKER_POLL_MS || 1000));
+const STALE_MS = Math.max(5000, Number(process.env.WORKER_STALE_MS || 120000));
 const now = () => new Date().toISOString();
 let stopping = false;
+async function reclaimStale() {
+  const stale = new Date(Date.now() - STALE_MS).toISOString();
+  await pool.query(
+    "UPDATE acorn_jobs SET state='QUEUED',worker_id=NULL,updated_at=$1 WHERE state='RUNNING' AND updated_at<$2",
+    [now(), stale]
+  );
+}
 async function ingest() {
   await pool.query("INSERT INTO acorn_jobs(id,tenant_id,kind,payload,state,attempts,max_attempts,created_at,updated_at) SELECT 'job_'||r.id,r.customer_id,'CUSTOMER_REQUEST',jsonb_build_object('request_id',r.id),'QUEUED',0,3,r.created_at,r.updated_at FROM requests r LEFT JOIN acorn_jobs j ON j.id='job_'||r.id WHERE j.id IS NULL ON CONFLICT DO NOTHING");
 }
@@ -89,6 +97,7 @@ process.on("SIGINT", shutdown);
 console.log(JSON.stringify({service:"acorn-live-worker",worker_id:WORKER_ID,status:"READY",authority:false,live:false,external_effect:false}));
 while (!stopping) {
   try {
+    await reclaimStale();
     await ingest();
     for (const j of await claim()) if (!stopping) await execute(j);
   } catch {
