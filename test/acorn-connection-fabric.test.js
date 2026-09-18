@@ -5,11 +5,18 @@ import {
   connectionConstitution,
   registerAdapter,
   discoverAdapters,
+  identifyAdapter,
+  authenticateAdapter,
+  capabilities,
   connect,
   health,
   measureConnection,
   verifyConnection,
   request,
+  receive,
+  send,
+  observe,
+  cancel,
   disconnect,
   revoke,
   resetConnectionFabric,
@@ -32,6 +39,8 @@ function adapter(overrides = {}) {
     request: async (payload) => ({ status: "HEALTHY", echo: payload }),
     send: async () => ({ status: "HEALTHY", accepted: true }),
     receive: async (payload) => ({ status: "HEALTHY", echo: payload }),
+    observe: async () => ({ status: "HEALTHY", observed: true }),
+    cancel: async () => ({ status: "HEALTHY", cancelled: true }),
     disconnect: async () => ({ status: "DISCONNECTED" }),
     ...overrides,
   };
@@ -80,6 +89,20 @@ test("connect, health, measure, verify, request and disconnect all execute throu
   const r = await request(id, { ping: true });
   assert.equal(r.executed, true);
   assert.deepEqual(r.result.echo, { ping: true });
+  const identified = identifyAdapter("test-adapter");
+  assert.equal(identified.status, "IDENTIFIED");
+  const authenticated = await authenticateAdapter("test-adapter", { identity: "test-runtime" });
+  assert.equal(authenticated.authenticated, true);
+  const caps = await capabilities("test-adapter");
+  assert.ok(caps.capabilities.includes("request"));
+  const sent = await send(id, { ping: true });
+  assert.equal(sent.executed, true);
+  const received = await receive(id, { pong: true });
+  assert.equal(received.executed, true);
+  const observed = await observe(id);
+  assert.equal(observed.observed, true);
+  const cancelled = await cancel(id, "op-1");
+  assert.equal(cancelled.cancelled, true);
   const d = await disconnect(id);
   assert.equal(d.status, "DISCONNECTED");
   assert.equal((await request(id, {})).executed, false);
