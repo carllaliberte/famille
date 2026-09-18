@@ -18,6 +18,7 @@ import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futurePr
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
 import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject, loadCommercialCycle } from "./commercial.mjs";
 import { buildRealitySnapshot, customerNextAction, assertTruthContract } from "../scripts/acorn-real-world-turnkey.mjs";
+import { discoverFromCapabilities, matchDemandCapability, productizeCapability, composeSolutions } from "../scripts/acorn-opportunity-loop.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -721,6 +722,65 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       }
       if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
         return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/opportunities/discover") {
+        const b = await readBody(req);
+        const related = await loadTenantState(database, cid);
+        const capabilities = related.filter((s) => s.entity === "CAPABILITY").map((s) => ({ id: s.id, name: s.data?.name, exists: s.data?.exists === true, available: s.data?.available === true, cost: s.data?.cost ?? null }));
+        const gaps = related.filter((s) => s.entity === "CAPABILITY" && s.data?.exists !== true);
+        const projects = related.filter((s) => s.entity === "PROJECT").map((s) => ({ id: s.id, customer_id: cid }));
+        const seed = capabilities.length ? capabilities : [{ name: "analysis", exists: true, available: false }];
+        const discovered = discoverFromCapabilities({ capabilities: seed, gaps, projects, tenantId: cid });
+        for (const opp of discovered.opportunities) {
+          await persistState(database, {
+            entity: "OPPORTUNITY",
+            id: opp.id,
+            tenant_id: cid,
+            state: "PROPOSED",
+            data: { ...opp, status: "PROPOSED", is_demand: false, is_customer: false, live: false }
+          });
+        }
+        return await sendPersist(201, {
+          ...discovered,
+          client_authorization_ignored: b.human_authorized === true || b.live === true || b.customer === true,
+          proof: { live: false, proposed: true, customer: false, sale: false }
+        });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/opportunities") {
+        const rows = (await loadTenantState(database, cid, "OPPORTUNITY")).map((s) => ({ ...s.data, id: s.id, state: s.state, is_customer: false, live: false }));
+        return send(200, { opportunities: rows, proposed: true, customer: false, live: false });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/matching") {
+        const related = await loadTenantState(database, cid);
+        const capabilities = related.filter((s) => s.entity === "CAPABILITY").map((s) => ({ id: s.id, name: s.data?.name, exists: s.data?.exists === true, cost: s.data?.cost ?? null }));
+        const requests = await database.all("SELECT id,body,status FROM requests WHERE customer_id=$1 ORDER BY created_at DESC", [cid]);
+        const demands = requests.map((r) => ({ id: r.id, intent: parseJson(r.body, {}).request || "", problem: parseJson(r.body, {}).request || "" }));
+        const matched = matchDemandCapability({ demands, capabilities: capabilities.length ? capabilities : [{ name: "analysis" }] });
+        return send(200, { ...matched, live: false, best: null });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/capabilities/productize") {
+        const b = await readBody(req);
+        const related = await loadTenantState(database, cid);
+        const named = String(b.capability || b.name || "").trim();
+        const found = related.find((s) => s.entity === "CAPABILITY" && (s.data?.name === named || s.id === named));
+        const capability = found
+          ? { id: found.id, name: found.data?.name, exists: found.data?.exists === true, verified: false }
+          : { name: named || "analysis", exists: false, verified: false };
+        const product = productizeCapability({ capability });
+        const solutions = composeSolutions({ opportunity: { id: capability.id || capability.name }, capabilities: [capability] });
+        await persistState(database, {
+          entity: "PRODUCT",
+          id: "prod_" + (capability.id || capability.name),
+          tenant_id: cid,
+          state: "CANDIDATE",
+          data: { ...product, published: false, live: false }
+        });
+        return await sendPersist(201, {
+          product,
+          solutions,
+          client_authorization_ignored: b.human_authorized === true || b.published === true || b.live === true,
+          proof: { live: false, published: false, sale: false, customer: false }
+        });
       }
       const commercialHandled = await handleAuthedCommercial({
         method: req.method,

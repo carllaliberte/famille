@@ -210,6 +210,11 @@
           <p class="quiet">Payment observed is not delivery. Renewal is proposed, never automatic in Acorn.</p>
           <div id="cycle" class="stack"></div>
         </div>
+        <div class="panel stack">
+          <h3>Opportunities</h3>
+          <p class="quiet">A capability can become an opportunity. An opportunity is not a customer. A product candidate is not a sale.</p>
+          <div id="opps" class="stack"></div>
+        </div>
       </div>
     </section>
 
@@ -250,13 +255,14 @@
 
     async function loadAccount() {
       try {
-        const [cat, ords, rights, led, ren, exp] = await Promise.all([
+        const [cat, ords, rights, led, ren, exp, opps] = await Promise.all([
           call("/api/v1/catalog"),
           call("/api/v1/orders"),
           call("/api/v1/usage-rights"),
           call("/api/v1/ledger"),
           call("/api/v1/renewal"),
-          call("/api/v1/expansion")
+          call("/api/v1/expansion"),
+          call("/api/v1/opportunities").catch(() => ({ opportunities: [] }))
         ]);
         const items = cat.catalog?.items || [];
         $("catalog").innerHTML = items.map((i) => `
@@ -302,6 +308,17 @@
           ${renewals.length ? renewals.map((r) => `<article class="req" style="cursor:default"><h4>Renewal ${esc(r.state)}</h4><p class="quiet">${esc(r.model || "")} · auto=${r.auto_renew_in_acorn === true} · live=false</p></article>`).join("") : `<p class="quiet">No renewal proposed. One-time orders do not auto-renew.</p>`}
           ${expansions.length ? expansions.map((e) => `<article class="req" style="cursor:default"><h4>Expansion ${esc(e.state)}</h4><p class="quiet">${(e.next_problems || []).length} next problems · auto_contract=${e.auto_contract === true}</p></article>`).join("") : `<p class="quiet">No expansion recommendation stored.</p>`}
         `;
+        const oppRows = opps.opportunities || [];
+        $("opps").innerHTML = `
+          <div class="row"><button class="btn btn-ghost" type="button" id="discoveropp">Propose from capabilities</button></div>
+          ${oppRows.length ? oppRows.map((o) => `<article class="req" style="cursor:default"><h4>${esc(o.kind || o.use_case || o.problem || "Opportunity")}</h4><p class="quiet">${esc(o.status || "PROPOSED")} · customer=false · cost=${esc(o.cost_state || "COST_NOT_MEASURED")} · live=false</p></article>`).join("") : `<p class="quiet">No opportunities stored. A capability is not a product until proposed.</p>`}
+        `;
+        $("discoveropp")?.addEventListener("click", async () => {
+          try {
+            await call("/api/v1/opportunities/discover", "POST", {});
+            loadAccount();
+          } catch (e) {}
+        });
       } catch (e) {
         $("catalog").innerHTML = `<p class="err">${esc(e.error || "Could not load account")}</p>`;
       }
