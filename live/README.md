@@ -11,8 +11,12 @@ Production customer runtime for FAMILLE.
 - `GET /api/v1/requests` request list
 - `GET /api/v1/requests/:id` request + event timeline
 
-State is persisted in SQLite. Passwords use scrypt and sessions use bearer tokens.
+Production durable state is PostgreSQL via `DATABASE_URL`. SQLite is an explicit local/test adapter (`ACORN_DB_ADAPTER=sqlite`) and is refused as a silent production fallback.
 
-The runtime uses the existing Acorn customer-service kernel. It does not invent payment, verification, authority, or LIVE evidence. Requests stop at the existing human/evidence gates until the corresponding real adapter/evidence exists.
+Passwords use scrypt and sessions use bearer tokens. Tenant isolation is enforced on request, enterprise, and evidence reads.
 
-Node 22.13+ is required for the built-in SQLite runtime.
+The runtime uses the existing Acorn customer-service kernel, enterprise state model, evidence registry, and connector execution fabric. It does not invent payment, verification, authority, or LIVE evidence. HTTP availability is not LIVE proof. Requests stop at the existing human/evidence gates until the corresponding real adapter/evidence exists.
+
+Truth states: `CODE_PRESENT` → `LOCAL_RUNNING` → `READY` → `EXTERNALLY_REACHABLE` → `LIVE_MEASURED` → `VERIFIED`. Local process health reports at most `READY`.
+
+Node 22.13+ is required for the built-in SQLite local adapter.
