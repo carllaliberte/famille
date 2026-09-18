@@ -1,0 +1,16 @@
+{
+  "contract": "acorn.open-pr-repair.v1",
+  "source_prs": [
+    905,
+    902,
+    898,
+    896,
+    889,
+    884,
+    885
+  ],
+  "base": "main",
+  "truth": "current-main-derived",
+  "authority": "human",
+  "auto_merge": false
+}
