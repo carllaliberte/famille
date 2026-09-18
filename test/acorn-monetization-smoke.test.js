@@ -1,0 +1,3 @@
+import test from"node:test";import assert from"node:assert/strict";import{createStripeAdapter}from"../scripts/acorn-stripe-adapter.mjs";import{runtimeSurface}from"../scripts/acorn-monetization-operating-system.mjs";
+test("stripe unconfigured remains honest",()=>{const t=createStripeAdapter({env:{}}).truth();assert.equal(t.mode,"UNCONFIGURED");assert.equal(t.live,false);assert.equal(t.executed,false);assert.equal(t.verified,false);});
+test("monetization runtime is backed by existing rails",()=>assert.ok(runtimeSurface().existing_runtime.includes("acorn-economic-ledger")));
