@@ -84,7 +84,7 @@ export function reinvestmentDecision({measuredRevenue=0,measuredCost=0,increment
 }
 
 export function economicAllocation({resources=[],opportunities=[],budget=0}={}) {
-  const rankedResources=[...resources].sort((a,b)=>(n(b.net_yield)-n(b.cost))/(Math.max(.000001,n(b.cost))-0.000001) - (n(a.net_yield)-n(a.cost))/(Math.max(.000001,n(a.cost))-0.000001));
+  const rankedResources=[...resources].sort((a,b)=>{ const score=r=>n(r.net_yield)-n(r.cost); const delta=score(b)-score(a); return delta!==0?delta:n(b.net_yield)-n(a.net_yield); });
   const rankedOpportunities=chooseEconomicWork(opportunities);
   const spendable=Math.max(0,n(budget));
   let remaining=spendable;
