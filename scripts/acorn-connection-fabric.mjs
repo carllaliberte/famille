@@ -148,6 +148,7 @@ export function connectionConstitution() {
     capability_is_not_authority: true,
     unknown_is_not_trusted: true,
     human_authority: "carl",
+    authority: "carl",
     auto_merge: false,
     auto_spend: false,
     live: false,
@@ -308,7 +309,7 @@ export async function cancel(connection_id, operation_id = null, options = {}) {
 
 export async function connect({
   adapter_id,
-  identity = UNKNOWN,
+  identity = "UNKNOWN",
   capability = UNKNOWN,
   provenance = null,
   authenticated = false,
@@ -483,7 +484,7 @@ async function externalCall(connection, operation, payload, { env, now, human_au
   const adapter = adapters.get(connection.adapter_id);
   if (!adapter) return { status: "UNKNOWN", reason: "ADAPTER_NOT_FOUND", executed: false, live: false };
   const input = {
-    kind: connection.capability || adapter.kind || "generic",
+    kind: adapter.kind || "generic-ai",
     channel: "connection",
     source: adapter.id,
     actor: connection.identity,
