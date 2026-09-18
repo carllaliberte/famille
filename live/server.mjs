@@ -17,6 +17,7 @@ import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState,
 import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt, proposeCapabilities } from "../scripts/acorn-operational-fabric.mjs";
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
 import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject, loadCommercialCycle } from "./commercial.mjs";
+import { buildRealitySnapshot, customerNextAction, assertTruthContract } from "../scripts/acorn-real-world-turnkey.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -452,6 +453,49 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           authority:{human_required:true,auto_contract:false,auto_payment:false,auto_spend:false,secret_custody:false,auto_merge:false},
           measured_at: now()
         });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/reality") {
+        const customer = await database.get("SELECT id FROM customers WHERE id=$1", [cid]);
+        const states = await loadTenantState(database, cid);
+        const requestId = u.searchParams.get("request_id") || null;
+        const request = requestId
+          ? await database.get("SELECT id,status FROM requests WHERE id=$1 AND customer_id=$2", [requestId, cid])
+          : await database.get("SELECT id,status FROM requests WHERE customer_id=$1 ORDER BY created_at DESC LIMIT 1", [cid]);
+        const commercial = request
+          ? await loadCommercialCycle(database, cid, request.id)
+          : { payment_observed:false, delivered:false, value_verified:false };
+        const connectors = connections().map((c) => ({
+          id: c.id,
+          provider: c.provider,
+          kind: c.kind,
+          capability: (c.capabilities || [])[0] || null,
+          state: c.state || "DISCOVERED",
+          authenticated: c.authenticated === true,
+          connected: c.reachable === true || c.connected === true,
+          readable: c.readable === true,
+          executable: c.executable === true,
+          measured: c.measured === true,
+          verified: c.verified === true,
+          live: c.live === true,
+        }));
+        const snapshot = buildRealitySnapshot({
+          customer: { id: customer?.id || cid, tenant_id: cid },
+          project: { id: request?.id || null, stage: request?.status || "INTAKE" },
+          connectors,
+          intelligences: intelligences(),
+          commercial: {
+            payment_required: Boolean(request),
+            payment_observed: commercial.payment_observed === true || commercial.orders?.some((o) => o.state === "PAYMENT_OBSERVED") === true,
+            delivered: commercial.delivery?.delivered === true,
+            value_verified: commercial.value?.verified === true,
+            checkout_created: commercial.orders?.some((o) => o.checkout_created === true) === true,
+            execution_authorized: commercial.execution_authorized === true,
+          },
+          execution: states.find((s) => s.entity === "EXECUTION" && s.data?.request_id === request?.id) || {},
+          evidence: await loadTenantEvidence(database, cid, request?.id || null),
+        });
+        assertTruthContract(snapshot);
+        return send(200, { ...snapshot, next_action: customerNextAction(snapshot) });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/requests") {
         const rows = await database.all("SELECT * FROM requests WHERE customer_id=$1 ORDER BY created_at DESC", [cid]);
