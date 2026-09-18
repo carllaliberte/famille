@@ -1,0 +1,3 @@
+export const CONTRACT="acorn.universal-project-multiplier.v1";
+export function multiplyProject(project={}){const verified=project.verified===true&&project.measured===true&&Array.isArray(project.evidence)&&project.evidence.length>0;return{state:verified?"MULTIPLIABLE":"NOT_MULTIPLIABLE",outputs:verified?["OUTCOME","EVIDENCE","CAPABILITY","KNOWLEDGE","TEMPLATE","PRODUCT_CANDIDATE","OPPORTUNITY_CANDIDATE"]:[],source:project.id??null,authority:"HUMAN"};}
+export function projectToPortfolio(projects=[]){return projects.map(multiplyProject).filter(x=>x.state==="MULTIPLIABLE");}

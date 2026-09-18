@@ -1,0 +1,3 @@
+export const CONTRACT="acorn.network-effect-fabric.v1";
+export function networkEffect(nodes=[],edges=[]){const degree=new Map();for(const e of edges){degree.set(e.from,(degree.get(e.from)||0)+1);degree.set(e.to,(degree.get(e.to)||0)+1);}return{nodes:nodes.map(n=>({...n,network_degree:degree.get(n.id)||0})),edges,authority:"UNCHANGED",truth:"NETWORK_SCALE != AUTHORITY"};}
+export function findReuseHubs(nodes=[]){return nodes.filter(n=>Number(n.network_degree)>0).sort((a,b)=>b.network_degree-a.network_degree);}
