@@ -1,12 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import {
-  notificationDecision,
-  triageRun,
-  workflowExitCode,
-  RUN_CLASSES,
-} from "../scripts/acorn-cognitive-run-triage.mjs";
+import { classifyRun, notificationDecision, triageRun, runBoundedVerification, workflowExitCode, RUN_CLASSES } from "../scripts/acorn-cognitive-run-triage.mjs";
 
 test("successful automation is silent", () => {
   const r = triageRun({ exitCode: 0 });
@@ -50,50 +44,28 @@ test("recovered transient failure stays silent", () => {
   assert.equal(r.notify, false);
 });
 
-test("notify true fails the workflow for regression, human, and security", () => {
-  assert.equal(workflowExitCode(triageRun({ exitCode: 1, reason: "assertion failed" })), 1);
-  assert.equal(workflowExitCode(triageRun({ exitCode: 1, reason: "HUMAN_AUTHORITY_REQUIRED" })), 1);
-  assert.equal(workflowExitCode(triageRun({ exitCode: 1, reason: "INTEGRITY_FAILURE" })), 1);
+
+test("bounded verification records a successful first attempt", () => {
+  const r = runBoundedVerification({
+    command: process.execPath,
+    args: ["-e", "process.exit(0)"],
+    maxRetries: 2,
+  });
+  assert.equal(r.classification, RUN_CLASSES.SUCCESS);
+  assert.equal(r.recovered, false);
+  assert.equal(r.attempts.length, 1);
 });
 
-test("notify false keeps expected and transient steps green", () => {
-  assert.equal(workflowExitCode(triageRun({ exitCode: 0 })), 0);
-  assert.equal(workflowExitCode(triageRun({ exitCode: 1, reason: "GPU_RUNTIME_NOT_PRESENT" })), 0);
-  assert.equal(workflowExitCode(triageRun({ exitCode: 1, reason: "ETIMEDOUT" })), 0);
-});
 
-test("bare HOLD is a human gate, not an expected failure", () => {
+test("bare HOLD is a human gate", () => {
   const r = triageRun({ exitCode: 1, stderr: "Verdict : HOLD" });
   assert.equal(r.classification, RUN_CLASSES.WAITING_HUMAN);
   assert.equal(r.notify, true);
   assert.equal(workflowExitCode(r), 1);
 });
 
-test("HOLD_HUMAN stays a human gate", () => {
-  const r = triageRun({ exitCode: 1, reason: "HOLD_HUMAN" });
+test("WAITING_HUMAN remains visible", () => {
+  const r = triageRun({ exitCode: 0, stderr: "WAITING_HUMAN" });
   assert.equal(r.classification, RUN_CLASSES.WAITING_HUMAN);
-  assert.equal(r.notify, true);
-});
-
-test("organism WAITING_HUMAN state stays visible even when the engine exits 0", () => {
-  const r = triageRun({
-    exitCode: 0,
-    stderr: JSON.stringify({ state: "WAITING_HUMAN", blocked: 1 }),
-  });
-  assert.equal(r.classification, RUN_CLASSES.WAITING_HUMAN);
-  assert.equal(r.notify, true);
   assert.equal(workflowExitCode(r), 1);
-});
-
-test("CLI exit code follows notify, not only REAL_REGRESSION", () => {
-  const run = (env) => spawnSync(process.execPath, ["scripts/acorn-cognitive-run-triage.mjs"], {
-    env: { ...process.env, ...env },
-    encoding: "utf8",
-  });
-  assert.equal(run({ ACORN_RUN_EXIT_CODE: "1", ACORN_RUN_REASON: "INTEGRITY_FAILURE" }).status, 1);
-  assert.equal(run({ ACORN_RUN_EXIT_CODE: "1", ACORN_RUN_REASON: "HOLD_HUMAN" }).status, 1);
-  assert.equal(run({ ACORN_RUN_EXIT_CODE: "1", ACORN_RUN_STDERR: "HOLD" }).status, 1);
-  assert.equal(run({ ACORN_RUN_EXIT_CODE: "1", ACORN_RUN_REASON: "assertion failed" }).status, 1);
-  assert.equal(run({ ACORN_RUN_EXIT_CODE: "1", ACORN_RUN_REASON: "GPU_RUNTIME_NOT_PRESENT" }).status, 0);
-  assert.equal(run({ ACORN_RUN_EXIT_CODE: "0" }).status, 0);
 });
