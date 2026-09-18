@@ -1,0 +1,8 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {VISIONARY_BENCHMARKS,REQUIRED_QUALITY_DIMENSIONS,ACORN_GAPS_TO_ELIMINATE,createQualityAudit,assertQualityAudit,qualityVerdict} from "../scripts/acorn-visionary-quality.mjs";
+test("benchmark is plural and non-ranking",()=>{assert.ok(VISIONARY_BENCHMARKS.length>=8);for(const b of VISIONARY_BENCHMARKS){assert.ok(b.id&&b.reference&&b.principle);assert.ok(Array.isArray(b.dimensions));}});
+test("assurance requires every dimension and expiry",()=>{const a=createQualityAudit();assert.equal(a.quality_assured,false);assert.ok(a.missing.length>0);assert.match(qualityVerdict(a),/EVIDENCE INCOMPLETE/);});
+test("complete dated evidence can assure",()=>{const evidence=Object.fromEntries(REQUIRED_QUALITY_DIMENSIONS.map(d=>[d,true]));const a=createQualityAudit({evidence,valid_until:"2026-12-31"});assert.equal(a.quality_assured,true);assert.deepEqual(a.missing,[]);assert.match(qualityVerdict(a),/QUALITY ASSURED/);assert.doesNotThrow(()=>assertQualityAudit(a));});
+test("material change remains visible",()=>{const evidence=Object.fromEntries(REQUIRED_QUALITY_DIMENSIONS.map(d=>[d,true]));const a=createQualityAudit({evidence,valid_until:"2026-12-31",material_change:true});assert.equal(a.material_change,true);});
+test("concrete gaps include trace, customer outcome and adversarial quality",()=>{assert.ok(ACORN_GAPS_TO_ELIMINATE.some(g=>g.id==="quality_trace_everywhere"));assert.ok(ACORN_GAPS_TO_ELIMINATE.some(g=>g.id==="customer_outcome_proof"));assert.ok(ACORN_GAPS_TO_ELIMINATE.some(g=>g.id==="adversarial_quality"));});
