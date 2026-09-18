@@ -1,0 +1,11 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {createOpenAIDeveloperBridge,discoverOpenAICapabilities,buildOpenAIHeaders,buildResponsesRequest,buildMCPTool,buildBuiltInTool,buildAgentSession,classifyOpenAIState,redactOpenAIConfig,futureProofOpenAISurface} from "../scripts/acorn-openai-developer-bridge.mjs";
+test("provider bridge never grants authority",()=>{const b=createOpenAIDeveloperBridge({capabilities:["responses","mcp"]});assert.equal(b.provider,"openai");assert.equal(b.authority,false);assert.equal(b.human_authorized,false);assert.equal(b.auth.key_env,"OPENAI_API_KEY")});
+test("capability discovery is open-ended",()=>{const xs=discoverOpenAICapabilities({tool_descriptors:[{type:"web_search"},{type:"future_new_tool"}]});assert.deepEqual(xs.map(x=>x.type),["web_search","future_new_tool"]);assert.ok(xs.every(x=>x.authority===false))});
+test("secrets are never exposed by redaction",()=>{const b=createOpenAIDeveloperBridge();const h=buildOpenAIHeaders({bridge:b,apiKey:"secret"});assert.equal(h.headers.authorization,"Bearer secret");assert.equal(redactOpenAIConfig(b).secrets_present,false)});
+test("Responses and tool composition",()=>{const r=buildResponsesRequest({model:"gpt-test",input:"hello",tools:[{type:"web_search"}]});assert.equal(r.model,"gpt-test");assert.equal(r.tools[0].type,"web_search")});
+test("MCP defaults to explicit approval",()=>{const t=buildMCPTool({server_label:"acorn",server_url:"https://example.invalid/mcp"});assert.equal(t.type,"mcp");assert.equal(t.require_approval,"always")});
+test("developer surfaces compose",()=>{assert.equal(buildBuiltInTool("web_search").type,"web_search");assert.equal(buildAgentSession({model:"gpt-test"}).model,"gpt-test")});
+test("truth states never imply authority",()=>{const s=classifyOpenAIState({configured:true,authenticated:true,connected:true});assert.equal(s.state,"CONNECTED");assert.equal(s.authority,false)});
+test("future surfaces are discoverable without model allowlists",()=>{const s=futureProofOpenAISurface({name:"future-api",capabilities:["new_capability"]});assert.equal(s.future_compatible,true);assert.equal(s.state,"DISCOVERED")});
