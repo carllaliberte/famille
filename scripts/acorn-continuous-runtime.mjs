@@ -452,7 +452,7 @@ export async function runContinuousRuntime({
       live: false,
     },
     unified: {
-      cycle_order: ["REAL_STATE", "INVENTORY", "DEFENSE", "CORTEX", "EVOLUTION", "LEARNING", "METABOLISM", "EVIDENCE", "CONTINUE"],
+      cycle_order: ["REAL_STATE", "INVENTORY", "CONNECTIONS", "DEFENSE", "CORTEX", "EVOLUTION", "LEARNING", "METABOLISM", "EVIDENCE", "CONTINUE"],
       measurement_basis: {
         discovered: coverage.discovered_count, wired: coverage.wired_count, executed: coverage.executed_count,
         measured: coverage.measured_count, verified: coverage.verified_count, unknown: coverage.unknown_count, failed: coverage.failed_count,
