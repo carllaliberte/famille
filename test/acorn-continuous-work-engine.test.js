@@ -50,9 +50,13 @@ test("work discovery is unified and rankable", () => {
     },
   };
   const rows = canonicalWorkFromRuntime(runtime);
-  assert.equal(rows.length, 5);
-  assert.ok(rows.some((row) => row.execution_kind === "connection-sweep"));
-  assert.ok(rows.some((row) => row.execution_kind === "compute-sweep"));
+  const kinds = new Set(rows.map((row) => row.execution_kind));
+  assert.ok(kinds.has("connection-sweep"));
+  assert.ok(kinds.has("compute-sweep"));
+  assert.ok(kinds.has("developer-gateway"));
+  assert.ok(kinds.has("market"));
+  assert.ok(kinds.has("contribution-economy"));
+  assert.ok(rows.length >= 8);
   assert.equal(rankWork(rows)[0].priority >= rankWork(rows)[1].priority, true);
 });
 
@@ -152,4 +156,24 @@ test("continuous work executes the canonical connection sweep", async () => {
   assert.equal(execution.connections.auto_spend, false);
   assert.equal(execution.connections.live, false);
   assert.equal(execution.connections.proof.status, "VERIFIED");
+});
+
+test("continuous work executes developer, market and contribution metabolism", async () => {
+  const rows = canonicalWorkFromRuntime({ unified: { evolution: {}, learning: {}, metabolism: {} }, coverage: {} });
+  const gateway = rows.find((row) => row.execution_kind === "developer-gateway");
+  const market = rows.find((row) => row.execution_kind === "market");
+  const economy = rows.find((row) => row.execution_kind === "contribution-economy");
+  assert.ok(gateway);
+  assert.ok(market);
+  assert.ok(economy);
+  const g = await executeWorkTask({ root: process.cwd(), task: gateway, env: process.env });
+  assert.equal(g.executor, "developer-gateway-fabric");
+  assert.equal(g.developer.manifest.live, false);
+  const m = await executeWorkTask({ root: process.cwd(), task: market, env: process.env });
+  assert.equal(m.executor, "market-engine");
+  assert.equal(m.market.no_auto_contract, true);
+  const e = await executeWorkTask({ root: process.cwd(), task: economy, env: process.env });
+  assert.equal(e.executor, "contribution-economy");
+  assert.equal(e.economy.settlement.state, "HOLD_HUMAN");
+  assert.equal(e.economy.policy.no_private_key_custody, true);
 });
