@@ -1,0 +1,23 @@
+name: ACORN Universal Environment Fabric
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/acorn-universal-environment-fabric.mjs"
+      - "scripts/acorn-environment-orchestrator.mjs"
+      - "test/acorn-universal-environment-fabric.test.js"
+      - ".github/workflows/acorn-universal-environment-fabric.yml"
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test test/acorn-universal-environment-fabric.test.js
+      - run: node --input-type=module -e "import('./scripts/acorn-universal-environment-fabric.mjs').then(({assertEnvironmentConstitution})=>assertEnvironmentConstitution())"
