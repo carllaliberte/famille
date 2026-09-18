@@ -1,0 +1,9 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {emitSignal,classifySignal,routeSignals,buildContextPacket,selectNextAction,recordSignalOutcome,assertCortexRoutingConstitution} from "../scripts/acorn-cortex-signal-routing.mjs";
+test("cortex emits typed environmental signals",()=>{const s=emitSignal({type:"NEED",source:"customer",subject:"project",payload:{x:1}});assert.equal(s.state,"OBSERVED");});
+test("priority and expiry are explicit",()=>{const s=classifySignal(emitSignal({type:"RISK",source:"a",subject:"x",urgency:.9}));assert.equal(s.state,"PRIORITY");});
+test("signals route to matching capabilities and knowledge",()=>{const s=classifySignal(emitSignal({type:"NEED",source:"a",subject:"x"}));const r=routeSignals({signals:[s],subscriptions:[{id:"team",types:["NEED"]}],capabilities:[{id:"cap",signal_types:["NEED"]}],knowledge:[{id:"k",subject:"x",state:"VERIFIED"}]});assert.deepEqual(r[0].recipients,["team"]);assert.deepEqual(r[0].relevant_capabilities,["cap"]);});
+test("context packet is bounded",()=>{const p=buildContextPacket({signal:{id:"s"},history:Array.from({length:30},(_,i)=>i)});assert.equal(p.relevant_history.length,20);});
+test("action selection remains a proposal",()=>{const x=selectNextAction({context:{signal_id:"s"},options:[{id:"a",expected_value:10,cost:2,risk:1}]});assert.equal(x.selected.id,"a");assert.equal(x.requires_authorization,true);});
+test("outcomes feed the loop",()=>{assert.equal(recordSignalOutcome({signal_id:"s",outcome:"done"}).state,"MEASURED");});
+test("constitution protects authority and Breaker",()=>{assert.equal(assertCortexRoutingConstitution(),true);assert.throws(()=>assertCortexRoutingConstitution({breaker_touched:true}),/BREAKER/);assert.throws(()=>assertCortexRoutingConstitution({auto_action:true}),/AUTHORIZATION/);});
