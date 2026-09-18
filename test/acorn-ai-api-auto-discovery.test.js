@@ -1,0 +1,5 @@
+import test from"node:test";import assert from"node:assert/strict";import{normalizeProvider,reconcileAiCatalog,buildDeveloperAccessPlan,discoverOpenRouterCatalog}from"../scripts/acorn-ai-api-auto-discovery.mjs";
+test("normalizes future providers without fixed allowlist dependence",()=>assert.equal(normalizeProvider({provider:"new-lab",models:["m"]}).provider,"new-lab"));
+test("reconciles direct and catalog surfaces",()=>{const p=reconcileAiCatalog({catalog:[{provider:"x",models:["a"]}],direct:[{provider:"x",models:["b"]}]});assert.deepEqual(p[0].models,["a","b"]);});
+test("developer plan never embeds credentials",()=>{const p=buildDeveloperAccessPlan({providers:[{provider:"x",models:[],key_env:"X_KEY",state:"DISCOVERED"}]});assert.equal(p[0].credential_present,false);assert.equal(Object.hasOwn(p[0],"credential"),false);});
+test("catalog failure stays truthful",async()=>{const r=await discoverOpenRouterCatalog({fetchImpl:async()=>({ok:false,status:503})});assert.equal(r.status,"FAILED");assert.equal(r.models.length,0);});
