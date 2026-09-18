@@ -1,0 +1,22 @@
+name: ACORN Universal Intent to Reality Commerce OS
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/acorn-universal-intent-to-reality-commerce-os.mjs"
+      - "scripts/acorn-customer-reality-conductor.mjs"
+      - "test/acorn-universal-intent-to-reality-commerce-os.test.js"
+      - ".github/workflows/acorn-universal-intent-to-reality-commerce-os.yml"
+permissions:
+  contents: read
+jobs:
+  commerce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test test/acorn-universal-intent-to-reality-commerce-os.test.js

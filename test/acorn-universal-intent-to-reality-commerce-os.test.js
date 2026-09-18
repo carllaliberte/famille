@@ -1,0 +1,15 @@
+import test from"node:test";import assert from"node:assert/strict";
+import{LIFECYCLE,DOMAINS,createCustomerIntent,qualifyIntent,compileProject,buildOffer,observePayment,authorizeEffect,verifyDelivery,createRenewalOpportunity,closeCommerceLoop,assertCommerceConstitution}from"../scripts/acorn-universal-intent-to-reality-commerce-os.mjs";
+const proof={verified:true,measured:true,expired:false,evidence:["e"]};
+test("constitution",()=>assert.equal(assertCommerceConstitution(),true));
+test("large lifecycle",()=>assert.ok(LIFECYCLE.length>=25&&DOMAINS.length>=20));
+test("intent qualification",()=>assert.equal(qualifyIntent(createCustomerIntent({objective:"x",success:["s"]})).state,"QUALIFIED"));
+test("missing intent stays blocked",()=>assert.equal(qualifyIntent(createCustomerIntent({objective:"x"})).state,"NEEDS_CLARIFICATION"));
+test("project uses verified capabilities",()=>assert.equal(compileProject({objective:"x",requirements:["r"],success:["s"]},[{state:"VERIFIED",capabilities:["r"]}]).state,"COMPILED"));
+test("unverified capability cannot compile as available",()=>assert.equal(compileProject({objective:"x",requirements:["r"],success:["s"]},[{state:"DISCOVERED",capabilities:["r"]}]).missing_capabilities.length,1));
+test("offer requires measured benchmark",()=>assert.equal(buildOffer({state:"COMPILED"},[]).state,"OFFER_BLOCKED"));
+test("payment observation is distinct",()=>assert.equal(observePayment({observed:true}).state,"PAYMENT_OBSERVED"));
+test("consequential action is human gated",()=>assert.equal(authorizeEffect("PRICE_CHANGE",{server_authorized:true}).authorized,false));
+test("delivery needs verified evidence and acceptance",()=>assert.equal(verifyDelivery({...proof,accepted:false}).state,"DELIVERY_NOT_VERIFIED"));
+test("measured value can create expansion candidate",()=>assert.equal(createRenewalOpportunity({...proof,accepted:true,customer_value_measured:true},{customer:"c"}).state,"EXPANSION_CANDIDATE"));
+test("full loop remains human governed",()=>assert.equal(closeCommerceLoop({}).authority,"HUMAN_SERVER"));
