@@ -141,6 +141,23 @@ test("unauthorized connector execution remains BLOCKED", async () => {
   });
 });
 
+test("HTTP cannot authorize a consequential real-world effect", async () => {
+  const connectors = JSON.stringify([{ id: "pay", provider: "example", base_url: "https://example.invalid/", effect: "MONEY", credential_env: "ACORN_TEST_SECRET" }]);
+  await withServer(async ({ base }) => {
+    const auth = await jsonReq(base, "/api/v1/register", { method: "POST", body: { name: "Pay", email: "pay@example.com", password: "correct-horse" } });
+    const created = await jsonReq(base, "/api/v1/requests", { method: "POST", token: auth.json.token, body: { request: "pay something" } });
+    const listed = await jsonReq(base, "/api/v1/real-world", { token: auth.json.token });
+    assert.equal(listed.status, 200);
+    assert.equal(listed.json.proof.connected, false);
+    assert.equal(listed.json.proof.live, false);
+    const spoof = await jsonReq(base, "/api/v1/runtime/external", { method: "POST", token: auth.json.token, body: { request_id: created.json.request.id, connector_id: "pay", path: "charges", method: "POST", body: { amount: 1 }, human_authorized: true } });
+    assert.equal(spoof.status, 403);
+    assert.equal(spoof.json.result.state, "BLOCKED");
+    assert.equal(spoof.json.result.reason, "HUMAN_AUTHORIZATION_REQUIRED");
+    assert.equal(JSON.stringify(spoof.json).includes("not-a-real-secret"), false);
+  }, { ACORN_REAL_WORLD_CONNECTORS: connectors, ACORN_TEST_SECRET: "not-a-real-secret" });
+});
+
 test("authorized execution produces a measured record but does not claim external effect", async () => {
   const executor = createConnectorExecutor({ connection: { id: "crm" }, execute: async () => ({ ok: true }) });
   const result = await executeConnector(executor, { task: { id: "t1" }, authorized: true });

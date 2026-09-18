@@ -10,6 +10,7 @@ import { createLiveDatabase, now, makeId, parseJson, encodeJson } from "./databa
 import { buildRuntimePlan, verifyRuntimePlan } from "../scripts/acorn-runtime-orchestrator.mjs";
 import { createExecutionRun, executionLoopSnapshot } from "../scripts/acorn-execution-evidence-loop.mjs";
 import { createConnectorExecutor, executeConnector } from "../scripts/acorn-connector-execution-fabric.mjs";
+import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot } from "../scripts/acorn-real-world-bridge.mjs";
 import { assessRuntimeStatus } from "./runtime-status.mjs";
 import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence } from "./enterprise-store.mjs";
 
@@ -305,6 +306,72 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         const result = await executeConnector(executor, { task: parseJson(b.task, {}), authorized: false });
         await persistEnterpriseEvent(database, { tenantId: cid, entityId: connection.id, type: "CONNECTOR_EXECUTION", payload: { state: result.state, reason: result.reason || "HUMAN_AUTHORIZATION_REQUIRED", external_effect_claimed: false }, actor: "acorn-live", authority: "none" });
         return send(result.state === "BLOCKED" ? 403 : 200, { result, proof: { live: false, external_effect: false, human_authorization_required: true } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/real-world") {
+        const connectors = loadRealWorldConnectors(env.ACORN_REAL_WORLD_CONNECTORS);
+        return send(200, {
+          bridge: realWorldBridgeSnapshot(connectors),
+          proof: { connected: false, live: false, secret_custody: false, executed: false },
+          measured_at: now()
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/runtime/external") {
+        const b = await readBody(req);
+        const requestId = String(b.request_id || "");
+        if (!requestId || !(await ownRequest(cid, requestId))) return send(404, { error: "NOT_FOUND" });
+        const connectors = loadRealWorldConnectors(env.ACORN_REAL_WORLD_CONNECTORS);
+        const connector = connectors.find((x) => x.id === String(b.connector_id || ""));
+        if (!connector) return send(404, { error: "CONNECTOR_NOT_CONFIGURED" });
+        const call = buildExternalCall({
+          connector,
+          path: String(b.path || ""),
+          method: String(b.method || "GET"),
+          body: b.body ?? null,
+          human_authorized: false,
+          idempotency_key: b.idempotency_key || null
+        });
+        const credential = connector.credential_env ? env[connector.credential_env] || process.env[connector.credential_env] || null : null;
+        const result = await executeExternalCall(call, { credential });
+        const publicResult = { ...result };
+        delete publicResult.credential;
+        await persistEnterpriseEvent(database, {
+          tenantId: cid,
+          entityId: requestId,
+          type: "REAL_WORLD_EXECUTION",
+          payload: { execution_id: result.id, connector_id: connector.id, state: result.state, effect: connector.effect, external_effect: result.external_effect === true, reason: result.reason || null },
+          actor: "acorn-live",
+          authority: "none"
+        });
+        if (result.state === "SUCCEEDED") {
+          await persistEvidence(database, {
+            tenantId: cid,
+            claim: "external_http_observed",
+            source: "external_http",
+            kind: "EXTERNAL_EXECUTION",
+            strength: 1,
+            margin: 0.1,
+            validUntil: new Date(Date.now() + 86400000).toISOString()
+          }, requestId);
+        }
+        await persistState(database, {
+          entity: "EXECUTION",
+          id: result.id,
+          tenant_id: cid,
+          state: result.state,
+          data: { request_id: requestId, connector_id: connector.id, effect: connector.effect, human_authorized: false, external_effect: result.external_effect === true, client_authorization_ignored: true }
+        });
+        return send(result.state === "SUCCEEDED" ? 200 : (result.state === "BLOCKED" ? 403 : 502), {
+          result: publicResult,
+          proof: {
+            live: false,
+            secret_custody: false,
+            human_authorization_required: true,
+            client_authorization_ignored: true,
+            external_call_measured: result.state === "SUCCEEDED",
+            external_effect: result.external_effect === true,
+            measured_at: now()
+          }
+        });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/runtime") {
         const jobs = await database.all("SELECT state,COUNT(*) AS count FROM acorn_jobs WHERE tenant_id=$1 GROUP BY state", [cid]).catch(() => []);

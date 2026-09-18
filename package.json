@@ -71,7 +71,8 @@
     "runtime:first-proof": "node scripts/acorn-first-enterprise-proof.mjs",
     "runtime:business-os": "node scripts/acorn-business-operating-system.mjs",
     "runtime:infinite-economy": "node scripts/acorn-infinite-economic-engine.mjs",
-    "runtime:total-os": "node scripts/acorn-total-operating-system.mjs"
+    "runtime:total-os": "node scripts/acorn-total-operating-system.mjs",
+    "runtime:real-world": "node -e \"import('./scripts/acorn-real-world-bridge.mjs').then(({realWorldBridgeSnapshot,loadRealWorldConnectors})=>console.log(JSON.stringify(realWorldBridgeSnapshot(loadRealWorldConnectors()),null,2)))\""
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -159,7 +160,8 @@
     "./acorn-execution-evidence-loop": "./scripts/acorn-execution-evidence-loop.mjs",
     "./acorn-business-operating-system": "./scripts/acorn-business-operating-system.mjs",
     "./acorn-infinite-economic-engine": "./scripts/acorn-infinite-economic-engine.mjs",
-    "./acorn-total-operating-system": "./scripts/acorn-total-operating-system.mjs"
+    "./acorn-total-operating-system": "./scripts/acorn-total-operating-system.mjs",
+    "./acorn-real-world-bridge": "./scripts/acorn-real-world-bridge.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
