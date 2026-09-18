@@ -48,7 +48,12 @@
     "runtime:privacy": "node scripts/acorn-privacy-process.mjs",
     "runtime:cloud-runner": "node scripts/acorn-cloud-runner.mjs",
     "runtime:free-first-cloud": "node -e \"import('./scripts/acorn-free-first-cloud-fabric.mjs').then(({snapshotFreeFirstCloud,createResource})=>console.log(JSON.stringify(snapshotFreeFirstCloud({resources:[createResource({id:'github:public-actions',provider:'github',resource_class:'FREE_PERMANENT',state:'DISCOVERED',capabilities:['ci','compute','test']})]}),null,2)))\"",
-    "runtime:economy": "node scripts/acorn-economic-optimizer.mjs"
+    "runtime:economy": "node scripts/acorn-economic-optimizer.mjs",
+    "runtime:protection": "node scripts/acorn-humanity-protection.mjs",
+    "runtime:developer-gateway": "node scripts/acorn-developer-gateway.mjs",
+    "runtime:market": "node scripts/acorn-market-engine.mjs",
+    "runtime:contribution-economy": "node scripts/acorn-contribution-economy.mjs",
+    "runtime:revenue": "node scripts/acorn-revenue-maximizer.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -110,7 +115,12 @@
     "./acorn-privacy-process": "./scripts/acorn-privacy-process.mjs",
     "./acorn-free-first-cloud-fabric": "./scripts/acorn-free-first-cloud-fabric.mjs",
     "./acorn-cloud-runner": "./scripts/acorn-cloud-runner.mjs",
-    "./acorn-economic-optimizer": "./scripts/acorn-economic-optimizer.mjs"
+    "./acorn-economic-optimizer": "./scripts/acorn-economic-optimizer.mjs",
+    "./acorn-humanity-protection": "./scripts/acorn-humanity-protection.mjs",
+    "./acorn-developer-gateway": "./scripts/acorn-developer-gateway.mjs",
+    "./acorn-market-engine": "./scripts/acorn-market-engine.mjs",
+    "./acorn-contribution-economy": "./scripts/acorn-contribution-economy.mjs",
+    "./acorn-revenue-maximizer": "./scripts/acorn-revenue-maximizer.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
