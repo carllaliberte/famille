@@ -45,7 +45,9 @@
     "runtime:run-triage": "node scripts/acorn-cognitive-run-triage.mjs",
     "runtime:value-opportunity": "node scripts/acorn-value-opportunity-fabric.mjs",
     "runtime:connections": "node scripts/acorn-connection-fabric.mjs",
-    "runtime:privacy": "node scripts/acorn-privacy-process.mjs"
+    "runtime:privacy": "node scripts/acorn-privacy-process.mjs",
+    "runtime:cloud-runner": "node scripts/acorn-cloud-runner.mjs",
+    "runtime:free-first-cloud": "node -e \"import('./scripts/acorn-free-first-cloud-fabric.mjs').then(({snapshotFreeFirstCloud,createResource})=>console.log(JSON.stringify(snapshotFreeFirstCloud({resources:[createResource({id:'github:public-actions',provider:'github',resource_class:'FREE_PERMANENT',state:'DISCOVERED',capabilities:['ci','compute','test']})]}),null,2)))\""
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -104,7 +106,9 @@
     "./acorn-continuous-optimization": "./docs/acorn-continuous-optimization.md",
     "./acorn-value-opportunity-fabric": "./scripts/acorn-value-opportunity-fabric.mjs",
     "./acorn-connection-fabric": "./scripts/acorn-connection-fabric.mjs",
-    "./acorn-privacy-process": "./scripts/acorn-privacy-process.mjs"
+    "./acorn-privacy-process": "./scripts/acorn-privacy-process.mjs",
+    "./acorn-free-first-cloud-fabric": "./scripts/acorn-free-first-cloud-fabric.mjs",
+    "./acorn-cloud-runner": "./scripts/acorn-cloud-runner.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
