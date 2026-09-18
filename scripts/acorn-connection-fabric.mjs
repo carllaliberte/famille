@@ -247,6 +247,65 @@ async function callAdapter(adapter, operation, payload = {}, context = {}) {
   }
 }
 
+export function identifyAdapter(adapter_id) {
+  const card = adapterCard(text(adapter_id));
+  return {
+    status: card.adapter_defined ? "IDENTIFIED" : "UNKNOWN",
+    identified: card.adapter_defined,
+    adapter: card,
+    live: false,
+    authority: "carl",
+  };
+}
+
+export async function authenticateAdapter(adapter_id, context = {}) {
+  const adapter = adapters.get(text(adapter_id));
+  if (!adapter) return { status: "UNKNOWN", authenticated: false, reason: "ADAPTER_NOT_DISCOVERED", live: false, authority: "carl" };
+  const result = await callAdapter(adapter, "authenticate", context, context);
+  return {
+    status: result.status,
+    authenticated: result.status === "AUTHENTICATED" || result.result?.authenticated === true,
+    result: result.result || null,
+    live: false,
+    authority: "carl",
+  };
+}
+
+export async function capabilities(adapter_id, context = {}) {
+  const adapter = adapters.get(text(adapter_id));
+  if (!adapter) return { status: "UNKNOWN", capabilities: [], live: false, authority: "carl" };
+  const result = await callAdapter(adapter, "capabilities", {}, context);
+  const values = Array.isArray(result.result) ? result.result : (Array.isArray(result.result?.capabilities) ? result.result.capabilities : []);
+  return {
+    status: result.status,
+    capabilities: [...new Set(values.map(text).filter(Boolean))],
+    live: false,
+    authority: "carl",
+  };
+}
+
+export async function observe(connection_id, options = {}) {
+  const connection = connections.get(text(connection_id));
+  if (!connection || connection.revoked) return { status: "REVOKED", observed: false, live: false };
+  const adapter = adapters.get(connection.adapter_id);
+  if (!adapter) return { status: "UNKNOWN", observed: false, live: false };
+  const result = await callAdapter(adapter, "observe", { connection_id }, { ...options, connection });
+  const observed = result.supported && result.status !== "FAILED" && result.status !== "UNKNOWN";
+  record({ type: "connection", operation: "observe", connection_id, observed, state: connection.state });
+  return { ...result, observed, connection: { ...connection }, live: false, authority: "carl" };
+}
+
+export async function cancel(connection_id, operation_id = null, options = {}) {
+  const connection = connections.get(text(connection_id));
+  if (!connection || connection.revoked) return { status: "REVOKED", cancelled: false, live: false };
+  const adapter = adapters.get(connection.adapter_id);
+  if (!adapter) return { status: "UNKNOWN", cancelled: false, live: false };
+  const result = await callAdapter(adapter, "cancel", { connection_id, operation_id }, { ...options, connection });
+  const cancelled = result.supported && result.status !== "FAILED" && result.status !== "UNKNOWN";
+  record({ type: "connection", operation: "cancel", connection_id, cancelled });
+  return { ...result, cancelled, live: false, authority: "carl" };
+}
+
 export async function connect({
   adapter_id,
   identity = UNKNOWN,
