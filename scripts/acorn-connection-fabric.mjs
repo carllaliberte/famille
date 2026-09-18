@@ -26,6 +26,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  UNKNOWN,
   admitIngress,
   releaseEgress,
   redactSecrets,
@@ -148,6 +149,7 @@ export function connectionConstitution() {
     capability_is_not_authority: true,
     unknown_is_not_trusted: true,
     human_authority: "carl",
+    authority: "carl",
     auto_merge: false,
     auto_spend: false,
     live: false,
@@ -420,6 +422,7 @@ export async function connect({
     revoked: false,
     measured: false,
     verified: false,
+    session_id: ingress.session?.session_id || null,
     live: false,
   };
   connections.set(connection.connection_id, connection);
@@ -483,13 +486,13 @@ async function externalCall(connection, operation, payload, { env, now, human_au
   const adapter = adapters.get(connection.adapter_id);
   if (!adapter) return { status: "UNKNOWN", reason: "ADAPTER_NOT_FOUND", executed: false, live: false };
   const input = {
-    kind: connection.capability || adapter.kind || "generic",
+    kind: adapter.kind || connection.capability || "generic",
     channel: "connection",
     source: adapter.id,
     actor: connection.identity,
     payload,
-    authenticated: connection.authenticated,
-    session_id: null,
+    authenticated: connection.authenticated === true,
+    session_id: connection.session_id || null,
     at: now,
   };
   if (operation === "receive") {
@@ -582,6 +585,7 @@ export function verifyConnection(connection_id, evidence = {}) {
     connection_id,
     status,
     measured,
+    verified: connection.verified,
     evidence: redactSecrets(evidence),
     digest: digest({ connection, evidence }),
     observed_at: nowIso(),
@@ -679,7 +683,7 @@ export async function runConnectionSweep({
       observation_count: observations.length,
     },
     proof: {
-      status: connected.status === "CONNECTED" && measured.measured && verified.verified ? "VERIFIED" : "INCONCLUSIVE",
+      status: connected.status === "CONNECTED" && measured.measured === true && verified.status === "VERIFIED" ? "VERIFIED" : "INCONCLUSIVE",
       digest: digest({ rows, connected: connected.status, measured: measured.status, verified: verified.status }),
     },
     rows,
