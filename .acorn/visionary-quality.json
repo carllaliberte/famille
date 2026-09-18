@@ -1,0 +1,12 @@
+{
+  "contract":"acorn.visionary-quality.v1",
+  "purpose":"Long-term quality constitution and plural visionary benchmark",
+  "non_ranking":true,
+  "required_dimensions":20,
+  "required_expiry":true,
+  "truth_contract":"CODE_PRESENT != TESTED != EXECUTED != MEASURED != VERIFIED != LIVE",
+  "authority":"human",
+  "auto_merge":false,
+  "human_merge":"carl",
+  "benchmarks":["steve_jobs","jeff_bezos","elon_musk","jensen_huang","bill_gates","satya_nadella","page_brin","mark_zuckerberg"]
+}
