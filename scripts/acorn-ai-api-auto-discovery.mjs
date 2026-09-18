@@ -15,7 +15,7 @@ export async function discoverOpenRouterCatalog({fetchImpl=globalThis.fetch,limi
  try {
   const r=await fetchImpl("https://openrouter.ai/api/v1/models",{headers:{"accept":"application/json"}});
   if(!r.ok) return {status:"FAILED",http_status:r.status,providers:[],models:[]};
-  const body=await r.json(); const models=arr(body?.data).slice(0,limit).map(m=>({id:m.id,name:m.name||m.id,provider:clean(m.id).split("/")[0]||"unknown,context_length:m.context_length||null,pricing:m.pricing||null,architecture:m.architecture||null,source:"OPENROUTER_PUBLIC_CATALOG"}));
+  const body=await r.json(); const models=arr(body?.data).slice(0,limit).map(m=>({id:m.id,name:m.name||m.id,provider:clean(m.id).split("/")[0]||"unknown",context_length:m.context_length||null,pricing:m.pricing||null,architecture:m.architecture||null,source:"OPENROUTER_PUBLIC_CATALOG"}));
   const providers=[...new Set(models.map(m=>m.provider))].map(provider=>normalizeProvider({provider,source:"OPENROUTER_PUBLIC_CATALOG",models:models.filter(m=>m.provider===provider).map(m=>m.id),state:"DISCOVERED",requires_key:true}));
   return {status:"MEASURED",providers,models,source:"OPENROUTER_PUBLIC_CATALOG",measured_at:ISO(),authority:false};
  } catch(error){return {status:"FAILED",reason:clean(error?.message||error),providers:[],models:[]};}
@@ -30,13 +30,13 @@ export function reconcileAiCatalog({catalog=[],direct=[]}={}) {
  for(const raw of [...arr(catalog),...arr(direct)]) {const p=normalizeProvider(raw);if(!p.id)continue;const old=map.get(p.id);map.set(p.id,{...(old||{}),...p,models:[...new Set([...(old?.models||[]),...p.models])],capabilities:[...new Set([...(old?.capabilities||[]),...p.capabilities])]});}
  return [...map.values()].sort((a,b)=>a.id.localeCompare(b.id));
 }
-export function buildDeveloperAccessPlan({providers=[]}={}) {
- return arr(providers).map(p=>({provider:p.provider,model_count:p.models.length,capabilities:p.capabilities,credential_env:p.key_env,credential_present:Boolean(p.key_env&&process.env[p.key_env]),state:p.state==="CONFIGURED"?"CONFIGURED":"DISCOVERED",next:"PROBE_WITHOUT_REPO_SECRET",authority:false}));
+export function buildDeveloperAccessPlan({providers=[],environment=process.env}={}) {
+ return arr(providers).map(p=>({provider:p.provider,model_count:p.models.length,capabilities:p.capabilities,credential_env:p.key_env,credential_present:Boolean(p.key_env&&environment[p.key_env]),state:p.state==="CONFIGURED"?"CONFIGURED":"DISCOVERED",next:"PROBE_WITHOUT_REPO_SECRET",authority:false}));
 }
 export async function runAiApiDiscovery({fetchImpl=globalThis.fetch,environment=process.env}={}) {
  const openrouter=await discoverOpenRouterCatalog({fetchImpl});
  const direct=discoverDirectProviderSurfaces({environment});
  const providers=reconcileAiCatalog({catalog:openrouter.providers,direct:direct.providers});
- return {contract:VERSION,source_count:DISCOVERY_SOURCES.length,openrouter,direct,providers,developer_plan:buildDeveloperAccessPlan({providers}),total_providers:providers.length,total_models:openrouter.models.length,measured_at:ISO(),live:false,verified:false,authority:false};
+ return {contract:VERSION,source_count:DISCOVERY_SOURCES.length,openrouter,direct,providers,developer_plan:buildDeveloperAccessPlan({providers,environment}),total_providers:providers.length,total_models:openrouter.models.length,measured_at:ISO(),live:false,verified:false,authority:false};
 }
 if(import.meta.url===`file://${process.argv[1]}`) console.log(JSON.stringify(await runAiApiDiscovery(),null,2));
