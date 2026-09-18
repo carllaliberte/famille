@@ -1,0 +1,8 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {describeBridge,selectBridge,buildBridgeChain,executeBridge,registerFutureModel,assertBridgeConstitution} from "../scripts/acorn-universal-ai-bridge-fabric.mjs";
+test("native bridge wins over remote bridge",()=>{const a=describeBridge({provider:"local",mode:"NATIVE",capabilities:["reasoning"]});const b=describeBridge({provider:"remote",mode:"OPENAI_COMPATIBLE",capabilities:["reasoning"]});assert.equal(selectBridge({capability:"reasoning",bridges:[b,a]}).provider,"local");});
+test("failed provider does not erase alternate bridges",()=>{const a=describeBridge({provider:"a",mode:"HTTP",capabilities:["reasoning"]});const b=describeBridge({provider:"b",mode:"SDK",capabilities:["reasoning"]});assert.equal(buildBridgeChain({capability:"reasoning",bridges:[a,b]}).length,2);});
+test("future model enters through generic adapter",()=>{assert.equal(registerFutureModel({provider:"future-ai",model:"new",capabilities:["reasoning"]}).adapter_generated,true);});
+test("bridge execution never grants authority",async()=>{const b=describeBridge({provider:"x",mode:"HTTP",capabilities:["x"]});const r=await executeBridge({bridge:b,request:{},adapter:async()=>({ok:true})});assert.equal(r.state,"SUCCEEDED");assert.equal(r.authority,false);});
+test("Breaker and API independence are protected",()=>{assert.equal(assertBridgeConstitution(),true);assert.throws(()=>assertBridgeConstitution({breaker_touched:true}),/BREAKER/);assert.throws(()=>assertBridgeConstitution({api_prerequisite:true}),/API_MUST_NOT/);});
