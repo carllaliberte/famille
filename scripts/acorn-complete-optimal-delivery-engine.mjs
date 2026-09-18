@@ -1,0 +1,109 @@
+/**
+ * ACORN — Complete Optimal Delivery Engine
+ * Contract: acorn.complete-optimal-delivery.v1
+ *
+ * "Optimal" is never an eternal claim. It is a dated, scoped, evidence-backed
+ * best-known result with a continuous improvement obligation.
+ *
+ * This engine converges existing Acorn fabrics into a delivery discipline:
+ * DEFINE → DISCOVER → COMPOSE → DELIVER → PROVE → BENCHMARK → OPTIMIZE → REDELIVER.
+ */
+export const CONTRACT="acorn.complete-optimal-delivery.v1";
+export const STATES=Object.freeze(["DEFINED","DISCOVERING","COMPOSED","READY","EXECUTING","DELIVERED","PROVEN","BENCHMARKED","OPTIMIZING","SUPERSEDED","BLOCKED"]);
+export const DIMENSIONS=Object.freeze([
+ "CUSTOMER_VALUE","QUALITY","RELIABILITY","LATENCY","COST","MARGIN","SECURITY","PRIVACY",
+ "EVIDENCE","FRESHNESS","MAINTAINABILITY","REUSABILITY","INTEROPERABILITY","SIMPLICITY",
+ "ACCESSIBILITY","RESILIENCE","SCALABILITY","SUSTAINABILITY","TIME_TO_VALUE","COMPLETENESS"
+]);
+const arr=v=>Array.isArray(v)?v:[];
+const num=v=>Number.isFinite(Number(v))?Number(v):null;
+const bool=v=>v===true;
+const dangerous=new Set(["MONEY","REFUND","PAYOUT","PRICE_CHANGE","CONTRACT","SIGN","DELETE","PUBLISH","WRITE_PROTECTED","MERGE"]);
+function finite(v){return v!==null&&Number.isFinite(v);}
+export function defineDelivery(input={}){
+ return {id:input.id??`delivery:${crypto.randomUUID()}`,objective:String(input.objective??""),
+   acceptance:arr(input.acceptance),constraints:arr(input.constraints),budget:input.budget??null,
+   deadline:input.deadline??null,jurisdiction:input.jurisdiction??null,customer:input.customer??null,
+   dimensions:arr(input.dimensions.length?input.dimensions:DIMENSIONS),state:"DEFINED",
+   created_at:input.created_at??new Date().toISOString()};
+}
+export function completionGaps(delivery={},world={}){
+ const gaps=[];
+ if(!String(delivery.objective??"").trim())gaps.push("OBJECTIVE");
+ if(!arr(delivery.acceptance).length)gaps.push("ACCEPTANCE_CRITERIA");
+ if(!arr(delivery.constraints).length&&world.require_constraints)gaps.push("CONSTRAINTS");
+ if(world.required_connections)for(const x of arr(world.required_connections))if(x.state!=="VERIFIED")gaps.push(`CONNECTION:${x.id??"UNKNOWN"}`);
+ return gaps;
+}
+export function discoverBestKnown(candidates=[],scope={}){
+ const eligible=arr(candidates).filter(c=>c.verified===true&&c.measured===true&&c.expired!==true);
+ const scored=eligible.map(c=>({...c,scope,score:objectiveScore(c,scope)})).sort((a,b)=>b.score-a.score);
+ return {state:scored.length?"BENCHMARKED":"NOT_MEASURED",scope,candidates:scored,
+   best_known:scored[0]??null,global_optimum:false};
+}
+export function objectiveScore(candidate={},scope={}){
+ const weights=scope.weights??{};
+ return DIMENSIONS.reduce((sum,k)=>{
+   const w=num(weights[k])??1, v=num(candidate[k]);
+   return sum+(finite(v)?v*w:0);
+ },0);
+}
+export function composeDelivery(delivery={},capabilities=[],scope={}){
+ const best=discoverBestKnown(capabilities,scope);
+ const gaps=completionGaps(delivery,scope);
+ return {delivery_id:delivery.id??null,state:gaps.length?"BLOCKED":"COMPOSED",
+   gaps,selected:best.best_known,alternatives:best.candidates,best_known_state:best.state,
+   optimization_scope:scope};
+}
+export function authorizeDelivery(action,ctx={}){
+ const effect=String(action??"UNKNOWN").toUpperCase();
+ if(dangerous.has(effect))return{authorized:false,state:"WAITING_HUMAN",reason:"HUMAN_AUTHORITY_REQUIRED"};
+ if(effect==="UNKNOWN")return{authorized:false,state:"BLOCKED",reason:"UNKNOWN_EFFECT"};
+ return ctx.server_authorized===true&&ctx.human_authorized===true
+  ?{authorized:true,state:"AUTHORIZED"}:{authorized:false,state:"WAITING_HUMAN",reason:"EXPLICIT_AUTHORIZATION_REQUIRED"};
+}
+export function recordDeliveryResult(result={}){
+ return {id:result.id??`result:${crypto.randomUUID()}`,delivery_id:result.delivery_id??null,
+   executed:bool(result.executed),delivered:bool(result.delivered),measured:bool(result.measured),
+   verified:bool(result.verified),evidence:arr(result.evidence),measurements:result.measurements??{},
+   value:result.value??null,cost:num(result.cost),duration:num(result.duration),
+   observed_at:result.observed_at??new Date().toISOString(),valid_until:result.valid_until??null};
+}
+export function proveDelivery(result={}){
+ const proven=result.executed===true&&result.delivered===true&&result.measured===true&&result.verified===true&&result.evidence.length>0;
+ return {...result,state:proven?"PROVEN":"NOT_PROVEN",proven};
+}
+export function optimizeDelivery(current={},alternatives=[],scope={}){
+ const proven=arr([current,...alternatives]).filter(x=>x?.proven===true);
+ const benchmark=discoverBestKnown(proven,scope);
+ const currentScore=objectiveScore(current,scope);
+ const next=benchmark.best_known;
+ const improvement=next?next.score-currentScore:0;
+ return {state:next&&improvement>0?"OPTIMIZING":"NO_MEASURED_IMPROVEMENT",
+   current_score:currentScore,best_known:next,improvement,
+   reason:next&&improvement>0?"MEASURED_BETTER_RESULT":"KEEP_CURRENT_AND_CONTINUE_OBSERVING",
+   never_final:true};
+}
+export function createImprovementCycle(result={},alternatives=[],scope={}){
+ const proven=proveDelivery(result);
+ if(!proven.proven)return{state:"BLOCKED",reason:"DELIVERY_MUST_BE_PROVEN",proven};
+ const optimization=optimizeDelivery(proven,alternatives,scope);
+ return {contract:CONTRACT,state:"CONTINUOUS",proven,optimization,
+   next:optimization.improvement>0?"REDELIVER_BETTER_KNOWN":"OBSERVE_NEW_EVIDENCE",
+   expiry:proven.valid_until??null};
+}
+export function buildCompleteDelivery({delivery={},world={},capabilities=[],scope={},result=null,alternatives=[]}={}){
+ const defined=defineDelivery(delivery);
+ const composition=composeDelivery(defined,capabilities,{...world,...scope});
+ const authorization=authorizeDelivery("EXECUTE",{});
+ const proof=result?proveDelivery(recordDeliveryResult(result)):null;
+ const evolution=proof?.proven?createImprovementCycle(proof,alternatives,{...world,...scope}):null;
+ return {contract:CONTRACT,delivery:defined,composition,authorization,proof,evolution,
+   dimensions:DIMENSIONS,complete:false,optimal:false,truth:"BEST_KNOWN_IN_SCOPE_ONLY",
+   authority:"HUMAN_REQUIRED",auto_merge:false,auto_spend:false,auto_contract:false};
+}
+export function assertCompleteOptimalConstitution(){
+ if(!DIMENSIONS.includes("CUSTOMER_VALUE")||!DIMENSIONS.includes("EVIDENCE"))throw new Error("DIMENSIONS_INCOMPLETE");
+ if(dangerous.has("MERGE")===false)throw new Error("AUTHORITY_BOUNDARY_BROKEN");
+ return true;
+}
