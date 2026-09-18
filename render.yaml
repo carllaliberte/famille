@@ -1,3 +1,10 @@
+databases:
+  - name: acorn-enterprise-state
+    plan: free
+    region: ohio
+    databaseName: acorn_enterprise_state
+    user: acorn_enterprise_state_user
+
 services:
   - type: web
     name: acorn-live
@@ -9,9 +16,7 @@ services:
         value: production
       - key: PORT
         value: "10000"
-      - key: ACORN_DB
-        value: /var/data/acorn-live.db
-    disk:
-      name: acorn-live-data
-      mountPath: /var/data
-      sizeGB: 1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: acorn-enterprise-state
+          property: connectionString
