@@ -1,0 +1,10 @@
+{
+  "contract":"acorn.universal-world-engine.v1",
+  "status":"CODE_PRESENT",
+  "truth":"DEFINED != CODE_PRESENT != TESTED != EXECUTED != MEASURED != VERIFIED != LIVE",
+  "authority":"HUMAN",
+  "auto_merge":false,
+  "auto_spend":false,
+  "auto_contract":false,
+  "scope":["intent","demand","capability","execution","evidence","value","reuse","opportunity"]
+}
