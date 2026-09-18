@@ -1,0 +1,13 @@
+import test from "node:test";import assert from "node:assert/strict";
+import {createProductionProgram,truthGate,connectionGate,customerGate,deliveryGate,authorize,optimizePortfolio,buildProductionProgram,assertProductionConstitution} from "../scripts/acorn-universal-production-grade.mjs";
+test("production constitution",()=>assert.equal(assertProductionConstitution(),true));
+test("program covers full planes",()=>assert.equal(createProductionProgram({}).planes.length,14));
+test("unverified truth stays unverified",()=>assert.equal(truthGate({evidence:["x"],measured:true,verified:false}).verified,false));
+test("live requires external state",()=>assert.equal(connectionGate({state:"VERIFIED"}).deliverable,true));
+test("unknown connection is not deliverable",()=>assert.equal(connectionGate({state:"UNKNOWN"}).deliverable,false));
+test("customer requires objective and acceptance",()=>assert.equal(customerGate({objective:"x",acceptance:["ok"]}).state,"DEFINED"));
+test("delivery blocks missing outcome",()=>assert.equal(deliveryGate({customer:{objective:"x",acceptance:["ok"]}}).state,"BLOCKED"));
+test("consequential effects stay human gated",()=>assert.equal(authorize("MERGE",{human_authorized:true,server_authorized:true}).authorized,false));
+test("optimization only uses measured verified candidates",()=>assert.equal(optimizePortfolio([{verified:false,measured:true,quality:99}]).candidates.length,0));
+test("optimization never claims global optimum",()=>assert.equal(optimizePortfolio([{verified:true,measured:true,quality:10}],{quality:1}).global_optimum,false));
+test("production program preserves truth contract",()=>assert.equal(buildProductionProgram({}).truth.includes("LIVE"),true));

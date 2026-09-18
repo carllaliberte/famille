@@ -1,0 +1,16 @@
+name: ACORN Universal Production Grade
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23,53 * * * *"
+permissions:
+  contents: read
+jobs:
+  production-grade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: node --test test/acorn-universal-production-grade.test.js
+      - run: node --input-type=module -e "import('./scripts/acorn-universal-production-grade.mjs').then(({assertProductionConstitution})=>console.log('ACORN_PRODUCTION_GRADE',assertProductionConstitution()))"
