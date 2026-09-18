@@ -9,6 +9,9 @@ import {
   consolidateCryptoSettlement,
   buildTaxReadyLedger,
   revenuePolicy,
+  measureCommercialYield,
+  scoreCommercialGrowth,
+  buildCommercialActionPlan,
 } from "../scripts/acorn-revenue-maximizer.mjs";
 
 test("measures owner net value",()=>{
@@ -65,4 +68,32 @@ test("policy preserves Acorn essence",()=>{
   assert.equal(p.auto_spend,false);
   assert.equal(p.auto_merge,false);
   assert.equal(p.human_authority,"carl");
+});
+
+
+test("commercial yield penalizes direct, acquisition, payment and administration costs",()=>{
+  const x=measureCommercialYield({gross_revenue:1000,direct_cost:100,acquisition_cost:50,payment_fees:20,admin_cost:10,recurring_revenue:700,expansion_revenue:150,verified_value:1200,transactions:2});
+  assert.equal(x.net_owner_value,820);
+  assert.equal(x.recurring_share,.7);
+  assert.equal(x.revenue_per_transaction,500);
+});
+
+test("growth score rewards recurring expansion and low friction",()=>{
+  const x=scoreCommercialGrowth({measured_yield:1,recurring_share:.8,expansion_share:.4,verified_demand:1,reuse:1,reliability:1,admin_burden:0,acquisition_friction:0});
+  assert.ok(x>.8);
+});
+
+test("action plan prioritizes expansion and reusable capabilities without auto-contracting",()=>{
+  const plan=buildCommercialActionPlan({
+    opportunities:[
+      {id:"new",audience:"MULTINATIONAL",gross_revenue:10000,measured_value:20000,incremental_cost:1000,verified:true},
+      {id:"existing",audience:"ENTERPRISE",gross_revenue:5000,measured_value:10000,incremental_cost:500,verified:true,customer_id:"c1"},
+    ],
+    capabilities:["cortex"],
+    existing_customers:[{id:"c1"}],
+  });
+  assert.equal(plan.acquisition_order[0],"MULTINATIONAL");
+  assert.ok(plan.actions.some(x=>x.action==="EXPAND_EXISTING_CUSTOMER"));
+  assert.ok(plan.actions.some(x=>x.action==="PACKAGE_REUSABLE_CAPABILITIES"));
+  assert.equal(plan.no_auto_contract,true);
 });
