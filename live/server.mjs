@@ -1,73 +1,525 @@
 #!/usr/bin/env node
 import http from "node:http";
 import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { customerServiceCycle } from "../scripts/acorn-customer-service.mjs";
 import { createConnection, createIntelligenceAdapter, createEnterpriseCycle, enterpriseSnapshot, measureConnection } from "../scripts/acorn-real-world-enterprise-os.mjs";
 import { createTask, buildExecutionPlan, executionSnapshot, runSyntheticExecution } from "../scripts/acorn-execution-fabric.mjs";
-import { createLiveDatabase, now, makeId } from "./database.mjs";
+import { createLiveDatabase, now, makeId, parseJson, encodeJson } from "./database.mjs";
 import { buildRuntimePlan, verifyRuntimePlan } from "../scripts/acorn-runtime-orchestrator.mjs";
 import { createExecutionRun, executionLoopSnapshot } from "../scripts/acorn-execution-evidence-loop.mjs";
+import { createConnectorExecutor, executeConnector } from "../scripts/acorn-connector-execution-fabric.mjs";
 import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot } from "../scripts/acorn-real-world-bridge.mjs";
-const PORT=Number(process.env.PORT||10000),HOST=process.env.HOST||"0.0.0.0",db=await createLiveDatabase();
-const MAX_BODY=Number(process.env.MAX_BODY_BYTES||262144);
-const json=(res,status,body)=>{const data=JSON.stringify(body);res.writeHead(status,{"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-frame-options":"DENY","content-length":Buffer.byteLength(data)});res.end(data)};
-const readBody=async req=>{let n=0;const chunks=[];for await(const c of req){n+=c.length;if(n>MAX_BODY)throw Object.assign(new Error("BODY_TOO_LARGE"),{status:413});chunks.push(c)}if(!chunks.length)return{};return JSON.parse(Buffer.concat(chunks).toString("utf8"))};
-const hashPassword=(p,s=crypto.randomBytes(16))=>new Promise((ok,bad)=>crypto.scrypt(p,s,64,(e,k)=>e?bad(e):ok(s.toString("hex")+":"+k.toString("hex"))));
-const verifyPassword=(p,v)=>new Promise((ok,bad)=>{const [s,h]=String(v).split(":");if(!s||!h)return ok(false);crypto.scrypt(p,Buffer.from(s,"hex"),64,(e,k)=>{if(e)return bad(e);const a=Buffer.from(h,"hex"),b=Buffer.from(k);ok(a.length===b.length&&crypto.timingSafeEqual(a,b))})});
-const token=()=>crypto.randomBytes(32).toString("base64url"),tokenHash=t=>crypto.createHash("sha256").update(t).digest("hex");
-const requireAuth=async req=>{const h=req.headers.authorization||"";if(!h.startsWith("Bearer "))return null;const row=await db.get("SELECT customer_id,expires_at FROM sessions WHERE token_hash=$1",[tokenHash(h.slice(7))]);return row&&Date.parse(row.expires_at)>Date.now()?row.customer_id:null};
-const event=async(id,type,payload)=>db.run("INSERT INTO events(request_id,type,payload,created_at) VALUES($1,$2,$3,$4)",[id,type,JSON.stringify(payload),now()]);
-const publicRequest=r=>r?{id:r.id,status:r.status,created_at:r.created_at,updated_at:r.updated_at,...(typeof r.body==="string"?JSON.parse(r.body):r.body)}:null;
-const connections=()=>{try{return JSON.parse(process.env.ACORN_CONNECTIONS||"[]").map(createConnection)}catch{return[]}},intelligences=()=>{try{return JSON.parse(process.env.ACORN_INTELLIGENCES||"[]").map(createIntelligenceAdapter)}catch{return[]}};
-const enterpriseData=async()=>({projects:(await db.all("SELECT id,status,created_at,updated_at FROM requests")).map(r=>({id:r.id,stage:r.status,created_at:r.created_at,updated_at:r.updated_at})),offers:[],ledger:{currency_default:"CAD",entries:[],balance:0,reserved:0,available:0},connections:connections(),intelligences:intelligences(),assets:[],products:[]});
-async function register(b){const email=String(b.email||"").trim().toLowerCase(),name=String(b.name||"").trim(),password=String(b.password||"");if(!email.includes("@")||!name||password.length<10)return{status:400,body:{error:"VALIDATION"}};if(await db.get("SELECT id FROM customers WHERE email=$1",[email]))return{status:409,body:{error:"ACCOUNT_EXISTS"}};const cid=makeId("cus"),ph=await hashPassword(password),created=now(),t=token(),expires=new Date(Date.now()+2592000000).toISOString();await db.run("INSERT INTO customers(id,email,name,password_hash,created_at) VALUES($1,$2,$3,$4,$5)",[cid,email,name,ph,created]);await db.run("INSERT INTO sessions(token_hash,customer_id,expires_at,created_at) VALUES($1,$2,$3,$4)",[tokenHash(t),cid,expires,created]);return{status:201,body:{customer:{id:cid,email,name},token:t,expires_at:expires}}}
-async function login(b){const email=String(b.email||"").trim().toLowerCase(),c=await db.get("SELECT * FROM customers WHERE email=$1",[email]);if(!c||!(await verifyPassword(String(b.password||""),c.password_hash)))return{status:401,body:{error:"INVALID_CREDENTIALS"}};const t=token(),expires=new Date(Date.now()+2592000000).toISOString();await db.run("INSERT INTO sessions(token_hash,customer_id,expires_at,created_at) VALUES($1,$2,$3,$4)",[tokenHash(t),c.id,expires,now()]);return{status:200,body:{customer:{id:c.id,email:c.email,name:c.name},token:t,expires_at:expires}}}
-const APP_HTML="<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>ACORN LIVE</title><style>body{font-family:system-ui;margin:0;background:#0d0d0d;color:#f4ead7}main{max-width:760px;margin:auto;padding:32px}section{background:#171717;padding:22px;border-radius:16px;margin:16px 0}input,textarea,button{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:9px;border:1px solid #555;background:#111;color:#fff}button{cursor:pointer;background:#c9a86a;color:#111;font-weight:700}pre{white-space:pre-wrap}</style></head><body><main><h1>ACORN LIVE</h1><section id='auth'><h2>Start</h2><input id='name' placeholder='Name'><input id='email' placeholder='Email'><input id='password' type='password' placeholder='Password (10+ characters)'><button onclick='register()'>Create account</button><button onclick='login()'>Sign in</button><pre id='authout'></pre></section><section id='work' style='display:none'><h2>New request</h2><textarea id='request' rows='6' placeholder='Describe the problem you want Acorn to solve…'></textarea><button onclick='submitRequest()'>Send to Acorn</button><button onclick='loadRequests()'>Refresh</button><pre id='out'></pre></section><script>let T=localStorage.acornToken||'';const out=x=>document.getElementById('out').textContent=JSON.stringify(x,null,2);async function call(path,method='GET',body){const r=await fetch(path,{method,headers:{'content-type':'application/json',...(T?{authorization:'Bearer '+T}:{})},body:body?JSON.stringify(body):undefined});const j=await r.json();if(!r.ok)throw j;return j}async function register(){try{const j=await call('/api/v1/register','POST',{name:name.value,email:email.value,password:password.value});T=j.token;localStorage.acornToken=T;auth.style.display='none';work.style.display='block';loadRequests()}catch(e){authout.textContent=JSON.stringify(e,null,2)}}async function login(){try{const j=await call('/api/v1/login','POST',{email:email.value,password:password.value});T=j.token;localStorage.acornToken=T;auth.style.display='none';work.style.display='block';loadRequests()}catch(e){authout.textContent=JSON.stringify(e,null,2)}}async function submitRequest(){try{out(await call('/api/v1/requests','POST',{request:document.getElementById('request').value}))}catch(e){out(e)}}async function loadRequests(){try{out(await call('/api/v1/requests'))}catch(e){out(e)}}if(T){auth.style.display='none';work.style.display='block';loadRequests()}</script></main></body></html>";
-const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,"http://localhost");
-if(req.method==="GET"&&u.pathname==="/")return json(res,200,{service:"ACORN LIVE",status:"LIVE",storage:db.mode,customer_entry:"/app",health:"/healthz",ready:"/readyz",proof:"measured_only"});
-if(req.method==="GET"&&u.pathname==="/healthz"){try{await db.health();return json(res,200,{ok:true,status:"LIVE",storage:db.mode,time:now()})}catch{return json(res,503,{ok:false,status:"DEGRADED",storage:db.mode})}}
-if(req.method==="GET"&&u.pathname==="/readyz"){try{await db.health();return json(res,200,{ok:true,db:true,storage:db.mode,time:now()})}catch{return json(res,503,{ok:false,db:false})}}
-if(req.method==="GET"&&u.pathname==="/app"){res.writeHead(200,{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","x-frame-options":"DENY"});return res.end(APP_HTML)}
-if(req.method==="POST"&&u.pathname==="/api/v1/register"){const r=await register(await readBody(req));return json(res,r.status,r.body)}
-if(req.method==="POST"&&u.pathname==="/api/v1/login"){const r=await login(await readBody(req));return json(res,r.status,r.body)}
-const cid=await requireAuth(req);if(!cid)return json(res,401,{error:"UNAUTHORIZED"});
-if(req.method==="GET"&&u.pathname==="/api/v1/me")return json(res,200,{customer:await db.get("SELECT id,email,name,created_at FROM customers WHERE id=$1",[cid])});
-if(req.method==="GET"&&u.pathname==="/api/v1/enterprise")return json(res,200,enterpriseSnapshot(await enterpriseData()));
-if(req.method==="GET"&&u.pathname==="/api/v1/connections")return json(res,200,{connections:connections().map(c=>({...c,secret_custody:false,credentials_present:false}))});
-if(req.method==="GET"&&u.pathname==="/api/v1/intelligences")return json(res,200,{intelligences:intelligences().map(i=>({...i,authority:false}))});
-if(req.method==="POST"&&u.pathname==="/api/v1/connections/measure"){const b=await readBody(req),c=createConnection(b),m=measureConnection(c,{reachable:Boolean(b.reachable),capabilities:Array.isArray(b.capabilities)?b.capabilities:[]});return json(res,200,{connection:{...m,credentials_present:false,secret_custody:false},proof:{measured_at:m.measured_at}})}
-if(req.method==="POST"&&u.pathname==="/api/v1/runtime/plan"){const b=await readBody(req);const plan=buildRuntimePlan({requestId:String(b.request_id||""),problem:String(b.problem||""),requiredCapabilities:Array.isArray(b.required_capabilities)?b.required_capabilities:[],intelligences:intelligences(),connectors:connections()});return json(res,201,{plan,verification:verifyRuntimePlan(plan),proof:{measured_at:now(),external_effect:false,human_authorization_required:true}})}
-if(req.method==="POST"&&u.pathname==="/api/v1/runtime/run"){const b=await readBody(req);const plan=buildRuntimePlan({requestId:String(b.request_id||""),problem:String(b.problem||""),requiredCapabilities:Array.isArray(b.required_capabilities)?b.required_capabilities:[],intelligences:intelligences(),connectors:connections()});const run=createExecutionRun({requestId:String(b.request_id||""),plan,authorized:Boolean(b.human_authorized)});return json(res,201,{run,snapshot:executionLoopSnapshot(run),proof:{planning_measured:true,execution_performed:false,external_effect:false}})}
-if(req.method==="GET"&&u.pathname==="/api/v1/real-world")return json(res,200,{bridge:realWorldBridgeSnapshot(loadRealWorldConnectors()),measured_at:now()});
-if(req.method==="POST"&&u.pathname==="/api/v1/runtime/external"){
- const b=await readBody(req),requestId=String(b.request_id||""),row=requestId?await db.get("SELECT id FROM requests WHERE id=$1 AND customer_id=$2",[requestId,cid]):null;
- if(!row)return json(res,404,{error:"REQUEST_NOT_FOUND"});
- const connectors=loadRealWorldConnectors(),connector=connectors.find(x=>x.id===String(b.connector_id||""));
- if(!connector)return json(res,404,{error:"CONNECTOR_NOT_CONFIGURED"});
- const call=buildExternalCall({connector,path:String(b.path||""),method:String(b.method||"GET"),body:b.body??null,human_authorized:Boolean(b.human_authorized),idempotency_key:b.idempotency_key||null});
- const credential=connector.credential_env?process.env[connector.credential_env]||null:null;
- const result=await executeExternalCall(call,{credential});
- const evidence=result.evidence?{id:makeId("ev"),request_id:requestId,kind:"EXTERNAL_EXECUTION",status:result.state==="SUCCEEDED"?"MEASURED":"FAILED",origin:"external_http",measured_at:result.measured_at||now(),valid_until:null,confidence:result.evidence.confidence||0,margin:result.evidence.margin||0,payload:JSON.stringify({execution_id:result.id,connector_id:connector.id,provider:connector.provider,http_status:result.http_status,output_hash:result.output_hash,effect:connector.effect,external_effect:result.external_effect})}:null;
- if(evidence)await db.run("INSERT INTO acorn_evidence(id,request_id,kind,status,origin,measured_at,valid_until,confidence,margin,payload) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",[evidence.id,evidence.request_id,evidence.kind,evidence.status,evidence.origin,evidence.measured_at,evidence.valid_until,evidence.confidence,evidence.margin,evidence.payload]);
- await event(requestId,"REAL_WORLD_EXECUTION",{execution_id:result.id,connector_id:connector.id,state:result.state,effect:connector.effect,external_effect:result.external_effect,measured_at:result.measured_at||now()});
- return json(res,result.state==="SUCCEEDED"?200:result.state==="BLOCKED"?403:502,{result:{...result,output:result.output},proof:{external_call_measured:result.state!=="BLOCKED",evidence_persisted:Boolean(evidence),secret_custody:false,measured_at:now()}});
+import { assessRuntimeStatus } from "./runtime-status.mjs";
+import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence } from "./enterprise-store.mjs";
+
+const APP_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ACORN LIVE</title><style>body{font-family:system-ui;margin:0;background:#0d0d0d;color:#f4ead7}main{max-width:760px;margin:auto;padding:32px}section{background:#171717;padding:22px;border-radius:16px;margin:16px 0}input,textarea,button{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:9px;border:1px solid #555;background:#111;color:#fff}button{cursor:pointer;background:#c9a86a;color:#111;font-weight:700}pre{white-space:pre-wrap}p.note{opacity:.8;font-size:.95rem}.row{display:flex;gap:8px}small{opacity:.7}</style></head><body><main><h1>ACORN</h1><p class="note">Customer entry. HTTP availability is not LIVE proof. Plans are not delivery. Payment and contracts are not claimed.</p><section id="auth"><h2>Start</h2><input id="name" placeholder="Name"><input id="email" placeholder="Email"><input id="password" type="password" placeholder="Password (10+ characters)"><button onclick="register()">Create account</button><button onclick="login()">Sign in</button><pre id="authout"></pre></section><section id="work" style="display:none"><div class="row"><button onclick="logout()">Sign out</button></div><h2>New request</h2><textarea id="request" rows="6" placeholder="Describe the problem you want Acorn to solve…"></textarea><button onclick="submitRequest()">Send to Acorn</button><button onclick="loadRequests()">Refresh</button><p class="note">Status values come from persisted state: received, awaiting human authorization, planned, blocked. Delivered/verified/LIVE only appear with evidence.</p><pre id="out"></pre></section><script>
+let T=localStorage.acornToken||"";
+const out=x=>document.getElementById("out").textContent=JSON.stringify(x,null,2);
+function label(status){
+  if(status==="HOLD_HUMAN_AUTHORIZATION") return "received / awaiting human authorization";
+  if(status==="HOLD_HUMAN") return "received / human hold";
+  if(status==="INTAKE"||status==="QUALIFY") return "received";
+  if(status==="PLANNED"||status==="READY") return "planned";
+  if(status==="BLOCKED") return "blocked";
+  return status||"received";
 }
-if(req.method==="GET"&&u.pathname==="/api/v1/runtime"){
- const jobs=await db.all("SELECT state,COUNT(*) AS count FROM acorn_jobs GROUP BY state").catch(()=>[]);
- const evidence=await db.all("SELECT id,request_id,kind,status,origin,measured_at,valid_until,confidence,margin FROM acorn_evidence WHERE request_id IN (SELECT id FROM requests WHERE customer_id=$1) ORDER BY measured_at DESC LIMIT 100",[cid]).catch(()=>[]);
- const requests=await db.all("SELECT status,COUNT(*)::int AS count FROM requests WHERE customer_id=$1 GROUP BY status",[cid]);
- return json(res,200,{runtime:"ACORN LIVE",storage:db.mode,requests,worker:{jobs},evidence,authority:{human_required:true,auto_contract:false,auto_payment:false,auto_spend:false,secret_custody:false,auto_merge:false},measured_at:now()});
+async function call(path,method="GET",body){
+  const r=await fetch(path,{method,headers:{"content-type":"application/json",...(T?{authorization:"Bearer "+T}:{})},body:body?JSON.stringify(body):undefined});
+  const j=await r.json();
+  if(!r.ok) throw j;
+  return j;
 }
-if(req.method==="GET"&&u.pathname==="/api/v1/requests"){
- const rows=await db.all("SELECT * FROM requests WHERE customer_id=$1 ORDER BY created_at DESC",[cid]);
- return json(res,200,{requests:rows.map(publicRequest)});
+async function register(){
+  try{
+    const j=await call("/api/v1/register","POST",{name:name.value,email:email.value,password:password.value});
+    T=j.token; localStorage.acornToken=T; auth.style.display="none"; work.style.display="block"; loadRequests();
+  }catch(e){authout.textContent=JSON.stringify(e,null,2)}
 }
-if(req.method==="GET"&&u.pathname==="/api/v1/enterprise/execution")return json(res,200,{fabric:"ACORN_EXECUTION_FABRIC",policy:"HUMAN_AUTHORIZATION_REQUIRED",synthetic:runSyntheticExecution({projectId:"live-probe",authorized:false})});
-if(req.method==="POST"&&u.pathname==="/api/v1/enterprise/execution/plan"){const b=await readBody(req),tasks=(Array.isArray(b.tasks)?b.tasks:[]).map(t=>createTask({...t,projectId:t.projectId||b.project_id})),plan=buildExecutionPlan({projectId:b.project_id,tasks,authorized:Boolean(b.human_authorized)});return json(res,201,{execution:plan,snapshot:executionSnapshot(plan)})}
-if(req.method==="POST"&&u.pathname==="/api/v1/enterprise/cycle"){const b=await readBody(req),cycle=createEnterpriseCycle({...b,customer:cid});return json(res,201,{cycle,proof:{live:false,reason:"cycle_is_a_plan_until_human_authorization_and_external_evidence"}})}
-if(req.method==="POST"&&u.pathname==="/api/v1/requests"){const b=await readBody(req),request=String(b.request||"").trim();if(!request)return json(res,400,{error:"REQUEST_REQUIRED"});const rid=makeId("req"),t=now(),cycle=customerServiceCycle({customer:{customer_id:cid},request,capabilities:["general"],solution:"Acorn intake and qualification",deliverables:["qualified request","execution plan"],evidence_plan:["runtime evidence","automated tests"],usage_rights:["CUSTOMER_USE_PENDING_HUMAN_AUTHORIZATION"],tasks:["qualify","plan","verify"],intelligence:["acorn"],human_authorized:false});await db.run("INSERT INTO requests(id,customer_id,body,status,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6)",[rid,cid,JSON.stringify({...b,request,customer_id:cid}),cycle.stage,t,t]);await event(rid,"REQUEST_CREATED",{stage:cycle.stage});return json(res,201,{request:publicRequest(await db.get("SELECT * FROM requests WHERE id=$1",[rid])),proof:{live:true,storage:db.mode,measured_at:t}})}
-const m=u.pathname.match(/^\/api\/v1\/requests\/([^/]+)$/);if(req.method==="GET"&&m){const row=await db.get("SELECT * FROM requests WHERE id=$1 AND customer_id=$2",[m[1],cid]);if(!row)return json(res,404,{error:"NOT_FOUND"});const events=await db.all("SELECT type,payload,created_at FROM events WHERE request_id=$1 ORDER BY id",[row.id]);return json(res,200,{request:publicRequest(row),events:events.map(e=>({...e,payload:typeof e.payload==="string"?JSON.parse(e.payload):e.payload}))})}
-if(req.method==="GET"&&u.pathname==="/api/v1/requests"){const rows=await db.all("SELECT * FROM requests WHERE customer_id=$1 ORDER BY created_at DESC",[cid]);return json(res,200,{requests:rows.map(publicRequest)})}
-return json(res,404,{error:"NOT_FOUND"})}catch(e){console.error(e);return json(res,e.status||500,{error:e.status===413?"BODY_TOO_LARGE":"INTERNAL_ERROR"})}});
-server.listen(PORT,HOST,()=>console.log("ACORN LIVE listening on "+HOST+":"+PORT));
-async function shutdown(){server.close();await db.close();process.exit(0)}process.on("SIGTERM",shutdown);process.on("SIGINT",shutdown);
+async function login(){
+  try{
+    const j=await call("/api/v1/login","POST",{email:email.value,password:password.value});
+    T=j.token; localStorage.acornToken=T; auth.style.display="none"; work.style.display="block"; loadRequests();
+  }catch(e){authout.textContent=JSON.stringify(e,null,2)}
+}
+async function logout(){
+  try{ await call("/api/v1/logout","POST"); }catch(e){}
+  T=""; localStorage.removeItem("acornToken"); auth.style.display="block"; work.style.display="none";
+}
+async function submitRequest(){
+  try{
+    const j=await call("/api/v1/requests","POST",{request:document.getElementById("request").value});
+    out({...j, display_status:label(j.request&&j.request.status), live:false, delivered:false});
+  }catch(e){out(e)}
+}
+async function loadRequests(){
+  try{
+    const j=await call("/api/v1/requests");
+    out({...j, requests:(j.requests||[]).map(r=>({id:r.id,status:r.status,display_status:label(r.status),created_at:r.created_at,request:r.request})), live:false});
+  }catch(e){out(e)}
+}
+if(T){auth.style.display="none";work.style.display="block";loadRequests()}
+</script></main></body></html>`;
+
+function logEvent(entry) {
+  const row = {
+    request_id: entry.request_id,
+    method: entry.method,
+    path: entry.path,
+    status: entry.status,
+    duration_ms: entry.duration_ms,
+    error_class: entry.error_class || null
+  };
+  console.log(JSON.stringify(row));
+}
+
+export async function createLiveServer({ env = process.env, db } = {}) {
+  const database = db || await createLiveDatabase({ env });
+  const MAX_BODY = Number(env.MAX_BODY_BYTES || process.env.MAX_BODY_BYTES || 262144);
+  const json = (res, status, body, headers = {}) => {
+    const data = JSON.stringify(body);
+    res.writeHead(status, {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
+      "referrer-policy": "no-referrer",
+      "x-frame-options": "DENY",
+      "content-length": Buffer.byteLength(data),
+      ...headers
+    });
+    res.end(data);
+  };
+  const readBody = async (req) => {
+    let n = 0;
+    const chunks = [];
+    for await (const c of req) {
+      n += c.length;
+      if (n > MAX_BODY) throw Object.assign(new Error("BODY_TOO_LARGE"), { status: 413, code: "BODY_TOO_LARGE" });
+      chunks.push(c);
+    }
+    if (!chunks.length) return {};
+    try { return JSON.parse(Buffer.concat(chunks).toString("utf8")); }
+    catch { throw Object.assign(new Error("INVALID_JSON"), { status: 400, code: "INVALID_JSON" }); }
+  };
+  const hashPassword = (p, s = crypto.randomBytes(16)) => new Promise((ok, bad) => crypto.scrypt(p, s, 64, (e, k) => e ? bad(e) : ok(s.toString("hex") + ":" + k.toString("hex"))));
+  const verifyPassword = (p, v) => new Promise((ok, bad) => {
+    const [s, h] = String(v).split(":");
+    if (!s || !h) return ok(false);
+    crypto.scrypt(p, Buffer.from(s, "hex"), 64, (e, k) => {
+      if (e) return bad(e);
+      const a = Buffer.from(h, "hex"), b = Buffer.from(k);
+      ok(a.length === b.length && crypto.timingSafeEqual(a, b));
+    });
+  });
+  const token = () => crypto.randomBytes(32).toString("base64url");
+  const tokenHash = (t) => crypto.createHash("sha256").update(t).digest("hex");
+  const bearer = (req) => {
+    const h = req.headers.authorization || "";
+    if (!h.startsWith("Bearer ")) return null;
+    return h.slice(7);
+  };
+  const requireAuth = async (req) => {
+    const raw = bearer(req);
+    if (!raw) return null;
+    const row = await database.get("SELECT customer_id,expires_at,token_hash FROM sessions WHERE token_hash=$1", [tokenHash(raw)]);
+    return row && Date.parse(row.expires_at) > Date.now() ? row : null;
+  };
+  const publicRequest = (r) => r ? { id: r.id, status: r.status, created_at: r.created_at, updated_at: r.updated_at, ...parseJson(r.body, {}) } : null;
+  const connections = () => {
+    try { return parseJson(env.ACORN_CONNECTIONS || "[]", []).map(createConnection); }
+    catch { return []; }
+  };
+  const intelligences = () => {
+    try { return parseJson(env.ACORN_INTELLIGENCES || "[]", []).map((row) => ({ ...createIntelligenceAdapter(row), authority: false })); }
+    catch { return []; }
+  };
+  const runtimeStatus = async () => {
+    let dbHealthy = false;
+    try { dbHealthy = await database.health(); } catch { dbHealthy = false; }
+    return assessRuntimeStatus({ processBound: true, dbHealthy, evidence: [] });
+  };
+  const ownRequest = async (cid, requestId) => {
+    if (!requestId) return null;
+    return database.get("SELECT id FROM requests WHERE id=$1 AND customer_id=$2", [requestId, cid]);
+  };
+
+  async function register(b) {
+    const email = String(b.email || "").trim().toLowerCase();
+    const name = String(b.name || "").trim();
+    const password = String(b.password || "");
+    if (!email.includes("@") || !name || password.length < 10) return { status: 400, body: { error: "VALIDATION" } };
+    if (await database.get("SELECT id FROM customers WHERE email=$1", [email])) return { status: 409, body: { error: "ACCOUNT_EXISTS" } };
+    const cid = makeId("cus");
+    const ph = await hashPassword(password);
+    const created = now();
+    const t = token();
+    const expires = new Date(Date.now() + 2592000000).toISOString();
+    await database.tx(async (tx) => {
+      await tx.run("INSERT INTO customers(id,email,name,password_hash,created_at) VALUES($1,$2,$3,$4,$5)", [cid, email, name, ph, created]);
+      await tx.run("INSERT INTO sessions(token_hash,customer_id,expires_at,created_at) VALUES($1,$2,$3,$4)", [tokenHash(t), cid, expires, created]);
+      await persistState(tx, { entity: "CUSTOMER", id: cid, tenant_id: cid, state: "ACTIVE", data: { email, name }, created_at: created, provenance: "acorn" });
+      await persistEnterpriseEvent(tx, { tenantId: cid, entityId: cid, type: "CUSTOMER_CREATED", payload: { email, name }, actor: "acorn-live", authority: "none" });
+    });
+    return { status: 201, body: { customer: { id: cid, email, name }, token: t, expires_at: expires } };
+  }
+  async function login(b) {
+    const email = String(b.email || "").trim().toLowerCase();
+    const c = await database.get("SELECT * FROM customers WHERE email=$1", [email]);
+    if (!c || !(await verifyPassword(String(b.password || ""), c.password_hash))) return { status: 401, body: { error: "INVALID_CREDENTIALS" } };
+    const t = token();
+    const expires = new Date(Date.now() + 2592000000).toISOString();
+    await database.run("INSERT INTO sessions(token_hash,customer_id,expires_at,created_at) VALUES($1,$2,$3,$4)", [tokenHash(t), c.id, expires, now()]);
+    return { status: 200, body: { customer: { id: c.id, email: c.email, name: c.name }, token: t, expires_at: expires } };
+  }
+  async function enterpriseData(cid) {
+    const states = await loadTenantState(database, cid);
+    const projects = states.filter((s) => s.entity === "PROJECT").map((s) => ({ id: s.id, stage: s.state, created_at: s.created_at, updated_at: s.updated_at }));
+    const fromRequests = (await database.all("SELECT id,status,created_at,updated_at FROM requests WHERE customer_id=$1", [cid]))
+      .filter((r) => !projects.some((p) => p.id === r.id))
+      .map((r) => ({ id: r.id, stage: r.status, created_at: r.created_at, updated_at: r.updated_at }));
+    return {
+      projects: projects.concat(fromRequests),
+      offers: states.filter((s) => s.entity === "OFFER"),
+      ledger: { currency_default: "CAD", entries: [], balance: 0, reserved: 0, available: 0 },
+      connections: connections(),
+      intelligences: intelligences(),
+      assets: states.filter((s) => s.entity === "ASSET"),
+      products: states.filter((s) => s.entity === "PRODUCT")
+    };
+  }
+
+  const server = http.createServer(async (req, res) => {
+    const started = Date.now();
+    const requestId = String(req.headers["x-request-id"] || makeId("http"));
+    let statusCode = 500;
+    let errorClass = null;
+    const send = (code, body) => {
+      statusCode = code;
+      return json(res, code, body, { "x-request-id": requestId });
+    };
+    try {
+      const u = new URL(req.url, "http://localhost");
+      if (req.method === "GET" && u.pathname === "/") {
+        const status = await runtimeStatus();
+        return send(200, {
+          service: "ACORN LIVE",
+          status: status.status,
+          live: false,
+          verified: false,
+          process: status.process,
+          database: status.database,
+          application: status.application,
+          external: status.external,
+          storage: database.mode,
+          customer_entry: "/app",
+          health: "/healthz",
+          ready: "/readyz",
+          proof: "measured_only",
+          external_deployment_evidence: status.external_deployment_evidence,
+          render_external_deployment: "NOT_MEASURED"
+        });
+      }
+      if (req.method === "GET" && u.pathname === "/healthz") {
+        try {
+          await database.health();
+          const status = await runtimeStatus();
+          return send(200, { ok: true, status: status.status, live: false, verified: false, process: status.process, database: status.database, application: status.application, external: "NOT_OBSERVED", storage: database.mode, time: now() });
+        } catch {
+          return send(503, { ok: false, status: "DEGRADED", live: false, process: "PROCESS_RUNNING", database: "UNAVAILABLE", application: "DEGRADED", external: "NOT_OBSERVED", storage: database.mode });
+        }
+      }
+      if (req.method === "GET" && u.pathname === "/readyz") {
+        try {
+          await database.health();
+          return send(200, { ok: true, db: true, status: "READY", live: false, process: "PROCESS_RUNNING", database: "READY", application: "READY", external: "NOT_OBSERVED", storage: database.mode, time: now() });
+        } catch {
+          return send(503, { ok: false, db: false, status: "DEGRADED", live: false, process: "PROCESS_RUNNING", database: "UNAVAILABLE", application: "DEGRADED", external: "NOT_OBSERVED" });
+        }
+      }
+      if (req.method === "GET" && u.pathname === "/app") {
+        statusCode = 200;
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff", "x-frame-options": "DENY", "x-request-id": requestId });
+        return res.end(APP_HTML);
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/register") {
+        const r = await register(await readBody(req));
+        return send(r.status, r.body);
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/login") {
+        const r = await login(await readBody(req));
+        return send(r.status, r.body);
+      }
+      const session = await requireAuth(req);
+      if (!session) return send(401, { error: "UNAUTHORIZED" });
+      const cid = session.customer_id;
+      if (req.method === "POST" && u.pathname === "/api/v1/logout") {
+        await database.run("DELETE FROM sessions WHERE token_hash=$1 AND customer_id=$2", [session.token_hash, cid]);
+        return send(200, { ok: true, revoked: true });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/me") {
+        return send(200, { customer: await database.get("SELECT id,email,name,created_at FROM customers WHERE id=$1", [cid]) });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/enterprise") {
+        return send(200, enterpriseSnapshot(await enterpriseData(cid)));
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/connections") {
+        return send(200, { connections: connections().map((c) => ({ ...c, secret_custody: false, credentials_present: false, authority: false })), proof: { connected: false, live: false } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/intelligences") {
+        return send(200, { intelligences: intelligences().map((i) => ({ ...i, authority: false })), proof: { executed: false, live: false } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/connections/measure") {
+        const b = await readBody(req);
+        const c = createConnection(b);
+        const m = measureConnection(c, { reachable: false, capabilities: Array.isArray(c.capabilities) ? c.capabilities : [] });
+        await persistState(database, { entity: "CONNECTION", id: m.id, tenant_id: cid, state: "DISCOVERED", data: { provider: m.provider, kind: m.kind, capabilities: m.capabilities, secret_custody: false } });
+        return send(200, { connection: { ...m, state: "DISCOVERED", credentials_present: false, secret_custody: false, authority: false }, proof: { measured_at: m.measured_at, live: false, external_effect: false, reachable_claimed_by_client: false } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/runtime/plan") {
+        const b = await readBody(req);
+        const requestId = String(b.request_id || "");
+        if (requestId && !(await ownRequest(cid, requestId))) return send(404, { error: "NOT_FOUND" });
+        const plan = buildRuntimePlan({ requestId, problem: String(b.problem || ""), requiredCapabilities: Array.isArray(b.required_capabilities) ? b.required_capabilities : [], intelligences: intelligences(), connectors: connections() });
+        await persistState(database, { entity: "EXECUTION", id: plan.id, tenant_id: cid, state: "PLANNED", data: { request_id: requestId, human_authorized: false, external_effect: false } });
+        return send(201, { plan, verification: verifyRuntimePlan(plan), proof: { measured_at: now(), external_effect: false, human_authorization_required: true, live: false } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/runtime/run") {
+        const b = await readBody(req);
+        let runRequestId = String(b.request_id || "");
+        if (runRequestId) {
+          if (!(await ownRequest(cid, runRequestId))) return send(404, { error: "NOT_FOUND" });
+        } else {
+          runRequestId = makeId("req");
+        }
+        const plan = buildRuntimePlan({ requestId: runRequestId, problem: String(b.problem || ""), requiredCapabilities: Array.isArray(b.required_capabilities) ? b.required_capabilities : [], intelligences: intelligences(), connectors: connections() });
+        const run = createExecutionRun({ requestId: runRequestId, plan, authorized: false });
+        await persistState(database, { entity: "EXECUTION", id: run.id, tenant_id: cid, state: run.state, data: { request_id: run.request_id, human_authorized: false, external_effect: false, client_authorization_ignored: true } });
+        return send(201, { run, snapshot: executionLoopSnapshot(run), proof: { planning_measured: true, execution_performed: false, external_effect: false, live: false, human_authorization_required: true } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/connectors/execute") {
+        const b = await readBody(req);
+        const requestId = String(b.request_id || "");
+        if (requestId && !(await ownRequest(cid, requestId))) return send(404, { error: "NOT_FOUND" });
+        const connection = createConnection({ id: String(b.connection_id || "unspecified"), provider: String(b.provider || "none"), kind: String(b.kind || "capability") });
+        const executor = createConnectorExecutor({ connection, execute: async () => ({ synthetic: true }) });
+        const result = await executeConnector(executor, { task: parseJson(b.task, {}), authorized: false });
+        await persistEnterpriseEvent(database, { tenantId: cid, entityId: connection.id, type: "CONNECTOR_EXECUTION", payload: { state: result.state, reason: result.reason || "HUMAN_AUTHORIZATION_REQUIRED", external_effect_claimed: false }, actor: "acorn-live", authority: "none" });
+        return send(result.state === "BLOCKED" ? 403 : 200, { result, proof: { live: false, external_effect: false, human_authorization_required: true } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/real-world") {
+        const connectors = loadRealWorldConnectors(env.ACORN_REAL_WORLD_CONNECTORS);
+        return send(200, {
+          bridge: realWorldBridgeSnapshot(connectors),
+          proof: { connected: false, live: false, secret_custody: false, executed: false },
+          measured_at: now()
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/runtime/external") {
+        const b = await readBody(req);
+        const requestId = String(b.request_id || "");
+        if (!requestId || !(await ownRequest(cid, requestId))) return send(404, { error: "NOT_FOUND" });
+        const connectors = loadRealWorldConnectors(env.ACORN_REAL_WORLD_CONNECTORS);
+        const connector = connectors.find((x) => x.id === String(b.connector_id || ""));
+        if (!connector) return send(404, { error: "CONNECTOR_NOT_CONFIGURED" });
+        const call = buildExternalCall({
+          connector,
+          path: String(b.path || ""),
+          method: String(b.method || "GET"),
+          body: b.body ?? null,
+          human_authorized: false,
+          idempotency_key: b.idempotency_key || null
+        });
+        const credential = connector.credential_env ? env[connector.credential_env] || process.env[connector.credential_env] || null : null;
+        const result = await executeExternalCall(call, { credential });
+        const publicResult = { ...result };
+        delete publicResult.credential;
+        await persistEnterpriseEvent(database, {
+          tenantId: cid,
+          entityId: requestId,
+          type: "REAL_WORLD_EXECUTION",
+          payload: { execution_id: result.id, connector_id: connector.id, state: result.state, effect: connector.effect, external_effect: result.external_effect === true, reason: result.reason || null },
+          actor: "acorn-live",
+          authority: "none"
+        });
+        if (result.state === "SUCCEEDED") {
+          await persistEvidence(database, {
+            tenantId: cid,
+            claim: "external_http_observed",
+            source: "external_http",
+            kind: "EXTERNAL_EXECUTION",
+            strength: 1,
+            margin: 0.1,
+            validUntil: new Date(Date.now() + 86400000).toISOString()
+          }, requestId);
+        }
+        await persistState(database, {
+          entity: "EXECUTION",
+          id: result.id,
+          tenant_id: cid,
+          state: result.state,
+          data: { request_id: requestId, connector_id: connector.id, effect: connector.effect, human_authorized: false, external_effect: result.external_effect === true, client_authorization_ignored: true }
+        });
+        return send(result.state === "SUCCEEDED" ? 200 : (result.state === "BLOCKED" ? 403 : 502), {
+          result: publicResult,
+          proof: {
+            live: false,
+            secret_custody: false,
+            human_authorization_required: true,
+            client_authorization_ignored: true,
+            external_call_measured: result.state === "SUCCEEDED",
+            external_effect: result.external_effect === true,
+            measured_at: now()
+          }
+        });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/runtime") {
+        const jobs = await database.all("SELECT state,COUNT(*) AS count FROM acorn_jobs WHERE tenant_id=$1 GROUP BY state", [cid]).catch(() => []);
+        const evidence = await loadTenantEvidence(database, cid);
+        const requests = await database.all("SELECT status,COUNT(*) AS count FROM requests WHERE customer_id=$1 GROUP BY status", [cid]);
+        const status = await runtimeStatus();
+        return send(200, {
+          runtime: "ACORN LIVE",
+          status: status.status,
+          live: false,
+          verified: false,
+          storage: database.mode,
+          requests,
+          worker: { jobs },
+          evidence,
+          authority:{human_required:true,auto_contract:false,auto_payment:false,auto_spend:false,secret_custody:false,auto_merge:false},
+          measured_at: now()
+        });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/requests") {
+        const rows = await database.all("SELECT * FROM requests WHERE customer_id=$1 ORDER BY created_at DESC", [cid]);
+        return send(200, { requests: rows.map(publicRequest) });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/enterprise/execution") {
+        return send(200, { fabric: "ACORN_EXECUTION_FABRIC", policy: "HUMAN_AUTHORIZATION_REQUIRED", synthetic: runSyntheticExecution({ projectId: "live-probe", authorized: false }), proof: { live: false, executed: false, external_effect: false, synthetic: true } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/enterprise/execution/plan") {
+        const b = await readBody(req);
+        const projectId = String(b.project_id || "");
+        if (projectId && !(await ownRequest(cid, projectId))) return send(404, { error: "NOT_FOUND" });
+        const tasks = (Array.isArray(b.tasks) ? b.tasks : []).map((t) => createTask({ ...t, projectId: t.projectId || projectId }));
+        const plan = buildExecutionPlan({ projectId, tasks, authorized: false });
+        await database.tx(async (tx) => {
+          await persistState(tx, { entity: "EXECUTION", id: plan.id, tenant_id: cid, state: plan.state, data: { project_id: projectId, authorized: false, external_effect: false } });
+          for (const task of plan.tasks || []) {
+            await persistState(tx, { entity: "TASK", id: task.id, tenant_id: cid, state: task.state, data: { execution_id: plan.id, project_id: projectId, kind: task.kind, title: task.title } });
+          }
+        });
+        return send(201, { execution: plan, snapshot: executionSnapshot(plan), proof: { live: false, external_effect: false, human_authorization_required: true } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/enterprise/cycle") {
+        const b = await readBody(req);
+        const cycle = createEnterpriseCycle({ ...b, customer: cid });
+        return send(201, { cycle, proof: { live: false, reason: "cycle_is_a_plan_until_human_authorization_and_external_evidence" } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/requests") {
+        const b = await readBody(req);
+        const request = String(b.request || "").trim();
+        if (!request) return send(400, { error: "REQUEST_REQUIRED" });
+        const safeBody = { ...b };
+        for (const k of ["password", "token", "authorization", "secret", "connectionString", "database_url", "DATABASE_URL"]) delete safeBody[k];
+        const rid = makeId("req");
+        const t = now();
+        const cycle = customerServiceCycle({
+          customer: { customer_id: cid },
+          request,
+          capabilities: ["general"],
+          solution: "Acorn intake and qualification",
+          deliverables: ["qualified request", "execution plan"],
+          evidence_plan: ["runtime evidence", "automated tests"],
+          usage_rights: ["CUSTOMER_USE_PENDING_HUMAN_AUTHORIZATION"],
+          tasks: ["qualify", "plan", "verify"],
+          intelligence: ["acorn"],
+          human_authorized: false
+        });
+        const persisted = await database.tx(async (tx) => {
+          await tx.run(
+            "INSERT INTO requests(id,customer_id,body,status,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6)",
+            [rid, cid, encodeJson(tx.mode, { ...safeBody, request, customer_id: cid }), cycle.stage, t, t]
+          );
+          await tx.run("INSERT INTO events(request_id,type,payload,created_at) VALUES($1,$2,$3,$4)", [rid, "REQUEST_CREATED", encodeJson(tx.mode, { stage: cycle.stage }), t]);
+          await persistState(tx, {
+            entity: "PROJECT",
+            id: rid,
+            tenant_id: cid,
+            state: cycle.stage,
+            data: { request_id: rid, customer_id: cid, stage: cycle.stage, delivered: false, payment: false, live: false }
+          });
+          await persistEnterpriseEvent(tx, { tenantId: cid, entityId: rid, type: "REQUEST_CREATED", payload: { stage: cycle.stage }, actor: "acorn-live", authority: "none" });
+          const horizon = new Date(Date.now() + 86400000).toISOString();
+          const evidence = await persistEvidence(tx, {
+            tenantId: cid,
+            claim: "request_persisted",
+            source: "acorn-live",
+            kind: "OBSERVATION",
+            strength: 1,
+            margin: 0.1,
+            validUntil: horizon
+          }, rid);
+          const row = await tx.get("SELECT * FROM requests WHERE id=$1 AND customer_id=$2", [rid, cid]);
+          return { row, evidence };
+        });
+        return send(201, {
+          request: publicRequest(persisted.row),
+          cycle: { stage: cycle.stage, live: false, delivered: false },
+          evidence: { id: persisted.evidence.id, claim: persisted.evidence.claim, status: persisted.evidence.status, source: persisted.evidence.source, measured_at: persisted.evidence.measured_at, valid_until: persisted.evidence.valid_until },
+          proof: { live: false, verified: false, delivered: false, storage: database.mode, measured_at: t, human_authorization_required: true }
+        });
+      }
+      const m = u.pathname.match(/^\/api\/v1\/requests\/([^/]+)$/);
+      if (req.method === "GET" && m) {
+        const row = await database.get("SELECT * FROM requests WHERE id=$1 AND customer_id=$2", [m[1], cid]);
+        if (!row) return send(404, { error: "NOT_FOUND" });
+        const events = await database.all("SELECT type,payload,created_at FROM events WHERE request_id=$1 ORDER BY id", [row.id]);
+        const state = await database.get("SELECT * FROM acorn_state WHERE id=$1 AND tenant_id=$2", [row.id, cid]);
+        const evidence = await database.all("SELECT * FROM acorn_evidence WHERE request_id=$1 AND tenant_id=$2", [row.id, cid]);
+        return send(200, {
+          request: publicRequest(row),
+          project: state ? { id: state.id, entity: state.entity, state: state.state } : null,
+          events: events.map((e) => ({ ...e, payload: parseJson(e.payload, {}) })),
+          evidence: evidence.map((e) => ({ id: e.id, claim: e.claim, source: e.source || e.origin, status: e.status, measured_at: e.measured_at, valid_until: e.valid_until })),
+          proof: { live: false, delivered: false }
+        });
+      }
+      return send(404, { error: "NOT_FOUND" });
+    } catch (e) {
+      const status = e.status || 500;
+      errorClass = e.code || (status === 413 ? "BODY_TOO_LARGE" : (status >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"));
+      if (status >= 500) console.error("LIVE_INTERNAL_ERROR");
+      return send(status, { error: status === 413 ? "BODY_TOO_LARGE" : (e.code || (status === 400 ? "BAD_REQUEST" : "INTERNAL_ERROR")) });
+    } finally {
+      logEvent({ request_id: requestId, method: req.method, path: (req.url || "").split("?")[0], status: statusCode, duration_ms: Date.now() - started, error_class: errorClass });
+    }
+  });
+  return { server, db: database };
+}
+
+export async function startLiveServer({ env = process.env, db } = {}) {
+  const { server, db: database } = await createLiveServer({ env, db });
+  const PORT = Number(env.PORT || 10000);
+  const HOST = env.HOST || "0.0.0.0";
+  await new Promise((resolve, reject) => {
+    server.listen(PORT, HOST, () => resolve());
+    server.on("error", reject);
+  });
+  const addr = server.address();
+  return { server, db: database, port: addr.port, host: HOST };
+}
+
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+if (isMain) {
+  const { server, db, port, host } = await startLiveServer();
+  console.log("ACORN LIVE listening on " + host + ":" + port);
+  async function shutdown() {
+    server.close();
+    await db.close();
+    process.exit(0);
+  }
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+}
