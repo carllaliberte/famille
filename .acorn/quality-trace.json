@@ -1,0 +1,20 @@
+{
+  "mark": "ACORN_ENGINEERED",
+  "contract": "acorn.quality-trace.v1",
+  "description": "Evidence-bearing Acorn provenance for projects engineered through the Acorn system.",
+  "quality_assured": false,
+  "expiry_required": true,
+  "principles": {
+    "truth_contract": "CODE_PRESENT != TESTED != EXECUTED != MEASURED != VERIFIED != LIVE",
+    "authority": "CAPABILITY != AUTHORITY",
+    "human_merge": true,
+    "auto_merge": false
+  },
+  "required_gates": [
+    "truth_contract",
+    "tests",
+    "security",
+    "provenance",
+    "human_authority"
+  ]
+}
