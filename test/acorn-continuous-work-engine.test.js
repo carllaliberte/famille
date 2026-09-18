@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   canonicalWorkFromRuntime,
   rankWork,
+  workState,
   runContinuousWorkEngine,
   executeWorkTask,
 } from "../scripts/acorn-work-engine.mjs";
@@ -112,4 +113,27 @@ test("continuous work engine includes universal compute metabolism", async () =>
   assert.equal(execution.compute.auto_spend, false);
   assert.equal(execution.compute.live, false);
   assert.ok(execution.compute.executed_count > 0 || execution.compute.held_count > 0);
+});
+
+
+test("continuous optimization reopens recurring work and records measured scheduling basis", () => {
+  const previous = {
+    queue: [{ id: "work:repeat", state: "COMPLETED", attempts: 1, cycle_count: 0 }],
+    history: [{ work_id: "work:repeat", state: "COMPLETED", duration_ms: 1000 }],
+  };
+  const discovered = [{
+    id: "work:repeat",
+    source: "learning",
+    subject: "repeat",
+    state: "READY",
+    information_gain: 1,
+    capability_gain: 1,
+    risk_reduction: 1,
+    cost: 0.1,
+    repeatable: true,
+  }];
+  const graph = workState({ previous, discovered });
+  assert.equal(graph.queue[0].state, "READY");
+  assert.equal(graph.queue[0].cycle_count, 1);
+  assert.equal(graph.queue[0].optimization.basis, "measured_history");
 });
