@@ -149,7 +149,10 @@
     "./acorn-connector-execution-fabric": "./scripts/acorn-connector-execution-fabric.mjs",
     "./acorn-commercial-growth-fabric": "./scripts/acorn-commercial-growth-fabric.mjs",
     "./acorn-operations-resilience-fabric": "./scripts/acorn-operations-resilience-fabric.mjs",
-    "./acorn-first-enterprise-proof": "./scripts/acorn-first-enterprise-proof.mjs"
+    "./acorn-first-enterprise-proof": "./scripts/acorn-first-enterprise-proof.mjs",
+    "./acorn-intelligence-fabric": "./scripts/acorn-intelligence-fabric.mjs",
+    "./acorn-connector-registry": "./scripts/acorn-connector-registry.mjs",
+    "./acorn-runtime-orchestrator": "./scripts/acorn-runtime-orchestrator.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
