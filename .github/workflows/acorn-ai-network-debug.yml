@@ -1,0 +1,27 @@
+name: ACORN AI Network Debug
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+  pull_request:
+    paths:
+      - scripts/acorn-ai-api-auto-discovery.mjs
+      - scripts/acorn-connector-debug-loop.mjs
+      - scripts/acorn-network-convergence.mjs
+      - test/acorn-ai-api-auto-discovery.test.js
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test test/acorn-ai-api-auto-discovery.test.js test/acorn-network-convergence.test.js
+      - run: npm run runtime:connector-debug
+        env:
+          ACORN_CONNECTOR_DEBUG: "true"
