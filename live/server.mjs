@@ -33,6 +33,16 @@ if(req.method==="GET"&&u.pathname==="/api/v1/enterprise")return json(res,200,ent
 if(req.method==="GET"&&u.pathname==="/api/v1/connections")return json(res,200,{connections:connections().map(c=>({...c,secret_custody:false,credentials_present:false}))});
 if(req.method==="GET"&&u.pathname==="/api/v1/intelligences")return json(res,200,{intelligences:intelligences().map(i=>({...i,authority:false}))});
 if(req.method==="POST"&&u.pathname==="/api/v1/connections/measure"){const b=await readBody(req),c=createConnection(b),m=measureConnection(c,{reachable:Boolean(b.reachable),capabilities:Array.isArray(b.capabilities)?b.capabilities:[]});return json(res,200,{connection:{...m,credentials_present:false,secret_custody:false},proof:{measured_at:m.measured_at}})}
+if(req.method==="GET"&&u.pathname==="/api/v1/runtime"){
+ const jobs=await db.all("SELECT state,COUNT(*)::int AS count FROM acorn_jobs GROUP BY state").catch(()=>[]);
+ const evidence=await db.all("SELECT id,request_id,kind,status,origin,measured_at,valid_until,confidence,margin FROM acorn_evidence WHERE request_id IN (SELECT id FROM requests WHERE customer_id=$1) ORDER BY measured_at DESC LIMIT 100",[cid]).catch(()=>[]);
+ const requests=await db.all("SELECT status,COUNT(*)::int AS count FROM requests WHERE customer_id=$1 GROUP BY status",[cid]);
+ return json(res,200,{runtime:"ACORN LIVE",storage:db.mode,requests,worker:{jobs},evidence,authority:{human_required:true,auto_contract:false,auto_payment:false,auto_spend:false,secret_custody:false,auto_merge:false},measured_at:now()});
+}
+if(req.method==="GET"&&u.pathname==="/api/v1/requests"){
+ const rows=await db.all("SELECT * FROM requests WHERE customer_id=$1 ORDER BY created_at DESC",[cid]);
+ return json(res,200,{requests:rows.map(publicRequest)});
+}
 if(req.method==="GET"&&u.pathname==="/api/v1/enterprise/execution")return json(res,200,{fabric:"ACORN_EXECUTION_FABRIC",policy:"HUMAN_AUTHORIZATION_REQUIRED",synthetic:runSyntheticExecution({projectId:"live-probe",authorized:false})});
 if(req.method==="POST"&&u.pathname==="/api/v1/enterprise/execution/plan"){const b=await readBody(req),tasks=(Array.isArray(b.tasks)?b.tasks:[]).map(t=>createTask({...t,projectId:t.projectId||b.project_id})),plan=buildExecutionPlan({projectId:b.project_id,tasks,authorized:Boolean(b.human_authorized)});return json(res,201,{execution:plan,snapshot:executionSnapshot(plan)})}
 if(req.method==="POST"&&u.pathname==="/api/v1/enterprise/cycle"){const b=await readBody(req),cycle=createEnterpriseCycle({...b,customer:cid});return json(res,201,{cycle,proof:{live:false,reason:"cycle_is_a_plan_until_human_authorization_and_external_evidence"}})}
