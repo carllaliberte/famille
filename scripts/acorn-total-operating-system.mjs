@@ -6,6 +6,7 @@ import { intelligenceSnapshot } from "./acorn-intelligence-fabric.mjs";
 import { connectorSnapshot } from "./acorn-connector-registry.mjs";
 import { executionLoopSnapshot } from "./acorn-execution-evidence-loop.mjs";
 import { buildCommercialCommandCenter } from "./acorn-commercial-control-plane.mjs";
+import { universalProjectContract, createUniversalProject, validateUniversalProject, canTransition, projectTruth } from "./acorn-universal-project-contract.mjs";
 
 const ISO=()=>new Date().toISOString();
 const uid=p=>p+"_"+crypto.randomUUID();
@@ -56,6 +57,37 @@ export function composeTotalRuntime({requestId,problem,requiredCapabilities=[],i
   economics:economicEngineSnapshot(economic),control:TOTAL_POLICY,
   authority:{acorn:"ANALYZE_PROPOSE_ROUTE_MEASURE",human:"AUTHORIZE_DECIDE_ACCEPT_MERGE"}};
 }
+
+export function universalProjectRuntime(input = {}) {
+  const project = createUniversalProject({
+    id: input.projectId || uid("project"),
+    tenantId: input.tenantId || null,
+    problem: input.problem || "UNSPECIFIED_PROJECT",
+    requirements: input.requirements || [],
+    constraints: input.constraints || [],
+    objectives: input.objectives || [],
+    capabilities: input.requiredCapabilities || [],
+    intelligences: input.intelligences || [],
+    connectors: input.connectors || [],
+    tasks: input.tasks || []
+  });
+  return {
+    contract: universalProjectContract(),
+    project,
+    validation: validateUniversalProject(project),
+    truth: projectTruth(project),
+    transition: canTransition(project.execution_state, input.nextState || project.execution_state, input.transitionContext || {}),
+    composed_with_existing_runtime: true,
+    second_runtime: false,
+    second_graph: false,
+    second_market_engine: false,
+    second_execution_fabric: false,
+    authority: "carl",
+    live: false,
+    measured_at: ISO()
+  };
+}
+
 export function totalOperatingSnapshot(input={}){
  const map=buildPyramidMap(), validation=validatePyramidMap(map);
  return {version:TOTAL_OS_VERSION,state:validation.ready?"READY_FOR_MEASURED_INPUT":"BLOCKED",measured_at:ISO(),
