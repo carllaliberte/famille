@@ -18,7 +18,7 @@ export function buildCognitiveContext({goal,episodes=[],knowledge=[],capabilitie
  return {goal,episodes:arr(episodes).map(e=>e.id),knowledge:arr(knowledge).map(k=>k.id||k),capabilities:arr(capabilities).map(c=>c.id||c),constraints:arr(constraints),state:"COMPOSED",provenance_required:true,authority:false,breaker_touched:false};
 }
 export function compareCognitiveStates({before={},after={},objectives=[]}={}) {
- return arr(objectives).map(o=>({dimension:o.dimension,delta:Number(after[o.dimension]||0)-Number(before[o.dimension]||0,baseline:Number(before[o.dimension]||0),weight:o.weight}));
+ return arr(objectives).map(o=>({dimension:o.dimension,delta:Number(after[o.dimension]||0)-Number(before[o.dimension]||0),baseline:Number(before[o.dimension]||0),weight:o.weight}));
 }
 export function chooseLearningPriority({gaps=[],objectives=[],history=[]}={}) {
  const learned=new Set(arr(history).map(x=>x.dimension));
