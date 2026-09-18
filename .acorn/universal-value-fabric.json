@@ -1,0 +1,1 @@
+{"contract":"acorn.universal-value-fabric.v1","authority":"human","auto_merge":false,"reuse_requires":["current_evidence","provenance","rights","compatibility"],"truth":["OFFER != ORDER","ORDER != PAYMENT_OBSERVED","PAYMENT_OBSERVED != AUTHORIZATION","AUTHORIZATION != EXECUTION","EXECUTION != VALUE"]}
