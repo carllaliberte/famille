@@ -146,6 +146,7 @@ describe("codex wrapper routing", () => {
       env: {
         ...process.env,
         PATH: `${real}:${process.env.PATH || ""}`,
+        ACORN_SYSTEM_MODE: "RUN",
         CODEX_PROVIDER: "openai",
         OPENROUTER_API_KEY: "sk-or-v1-abcdefghijklmnopqrstuvwxyz",
       },
