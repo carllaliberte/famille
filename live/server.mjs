@@ -6,6 +6,7 @@ import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { customerServiceCycle } from "../scripts/acorn-customer-service.mjs";
 import { createConnection, createIntelligenceAdapter, createEnterpriseCycle, enterpriseSnapshot, measureConnection } from "../scripts/acorn-real-world-enterprise-os.mjs";
+import { createTask, buildExecutionPlan, executionSnapshot, runSyntheticExecution } from "../scripts/acorn-execution-fabric.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -61,6 +62,14 @@ const server=http.createServer(async(req,res)=>{
   if(req.method==="POST"&&url.pathname==="/api/v1/login"){const r=await login(await readBody(req));return json(res,r.status,r.body)}
   const customerId=requireAuth(req);if(!customerId)return json(res,401,{error:"UNAUTHORIZED"});
   if(req.method==="GET"&&url.pathname==="/api/v1/me"){return json(res,200,{customer:db.prepare("SELECT id,email,name,created_at FROM customers WHERE id=?").get(customerId)})}
+  if(req.method==="GET"&&url.pathname==="/api/v1/enterprise/execution"){
+   return json(res,200,{fabric:"ACORN_EXECUTION_FABRIC",policy:"HUMAN_AUTHORIZATION_REQUIRED",synthetic:runSyntheticExecution({projectId:"live-probe",authorized:false})});
+  }
+  if(req.method==="POST"&&url.pathname==="/api/v1/enterprise/execution/plan"){
+   const body=await readBody(req); const tasks=(Array.isArray(body.tasks)?body.tasks:[]).map(t=>createTask({...t,projectId:t.projectId||body.project_id}));
+   const plan=buildExecutionPlan({projectId:body.project_id,tasks,authorized:Boolean(body.human_authorized)});
+   return json(res,201,{execution:plan,snapshot:executionSnapshot(plan)});
+  }
   if(req.method==="GET"&&url.pathname==="/api/v1/enterprise"){return json(res,200,enterpriseSnapshot(enterpriseData()))}
   if(req.method==="GET"&&url.pathname==="/api/v1/connections"){return json(res,200,{connections:configuredConnections().map(c=>({...c,secret_custody:false,credentials_present:false}))})}
   if(req.method==="GET"&&url.pathname==="/api/v1/intelligences"){return json(res,200,{intelligences:configuredIntelligences().map(i=>({...i,authority:false}))})}
