@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: acorn-live
+    runtime: docker
+    dockerfilePath: ./live/Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: ACORN_DB
+        value: /var/data/acorn-live.db
+    disk:
+      name: acorn-live-data
+      mountPath: /var/data
+      sizeGB: 1
