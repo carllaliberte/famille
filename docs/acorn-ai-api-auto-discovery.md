@@ -17,7 +17,7 @@ DISCOVERED != CONFIGURED != CONNECTED != EXECUTED != MEASURED != VERIFIED != LIV
 No provider is declared connected merely because its model appears in a public catalog.
 
 ## Automatic operation
-The catalog is replaceable. Future providers can enter through discovery metadata without a code change. Provider-specific adapters are optional; OpenAI-compatible surfaces can use a common transport contract.
+The catalog is replaceable. Future providers can enter through public catalog discovery or runtime environment discovery without a code change. The direct provider list is not closed-world. Provider-specific adapters are optional; OpenAI-compatible surfaces can use a common transport contract.
 
 ## Secrets
 API keys never enter source, commits, logs, catalog output, or PR bodies. Only environment-variable presence is detected.
