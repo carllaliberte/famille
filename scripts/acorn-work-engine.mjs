@@ -31,6 +31,7 @@ import { privacyPolicy, privacyAudit } from "./acorn-privacy-process.mjs";
 import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
 import { snapshotFreeFirstCloud, createResource, buildFreeFirstPlan } from "./acorn-free-first-cloud-fabric.mjs";
 import { economicPolicy, measureUnitEconomics, economicAllocation } from "./acorn-economic-optimizer.mjs";
+import { runAutoEvolutionAudit } from "./acorn-auto-evolution.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
   limitsFromEnv,
@@ -111,6 +112,7 @@ export function canonicalWorkFromRuntime(runtime) {
 
   push({ id:"free-first-cloud-sweep", subject:"discover, classify, verify and measure free-first cloud resources", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:1, reversibility:1, cost:0.1, execution_kind:"free-first-cloud" }, "cloud");
   push({ id:"economic-optimization-cycle", subject:"maximize verified net value and crypto yield per unit of resource", information_gain:1, capability_gain:0.8, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.05, execution_kind:"economic-optimization" }, "economy");
+  push({ id:"auto-evolution-audit", subject:"observe capability gaps, propose bounded repairs, and refuse self-authorization", information_gain:1, capability_gain:0.9, risk_reduction:1, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"auto-evolution" }, "evolution");
 
   // Compute is part of the organism metabolism: execute every currently
   // executable safe resource, while keeping remote/paid/unknown work gated.
@@ -235,6 +237,18 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
       stderr_tail: result.proof?.status === "VERIFIED" ? "" : "CONNECTION_SWEEP_NOT_VERIFIED",
     };
   }
+  if (kind === "auto-evolution") {
+    const started = Date.now();
+    const audit = runAutoEvolutionAudit(task.organism || {});
+    return {
+      status: "COMPLETED",
+      duration_ms: Date.now() - started,
+      executor: "auto-evolution",
+      evolution: { ...audit, authority: "carl", self_authorizing: false, live: false },
+      stdout_tail: "",
+      stderr_tail: ""
+    };
+  }
   if (kind === "economic-optimization") {
     const started = Date.now();
     const economics = measureUnitEconomics(task.economics || {});
@@ -316,6 +330,7 @@ function defaultTaskFor(row, env = process.env) {
   if (row.execution_kind === "contribution-economy") return { ...row, execution_kind:"contribution-economy", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "revenue-maximization") return { ...row, execution_kind:"revenue-maximization", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "universal-project-value") return { ...row, execution_kind:"universal-project-value", resource_cost:{actions:1,cpu_ms:12000} };
+  if (row.execution_kind === "auto-evolution") return { ...row, execution_kind:"auto-evolution", resource_cost:{actions:1,cpu_ms:8000} };
   if (row.execution_kind === "connection-sweep") {
     return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }

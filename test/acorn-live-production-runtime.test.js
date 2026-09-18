@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { selectLiveDatabaseAdapter } from "../live/database.mjs";
 
 test("production runtime contract", () => {
-  assert.equal(typeof process.env.NODE_ENV, "string");
+  assert.throws(() => selectLiveDatabaseAdapter({ NODE_ENV: "production" }), /DATABASE_URL_REQUIRED/);
+  assert.equal(selectLiveDatabaseAdapter({ NODE_ENV: "production", DATABASE_URL: "postgres://example.invalid/db" }).mode, "postgres");
   assert.ok("postgres".length > 0);
 });
 

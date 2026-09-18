@@ -50,9 +50,10 @@ test("work discovery is unified and rankable", () => {
     },
   };
   const rows = canonicalWorkFromRuntime(runtime);
-  assert.equal(rows.length, 14);
+  assert.equal(rows.length, 15);
   assert.ok(rows.some((row) => row.execution_kind === "connection-sweep"));
   assert.ok(rows.some((row) => row.execution_kind === "compute-sweep"));
+  assert.ok(rows.some((row) => row.execution_kind === "auto-evolution"));
   assert.equal(rankWork(rows)[0].priority >= rankWork(rows)[1].priority, true);
 });
 

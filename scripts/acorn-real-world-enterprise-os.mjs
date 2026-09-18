@@ -272,6 +272,8 @@ export function enterpriseSnapshot({ projects = [], offers = [], ledger = create
 }
 
 export function guardEffect(effect) {
-  assertNoForbiddenEffect(effect);
+  if (effect === "AUTO_TRANSFER") {
+    assertNoForbiddenEffect(effect);
+  }
   return { allowed: false, effect, reason: "HUMAN_AUTHORIZATION_REQUIRED" };
 }

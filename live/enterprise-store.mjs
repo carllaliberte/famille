@@ -141,4 +141,23 @@ export async function getTenantState(db, id, tenantId) {
   return record;
 }
 
+export async function loadIdempotentResult(db, { tenantId, connectorId, idempotencyKey } = {}) {
+  if (!tenantId || !connectorId || !idempotencyKey) return null;
+  const row = await db.get(
+    "SELECT result FROM acorn_idempotency WHERE tenant_id=$1 AND connector_id=$2 AND idempotency_key=$3",
+    [tenantId, connectorId, idempotencyKey]
+  );
+  return row ? parseJson(row.result, null) : null;
+}
+
+export async function persistIdempotentResult(db, { tenantId, connectorId, idempotencyKey, requestHash, result } = {}) {
+  if (!tenantId || !connectorId || !idempotencyKey) return null;
+  const id = `idem_${tenantId}_${connectorId}_${idempotencyKey}`.slice(0, 180);
+  await db.run(
+    "INSERT INTO acorn_idempotency(id,tenant_id,connector_id,idempotency_key,request_hash,result,created_at) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(tenant_id,connector_id,idempotency_key) DO NOTHING",
+    [id, tenantId, connectorId, idempotencyKey, requestHash || "", encodeJson(db.mode, result || {}), new Date().toISOString()]
+  );
+  return loadIdempotentResult(db, { tenantId, connectorId, idempotencyKey });
+}
+
 export { evidenceRecord, evidenceIsCurrent, registerEvidence, assertTenantAccess };

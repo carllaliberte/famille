@@ -64,7 +64,8 @@ test("production configuration does not silently fall back to local SQLite", () 
   assert.throws(() => selectLiveDatabaseAdapter({ NODE_ENV: "production" }), /DATABASE_URL_REQUIRED/);
   assert.throws(() => selectLiveDatabaseAdapter({ NODE_ENV: "production", ACORN_DB: "./live/acorn-live.db" }), /DATABASE_URL_REQUIRED/);
   assert.throws(() => selectLiveDatabaseAdapter({ ACORN_DB_ADAPTER: "postgres" }), /DATABASE_URL_REQUIRED/);
-  assert.equal(selectLiveDatabaseAdapter({ NODE_ENV: "production", ACORN_DB_ADAPTER: "sqlite" }).mode, "sqlite");
+  assert.throws(() => selectLiveDatabaseAdapter({ NODE_ENV: "production", ACORN_DB_ADAPTER: "sqlite" }), /SQLITE_FORBIDDEN_IN_PRODUCTION/);
+  assert.equal(selectLiveDatabaseAdapter({ NODE_ENV: "production", ACORN_DB_ADAPTER: "sqlite", ACORN_ALLOW_SQLITE_IN_PRODUCTION: "1" }).mode, "sqlite");
 });
 
 test("postgres connection failure does not fall back to sqlite", async () => {
@@ -313,5 +314,20 @@ test("Dockerfile is production-shaped and does not claim a container measurement
   assert.match(df, /NODE_ENV=production/);
   assert.match(df, /live\/server.mjs/);
   assert.match(df, /npm install --omit=dev/);
+});
+
+test("HTTP client path cannot steer a READ connector off-scope", async () => {
+  const connectors = JSON.stringify([{ id: "read", provider: "example", base_url: "https://example.test/api/", effect: "READ" }]);
+  await withServer(async ({ base }) => {
+    const auth = await jsonReq(base, "/api/v1/register", { method: "POST", body: { name: "Read", email: "read@example.com", password: "correct-horse" } });
+    const created = await jsonReq(base, "/api/v1/requests", { method: "POST", token: auth.json.token, body: { request: "observe" } });
+    const ssrf = await jsonReq(base, "/api/v1/runtime/external", { method: "POST", token: auth.json.token, body: { request_id: created.json.request.id, connector_id: "read", path: "https://169.254.169.254/latest/meta-data", method: "GET", human_authorized: true } });
+    assert.equal(ssrf.status, 403);
+    assert.equal(ssrf.json.result.state, "BLOCKED");
+    assert.equal(ssrf.json.result.reason, "URL_OUT_OF_SCOPE");
+    assert.equal(ssrf.json.proof.verified, false);
+    assert.equal(ssrf.json.proof.live, false);
+    assert.equal(JSON.stringify(ssrf.json).includes("ACORN_TEST_SECRET"), false);
+  }, { ACORN_REAL_WORLD_CONNECTORS: connectors });
 });
 

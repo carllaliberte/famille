@@ -10,9 +10,9 @@ import { createLiveDatabase, now, makeId, parseJson, encodeJson } from "./databa
 import { buildRuntimePlan, verifyRuntimePlan } from "../scripts/acorn-runtime-orchestrator.mjs";
 import { createExecutionRun, executionLoopSnapshot } from "../scripts/acorn-execution-evidence-loop.mjs";
 import { createConnectorExecutor, executeConnector } from "../scripts/acorn-connector-execution-fabric.mjs";
-import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot } from "../scripts/acorn-real-world-bridge.mjs";
+import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot, isConsequentialEffect, publicExternalResult } from "../scripts/acorn-real-world-bridge.mjs";
 import { assessRuntimeStatus } from "./runtime-status.mjs";
-import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence } from "./enterprise-store.mjs";
+import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadIdempotentResult, persistIdempotentResult } from "./enterprise-store.mjs";
 
 const APP_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ACORN LIVE</title><style>body{font-family:system-ui;margin:0;background:#0d0d0d;color:#f4ead7}main{max-width:760px;margin:auto;padding:32px}section{background:#171717;padding:22px;border-radius:16px;margin:16px 0}input,textarea,button{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:9px;border:1px solid #555;background:#111;color:#fff}button{cursor:pointer;background:#c9a86a;color:#111;font-weight:700}pre{white-space:pre-wrap}p.note{opacity:.8;font-size:.95rem}.row{display:flex;gap:8px}small{opacity:.7}</style></head><body><main><h1>ACORN</h1><p class="note">Customer entry. HTTP availability is not LIVE proof. Plans are not delivery. Payment and contracts are not claimed.</p><section id="auth"><h2>Start</h2><input id="name" placeholder="Name"><input id="email" placeholder="Email"><input id="password" type="password" placeholder="Password (10+ characters)"><button onclick="register()">Create account</button><button onclick="login()">Sign in</button><pre id="authout"></pre></section><section id="work" style="display:none"><div class="row"><button onclick="logout()">Sign out</button></div><h2>New request</h2><textarea id="request" rows="6" placeholder="Describe the problem you want Acorn to solve…"></textarea><button onclick="submitRequest()">Send to Acorn</button><button onclick="loadRequests()">Refresh</button><p class="note">Status values come from persisted state: received, awaiting human authorization, planned, blocked. Delivered/verified/LIVE only appear with evidence.</p><pre id="out"></pre></section><script>
 let T=localStorage.acornToken||"";
@@ -322,18 +322,50 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         const connectors = loadRealWorldConnectors(env.ACORN_REAL_WORLD_CONNECTORS);
         const connector = connectors.find((x) => x.id === String(b.connector_id || ""));
         if (!connector) return send(404, { error: "CONNECTOR_NOT_CONFIGURED" });
+        const idempotencyKey = b.idempotency_key ? String(b.idempotency_key) : null;
+        if (idempotencyKey) {
+          const cached = await loadIdempotentResult(database, { tenantId: cid, connectorId: connector.id, idempotencyKey });
+          if (cached) {
+            return send(cached.state === "SUCCEEDED" ? 200 : (cached.state === "BLOCKED" ? 403 : 502), {
+              result: publicExternalResult(cached),
+              proof: {
+                live: false,
+                verified: false,
+                secret_custody: false,
+                human_authorization_required: true,
+                client_authorization_ignored: true,
+                idempotent_replay: true,
+                external_call_measured: cached.state === "SUCCEEDED",
+                external_effect: cached.external_effect === true,
+                measured_at: now()
+              }
+            });
+          }
+        }
         const call = buildExternalCall({
           connector,
           path: String(b.path || ""),
           method: String(b.method || "GET"),
           body: b.body ?? null,
-          human_authorized: false,
-          idempotency_key: b.idempotency_key || null
+          source: "http",
+          idempotency_key: idempotencyKey
         });
+        if (isConsequentialEffect(connector.effect) && call.state === "AUTHORIZED") {
+          call.state = "BLOCKED";
+          call.reason = "HUMAN_AUTHORIZATION_REQUIRED";
+        }
         const credential = connector.credential_env ? env[connector.credential_env] || process.env[connector.credential_env] || null : null;
         const result = await executeExternalCall(call, { credential });
-        const publicResult = { ...result };
-        delete publicResult.credential;
+        const publicResult = publicExternalResult(result);
+        if (idempotencyKey) {
+          await persistIdempotentResult(database, {
+            tenantId: cid,
+            connectorId: connector.id,
+            idempotencyKey,
+            requestHash: `${connector.id}:${String(b.method || "GET")}:${String(b.path || "")}`,
+            result: publicResult
+          });
+        }
         await persistEnterpriseEvent(database, {
           tenantId: cid,
           entityId: requestId,
@@ -347,10 +379,10 @@ export async function createLiveServer({ env = process.env, db } = {}) {
             tenantId: cid,
             claim: "external_http_observed",
             source: "external_http",
-            kind: "EXTERNAL_EXECUTION",
+            kind: "OBSERVATION",
             strength: 1,
             margin: 0.1,
-            validUntil: new Date(Date.now() + 86400000).toISOString()
+            validUntil: result.evidence?.valid_until || `${new Date().toISOString().slice(0, 10)}T23:59:59.000Z`
           }, requestId);
         }
         await persistState(database, {
@@ -369,6 +401,8 @@ export async function createLiveServer({ env = process.env, db } = {}) {
             client_authorization_ignored: true,
             external_call_measured: result.state === "SUCCEEDED",
             external_effect: result.external_effect === true,
+            verified: false,
+            live: false,
             measured_at: now()
           }
         });
@@ -516,7 +550,7 @@ if (isMain) {
   const { server, db, port, host } = await startLiveServer();
   console.log("ACORN LIVE listening on " + host + ":" + port);
   async function shutdown() {
-    server.close();
+    await new Promise((resolve) => server.close(() => resolve()));
     await db.close();
     process.exit(0);
   }

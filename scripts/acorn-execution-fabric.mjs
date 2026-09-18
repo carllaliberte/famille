@@ -23,14 +23,19 @@ export function taskGraph(tasks=[]){
   const ids=new Set(tasks.map(t=>t.id));
   for(const t of tasks) for(const d of t.depends_on) if(!ids.has(d)) throw new Error(`UNKNOWN_TASK_DEPENDENCY:${d}`);
   const state=new Map(tasks.map(t=>[t.id,t]));
-  return tasks.map(t=>({...t,state: t.depends_on.every(d=>state.get(d)?.state==="SUCCEEDED") ? "READY" : "PLANNED"}));
+  const terminal = new Set(["SUCCEEDED", "FAILED", "CANCELLED", "RUNNING", "BLOCKED"]);
+  return tasks.map((t) => {
+    if (terminal.has(t.state)) return t;
+    return { ...t, state: t.depends_on.every((d) => state.get(d)?.state === "SUCCEEDED") ? "READY" : "PLANNED" };
+  });
 }
 export function nextRunnableTasks(tasks=[]){
   return taskGraph(tasks).filter(t=>t.state==="READY");
 }
 export function startTask(task,{authorized=false}={}){
   if(!authorized) return {...task,state:"BLOCKED",error:"HUMAN_AUTHORIZATION_REQUIRED",updated_at:ISO()};
-  if(task.state!=="READY") return task;
+  const ready = task.state === "READY" || (task.state === "PLANNED" && !(task.depends_on || []).length);
+  if(!ready) return task;
   return {...task,state:"RUNNING",attempts:task.attempts+1,error:null,updated_at:ISO()};
 }
 export function completeTask(task,{success,output=null,error=null,evidenceIds=[]}={}){
@@ -55,7 +60,10 @@ export function executionSnapshot(execution){
     measured_at:ISO()};
 }
 export function guardExecutionEffect(effect){
-  if(Object.values(EXECUTION_POLICIES).includes(effect)) throw new Error(`FORBIDDEN_AUTOMATIC_EFFECT:${effect}`);
+  const name = String(effect || "").toUpperCase();
+  if (name.startsWith("AUTO_") && EXECUTION_POLICIES[name] === false) {
+    throw new Error(`FORBIDDEN_AUTOMATIC_EFFECT:${name}`);
+  }
   return {allowed:false,effect,reason:"HUMAN_AUTHORIZATION_REQUIRED"};
 }
 export function runSyntheticExecution({projectId,authorized=false}={}){

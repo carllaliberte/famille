@@ -26,7 +26,12 @@ export function selectLiveDatabaseAdapter(env = process.env) {
   const url = String(env.DATABASE_URL || "").trim();
   const adapter = String(env.ACORN_DB_ADAPTER || "").trim().toLowerCase();
   const nodeEnv = String(env.NODE_ENV || "").trim().toLowerCase();
-  if (adapter === "sqlite") return { mode: "sqlite", url: null };
+  if (adapter === "sqlite") {
+    if (nodeEnv === "production" && String(env.ACORN_ALLOW_SQLITE_IN_PRODUCTION || "").trim() !== "1") {
+      throw new Error("SQLITE_FORBIDDEN_IN_PRODUCTION");
+    }
+    return { mode: "sqlite", url: null };
+  }
   if (adapter === "postgres") {
     if (!url) throw new Error("DATABASE_URL_REQUIRED");
     return { mode: "postgres", url };
