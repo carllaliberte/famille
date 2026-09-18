@@ -18,6 +18,7 @@ import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futurePr
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
 import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject, loadCommercialCycle } from "./commercial.mjs";
 import { buildRealitySnapshot, customerNextAction, assertTruthContract } from "../scripts/acorn-real-world-turnkey.mjs";
+import { adaptiveCycle, admitUnknown, remember, diagnoseGap } from "../scripts/acorn-adaptive-loop.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -721,6 +722,75 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       }
       if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
         return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/adaptive/cycle") {
+        const b = await readBody(req);
+        const related = await loadTenantState(database, cid);
+        const caps = related.filter((s) => s.entity === "CAPABILITY").map((s) => s.data?.name).filter(Boolean);
+        const products = related.filter((s) => s.entity === "PRODUCT").map((s) => ({ name: s.data?.name || s.id }));
+        const latest = await database.get("SELECT id,body FROM requests WHERE customer_id=$1 ORDER BY created_at DESC LIMIT 1", [cid]);
+        const problem = String(b.request || b.problem || parseJson(latest?.body, {}).request || "").trim();
+        const cycle = adaptiveCycle({
+          tenantId: cid,
+          customerId: cid,
+          problem,
+          capabilities: caps,
+          products,
+          constraints: { authority: false }
+        });
+        for (const comp of cycle.compositions) {
+          await persistState(database, {
+            entity: "COMPOSITION",
+            id: comp.id + "_" + cid.slice(-8),
+            tenant_id: cid,
+            state: "PROPOSED",
+            data: { ...comp, live: false }
+          });
+        }
+        for (const pat of cycle.patterns.patterns) {
+          await persistState(database, {
+            entity: "PATTERN",
+            id: "pat_" + (pat.capabilities.join("_") || "empty") + "_" + cid.slice(-8),
+            tenant_id: cid,
+            state: "PROPOSED",
+            data: { ...pat, truth: false, live: false }
+          });
+        }
+        return await sendPersist(201, {
+          ...cycle,
+          client_authorization_ignored: b.human_authorized === true || b.live === true,
+          proof: { live: false, best: null, potential_not_actual: true }
+        });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/adaptive") {
+        const compositions = (await loadTenantState(database, cid, "COMPOSITION")).map((s) => ({ ...s.data, id: s.id, state: s.state, live: false }));
+        const patterns = (await loadTenantState(database, cid, "PATTERN")).map((s) => ({ ...s.data, id: s.id, truth: false, live: false }));
+        return send(200, {
+          compositions,
+          patterns,
+          more_capabilities_is_not_better: true,
+          best: null,
+          live: false
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/adaptive/unknown") {
+        const b = await readBody(req);
+        const admitted = admitUnknown({ provider: b.provider, model: b.model, capabilities: b.capabilities || [] });
+        return send(200, {
+          ...admitted,
+          client_authorization_ignored: b.trusted === true || b.authorized === true || b.live === true,
+          proof: { live: false, trusted: false, authorized: false }
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/adaptive/remember") {
+        const b = await readBody(req);
+        const mem = remember({ kind: b.kind, claim: b.claim, verified: b.verified === true });
+        return send(200, { memory: mem, proof: { live: false, hypothesis_is_not_fact: mem.is_fact !== true } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/adaptive/diagnose") {
+        const b = await readBody(req);
+        const d = diagnoseGap({ gap: b.gap || b.capability, authorized: false });
+        return send(200, { ...d, client_authorization_ignored: b.human_authorized === true, proof: { live: false, auto_repair: false } });
       }
       const commercialHandled = await handleAuthedCommercial({
         method: req.method,
