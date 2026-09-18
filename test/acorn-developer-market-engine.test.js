@@ -50,6 +50,17 @@ test("market engine turns one demand into a diversified measured offer set", () 
   assert.ok(result.offer_count > 1);
   assert.equal(result.no_fake_capability, true);
   assert.equal(result.no_auto_contract, true);
+  assert.equal(result.offers.every((offer) => offer.verified === false), true);
+});
+
+test("market offers stay unverified without proven capability evidence", () => {
+  const [offer] = diversifyOffer({
+    demand: { id: "d-unproven", audience: "BUSINESS", capability_proven: false },
+    capabilityIds: ["evidence"],
+    evidence: [{ id: "e1", status: "VERIFIED" }]
+  });
+  assert.equal(offer.verified, false);
+  assert.equal(offer.capability_proven, false);
 });
 
 test("commercial settlement is based on measured published usage", () => {

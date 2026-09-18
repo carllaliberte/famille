@@ -68,11 +68,11 @@ test("measurement records form a dated integrity chain", () => {
 
 test("artifact readback verifies the previous dated state", () => {
   const { record } = sample();
-  const dir = join(process.cwd(), ".measurement-record-readback");
-  mkdirSync(dir, { recursive: true });
   const run = (command, args) => {
     if (args[1] === "list") return JSON.stringify([{ databaseId: 123, headSha: "abc123" }]);
     if (args[1] === "download") {
+      const dir = args[args.indexOf("--dir") + 1];
+      mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "measurement-record.json"), `${JSON.stringify(record)}\n`);
       return "";
     }
@@ -85,12 +85,12 @@ test("artifact readback verifies the previous dated state", () => {
 
 test("readback skips successful runs that have no measurement artifact", () => {
   const { record } = sample();
-  const dir = join(process.cwd(), ".measurement-record-readback");
-  mkdirSync(dir, { recursive: true });
   const run = (command, args) => {
     if (args[1] === "list") return JSON.stringify([{ databaseId: 999, headSha: "no-artifact" }, { databaseId: 123, headSha: "abc123" }]);
     if (args[1] === "download") {
       if (String(args[2]) === "999") throw new Error("artifact missing");
+      const dir = args[args.indexOf("--dir") + 1];
+      mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "measurement-record.json"), `${JSON.stringify(record)}\n`);
       return "";
     }
@@ -110,12 +110,12 @@ test("artifact readback rejects a broken predecessor link", () => {
     memoryIndex: sample().memoryIndex,
     previousRecord: first,
   });
-  const dir = join(process.cwd(), ".measurement-record-readback");
-  mkdirSync(dir, { recursive: true });
   const run = (command, args) => {
     if (args[1] === "list") return JSON.stringify([{ databaseId: 200, headSha: "def456" }, { databaseId: 100, headSha: "abc123" }]);
     if (args[1] === "download") {
       const id = String(args[2]);
+      const dir = args[args.indexOf("--dir") + 1];
+      mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "measurement-record.json"), `${JSON.stringify(id === "200" ? second : { ...first, seal: { ...first.seal, digest: "tampered" } })}\n`);
       return "";
     }

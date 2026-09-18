@@ -24,6 +24,8 @@ import { runUniversalComputeSweep } from "./acorn-universal-compute-sweep.mjs";
 import { runValueOpportunityCycle } from "./acorn-value-opportunity-fabric.mjs";
 import { gatewayPolicy, buildDeveloperConnectManifest } from "./acorn-developer-gateway.mjs";
 import { runMarketCycle } from "./acorn-market-engine.mjs";
+import { commercialRuntimeSnapshot } from "./acorn-commercial-runtime.mjs";
+import { runUniversalInfrastructureCycle } from "./acorn-universal-infrastructure.mjs";
 import { contributionSettlementReadiness, economyPolicy } from "./acorn-contribution-economy.mjs";
 import { revenuePolicy, measureRevenueEconomics, measureCommercialYield, chooseRevenueOpportunities, buildCommercialActionPlan, consolidateBilling, consolidateCryptoSettlement, buildTaxReadyLedger } from "./acorn-revenue-maximizer.mjs";
 import { universalProjectValueCycle } from "./acorn-universal-project-value.mjs";
@@ -31,6 +33,7 @@ import { privacyPolicy, privacyAudit } from "./acorn-privacy-process.mjs";
 import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
 import { snapshotFreeFirstCloud, createResource, buildFreeFirstPlan } from "./acorn-free-first-cloud-fabric.mjs";
 import { economicPolicy, measureUnitEconomics, economicAllocation } from "./acorn-economic-optimizer.mjs";
+import { runAutoEvolutionAudit } from "./acorn-auto-evolution.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
   limitsFromEnv,
@@ -105,12 +108,15 @@ export function canonicalWorkFromRuntime(runtime) {
   push({ id:"privacy-process-audit", subject:"minimize data, redact secrets, enforce retention and reduce human administration", information_gain:1, capability_gain:0.9, risk_reduction:1, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"privacy-audit" }, "privacy");
   push({ id:"developer-gateway-sweep", subject:"keep universal developer onboarding and connection readiness measured", information_gain:1, capability_gain:1, risk_reduction:0.8, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"developer-gateway" }, "developer");
   push({ id:"market-engine-cycle", subject:"detect demand, diversify verified offers, and prepare measured commercial collection", information_gain:1, capability_gain:1, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.08, execution_kind:"market" }, "market");
+  push({ id:"stripe-commercial-runtime", subject:"keep Stripe checkout, signed webhooks and the commercial journey measured without inventing LIVE", information_gain:1, capability_gain:1, risk_reduction:1, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"commerce" }, "commerce");
   push({ id:"contribution-economy-cycle", subject:"allocate measured contribution rewards only through verified settlement rails", information_gain:0.8, capability_gain:0.8, risk_reduction:0.9, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"contribution-economy" }, "economy");
   push({ id:"revenue-maximization-cycle", subject:"maximize verified net revenue while preserving Acorn essence and open access", information_gain:1, capability_gain:1, risk_reduction:0.8, uncertainty:0.9, reversibility:1, cost:0.06, execution_kind:"revenue-maximization" }, "revenue");
   push({ id:"universal-project-value-cycle", subject:"turn human intention into a verified project, reusable product and measured value", information_gain:1, capability_gain:1, risk_reduction:0.8, uncertainty:0.9, reversibility:1, cost:0.07, execution_kind:"universal-project-value" }, "project-value");
 
   push({ id:"free-first-cloud-sweep", subject:"discover, classify, verify and measure free-first cloud resources", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:1, reversibility:1, cost:0.1, execution_kind:"free-first-cloud" }, "cloud");
   push({ id:"economic-optimization-cycle", subject:"maximize verified net value and crypto yield per unit of resource", information_gain:1, capability_gain:0.8, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.05, execution_kind:"economic-optimization" }, "economy");
+  push({ id:"auto-evolution-audit", subject:"observe capability gaps, propose bounded repairs, and refuse self-authorization", information_gain:1, capability_gain:0.9, risk_reduction:1, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"auto-evolution" }, "evolution");
+  push({ id:"universal-infrastructure-cycle", subject:"compose capabilities through the existing fabrics without inventing LIVE or a second architecture", information_gain:1, capability_gain:1, risk_reduction:1, uncertainty:0.8, reversibility:1, cost:0.06, execution_kind:"universal-infrastructure" }, "infrastructure");
 
   // Compute is part of the organism metabolism: execute every currently
   // executable safe resource, while keeping remote/paid/unknown work gated.
@@ -220,6 +226,16 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
   if (kind === "privacy-audit") { const started=Date.now(); const result=privacyAudit({events:task.events||[],records:task.records||[]}); return {status:result.status==="PASS"?"COMPLETED":"FAILED",duration_ms:Date.now()-started,executor:"privacy-process-fabric",privacy:{policy:privacyPolicy(),audit:result},stdout_tail:"",stderr_tail:result.status==="PASS"?"":"PRIVACY_AUDIT_FAILED"}; }
   if (kind === "developer-gateway") { const started=Date.now(); const manifest=buildDeveloperConnectManifest({capabilities:task.capabilities||[],protocols:["connector-flux"]}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"developer-gateway-fabric",developer:{policy:gatewayPolicy(),manifest},stdout_tail:"",stderr_tail:""}; }
   if (kind === "market") { const started=Date.now(); const result=runMarketCycle({signals:task.signals||[],capabilityIndex:task.capabilityIndex||[]}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"market-engine",market:result,stdout_tail:"",stderr_tail:""}; }
+  if (kind === "commerce") { const started=Date.now(); const result=commercialRuntimeSnapshot(env); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"commercial-runtime",commerce:result,stdout_tail:"",stderr_tail:""}; }
+  if (kind === "universal-infrastructure") {
+    const started = Date.now();
+    const result = await runUniversalInfrastructureCycle({
+      problem: task.problem || "17 * 23",
+      required: task.required || ["arithmetic"],
+      env,
+    });
+    return { status: "COMPLETED", duration_ms: Date.now() - started, executor: "universal-infrastructure", infrastructure: result, stdout_tail: "", stderr_tail: "" };
+  }
   if (kind === "contribution-economy") { const started=Date.now(); const readiness=contributionSettlementReadiness({paymentRail:task.paymentRail||null,destination:task.destination||null}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"contribution-economy",economy:{policy:economyPolicy(),settlement:readiness},stdout_tail:"",stderr_tail:""}; }
   if (kind === "universal-project-value") { const started = Date.now(); const result = universalProjectValueCycle(task.project || task); return { status:"COMPLETED", duration_ms:Date.now()-started, executor:"universal-project-value-engine", project_value:result, stdout_tail:"", stderr_tail:"" }; }
   if (kind === "revenue-maximization") { const started=Date.now(); const economics=measureRevenueEconomics(task.economics||{}); const commercial_yield=measureCommercialYield(task.commercial_yield||{}); const opportunities=chooseRevenueOpportunities(task.opportunities||[],{max:Number(task.max_opportunities||10)}); const action_plan=buildCommercialActionPlan({opportunities:task.opportunities||[],capabilities:task.capabilities||[],existing_customers:task.existing_customers||[]}); const billing=consolidateBilling({customer_id:task.customer_id||null,period:task.period||null,events:task.billing_events||[],currency:task.currency||"USD",settlement_threshold:task.settlement_threshold||0}); const crypto=consolidateCryptoSettlement({customer_id:task.customer_id||null,period:task.period||null,invoices:task.crypto_invoices||[],rail:task.payment_rail||null,minimum_threshold:task.crypto_threshold||0}); const tax=buildTaxReadyLedger({customer_id:task.customer_id||null,period:task.period||null,invoices:task.billing_events||[],settlements:task.crypto_invoices||[],costs:task.costs||[]}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"revenue-maximizer",revenue:{policy:revenuePolicy(),economics,commercial_yield,opportunities,action_plan,billing,crypto_settlement:crypto,tax_ready:tax},stdout_tail:"",stderr_tail:""}; }
@@ -233,6 +249,18 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
       connections: result,
       stdout_tail: "",
       stderr_tail: result.proof?.status === "VERIFIED" ? "" : "CONNECTION_SWEEP_NOT_VERIFIED",
+    };
+  }
+  if (kind === "auto-evolution") {
+    const started = Date.now();
+    const audit = runAutoEvolutionAudit(task.organism || {});
+    return {
+      status: "COMPLETED",
+      duration_ms: Date.now() - started,
+      executor: "auto-evolution",
+      evolution: { ...audit, authority: "carl", self_authorizing: false, live: false },
+      stdout_tail: "",
+      stderr_tail: ""
     };
   }
   if (kind === "economic-optimization") {
@@ -316,6 +344,9 @@ function defaultTaskFor(row, env = process.env) {
   if (row.execution_kind === "contribution-economy") return { ...row, execution_kind:"contribution-economy", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "revenue-maximization") return { ...row, execution_kind:"revenue-maximization", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "universal-project-value") return { ...row, execution_kind:"universal-project-value", resource_cost:{actions:1,cpu_ms:12000} };
+  if (row.execution_kind === "auto-evolution") return { ...row, execution_kind:"auto-evolution", resource_cost:{actions:1,cpu_ms:8000} };
+  if (row.execution_kind === "commerce") return { ...row, execution_kind:"commerce", resource_cost:{actions:1,cpu_ms:8000} };
+  if (row.execution_kind === "universal-infrastructure") return { ...row, execution_kind:"universal-infrastructure", resource_cost:{actions:1,cpu_ms:12000} };
   if (row.execution_kind === "connection-sweep") {
     return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }

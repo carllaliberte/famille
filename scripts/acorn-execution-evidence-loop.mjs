@@ -11,7 +11,7 @@ const uid=p=>`${p}_${crypto.randomUUID()}`;
 
 export function createExecutionRun({requestId,plan,authorized=false}={}){
  if(!requestId||!plan) throw new Error("REQUEST_AND_PLAN_REQUIRED");
- return {id:uid("run"),request_id:requestId,plan_id:plan.id,state:"PLANNED",
+ return {id:uid("run"),request_id:requestId,plan_id:plan.id,plan,state:"PLANNED",
    human_authorized:Boolean(authorized),authority:false,external_effect:false,
    steps:[],evidence:[],value:null,created_at:ISO()};
 }

@@ -67,7 +67,7 @@ export function measureConnection(connection, { reachable = false, capabilities 
   };
 }
 
-export function createIntelligenceAdapter({ id, provider, model, capabilities = [], endpoint = null }) {
+export function createIntelligenceAdapter({ id, provider, model, capabilities = [], endpoint = null, timeout_ms = null, cost = null }) {
   return {
     id, provider, model, endpoint,
     capabilities: [...new Set(capabilities)],
@@ -75,6 +75,11 @@ export function createIntelligenceAdapter({ id, provider, model, capabilities = 
     authority: false,
     state: "DISCOVERED",
     evidence: [],
+    timeout_ms,
+    cost_metadata: cost || { amount: "NOT_MEASURED", currency: "UNKNOWN" },
+    cancellable: true,
+    retryable: true,
+    provider_is_not_foundation: true,
     discovered_at: ISO()
   };
 }
@@ -272,6 +277,8 @@ export function enterpriseSnapshot({ projects = [], offers = [], ledger = create
 }
 
 export function guardEffect(effect) {
-  assertNoForbiddenEffect(effect);
+  if (effect === "AUTO_TRANSFER") {
+    assertNoForbiddenEffect(effect);
+  }
   return { allowed: false, effect, reason: "HUMAN_AUTHORIZATION_REQUIRED" };
 }

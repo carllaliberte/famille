@@ -150,7 +150,7 @@ export function buildCustomerOffer({
 }
 
 export function authorizeCustomerOrder({ offer, authorized = false, authorized_by = null } = {}) {
-  const ok = authorized === true && offer?.stage === "OFFER_READY" && str(authorized_by);
+  const ok = Boolean(authorized === true && offer?.stage === "OFFER_READY" && str(authorized_by));
   return {
     offer_id: offer?.offer_id || null,
     authorized: ok,

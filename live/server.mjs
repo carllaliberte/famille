@@ -10,9 +10,38 @@ import { createLiveDatabase, now, makeId, parseJson, encodeJson } from "./databa
 import { buildRuntimePlan, verifyRuntimePlan } from "../scripts/acorn-runtime-orchestrator.mjs";
 import { createExecutionRun, executionLoopSnapshot } from "../scripts/acorn-execution-evidence-loop.mjs";
 import { createConnectorExecutor, executeConnector } from "../scripts/acorn-connector-execution-fabric.mjs";
-import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot } from "../scripts/acorn-real-world-bridge.mjs";
+import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot, isConsequentialEffect, publicExternalResult } from "../scripts/acorn-real-world-bridge.mjs";
 import { assessRuntimeStatus } from "./runtime-status.mjs";
-import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence } from "./enterprise-store.mjs";
+import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadIdempotentResult, persistIdempotentResult } from "./enterprise-store.mjs";
+import {
+  loadStripeConfig,
+  publicStripeConfig,
+  stripeWebhookSecret,
+  verifyStripeSignature,
+  rejectClientPrice,
+  createCheckoutSession,
+  createBillingPortalSession,
+  enterpriseDocument,
+  usageBasedExtension,
+} from "../scripts/acorn-stripe-adapter.mjs";
+import {
+  publicCatalog,
+  serverPriceTable,
+  qualifyCommercialDemand,
+  createProject,
+  createVersionedOffer,
+  createOrder,
+  becomeCustomer,
+  createDemand,
+} from "../scripts/acorn-commercial-runtime.mjs";
+import { persistOffer, persistOrder, applyVerifiedStripeEvent, persistStripeEvent, loadTenantCommerce } from "./commerce-store.mjs";
+import { authorizeCustomerOrder } from "../scripts/acorn-customer-service.mjs";
+import {
+  composeProblem,
+  fabricSnapshot,
+  ignoreClientAuthority,
+  publicContract,
+} from "../scripts/acorn-universal-infrastructure.mjs";
 
 const APP_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ACORN LIVE</title><style>body{font-family:system-ui;margin:0;background:#0d0d0d;color:#f4ead7}main{max-width:760px;margin:auto;padding:32px}section{background:#171717;padding:22px;border-radius:16px;margin:16px 0}input,textarea,button{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:9px;border:1px solid #555;background:#111;color:#fff}button{cursor:pointer;background:#c9a86a;color:#111;font-weight:700}pre{white-space:pre-wrap}p.note{opacity:.8;font-size:.95rem}.row{display:flex;gap:8px}small{opacity:.7}</style></head><body><main><h1>ACORN</h1><p class="note">Customer entry. HTTP availability is not LIVE proof. Plans are not delivery. Payment and contracts are not claimed.</p><section id="auth"><h2>Start</h2><input id="name" placeholder="Name"><input id="email" placeholder="Email"><input id="password" type="password" placeholder="Password (10+ characters)"><button onclick="register()">Create account</button><button onclick="login()">Sign in</button><pre id="authout"></pre></section><section id="work" style="display:none"><div class="row"><button onclick="logout()">Sign out</button></div><h2>New request</h2><textarea id="request" rows="6" placeholder="Describe the problem you want Acorn to solve…"></textarea><button onclick="submitRequest()">Send to Acorn</button><button onclick="loadRequests()">Refresh</button><p class="note">Status values come from persisted state: received, awaiting human authorization, planned, blocked. Delivered/verified/LIVE only appear with evidence.</p><pre id="out"></pre></section><script>
 let T=localStorage.acornToken||"";
@@ -74,7 +103,7 @@ function logEvent(entry) {
   console.log(JSON.stringify(row));
 }
 
-export async function createLiveServer({ env = process.env, db } = {}) {
+export async function createLiveServer({ env = process.env, db, stripeFetch } = {}) {
   const database = db || await createLiveDatabase({ env });
   const MAX_BODY = Number(env.MAX_BODY_BYTES || process.env.MAX_BODY_BYTES || 262144);
   const json = (res, status, body, headers = {}) => {
@@ -101,6 +130,16 @@ export async function createLiveServer({ env = process.env, db } = {}) {
     if (!chunks.length) return {};
     try { return JSON.parse(Buffer.concat(chunks).toString("utf8")); }
     catch { throw Object.assign(new Error("INVALID_JSON"), { status: 400, code: "INVALID_JSON" }); }
+  };
+  const readRawBody = async (req) => {
+    let n = 0;
+    const chunks = [];
+    for await (const c of req) {
+      n += c.length;
+      if (n > MAX_BODY) throw Object.assign(new Error("BODY_TOO_LARGE"), { status: 413, code: "BODY_TOO_LARGE" });
+      chunks.push(c);
+    }
+    return Buffer.concat(chunks);
   };
   const hashPassword = (p, s = crypto.randomBytes(16)) => new Promise((ok, bad) => crypto.scrypt(p, s, 64, (e, k) => e ? bad(e) : ok(s.toString("hex") + ":" + k.toString("hex"))));
   const verifyPassword = (p, v) => new Promise((ok, bad) => {
@@ -181,7 +220,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
     return {
       projects: projects.concat(fromRequests),
       offers: states.filter((s) => s.entity === "OFFER"),
-      ledger: { currency_default: "CAD", entries: [], balance: 0, reserved: 0, available: 0 },
+      ledger: { currency_default: "CAD", entries: (await loadTenantCommerce(database, cid)).ledger, balance: null, reserved: null, available: null, invented: false },
       connections: connections(),
       intelligences: intelligences(),
       assets: states.filter((s) => s.entity === "ASSET"),
@@ -242,6 +281,47 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff", "x-frame-options": "DENY", "x-request-id": requestId });
         return res.end(APP_HTML);
       }
+      if (req.method === "GET" && u.pathname === "/api/v1/commerce/catalog") {
+        return send(200, {
+          catalog: publicCatalog(env),
+          price_source: "SERVER_CATALOG",
+          client_price_accepted: false,
+          stripe: publicStripeConfig(loadStripeConfig(env)),
+          checkout_is_not_payment: true,
+          live: false
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/webhooks/stripe") {
+        const raw = await readRawBody(req);
+        const text = raw.toString("utf8");
+        const config = loadStripeConfig(env);
+        let event = null;
+        try { event = text ? JSON.parse(text) : null; }
+        catch { return send(400, { error: "INVALID_JSON", webhook_is_not_receipt: true, live: false }); }
+        if (!event || !event.id) return send(400, { error: "EVENT_ID_MISSING", webhook_is_not_receipt: true, live: false });
+        const secret = stripeWebhookSecret(config, { live: config.mode === "live" });
+        const signature = verifyStripeSignature({
+          payload: text,
+          header: req.headers["stripe-signature"],
+          secret
+        });
+        if (event.livemode === true && config.mode !== "live") {
+          await persistStripeEvent(database, { event, signature: { verified: false, reason: "LIVE_STRIPE_EVENT_HOLD" }, tenantId: event.data?.object?.metadata?.tenant_id || null });
+          return send(202, { ok: false, state: "HOLD_HUMAN", reason: "LIVE_STRIPE_EVENT_HOLD", webhook_is_not_receipt: true, live: false });
+        }
+        const result = await applyVerifiedStripeEvent(database, { event, signature });
+        const status = signature.verified ? 200 : 400;
+        return send(status, {
+          ok: result.accepted === true,
+          duplicate: result.duplicate === true,
+          replay_protected: result.replay_protected === true || result.duplicate === true,
+          payment_state: result.payment_state || null,
+          checkout_is_not_payment: true,
+          webhook_is_not_receipt: true,
+          reason: result.reason || null,
+          live: false
+        });
+      }
       if (req.method === "POST" && u.pathname === "/api/v1/register") {
         const r = await register(await readBody(req));
         return send(r.status, r.body);
@@ -261,13 +341,42 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         return send(200, { customer: await database.get("SELECT id,email,name,created_at FROM customers WHERE id=$1", [cid]) });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/enterprise") {
-        return send(200, enterpriseSnapshot(await enterpriseData(cid)));
+        const data = await enterpriseData(cid);
+        return send(200, { ...enterpriseSnapshot(data), commerce: await loadTenantCommerce(database, cid), live: false });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/connections") {
         return send(200, { connections: connections().map((c) => ({ ...c, secret_custody: false, credentials_present: false, authority: false })), proof: { connected: false, live: false } });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/intelligences") {
         return send(200, { intelligences: intelligences().map((i) => ({ ...i, authority: false })), proof: { executed: false, live: false } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/capabilities") {
+        return send(200, {
+          contract: publicContract(),
+          snapshot: fabricSnapshot({ env }),
+          proof: { live: false, verified: false, executed: false, authority: false },
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/compose") {
+        const raw = await readBody(req);
+        const b = ignoreClientAuthority(raw).sanitized;
+        const plan = composeProblem({
+          problem: String(b.problem || ""),
+          required: Array.isArray(b.required_capabilities) ? b.required_capabilities : [],
+          policy: "FREE_FIRST",
+          human_authorization: false,
+          mode: b.mode === "SIMULATION" || b.mode === "DRY_RUN" || b.mode === "PLAN" ? b.mode : "PLAN",
+        });
+        return send(200, {
+          plan,
+          proof: {
+            live: false,
+            executed: false,
+            verified: false,
+            client_authorization_ignored: true,
+            human_authorization_required: true,
+          },
+        });
       }
       if (req.method === "POST" && u.pathname === "/api/v1/connections/measure") {
         const b = await readBody(req);
@@ -322,18 +431,50 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         const connectors = loadRealWorldConnectors(env.ACORN_REAL_WORLD_CONNECTORS);
         const connector = connectors.find((x) => x.id === String(b.connector_id || ""));
         if (!connector) return send(404, { error: "CONNECTOR_NOT_CONFIGURED" });
+        const idempotencyKey = b.idempotency_key ? String(b.idempotency_key) : null;
+        if (idempotencyKey) {
+          const cached = await loadIdempotentResult(database, { tenantId: cid, connectorId: connector.id, idempotencyKey });
+          if (cached) {
+            return send(cached.state === "SUCCEEDED" ? 200 : (cached.state === "BLOCKED" ? 403 : 502), {
+              result: publicExternalResult(cached),
+              proof: {
+                live: false,
+                verified: false,
+                secret_custody: false,
+                human_authorization_required: true,
+                client_authorization_ignored: true,
+                idempotent_replay: true,
+                external_call_measured: cached.state === "SUCCEEDED",
+                external_effect: cached.external_effect === true,
+                measured_at: now()
+              }
+            });
+          }
+        }
         const call = buildExternalCall({
           connector,
           path: String(b.path || ""),
           method: String(b.method || "GET"),
           body: b.body ?? null,
-          human_authorized: false,
-          idempotency_key: b.idempotency_key || null
+          source: "http",
+          idempotency_key: idempotencyKey
         });
+        if (isConsequentialEffect(connector.effect) && call.state === "AUTHORIZED") {
+          call.state = "BLOCKED";
+          call.reason = "HUMAN_AUTHORIZATION_REQUIRED";
+        }
         const credential = connector.credential_env ? env[connector.credential_env] || process.env[connector.credential_env] || null : null;
         const result = await executeExternalCall(call, { credential });
-        const publicResult = { ...result };
-        delete publicResult.credential;
+        const publicResult = publicExternalResult(result);
+        if (idempotencyKey) {
+          await persistIdempotentResult(database, {
+            tenantId: cid,
+            connectorId: connector.id,
+            idempotencyKey,
+            requestHash: `${connector.id}:${String(b.method || "GET")}:${String(b.path || "")}`,
+            result: publicResult
+          });
+        }
         await persistEnterpriseEvent(database, {
           tenantId: cid,
           entityId: requestId,
@@ -347,10 +488,10 @@ export async function createLiveServer({ env = process.env, db } = {}) {
             tenantId: cid,
             claim: "external_http_observed",
             source: "external_http",
-            kind: "EXTERNAL_EXECUTION",
+            kind: "OBSERVATION",
             strength: 1,
             margin: 0.1,
-            validUntil: new Date(Date.now() + 86400000).toISOString()
+            validUntil: result.evidence?.valid_until || `${new Date().toISOString().slice(0, 10)}T23:59:59.000Z`
           }, requestId);
         }
         await persistState(database, {
@@ -369,9 +510,142 @@ export async function createLiveServer({ env = process.env, db } = {}) {
             client_authorization_ignored: true,
             external_call_measured: result.state === "SUCCEEDED",
             external_effect: result.external_effect === true,
+            verified: false,
+            live: false,
             measured_at: now()
           }
         });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/commerce/journey") {
+        const commerce = await loadTenantCommerce(database, cid);
+        const customer = await database.get("SELECT id,email,name FROM customers WHERE id=$1", [cid]);
+        return send(200, {
+          customer: { customer_id: cid, email: customer?.email || null, name: customer?.name || null },
+          ...commerce,
+          stripe: publicStripeConfig(loadStripeConfig(env)),
+          checkout_is_not_payment: true,
+          live: false
+        });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/commerce/ledger") {
+        const commerce = await loadTenantCommerce(database, cid);
+        return send(200, {
+          entries: commerce.ledger,
+          invented: false,
+          reconciliation: "OBSERVED_ONLY",
+          live: false
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/commerce/offers") {
+        const b = await readBody(req);
+        const rejected = rejectClientPrice(b);
+        if (!rejected.ok) return send(400, { error: "CLIENT_PRICE_REJECTED", attempted: rejected.attempted, live: false });
+        const prices = serverPriceTable(env);
+        const catalogId = String(b.catalog_id || "custom");
+        const priced = prices[catalogId];
+        if (!priced || priced.unit_amount == null) return send(409, { error: "SERVER_PRICE_MISSING", hold_human: true, live: false });
+        const customer = becomeCustomer({ prospect_id: cid }, { customer_id: cid, tenant_id: cid });
+        const demand = createDemand({ customer, problem: String(b.problem || b.request || "commercial demand"), audience: "BUSINESS", evidence: [{ verified: true }] });
+        const qualification = qualifyCommercialDemand({ demand, capabilities: ["general"] });
+        const project = createProject({ customer, demand, qualification });
+        const offer = createVersionedOffer({
+          catalog_id: catalogId,
+          customer,
+          project,
+          qualification,
+          currency: priced.currency,
+          unit_amount: priced.unit_amount,
+          interval: b.interval || null
+        });
+        if (!offer.ok) return send(409, { error: "OFFER_NOT_READY", offer, live: false });
+        await persistOffer(database, offer);
+        return send(201, { offer: { ...offer, kernel: undefined }, price_source: "SERVER_CATALOG", client_price_accepted: false, live: false });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/commerce/checkout") {
+        const b = await readBody(req);
+        const rejected = rejectClientPrice(b);
+        if (!rejected.ok) return send(400, { error: "CLIENT_PRICE_REJECTED", attempted: rejected.attempted, live: false });
+        const prices = serverPriceTable(env);
+        const catalogId = String(b.catalog_id || "custom");
+        const priced = prices[catalogId];
+        if (!priced || priced.unit_amount == null) return send(409, { error: "SERVER_PRICE_MISSING", hold_human: true, live: false });
+        const config = loadStripeConfig(env);
+        if (b.live === true || b.livemode === true) {
+          return send(409, { error: "LIVE_STRIPE_HOLD", state: "HOLD_HUMAN", live: false });
+        }
+        const customerRow = await database.get("SELECT id,email,name FROM customers WHERE id=$1", [cid]);
+        const customer = becomeCustomer({ prospect_id: cid }, { customer_id: cid, tenant_id: cid, contact: customerRow?.email, name: customerRow?.name });
+        const demand = createDemand({ customer, problem: String(b.problem || "checkout"), audience: "BUSINESS", evidence: [{ verified: true }] });
+        const qualification = qualifyCommercialDemand({ demand, capabilities: ["general"] });
+        const project = createProject({ customer, demand, qualification });
+        const offer = createVersionedOffer({
+          catalog_id: catalogId,
+          customer,
+          project,
+          qualification,
+          currency: priced.currency,
+          unit_amount: priced.unit_amount,
+          interval: b.mode === "subscription" ? (b.interval || "month") : null
+        });
+        const authorization = authorizeCustomerOrder({
+          offer: offer.kernel,
+          authorized: true,
+          authorized_by: "server-catalog"
+        });
+        const order = createOrder({ offer, authorization, customer });
+        await persistOffer(database, offer);
+        await persistOrder(database, order);
+        const checkout = await createCheckoutSession({
+          config,
+          offer,
+          order,
+          customer: { ...customer, email: customerRow?.email },
+          checkoutMode: b.mode === "subscription" ? "subscription" : "payment",
+          liveMode: false,
+          client: {},
+          fetchImpl: stripeFetch || globalThis.fetch
+        });
+        if (checkout.ok && checkout.session_id) {
+          await persistState(database, {
+            entity: "MONEY_CLAIM",
+            id: order.order_id,
+            tenant_id: cid,
+            state: checkout.state,
+            data: { session_id: checkout.session_id, checkout_is_not_payment: true, live: false }
+          });
+        }
+        return send(checkout.ok ? 201 : (checkout.state === "HOLD_HUMAN" ? 409 : 503), {
+          order: { order_id: order.order_id, offer_id: offer.offer_id, payment_state: checkout.state || "UNPAID" },
+          checkout,
+          checkout_is_not_payment: true,
+          live: false
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/commerce/portal") {
+        const b = await readBody(req);
+        if (b.live === true) return send(409, { error: "LIVE_STRIPE_HOLD", state: "HOLD_HUMAN", live: false });
+        const portal = await createBillingPortalSession({
+          config: loadStripeConfig(env),
+          stripeCustomerId: b.stripe_customer_id,
+          liveMode: false,
+          fetchImpl: stripeFetch || globalThis.fetch
+        });
+        return send(portal.ok ? 201 : (portal.state === "HOLD_HUMAN" ? 409 : 503), { portal, live: false });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/commerce/invoice") {
+        const b = await readBody(req);
+        const rejected = rejectClientPrice(b);
+        if (!rejected.ok) return send(400, { error: "CLIENT_PRICE_REJECTED", attempted: rejected.attempted, live: false });
+        return send(200, {
+          document: enterpriseDocument({ kind: b.kind || "invoice", customer: { customer_id: cid } }),
+          hold_human: true,
+          live_document_created: false,
+          live: false
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/commerce/usage") {
+        const b = await readBody(req);
+        return send(200, { usage: usageBasedExtension({ offer: { offer_id: b.offer_id }, units: b.units }), live: false });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/runtime") {
         const jobs = await database.all("SELECT state,COUNT(*) AS count FROM acorn_jobs WHERE tenant_id=$1 GROUP BY state", [cid]).catch(() => []);
@@ -516,7 +790,7 @@ if (isMain) {
   const { server, db, port, host } = await startLiveServer();
   console.log("ACORN LIVE listening on " + host + ":" + port);
   async function shutdown() {
-    server.close();
+    await new Promise((resolve) => server.close(() => resolve()));
     await db.close();
     process.exit(0);
   }

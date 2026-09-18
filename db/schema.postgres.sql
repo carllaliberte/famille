@@ -88,3 +88,82 @@ CREATE INDEX IF NOT EXISTS idx_acorn_state_tenant_entity ON acorn_state(tenant_i
 CREATE INDEX IF NOT EXISTS idx_acorn_events_entity ON acorn_events(tenant_id, entity_id);
 CREATE INDEX IF NOT EXISTS idx_acorn_jobs_claim ON acorn_jobs(state, created_at);
 CREATE INDEX IF NOT EXISTS idx_acorn_jobs_tenant ON acorn_jobs(tenant_id, state);
+CREATE TABLE IF NOT EXISTS acorn_idempotency(
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  connector_id TEXT NOT NULL,
+  idempotency_key TEXT NOT NULL,
+  request_hash TEXT NOT NULL,
+  result JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  UNIQUE(tenant_id, connector_id, idempotency_key)
+);
+CREATE INDEX IF NOT EXISTS idx_acorn_idempotency_tenant ON acorn_idempotency(tenant_id, connector_id);
+CREATE TABLE IF NOT EXISTS acorn_commerce_offers(
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  customer_id TEXT NOT NULL,
+  project_id TEXT,
+  catalog_id TEXT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1,
+  currency TEXT NOT NULL,
+  unit_amount INTEGER,
+  price_source TEXT NOT NULL DEFAULT 'SERVER_CATALOG',
+  terms TEXT NOT NULL,
+  usage_rights JSONB NOT NULL DEFAULT '[]'::jsonb,
+  data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE IF NOT EXISTS acorn_commerce_orders(
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  customer_id TEXT NOT NULL,
+  project_id TEXT,
+  offer_id TEXT NOT NULL,
+  offer_version INTEGER,
+  currency TEXT,
+  unit_amount INTEGER,
+  payment_state TEXT NOT NULL DEFAULT 'UNPAID',
+  stage TEXT NOT NULL DEFAULT 'ORDER',
+  data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE IF NOT EXISTS acorn_stripe_events(
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT,
+  type TEXT NOT NULL,
+  class TEXT NOT NULL,
+  livemode INTEGER NOT NULL DEFAULT 0,
+  signature_verified INTEGER NOT NULL DEFAULT 0,
+  processing_state TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  result JSONB,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE IF NOT EXISTS acorn_economic_entries(
+  id TEXT PRIMARY KEY,
+  tenant_id TEXT,
+  customer_id TEXT,
+  project_id TEXT,
+  order_id TEXT,
+  offer_id TEXT,
+  stripe_event_id TEXT,
+  stripe_object_id TEXT,
+  currency TEXT,
+  gross INTEGER,
+  fee INTEGER,
+  net INTEGER,
+  tax INTEGER,
+  status TEXT NOT NULL,
+  reconciliation TEXT NOT NULL DEFAULT 'UNRECONCILED',
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_commerce_offers_tenant ON acorn_commerce_offers(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_commerce_orders_tenant ON acorn_commerce_orders(tenant_id, payment_state);
+CREATE INDEX IF NOT EXISTS idx_stripe_events_tenant ON acorn_stripe_events(tenant_id, processing_state);
+CREATE INDEX IF NOT EXISTS idx_economic_entries_tenant ON acorn_economic_entries(tenant_id, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_economic_entries_event ON acorn_economic_entries(stripe_event_id) WHERE stripe_event_id IS NOT NULL;
