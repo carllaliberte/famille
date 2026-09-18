@@ -81,7 +81,7 @@ export function canonicalWorkFromRuntime(runtime) {
       execution_kind: text(row.execution_kind || row.executor || "deterministic"),
       task: row.task && typeof row.task === "object" ? row.task : null,
     });
-  });
+  };
 
   for (const row of runtime?.unified?.evolution?.next_work || []) push(row, "evolution");
   for (const row of runtime?.unified?.learning?.next || []) push(row, "learning");
