@@ -1,0 +1,10 @@
+import test from "node:test";import assert from "node:assert/strict";
+import {createKnowledge,addEvidence,verifyKnowledge,shareKnowledge,mergeKnowledge,routeForKnowledge,learnGlobally,assertCollectiveKnowledgeConstitution} from "../scripts/acorn-collective-knowledge-fluidity.mjs";
+test("knowledge keeps provenance",()=>{const k=createKnowledge({subject:"routing",claim:"native path is faster",evidence:["m1"],source:"node-a"});assert.equal(k.provenance.source,"node-a");});
+test("evidence upgrades observation",()=>{const k=createKnowledge({subject:"x",claim:"c"});assert.equal(addEvidence(k,{evidence:"e"}).state,"OBSERVED");});
+test("verification is temporal and bounded",()=>{const k=verifyKnowledge(createKnowledge({subject:"x",claim:"c"}),{confidence:.9});assert.equal(k.state,"VERIFIED");assert.ok(k.verified_at);});
+test("untrusted knowledge cannot spread",()=>{const k=createKnowledge({subject:"x",claim:"c"});assert.equal(shareKnowledge(k,{to:["b"]}).state,"BLOCKED");});
+test("knowledge can be fused without erasing conflict",()=>{const a=verifyKnowledge(createKnowledge({subject:"x",claim:"a",evidence:["1"]}));const b=verifyKnowledge(createKnowledge({subject:"x",claim:"b",evidence:["2"]}));const m=mergeKnowledge({subject:"x",items:[a,b]});assert.equal(m.conflict,true);});
+test("verified knowledge routes with provenance",()=>{const k=verifyKnowledge(createKnowledge({subject:"x",claim:"c"}));const r=routeForKnowledge({knowledge:k,participants:[{id:"p",scope:"LOCAL"}]});assert.equal(r[0].knowledge_id,k.id);});
+test("global learning deduplicates verified knowledge",()=>{const k=verifyKnowledge(createKnowledge({subject:"x",claim:"c"}));assert.equal(learnGlobally({local_results:[k,k]}).reusable_count,1);});
+test("constitution protects truth and authority",()=>{assert.equal(assertCollectiveKnowledgeConstitution(),true);assert.throws(()=>assertCollectiveKnowledgeConstitution({breaker_touched:true}),/BREAKER/);assert.throws(()=>assertCollectiveKnowledgeConstitution({undated_verification:true}),/TEMPORAL/);});
