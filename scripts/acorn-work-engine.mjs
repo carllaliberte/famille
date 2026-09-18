@@ -167,7 +167,7 @@ export function workState({ previous = {}, discovered = [] } = {}) {
     const prior = old.get(row.id);
     return {
       ...row,
-      state: prior?.state || row.state,
+      state: prior?.state === "COMPLETED" && row.repeatable !== false ? row.state : (prior?.state || row.state),
       attempts: Number(prior?.attempts || 0),
       cycle_count: prior?.state === "COMPLETED" && row.repeatable !== false ? Number(prior?.cycle_count || 0) + 1 : Number(prior?.cycle_count || 0),
       optimization: { basis: Array.isArray(previous.history) && previous.history.length ? "measured_history" : "initial_measurement" },
