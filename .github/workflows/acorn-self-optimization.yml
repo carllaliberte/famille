@@ -1,0 +1,18 @@
+name: ACORN Self Optimization
+on:
+  workflow_dispatch:
+  pull_request:
+  schedule:
+    - cron: '*/30 * * * *'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test test/acorn-self-optimization.test.js
+      - run: node -e "import('./scripts/acorn-self-optimization.mjs').then(m=>m.assertSelfOptimizationConstitution())"
