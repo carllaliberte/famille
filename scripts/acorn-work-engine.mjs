@@ -26,6 +26,7 @@ import { privacyPolicy, privacyAudit } from "./acorn-privacy-process.mjs";
 import { gatewayPolicy, buildDeveloperConnectManifest } from "./acorn-developer-gateway.mjs";
 import { runMarketCycle } from "./acorn-market-engine.mjs";
 import { contributionSettlementReadiness, economyPolicy } from "./acorn-contribution-economy.mjs";
+import { revenuePolicy, measureRevenueEconomics, chooseRevenueOpportunities, consolidateBilling, consolidateCryptoSettlement, buildTaxReadyLedger } from "./acorn-revenue-maximizer.mjs";
 import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
@@ -91,6 +92,7 @@ export function canonicalWorkFromRuntime(runtime) {
   push({ id:"developer-gateway-sweep", subject:"keep universal developer onboarding and connection readiness measured", information_gain:1, capability_gain:1, risk_reduction:0.8, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"developer-gateway" }, "developer");
   push({ id:"market-engine-cycle", subject:"detect demand, diversify verified offers, and prepare measured commercial collection", information_gain:1, capability_gain:1, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.08, execution_kind:"market" }, "market");
   push({ id:"contribution-economy-cycle", subject:"allocate measured contribution rewards only through verified settlement rails", information_gain:0.8, capability_gain:0.8, risk_reduction:0.9, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"contribution-economy" }, "economy");
+  push({ id:"revenue-maximization-cycle", subject:"maximize verified net revenue while preserving Acorn essence and open access", information_gain:1, capability_gain:1, risk_reduction:0.8, uncertainty:0.9, reversibility:1, cost:0.06, execution_kind:"revenue-maximization" }, "revenue");
 
   // Compute is part of the organism metabolism: execute every currently
   // executable safe resource, while keeping remote/paid/unknown work gated.
@@ -206,6 +208,15 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
     const readiness=contributionSettlementReadiness({paymentRail:task.paymentRail||null,destination:task.destination||null});
     return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"contribution-economy",economy:{policy:economyPolicy(),settlement:readiness},stdout_tail:"",stderr_tail:""};
   }
+  if (kind === "revenue-maximization") {
+    const started=Date.now();
+    const economics=measureRevenueEconomics(task.economics||{});
+    const opportunities=chooseRevenueOpportunities(task.opportunities||[],{max:Number(task.max_opportunities||10)});
+    const bill=consolidateBilling({customer_id:task.customer_id||null,period:task.period||null,events:task.billing_events||[],currency:task.currency||"USD",settlement_threshold:task.settlement_threshold||0});
+    const crypto=consolidateCryptoSettlement({customer_id:task.customer_id||null,period:task.period||null,invoices:task.crypto_invoices||[],rail:task.payment_rail||null,minimum_threshold:task.crypto_threshold||0});
+    const tax=buildTaxReadyLedger({customer_id:task.customer_id||null,period:task.period||null,invoices:task.billing_events||[],settlements:task.crypto_invoices||[],costs:task.costs||[]});
+    return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"revenue-maximizer",revenue:{policy:revenuePolicy(),economics,opportunities,billing:bill,crypto_settlement:crypto,tax_ready:tax},stdout_tail:"",stderr_tail:""};
+  }
   if (kind === "connection-sweep") {
     const started = Date.now();
     const result = await runConnectionSweep({ env, now: new Date().toISOString() });
@@ -279,6 +290,7 @@ function defaultTaskFor(row, env = process.env) {
   if (row.execution_kind === "developer-gateway") return { ...row, execution_kind:"developer-gateway", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "market") return { ...row, execution_kind:"market", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "contribution-economy") return { ...row, execution_kind:"contribution-economy", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "revenue-maximization") return { ...row, execution_kind:"revenue-maximization", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "connection-sweep") {
     return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
