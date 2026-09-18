@@ -75,10 +75,11 @@ jobs:
               "node --check scripts/acorn-resource-governor.mjs
               node --check scripts/acorn-free-first-cloud-fabric.mjs
               node --check scripts/acorn-cloud-runner.mjs
-              node --check scripts/acorn-economic-optimizer.mjs",
+              node --check scripts/acorn-economic-optimizer.mjs
+              node --check scripts/acorn-revenue-maximization.mjs",
               "node --check scripts/acorn-work-engine.mjs",
               "node --check scripts/acorn-continuous-runtime.mjs",
-              "node --test test/acorn-continuous-work-engine.test.js test/acorn-cognitive-run-triage.test.js test/acorn-free-first-cloud-fabric.test.js test/acorn-cloud-runner.test.js test/acorn-economic-optimizer.test.js"
+              "node --test test/acorn-continuous-work-engine.test.js test/acorn-cognitive-run-triage.test.js test/acorn-free-first-cloud-fabric.test.js test/acorn-cloud-runner.test.js test/acorn-economic-optimizer.test.js test/acorn-revenue-maximization.test.js"
             ].join(" && ")],
             maxRetries: 2,
             timeoutMs: 120_000,
