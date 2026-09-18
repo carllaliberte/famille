@@ -44,6 +44,7 @@ export const SELF_BUILD_LOOP = Object.freeze([
   "VERIFY",
   "REGISTER",
   "USE",
+  "LEARN",
 ]);
 
 export const BUILD_LIFECYCLE = Object.freeze([
@@ -117,6 +118,21 @@ export const FORBIDDEN_SELF_CLAIMS = Object.freeze([
   "PRODUCTION_WRITTEN",
 ]);
 
+export const AUTONOMY_LEVELS = Object.freeze([
+  { code: "L0", name: "OBSERVE", may: ["observe", "read"] },
+  { code: "L1", name: "PROPOSE", may: ["observe", "read", "propose"] },
+  { code: "L2", name: "BUILD_IN_SANDBOX", may: ["observe", "read", "propose", "build_sandbox"] },
+  { code: "L3", name: "TEST", may: ["observe", "read", "propose", "build_sandbox", "test"] },
+  { code: "L4", name: "MEASURE", may: ["observe", "read", "propose", "build_sandbox", "test", "measure"] },
+  { code: "L5", name: "PREPARE_DEPLOYMENT", may: ["observe", "read", "propose", "prepare_deployment"], human_required: true },
+  { code: "L6", name: "EXECUTE_AUTHORIZED_ACTION", may: ["execute_authorized"], human_required: true, authorized_required: true },
+  { code: "L7", name: "HUMAN_APPROVAL_REQUIRED", may: [], human_required: true, ceiling: true },
+]);
+
+export const AUTONOMY_CEILING_WITHOUT_CARL = "L2";
+
+export const WORK_CLASS = Object.freeze(["IMPLEMENT_NOW", "FOUNDATION_NOW", "FUTURE", "HUMAN_HOLD"]);
+
 const HOLD_PATTERN = /\b(secret|credential|token|password|wrangler|merge|qpu|photon|quantum-node|payment|spend|irreversible)\b/i;
 
 const extensions = new Map();
@@ -178,6 +194,8 @@ export function selfBuildConstitution() {
     auto_merge: false,
     auto_authorize: false,
     production_write: false,
+    autonomy_ceiling_without_carl: AUTONOMY_CEILING_WITHOUT_CARL,
+    autonomy_cannot_self_escalate: true,
     live: false,
     authority: "carl",
     merge: "carl",
@@ -261,6 +279,264 @@ export function shouldStop(input = {}) {
     authority: "carl",
     can_build: reason !== "SECRET_REQUIRED" && reason !== "PROTECTED_MODIFICATION" && reason !== "GOVERNANCE_CONFLICT" && reason !== "IRREVERSIBLE_UNAUTHORIZED",
   };
+}
+
+function autonomyIndex(code) {
+  return AUTONOMY_LEVELS.findIndex((row) => row.code === String(code || "").toUpperCase());
+}
+
+export function autonomyLevel(code = "L1") {
+  const row = AUTONOMY_LEVELS[Math.max(0, autonomyIndex(code))] || AUTONOMY_LEVELS[1];
+  return Object.freeze({
+    ...row,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+    ceiling_without_carl: AUTONOMY_CEILING_WITHOUT_CARL,
+  });
+}
+
+export function assertAutonomy(action, { level = "L1", authorized = false } = {}) {
+  const current = autonomyLevel(level);
+  const act = text(action, "observe");
+  const allowed = current.may.includes(act);
+  if (current.authorized_required && authorized !== true) {
+    return { allowed: false, stop: true, human_hold: true, reason: "AUTHORITY_ABSENT", status: "HUMAN_HOLD", level: current.code, live: false, auto_merge: false, authority: "carl" };
+  }
+  if (current.human_required && authorized !== true) {
+    return { allowed: false, stop: true, human_hold: true, reason: "HUMAN_APPROVAL_REQUIRED", status: "HUMAN_HOLD", level: current.code, live: false, auto_merge: false, authority: "carl" };
+  }
+  if (!allowed) {
+    return { allowed: false, stop: true, human_hold: true, reason: "AUTONOMY_INSUFFICIENT", status: "HUMAN_HOLD", level: current.code, live: false, auto_merge: false, authority: "carl" };
+  }
+  return { allowed: true, stop: false, human_hold: false, reason: null, level: current.code, live: false, auto_merge: false, authority: "carl" };
+}
+
+export function escalateAutonomy({ from = "L1", to, authorized = false, actor = "acorn" } = {}) {
+  const start = autonomyIndex(from);
+  const target = autonomyIndex(to);
+  const ceiling = autonomyIndex(AUTONOMY_CEILING_WITHOUT_CARL);
+  if (start < 0 || target < 0) {
+    return { granted: false, status: "HUMAN_HOLD", reason: "UNKNOWN_AUTONOMY_LEVEL", from, to: from, live: false, auto_merge: false, authority: "carl" };
+  }
+  if (target <= start) {
+    return { granted: true, status: "UNCHANGED", from, to: AUTONOMY_LEVELS[start].code, live: false, auto_merge: false, authority: "carl" };
+  }
+  if (target > start + 1) {
+    return { granted: false, status: "HUMAN_HOLD", reason: "AUTONOMY_SKIP_FORBIDDEN", from, to: AUTONOMY_LEVELS[start].code, live: false, auto_merge: false, authority: "carl" };
+  }
+  if (target > ceiling && authorized !== true) {
+    return { granted: false, status: "HUMAN_HOLD", reason: "AUTONOMY_CANNOT_SELF_ESCALATE", from, to: AUTONOMY_LEVELS[start].code, actor, live: false, auto_merge: false, authority: "carl" };
+  }
+  if (AUTONOMY_LEVELS[target].code === "L6" || AUTONOMY_LEVELS[target].code === "L7") {
+    return { granted: false, status: "HUMAN_HOLD", reason: "HUMAN_APPROVAL_REQUIRED", from, to: AUTONOMY_LEVELS[start].code, live: false, auto_merge: false, authority: "carl" };
+  }
+  if (authorized !== true) {
+    return { granted: false, status: "HUMAN_HOLD", reason: "AUTONOMY_CANNOT_SELF_ESCALATE", from, to: AUTONOMY_LEVELS[start].code, live: false, auto_merge: false, authority: "carl" };
+  }
+  return { granted: true, status: "GRANTED_BY_HUMAN", from, to: AUTONOMY_LEVELS[target].code, live: false, auto_merge: false, authority: "carl" };
+}
+
+export function learnFromLoop({
+  task = "",
+  gaps = [],
+  proposals = [],
+  used = false,
+} = {}) {
+  return Object.freeze({
+    recorded: true,
+    promoted: false,
+    replaced: false,
+    used: used === true,
+    authorized: false,
+    knowledge: "OBSERVED",
+    task: text(task) || null,
+    gaps: list(gaps),
+    proposals: list(proposals),
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+    learning_equals_authority: false,
+  });
+}
+
+export function proposeRepair({
+  failure = "",
+  failure_class = null,
+  attempt = 0,
+} = {}) {
+  const hold = shouldStop({ task: failure, capability: failure_class || failure });
+  if (hold.stop) {
+    return {
+      status: "HUMAN_HOLD",
+      reason: hold.reason,
+      diagnose: true,
+      deploy: false,
+      auto_merge: false,
+      live: false,
+      authority: "carl",
+    };
+  }
+  return {
+    version: SELF_BUILD_VERSION,
+    status: "PROPOSED",
+    lifecycle: "PROPOSED",
+    failure: text(failure) || null,
+    failure_class: text(failure_class, "UNKNOWN"),
+    attempt: Number(attempt) || 0,
+    diagnose: true,
+    build: true,
+    test: true,
+    measure: true,
+    deploy: false,
+    silent_success: false,
+    auto_merge: false,
+    live: false,
+    authority: "carl",
+    next: "HUMAN_HOLD_BEFORE_DEPLOY",
+  };
+}
+
+export function proposeImprovement({
+  capability = "",
+  observation = "",
+  current_is_critical = false,
+} = {}) {
+  if (current_is_critical) {
+    return {
+      status: "HUMAN_HOLD",
+      reason: "CRITICAL_CAPABILITY_CANNOT_BE_REPLACED_SILENTLY",
+      replaced: false,
+      promoted: false,
+      live: false,
+      auto_merge: false,
+      authority: "carl",
+    };
+  }
+  return {
+    version: SELF_BUILD_VERSION,
+    status: "PROPOSED",
+    lifecycle: "PROPOSED",
+    capability: text(capability) || null,
+    observation: text(observation) || null,
+    replaced: false,
+    promoted: false,
+    experimental: true,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+    next: "EXPERIMENT_THEN_MEASURE_THEN_PROPOSE_PROMOTION",
+  };
+}
+
+export function productCandidate({
+  repeats = 0,
+  problem = "",
+  solution = "",
+} = {}) {
+  const n = Number(repeats) || 0;
+  if (n < 2) {
+    return {
+      status: "INSUFFICIENT_EVIDENCE",
+      product: false,
+      candidate: false,
+      repeats: n,
+      live: false,
+      auto_merge: false,
+      authority: "carl",
+    };
+  }
+  return {
+    version: SELF_BUILD_VERSION,
+    status: "PRODUCT_CANDIDATE",
+    product: false,
+    candidate: true,
+    repeats: n,
+    problem: text(problem) || null,
+    solution: text(solution) || null,
+    economic_value_measured: false,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+    product_candidate_neq_product: true,
+  };
+}
+
+export function classifyWork(name) {
+  const now = new Set([
+    "capability-gap", "self-build-loop", "lifecycle", "falsify", "measure",
+    "extension-admission", "autonomy-levels", "learn", "repair-proposal",
+    "tenant-isolation", "evidence", "honest-health",
+  ]);
+  const foundation = new Set([
+    "webhooks", "m2m-auth", "sdk-packaging", "digital-twin-full",
+    "learning-router", "product-generalization", "billing-adapter",
+  ]);
+  const future = new Set(["payment-capture", "live-claim", "qkd", "quantum", "marketplace"]);
+  const hold = new Set(["merge", "secret-custody", "authorized-external-effect", "render-receipt", "self-authorize"]);
+  const key = text(name).toLowerCase();
+  if (now.has(key)) return "IMPLEMENT_NOW";
+  if (foundation.has(key)) return "FOUNDATION_NOW";
+  if (future.has(key)) return "FUTURE";
+  if (hold.has(key)) return "HUMAN_HOLD";
+  return "FOUNDATION_NOW";
+}
+
+export function howAcornBuilds() {
+  return Object.freeze({
+    version: SELF_BUILD_VERSION,
+    purpose: "Transfer construction capability, never human authority.",
+    steps: [
+      { n: 1, name: "understand", entry: "selfBuildConstitution + howAcornBuilds" },
+      { n: 2, name: "discover", entry: "catalogTools + capabilityGap + admitExtension" },
+      { n: 3, name: "detect_gap", entry: "detectGaps" },
+      { n: 4, name: "design", entry: "proposeBuild" },
+      { n: 5, name: "build", entry: "runSelfBuildLoop builder in BUILD zone" },
+      { n: 6, name: "test", entry: "runSelfBuildLoop tester" },
+      { n: 7, name: "falsify", entry: "falsifyCapability" },
+      { n: 8, name: "measure", entry: "measureCapability" },
+      { n: 9, name: "evidence", entry: "registerEvidence" },
+      { n: 10, name: "register", entry: "registerQualified" },
+      { n: 11, name: "use", entry: "USE requires human authorization; READY ≠ AUTHORIZED" },
+      { n: 12, name: "limits", entry: "shouldStop + assertAutonomy + notYetImplemented" },
+      { n: 13, name: "again", entry: "LEARN records observations and does not promote" },
+    ],
+    entrypoints: {
+      module: "scripts/acorn-self-build.mjs",
+      schema: "schema/acorn-self-build.v0.json",
+      tests: "test/acorn-self-build.test.js",
+      example: "examples/self-build-extension.mjs",
+      http: ["/api/v1/self-build", "/api/v1/self-build/observe", "/api/v1/self-build/repair"],
+      reuse: [
+        "scripts/tool-resolve.mjs",
+        "scripts/acorn-evidence-registry.mjs",
+        "scripts/acorn-constitution.mjs",
+        "scripts/acorn-capability-registry.mjs",
+        "scripts/self-heal.mjs",
+        "scripts/acorn-self-correction.mjs",
+      ],
+    },
+    autonomy: {
+      default: "L1",
+      sandbox: "L2",
+      ceiling_without_carl: AUTONOMY_CEILING_WITHOUT_CARL,
+      l6_l7: "HUMAN_HOLD",
+    },
+    cannot: [
+      "merge",
+      "self-authorize",
+      "mint LIVE",
+      "write production",
+      "modify secrets",
+      "modify governance to gain power",
+      "declare a human act done",
+      "treat simulation as reality",
+    ],
+    single_model_dependency: false,
+    live: false,
+    auto_merge: false,
+    authority: "carl",
+  });
 }
 
 function matchKnown(name, known = []) {
@@ -848,17 +1124,37 @@ export async function runSelfBuildLoop({
   timeout_ms = 8000,
   authorized = false,
   depends_on = {},
+  autonomy = "L1",
 } = {}) {
   const constitution = selfBuildConstitution();
   const z = SAFE_ZONES.includes(zone) ? zone : "BUILD";
+  const requestedAutonomy = typeof builder === "function" ? "L2" : autonomy;
+  const gate = assertAutonomy(typeof builder === "function" ? "build_sandbox" : "propose", {
+    level: requestedAutonomy,
+    authorized: false,
+  });
   const phases = [];
   const mark = (phase, extra = {}) => {
     phases.push({ phase, at: iso(), ...extra });
     return extra;
   };
 
-  mark("OBSERVE", { task: text(task) || null });
+  mark("OBSERVE", { task: text(task) || null, autonomy: requestedAutonomy });
   mark("UNDERSTAND", { required: list(required) });
+
+  if (gate.stop) {
+    return {
+      version: SELF_BUILD_VERSION,
+      status: "HUMAN_HOLD",
+      reason: gate.reason,
+      phases,
+      zone: z,
+      used: false,
+      live: false,
+      auto_merge: false,
+      authority: "carl",
+    };
+  }
 
   if (z === "PRODUCTION") {
     const hold = { status: "HUMAN_HOLD", reason: "PRODUCTION_WRITE_FORBIDDEN", phases, live: false, auto_merge: false, authority: "carl" };
@@ -1007,16 +1303,25 @@ export async function runSelfBuildLoop({
 
   const sep = assertCapabilityAuthoritySeparation({ capability: 100, authority: 0, actor: "self-build" });
   const used = false;
+  const learned = learnFromLoop({
+    task,
+    gaps: detection.gaps.map((g) => g.capability),
+    proposals: proposals.map((row) => row.record?.lifecycle || row.record?.status || "UNKNOWN"),
+    used,
+  });
+  mark("LEARN", { recorded: true, promoted: false, authorized: false });
   return {
     version: SELF_BUILD_VERSION,
     status: detection.gaps.length ? (proposals.some((row) => row.record?.lifecycle === "VERIFIED") ? "PROPOSED" : "GAP_DETECTED") : "NO_GAP",
     detection,
     proposals,
     phases,
+    learned,
     zone: z,
     used,
     authorized: false,
     human_authorized: authorized === true,
+    autonomy: autonomyLevel(requestedAutonomy),
     capability_is_not_authority: sep.capability_is_not_authority,
     constitution,
     live: false,
@@ -1051,6 +1356,9 @@ export function notYetImplemented() {
     "recursive unbounded builds",
     "secret custody",
     "constitutional modification",
+    "L6 authorized real-world execution",
+    "L7 human approval remaining Carl",
+    "automatic promotion of an improvement",
   ]);
 }
 
@@ -1066,6 +1374,12 @@ export function implementedNow() {
     "dependency cycle and depth limits",
     "HUMAN_HOLD stop conditions",
     "extension admission without core modification",
+    "autonomy levels L0-L7 with no self-escalation",
+    "LEARN without promotion",
+    "repair proposal without deploy",
+    "improvement proposal without silent replace",
+    "product candidate is not a product",
+    "howAcornBuilds transfer contract",
   ]);
 }
 
@@ -1087,6 +1401,9 @@ if (isMain()) {
     status: result.status,
     gaps: result.detection.gaps.map((g) => g.capability),
     found: result.detection.found.map((g) => g.capability),
+    learned: result.learned,
+    autonomy: result.autonomy,
+    how: howAcornBuilds().steps.map((s) => s.name),
     live: result.live,
     auto_merge: result.auto_merge,
     authority: result.authority,
