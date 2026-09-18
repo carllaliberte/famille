@@ -1,0 +1,9 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {createContext,rankContext,compressContext,detectContextGaps,updateContext,contextHandoff,assertContextConstitution} from "../scripts/acorn-contextual-cortex.mjs";
+test("context assembles distributed signals",()=>{const c=createContext({goal:"g",knowledge:[{confidence:.9}],capabilities:[{reliability:.8}],signals:["s"]});assert.equal(c.state,"ASSEMBLED");});
+test("context ranks useful evidence",()=>{const c=createContext({goal:"g",knowledge:[{confidence:.2},{confidence:.9}]});assert.equal(rankContext({context:c})[0].item.confidence,.9);});
+test("context compresses without losing traceability",()=>{const c=compressContext({context:createContext({goal:"g",knowledge:Array.from({length:30},(_,i)=>({confidence:i/30}))}),max_items:10});assert.equal(c.selected_context.length,10);assert.equal(c.dropped_count,20);});
+test("context gaps stay explicit",()=>{const c=createContext({goal:"g"});assert.equal(detectContextGaps({context:c,required:["missing"]})[0].state,"UNKNOWN");});
+test("context evolves from observations",()=>{const c=updateContext({context:createContext({goal:"g"}),observations:["o"],measurements:["m"]});assert.equal(c.signals.length,1);assert.equal(c.outcomes.length,1);});
+test("handoff preserves constraints and gaps",()=>{const c=compressContext({context:createContext({goal:"g",constraints:["c"]})});assert.equal(contextHandoff({context:c}).constraints[0],"c");});
+test("context cannot grant authority",()=>{assert.equal(assertContextConstitution(),true);assert.throws(()=>assertContextConstitution({breaker_touched:true}),/BREAKER/);assert.throws(()=>assertContextConstitution({authority_transfer:true}),/AUTHORITY/);assert.throws(()=>assertContextConstitution({hidden_context:true}),/TRACEABLE/);});
