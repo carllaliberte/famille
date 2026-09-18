@@ -42,7 +42,7 @@ export function classifyRun({ exitCode = 0, reason = "", stderr = "", checks = {
   if (SECURITY.has(String(reason).toUpperCase()) || [...SECURITY].some((x) => haystack.includes(x))) {
     return RUN_CLASSES.SECURITY;
   }
-  if (HUMAN.has(String(reason).toUpperCase()) || [...HUMAN].some((x) => haystack.includes(x)) || haystack.includes("WAITING_HUMAN") || /\\bHOLD\\b/.test(haystack)) {
+  if (HUMAN.has(String(reason).toUpperCase()) || [...HUMAN].some((x) => haystack.includes(x)) || haystack.includes("WAITING_HUMAN") || /\bHOLD\b/.test(haystack)) {
     return RUN_CLASSES.WAITING_HUMAN;
   }
   if (Number(exitCode) === 0) return RUN_CLASSES.SUCCESS;
