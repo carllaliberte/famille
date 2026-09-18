@@ -1,0 +1,8 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {buildCortexCycle,advanceCortexCycle,detectCortexGaps,chooseNextCortexWork,cortexHealth,assertContinuousCortexConstitution} from "../scripts/acorn-continuous-cortex-conductor.mjs";
+test("one conductor joins all three fabrics",()=>{const c=buildCortexCycle({goal:"g"});assert.equal(c.contract,"acorn.continuous-cortex-conductor.v1");assert.equal(c.authority,false);});
+test("cycle advances through measured stages",()=>{const c=buildCortexCycle({});const n=advanceCortexCycle(c,{stage:"MEASURE",measurement:{ok:true},evidence:["e"]});assert.equal(n.state,"MEASURE");});
+test("cortex detects knowledge and outcome gaps",()=>{const g=detectCortexGaps({knowledge:[{id:"k",evidence:[]}],outcomes:[{id:"o",state:"PROPOSED"}]});assert.deepEqual(g.missing_evidence,["k"]);assert.deepEqual(g.unmeasured_outcomes,["o"]);});
+test("cortex chooses high-value next work",()=>{const p=chooseNextCortexWork({gaps:{capability_gaps:["c"],unmeasured_outcomes:["o"],missing_evidence:["e"]}});assert.equal(p.work[0].kind,"OUTCOME_MEASUREMENT");assert.equal(p.requires_authorization,true);});
+test("healthy cortex has no known gaps",()=>{assert.equal(cortexHealth({cycle:{state:"MEASURED"},gaps:{missing_evidence:[],capability_gaps:[],unmeasured_outcomes:[]}}).state,"HEALTHY");});
+test("all constitutions remain active",()=>{assert.equal(assertContinuousCortexConstitution({breaker_touched:false,authority_transfer:false,auto_merge:false,auto_spend:false,auto_signature:false}),true);assert.throws(()=>assertContinuousCortexConstitution({breaker_touched:true}),/BREAKER/);});
