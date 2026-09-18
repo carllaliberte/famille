@@ -47,14 +47,25 @@ export function interposeExternalEffect(input = {}) {
     reversibility = 'UNKNOWN', epistemic = 'UNKNOWN', evidence = {}, risk = {},
   } = input;
 
-  if (!capability_id) return blocked('MISSING_EFFECT_IDENTITY', capability_id, operation);
+  const resolvedCapabilityId = capability_id || input.capability?.id || null;
+  if (!resolvedCapabilityId) return blocked('MISSING_EFFECT_IDENTITY', resolvedCapabilityId, operation);
   if (!OBSERVABILITY.has(observability)) return blocked('INVALID_OBSERVABILITY', capability_id, operation);
   if (!CONTROL.has(control)) return blocked('INVALID_CONTROL', capability_id, operation);
   if (!REVERSIBILITY.has(reversibility)) return blocked('INVALID_REVERSIBILITY', capability_id, operation);
 
   const result = authorizeEffectCore({
     actor: input.actor || 'acorn.effect-governor',
-    capability: { id: capability_id, kind, resource, provider, context, observability, control, reversibility, epistemic },
+    capability: {
+      id: resolvedCapabilityId,
+      kind: input.capability?.kind || kind,
+      resource: input.capability?.resource || resource,
+      provider: input.capability?.provider || provider,
+      context: input.capability?.context || context,
+      observability: input.capability?.observability || observability,
+      control: input.capability?.control || control,
+      reversibility: input.capability?.reversibility || reversibility,
+      epistemic: input.capability?.epistemic || epistemic,
+    },
     operation,
     evidence: { measured: true, ...evidence },
     risk,
