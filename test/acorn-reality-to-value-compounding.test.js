@@ -1,0 +1,12 @@
+import test from"node:test";import assert from"node:assert/strict";
+import{STAGES,ASSETS,qualifyReality,deriveAssets,createOpportunity,composeNextUse,benchmarkCompounding,closeCompoundingLoop,assertCompoundingConstitution}from"../scripts/acorn-reality-to-value-compounding.mjs";
+test("constitution",()=>assert.equal(assertCompoundingConstitution(),true));
+test("complete loop",()=>assert.ok(STAGES.includes("OUTCOME")&&STAGES.includes("OPPORTUNITY")&&STAGES.includes("REUSE")));
+test("asset space",()=>assert.ok(ASSETS.length>=8));
+test("unverified reality cannot compound",()=>assert.equal(qualifyReality({verified:false,measured:true,evidence:["x"]}).state,"NOT_QUALIFIED"));
+test("verified measured reality qualifies",()=>assert.equal(qualifyReality({id:"o",verified:true,measured:true,evidence:["e"]}).state,"QUALIFIED_REALITY"));
+test("verified outcome derives reusable assets",()=>assert.equal(deriveAssets({id:"o",verified:true,measured:true,evidence:["e"]}).state,"REUSABLE_ASSETS"));
+test("opportunity remains exploratory without verified demand",()=>assert.equal(createOpportunity({state:"REUSABLE_ASSETS",provenance:"o"},{verified:false}).state,"EXPLORATORY"));
+test("composition detects gaps",()=>assert.equal(composeNextUse([{capabilities:["a"]}],["a","b"]).state,"GAP_DETECTED"));
+test("benchmark is scoped",()=>assert.equal(benchmarkCompounding([{verified:true,measured:true,evidence:["e"],q:1}],{q:1}).global_optimum,false));
+test("loop preserves human authority",()=>assert.equal(closeCompoundingLoop({}).authority,"HUMAN"));
