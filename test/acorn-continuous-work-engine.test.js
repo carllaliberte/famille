@@ -50,7 +50,7 @@ test("work discovery is unified and rankable", () => {
     },
   };
   const rows = canonicalWorkFromRuntime(runtime);
-  assert.equal(rows.length, 15);
+  assert.equal(rows.length, 16);
   assert.ok(rows.some((row) => row.execution_kind === "connection-sweep"));
   assert.ok(rows.some((row) => row.execution_kind === "compute-sweep"));
   assert.ok(rows.some((row) => row.execution_kind === "auto-evolution"));
@@ -164,11 +164,13 @@ test("continuous work includes universal access, market, contribution and revenu
   assert.ok(kinds.has("contribution-economy"));
   assert.ok(kinds.has("revenue-maximization"));
   assert.ok(kinds.has("universal-project-value"));
+  assert.ok(kinds.has("commerce"));
   const gateway = rows.find((row) => row.execution_kind === "developer-gateway");
   const market = rows.find((row) => row.execution_kind === "market");
   const economy = rows.find((row) => row.execution_kind === "contribution-economy");
   const revenue = rows.find((row) => row.execution_kind === "revenue-maximization");
   const projectValue = rows.find((row) => row.execution_kind === "universal-project-value");
+  const commerce = rows.find((row) => row.execution_kind === "commerce");
   const g = await executeWorkTask({ root: process.cwd(), task: gateway, env: process.env });
   assert.equal(g.executor, "developer-gateway-fabric");
   assert.equal(g.developer.manifest.live, false);
@@ -186,4 +188,8 @@ test("continuous work includes universal access, market, contribution and revenu
   assert.equal(pv.executor, "universal-project-value-engine");
   assert.equal(pv.project_value.policy.auto_contract, false);
   assert.equal(pv.project_value.live, false);
+  const c = await executeWorkTask({ root: process.cwd(), task: commerce, env: process.env });
+  assert.equal(c.executor, "commercial-runtime");
+  assert.equal(c.commerce.live, false);
+  assert.equal(c.commerce.policy.checkout_is_not_payment, true);
 });

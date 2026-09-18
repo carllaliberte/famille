@@ -158,11 +158,11 @@ test("paired loader keeps PR source_sha even when it differs from Actions headSh
 test("record-only readback still loads when source_sha differs from run headSha", () => {
   const ranking = rankingA();
   const record = recordFor(ranking, "pr-head");
-  const dir = join(process.cwd(), ".measurement-record-readback");
-  mkdirSync(dir, { recursive: true });
   const run = (_cmd, args) => {
     if (args[1] === "list") return JSON.stringify([{ databaseId: 39, headSha: "merge-head" }]);
     if (args[1] === "download") {
+      const dir = args[args.indexOf("--dir") + 1];
+      mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "measurement-record.json"), `${JSON.stringify(record)}\n`);
       return "";
     }

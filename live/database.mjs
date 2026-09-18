@@ -2,16 +2,26 @@
  * PostgreSQL is the production backend when DATABASE_URL is present.
  * SQLite is an explicit local/test adapter only. Production never falls back silently.
  * Schema (via live/migrate.mjs): customers, sessions, requests, events,
- * acorn_state, acorn_events, acorn_evidence, acorn_jobs, schema_migrations.
+ * acorn_state, acorn_events, acorn_evidence, acorn_jobs, acorn_idempotency,
+ * commerce/stripe tables, schema_migrations.
  */
 import crypto from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import pg from "pg";
 import { applyMigrations } from "./migrate.mjs";
 
-const { Pool } = pg;
+async function loadPgPool() {
+  try {
+    const mod = await import("pg");
+    const Pool = (mod.default || mod).Pool;
+    if (typeof Pool !== "function") throw new Error("POSTGRES_UNAVAILABLE");
+    return Pool;
+  } catch (error) {
+    if (String(error?.message || error) === "POSTGRES_UNAVAILABLE") throw error;
+    throw new Error("POSTGRES_UNAVAILABLE");
+  }
+}
 
 export function adaptPgToSqlite(sql, params = []) {
   const indexes = [];
@@ -118,6 +128,7 @@ export async function createLiveDatabase(options = {}) {
   const env = options.env || process.env;
   const selected = selectLiveDatabaseAdapter(env);
   if (selected.mode === "postgres") {
+    const Pool = await loadPgPool();
     const pool = new Pool({
       connectionString: selected.url,
       max: Number(env.DB_POOL_MAX || 5),

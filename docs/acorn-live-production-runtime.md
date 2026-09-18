@@ -14,3 +14,5 @@ Production truth: storage=postgres is required before treating the live customer
 RENDER_EXTERNAL_DEPLOYMENT = NOT_MEASURED from this runtime. render.yaml existence is not a receipt.
 
 Worker: persisted `requests` are ingested into `acorn_jobs`. Stale `RUNNING` rows are requeued. Exhausted retries become `FAILED`. Execute writes run in one transaction. Importing `live/worker.mjs` without `DATABASE_URL` remains fail-closed. This is CODE_PRESENT + local TEST coverage, not a Render EXECUTED proof.
+
+Commerce: Stripe is an isolated test/live adapter (`docs/acorn-stripe-commercial-runtime.md`). Checkout is server-priced. Webhooks require a signed raw body. Checkout is not payment. A webhook is not a receipt. Live Stripe stays HOLD_HUMAN until Carl enables it. No Live products are created by this runtime.

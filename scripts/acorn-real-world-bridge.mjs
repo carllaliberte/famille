@@ -397,7 +397,10 @@ export function realWorldBridgeSnapshot(connectors = loadRealWorldConnectors()) 
       persist_raw_secrets: false,
       measured_only: true,
       external_effects_observed: true,
-      http_200_is_not_verified: true
+      http_200_is_not_verified: true,
+      http_cannot_grant_authority: true,
+      consequential_effects_server_locked: CONSEQUENTIAL_EFFECTS.slice(),
+      untrusted_client_fields: ["base_url", "path", "method", "human_authorized", "authority", "authorized"]
     },
     measured_at: ISO()
   };
