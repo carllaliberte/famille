@@ -69,17 +69,23 @@ jobs:
         run: |
           node --input-type=module <<'EOF'
           import { runBoundedVerification, workflowExitCode } from "./scripts/acorn-cognitive-run-triage.mjs";
+          const commands = [
+            "node --check scripts/acorn-resource-governor.mjs",
+            "node --check scripts/acorn-free-first-cloud-fabric.mjs",
+            "node --check scripts/acorn-cloud-runner.mjs",
+            "node --check scripts/acorn-economic-optimizer.mjs",
+            "node --check scripts/acorn-humanity-protection.mjs",
+            "node --check scripts/acorn-developer-gateway.mjs",
+            "node --check scripts/acorn-market-engine.mjs",
+            "node --check scripts/acorn-contribution-economy.mjs",
+            "node --check scripts/acorn-revenue-maximizer.mjs",
+            "node --check scripts/acorn-work-engine.mjs",
+            "node --check scripts/acorn-continuous-runtime.mjs",
+            "node --test test/acorn-continuous-work-engine.test.js test/acorn-cognitive-run-triage.test.js test/acorn-free-first-cloud-fabric.test.js test/acorn-cloud-runner.test.js test/acorn-economic-optimizer.test.js test/acorn-revenue-maximizer.test.js"
+          ];
           const result = runBoundedVerification({
             command: "bash",
-            args: ["-lc", [
-              "node --check scripts/acorn-resource-governor.mjs
-              node --check scripts/acorn-free-first-cloud-fabric.mjs
-              node --check scripts/acorn-cloud-runner.mjs
-              node --check scripts/acorn-economic-optimizer.mjs\n              node --check scripts/acorn-humanity-protection.mjs\n              node --check scripts/acorn-developer-gateway.mjs\n              node --check scripts/acorn-market-engine.mjs\n              node --check scripts/acorn-contribution-economy.mjs\n              node --check scripts/acorn-revenue-maximizer.mjs",
-              "node --check scripts/acorn-work-engine.mjs",
-              "node --check scripts/acorn-continuous-runtime.mjs",
-              "node --test test/acorn-continuous-work-engine.test.js test/acorn-cognitive-run-triage.test.js test/acorn-free-first-cloud-fabric.test.js test/acorn-cloud-runner.test.js test/acorn-economic-optimizer.test.js"
-            ].join(" && ")],
+            args: ["-lc", commands.join(" && ")],
             maxRetries: 2,
             timeoutMs: 120_000,
           });
