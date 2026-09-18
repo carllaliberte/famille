@@ -1,0 +1,11 @@
+{
+  "contract":"acorn.quality-fabric.v1",
+  "purpose":"cross-cutting dated quality, provenance, falsification, drift and customer-outcome fabric",
+  "dimensions":26,
+  "expiry_required":true,
+  "authority":"human",
+  "auto_merge":false,
+  "reuse_requires":["provenance","rights","compatibility","current_evidence"],
+  "assurance_requires":["dated_evidence","all_required_dimensions","falsification","customer_outcome_when_applicable"],
+  "repair":["DETECT","DIAGNOSE","SELECT_ALTERNATIVE","SIMULATE","TEST","FALSIFY","MEASURE","VERIFY","HUMAN_AUTHORIZE"]
+}
