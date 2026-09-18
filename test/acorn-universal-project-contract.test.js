@@ -58,7 +58,7 @@ test("connector LIVE requires observed and verified", () => {
 
 test("contract is a composition layer, not a second runtime", () => {
   const c = universalProjectContract();
-  assert.ok(c.fields.includes("project"));
+  assert.ok(c.fields.includes("problem"));
   assert.equal(c.policy.no_auto_merge,true);
   assert.equal(c.policy.capability_is_not_authority,true);
 });
