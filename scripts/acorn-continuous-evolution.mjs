@@ -15,6 +15,7 @@
  * CARL = MERGE
  */
 import crypto from "node:crypto";
+import { readFileSync, writeFileSync } from "node:fs";
 import { nextAction as maintenanceNextAction } from "./acorn-continuous-maintenance.mjs";
 import { buildUniversalEvolutionCycle } from "./acorn-universal-evolution.mjs";
 import { runCognitiveStrategyLearningCycle } from "./acorn-cognitive-strategy.mjs";
@@ -378,7 +379,7 @@ export function assertContinuousEvolutionContract(result = {}) {
 }
 
 function loadEvolutionInput(path) {
-  if (path) return JSON.parse(require("node:fs").readFileSync(path, "utf8"));
+  if (path) return JSON.parse(readFileSync(path, "utf8"));
   if (process.env.ACORN_EVOLUTION_SNAPSHOT) return JSON.parse(process.env.ACORN_EVOLUTION_SNAPSHOT);
   return {
     repository: process.env.GITHUB_REPOSITORY || "carllaliberte/famille",
@@ -392,6 +393,6 @@ if (import.meta.url === "file://" + process.argv[1]) {
   const result = runContinuousEvolution(input);
   assertContinuousEvolutionContract(result);
   const output = process.env.ACORN_EVOLUTION_OUTPUT;
-  if (output) require("node:fs").writeFileSync(output, JSON.stringify(result, null, 2) + "\\n");
+  if (output) writeFileSync(output, JSON.stringify(result, null, 2) + "\n");
   console.log(JSON.stringify(result, null, 2));
 }
