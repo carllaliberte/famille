@@ -1,0 +1,10 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {defineCognitiveObjective,recordCognitiveEpisode,extractLessons,buildCognitiveContext,compareCognitiveStates,chooseLearningPriority,propagateLearning,assertCognitiveDevelopmentConstitution} from "../scripts/acorn-cognitive-development.mjs";
+test("cognition has explicit development dimensions",()=>{assert.equal(defineCognitiveObjective({dimension:"MEMORY"}).state,"DEFINED");});
+test("episodes preserve context and evidence",()=>{const e=recordCognitiveEpisode({actor:"a",goal:"g",context:{x:1},outcome:"ok",evidence:["proof"]});assert.equal(e.context.x,1);assert.equal(e.evidence.length,1);});
+test("lessons require evidence",()=>{const e=recordCognitiveEpisode({goal:"g",outcome:"ok",feedback:["improve"],evidence:["proof"]});assert.equal(extractLessons([e])[0].requires_validation,true);});
+test("cognitive context composes knowledge and capability",()=>{const c=buildCognitiveContext({goal:"g",knowledge:[{id:"k"}],capabilities:[{id:"c"}]});assert.deepEqual(c.knowledge,["k"]);assert.deepEqual(c.capabilities,["c"]);});
+test("cognitive states are comparable",()=>{const x=compareCognitiveStates({before:{MEMORY:2},after:{MEMORY:5},objectives:[{dimension:"MEMORY",weight:1}]});assert.equal(x[0].delta,3);});
+test("learning priorities favor unlearned gaps",()=>{assert.equal(chooseLearningPriority({gaps:["REASONING","MEMORY"],history:[{dimension:"MEMORY"}]})[0].dimension,"REASONING");});
+test("learning transfer remains a proposal",()=>{const x=propagateLearning({lesson:"x",targets:["b"]});assert.equal(x.state,"TRANSFER_PROPOSED");assert.equal(x.requires_validation,true);});
+test("cognitive development cannot create authority",()=>{assert.equal(assertCognitiveDevelopmentConstitution(),true);assert.throws(()=>assertCognitiveDevelopmentConstitution({hidden_learning:true}),/HIDDEN/);assert.throws(()=>assertCognitiveDevelopmentConstitution({breaker_touched:true}),/BREAKER/);assert.throws(()=>assertCognitiveDevelopmentConstitution({auto_merge:true}),/AUTOMATION/);});
