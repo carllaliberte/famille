@@ -68,14 +68,14 @@ jobs:
       - name: Verify continuous engine contracts with bounded recovery
         run: |
           node --input-type=module <<'EOF'
-          import { runBoundedVerification } from "./scripts/acorn-cognitive-run-triage.mjs";
+          import { runBoundedVerification, workflowExitCode } from "./scripts/acorn-cognitive-run-triage.mjs";
           const result = runBoundedVerification({
             command: "bash",
             args: ["-lc", [
               "node --check scripts/acorn-resource-governor.mjs
               node --check scripts/acorn-free-first-cloud-fabric.mjs
               node --check scripts/acorn-cloud-runner.mjs
-              node --check scripts/acorn-economic-optimizer.mjs",
+              node --check scripts/acorn-economic-optimizer.mjs\n              node --check scripts/acorn-humanity-protection.mjs\n              node --check scripts/acorn-developer-gateway.mjs\n              node --check scripts/acorn-market-engine.mjs\n              node --check scripts/acorn-contribution-economy.mjs\n              node --check scripts/acorn-revenue-maximizer.mjs",
               "node --check scripts/acorn-work-engine.mjs",
               "node --check scripts/acorn-continuous-runtime.mjs",
               "node --test test/acorn-continuous-work-engine.test.js test/acorn-cognitive-run-triage.test.js test/acorn-free-first-cloud-fabric.test.js test/acorn-cloud-runner.test.js test/acorn-economic-optimizer.test.js"
@@ -84,9 +84,7 @@ jobs:
             timeoutMs: 120_000,
           });
           console.log(JSON.stringify(result, null, 2));
-          if (result.notify && ["REAL_REGRESSION", "WAITING_HUMAN", "SECURITY"].includes(result.classification)) {
-            process.exitCode = 1;
-          }
+          process.exitCode = workflowExitCode(result);
           EOF
 
       - name: Run continuous organism work engine
