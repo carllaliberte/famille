@@ -1,0 +1,14 @@
+import test from"node:test";import assert from"node:assert/strict";
+import{PLANES,LOOP,GATES,compileIntent,discoverGaps,compose,chooseBestKnown,authorize,registerOutcome,createOpportunity,recover,buildTotalConvergence,assertTotalConvergence}from"../scripts/acorn-total-world-convergence.mjs";
+test("total constitution",()=>assert.equal(assertTotalConvergence(),true));
+test("world coverage",()=>assert.ok(PLANES.length>=35&&LOOP.length>=25&&GATES.length>=10));
+test("intent compiles",()=>assert.equal(compileIntent({objective:"x",success:["s"]}).state,"COMPILED"));
+test("gaps are explicit",()=>assert.equal(discoverGaps({requirements:["x"]},[]).missing.length,1));
+test("only verified capabilities compose",()=>assert.equal(compose([{state:"DISCOVERED",capabilities:["x"]}],["x"]).state,"GAP_DETECTED"));
+test("best known is scoped",()=>assert.equal(chooseBestKnown([{verified:true,measured:true,evidence:["e"],q:1}],{q:1}).global_optimum,false));
+test("money stays human gated",()=>assert.equal(authorize("MONEY",{server_authorized:true}).authorized,false));
+test("merge stays human gated",()=>assert.equal(authorize("MERGE",{server_authorized:true}).authorized,false));
+test("outcomes compound only when verified",()=>assert.equal(registerOutcome({verified:true,measured:true,evidence:["e"]}).state,"REUSABLE_CANDIDATE"));
+test("unverified capability does not create evidence backed opportunity",()=>assert.equal(createOpportunity({state:"REUSABLE_CANDIDATE"},{verified:false}).state,"EXPLORATORY"));
+test("recovery is fail closed",()=>assert.equal(recover({state:"DEGRADED"}).fail_closed,true));
+test("total portfolio preserves authority",()=>assert.equal(buildTotalConvergence({}).authority,"HUMAN_SERVER"));
