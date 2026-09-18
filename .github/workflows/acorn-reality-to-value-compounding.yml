@@ -1,0 +1,23 @@
+name: ACORN Reality Value Compounding
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/acorn-reality-to-value-compounding.mjs"
+      - "scripts/acorn-value-compounding-conductor.mjs"
+      - "scripts/acorn-open-work-convergence.mjs"
+      - "test/acorn-reality-to-value-compounding.test.js"
+      - "test/acorn-open-work-convergence.test.js"
+permissions:
+  contents: read
+jobs:
+  convergence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test test/acorn-reality-to-value-compounding.test.js test/acorn-open-work-convergence.test.js
