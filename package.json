@@ -56,7 +56,8 @@
     "runtime:revenue": "node scripts/acorn-revenue-maximizer.mjs",
     "runtime:project-value": "node scripts/acorn-universal-project-value.mjs",
     "runtime:project-ledger": "node scripts/acorn-project-value-ledger.mjs",
-    "runtime:customer-experience": "node scripts/acorn-customer-experience.mjs"
+    "runtime:customer-experience": "node scripts/acorn-customer-experience.mjs",
+    "runtime:asset-product-factory": "node scripts/acorn-asset-product-factory.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -126,7 +127,8 @@
     "./acorn-revenue-maximizer": "./scripts/acorn-revenue-maximizer.mjs",
     "./acorn-universal-project-value": "./scripts/acorn-universal-project-value.mjs",
     "./acorn-project-value-ledger": "./scripts/acorn-project-value-ledger.mjs",
-    "./acorn-customer-experience": "./scripts/acorn-customer-experience.mjs"
+    "./acorn-customer-experience": "./scripts/acorn-customer-experience.mjs",
+    "./acorn-asset-product-factory": "./scripts/acorn-asset-product-factory.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
