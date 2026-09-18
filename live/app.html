@@ -165,6 +165,9 @@
             <li><span class="dot">3</span><div><strong>Offer</strong><div class="quiet">Acorn proposes a priced project. You never type the amount.</div></div></li>
             <li><span class="dot">4</span><div><strong>Pay</strong><div class="quiet">Checkout is hosted by Stripe. This screen is never a receipt.</div></div></li>
             <li><span class="dot">5</span><div><strong>Hold</strong><div class="quiet">Payment does not authorize real-world action. Carl remains the authority.</div></div></li>
+            <li><span class="dot">6</span><div><strong>Deliver</strong><div class="quiet">Delivery waits for a human. Observed payment is not a handoff.</div></div></li>
+            <li><span class="dot">7</span><div><strong>Value</strong><div class="quiet">Revenue is observed from the ledger. Cost and customer value stay empty until measured.</div></div></li>
+            <li><span class="dot">8</span><div><strong>Renew / expand</strong><div class="quiet">Subscriptions propose renewal. Expansion is a recommendation. Nothing auto-contracts.</div></div></li>
           </ol>
         </aside>
       </div>
@@ -201,6 +204,11 @@
           <h3>Ledger</h3>
           <p class="quiet">Not tax advice. Not accounting advice. Net only when gross and fees were both observed.</p>
           <div id="ledger" class="stack"></div>
+        </div>
+        <div class="panel stack">
+          <h3>Delivery, value, renewal</h3>
+          <p class="quiet">Payment observed is not delivery. Renewal is proposed, never automatic in Acorn.</p>
+          <div id="cycle" class="stack"></div>
         </div>
       </div>
     </section>
@@ -242,11 +250,13 @@
 
     async function loadAccount() {
       try {
-        const [cat, ords, rights, led] = await Promise.all([
+        const [cat, ords, rights, led, ren, exp] = await Promise.all([
           call("/api/v1/catalog"),
           call("/api/v1/orders"),
           call("/api/v1/usage-rights"),
-          call("/api/v1/ledger")
+          call("/api/v1/ledger"),
+          call("/api/v1/renewal"),
+          call("/api/v1/expansion")
         ]);
         const items = cat.catalog?.items || [];
         $("catalog").innerHTML = items.map((i) => `
@@ -284,6 +294,13 @@
           <div class="stat"><h3>Orders</h3><strong>${orders.length}</strong><span class="quiet">Durable. Not paid by existing.</span></div>
           <div class="stat"><h3>Rights granted</h3><strong>${rightsRows.filter((r) => r.state === "GRANTED").length}</strong><span class="quiet">Never inferred as perpetual.</span></div>
           <div class="stat"><h3>Rail</h3><strong>${esc(cat.rail?.mode || "UNCONFIGURED")}</strong><span class="quiet">Key present is not live.</span></div>
+        `;
+        const renewals = ren.renewals || [];
+        const expansions = exp.expansions || (exp.state ? [exp] : []);
+        $("cycle").innerHTML = `
+          <p class="quiet">Delivered=false · execution unauthorized · auto-renew=${ren.auto_renew_in_acorn === true}</p>
+          ${renewals.length ? renewals.map((r) => `<article class="req" style="cursor:default"><h4>Renewal ${esc(r.state)}</h4><p class="quiet">${esc(r.model || "")} · auto=${r.auto_renew_in_acorn === true} · live=false</p></article>`).join("") : `<p class="quiet">No renewal proposed. One-time orders do not auto-renew.</p>`}
+          ${expansions.length ? expansions.map((e) => `<article class="req" style="cursor:default"><h4>Expansion ${esc(e.state)}</h4><p class="quiet">${(e.next_problems || []).length} next problems · auto_contract=${e.auto_contract === true}</p></article>`).join("") : `<p class="quiet">No expansion recommendation stored.</p>`}
         `;
       } catch (e) {
         $("catalog").innerHTML = `<p class="err">${esc(e.error || "Could not load account")}</p>`;
@@ -345,8 +362,11 @@
       const routes = data.intelligence_routes || [];
       const evidence = data.evidence || [];
       const offers = data.offers || [];
-      const order = data.order || null;
+      const order = data.order || (data.orders && data.orders[0]) || null;
       const checkout = data.checkout || null;
+      const delivery = data.delivery || null;
+      const value = data.value || null;
+      const renewal = data.renewal || null;
       $("current").innerHTML = `
         <div class="row">
           <span class="chip hold">${label(req.status || data.cycle?.stage)}</span>
@@ -385,6 +405,13 @@
           ${checkout ? `<p class="quiet">Checkout ${checkout.configured === false ? "rail is not connected" : "created"}. This is not a receipt.</p>` : ""}
           ${order ? `<p class="mono">order ${esc(order.id)} · ${esc(order.state)} · paid=false</p>` : ""}
         </div>
+        ${delivery || value || renewal ? `<div>
+          <h3>After payment</h3>
+          ${delivery ? `<p>Delivery <strong>${esc(delivery.state)}</strong> · delivered=false · ${esc(delivery.reason || "PAYMENT_IS_NOT_DELIVERY")}</p>` : ""}
+          ${value ? `<p class="quiet">Value observed: ${value.revenue_cents == null ? "not observed" : money(value.revenue_cents, "CAD")} · verified=false · cost ${value.cost_cents == null ? "unknown" : money(value.cost_cents, "CAD")}</p>` : ""}
+          ${renewal ? `<p class="quiet">Renewal ${esc(renewal.state)} · auto=${renewal.auto_renew_in_acorn === true}</p>` : ""}
+          <p class="quiet">Payment is not execution. Delivery waits for a human.</p>
+        </div>` : ""}
         <div>
           <h3>Task graph</h3>
           <div class="stack">${(tasks.length ? tasks : ["Qualify", "Plan", "Verify"]).map((t) => `<div class="chip">${t}</div>`).join("")}</div>

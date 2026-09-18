@@ -14,8 +14,10 @@ import {
   catalogPublic,
   PRICE_CATALOG,
   revenueMaximizerBounded,
-  developerSurface
+  developerSurface,
+  advanceAfterPayment
 } from "../scripts/acorn-commercial-runtime.mjs";
+import { STATE_ENTITIES } from "../scripts/acorn-enterprise-state.mjs";
 
 function sign(secret, body, ts = Math.floor(Date.now() / 1000)) {
   const v1 = crypto.createHmac("sha256", secret).update(`${ts}.${body}`).digest("hex");
@@ -408,4 +410,122 @@ test("order reuse is idempotent and usage billing stays inactive", async () => {
     const pay = await jsonReq(base, "/pay/success");
     assert.equal(pay.status, 200);
   });
+});
+
+test("state allowlist includes delivery value renewal expansion", () => {
+  for (const entity of ["DELIVERY", "VALUE", "RENEWAL", "EXPANSION"]) {
+    assert.equal(STATE_ENTITIES.includes(entity), true);
+  }
+});
+
+test("advanceAfterPayment holds delivery and does not authorize execution", () => {
+  const order = {
+    id: "ord_1",
+    tenant_id: "cus_1",
+    customer_id: "cus_1",
+    project_id: "req_1",
+    model: "SUBSCRIPTION",
+    amount_cents: 4900,
+    currency: "cad",
+    state: "PAYMENT_OBSERVED"
+  };
+  const cycle = advanceAfterPayment({
+    order,
+    entry: { gross_amount: 4900, epistemic: "OBSERVED" },
+    gaps: [{ capability: "connector-github" }]
+  });
+  assert.equal(cycle.stage, "EXECUTION_HOLD");
+  assert.equal(cycle.execution_authorized, false);
+  assert.equal(cycle.delivered, false);
+  assert.equal(cycle.live, false);
+  assert.equal(cycle.delivery.state, "WAITING_HUMAN");
+  assert.equal(cycle.delivery.delivered, false);
+  assert.equal(cycle.value.verified, false);
+  assert.equal(cycle.value.revenue_cents, 4900);
+  assert.equal(cycle.value.cost_cents, null);
+  assert.equal(cycle.renewal.state, "PROPOSED");
+  assert.equal(cycle.renewal.auto_renew_in_acorn, false);
+  assert.equal(cycle.expansion.state, "RECOMMENDATION_ONLY");
+  assert.equal(cycle.expansion.auto_contract, false);
+  assert.deepEqual(cycle.expansion.next_problems, ["connector-github"]);
+});
+
+test("payment observed persists delivery value renewal without granting execution", async () => {
+  const secret = "whsec_cycle";
+  await withServer(async ({ base }) => {
+    const a = await register(base, "cycle@example.com");
+    const created = await jsonReq(base, "/api/v1/requests", { method: "POST", token: a.token, body: { request: "Need a monthly capability and a github connector" } });
+    assert.equal(created.status, 201);
+    const offer = created.json.offers.find((o) => o.model === "SUBSCRIPTION") || created.json.offers.find((o) => o.amount_cents);
+    const ordered = await jsonReq(base, "/api/v1/orders", { method: "POST", token: a.token, body: { project_id: created.json.request.id, offer_id: offer.id } });
+    const orderId = ordered.json.order.id;
+    const amount = ordered.json.order.amount_cents;
+    const body = JSON.stringify({
+      id: "evt_cycle",
+      type: "payment_intent.succeeded",
+      livemode: false,
+      created: Math.floor(Date.now() / 1000),
+      data: {
+        object: {
+          id: "pi_cycle",
+          object: "payment_intent",
+          amount,
+          currency: "cad",
+          customer: "cus_stripe",
+          metadata: { acorn_tenant_id: a.customer.id, acorn_order_id: orderId, acorn_project_id: created.json.request.id }
+        }
+      }
+    });
+    const paid = await fetch(base + "/api/v1/billing/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json", "stripe-signature": sign(secret, body) },
+      body
+    });
+    const paidJson = await paid.json();
+    assert.equal(paid.status, 200);
+    assert.equal(paidJson.order_state, "PAYMENT_OBSERVED");
+    assert.equal(paidJson.execution_authorized, false);
+    assert.equal(paidJson.delivered, false);
+    assert.equal(paidJson.live, false);
+    assert.equal(paidJson.cycle.stage, "EXECUTION_HOLD");
+    assert.equal(paidJson.cycle.execution_authorized, false);
+
+    const got = await jsonReq(base, "/api/v1/requests/" + created.json.request.id, { token: a.token });
+    assert.equal(got.status, 200);
+    assert.equal(got.json.delivery.state, "WAITING_HUMAN");
+    assert.equal(got.json.delivery.delivered, false);
+    assert.equal(got.json.value.verified, false);
+    assert.equal(got.json.value.live, false);
+    assert.equal(got.json.proof.execution_authorized, false);
+    assert.equal(got.json.proof.delivered, false);
+    assert.equal(got.json.orders[0].state, "PAYMENT_OBSERVED");
+    assert.equal(got.json.orders[0].paid, false);
+    assert.equal(got.json.project.state, "EXECUTION_HOLD");
+
+    const renewal = await jsonReq(base, "/api/v1/renewal", { token: a.token });
+    assert.equal(renewal.status, 200);
+    assert.equal(renewal.json.auto_renew_in_acorn, false);
+    assert.equal(renewal.json.live, false);
+    if (offer.model === "SUBSCRIPTION") {
+      assert.equal(got.json.renewal.state, "PROPOSED");
+      assert.equal(got.json.renewal.auto_renew_in_acorn, false);
+    }
+
+    const expansion = await jsonReq(base, "/api/v1/expansion", { token: a.token });
+    assert.equal(expansion.status, 200);
+    assert.equal(expansion.json.live, false);
+    assert.equal(expansion.json.auto_contract, false);
+
+    const revenue = await jsonReq(base, "/api/v1/revenue", { token: a.token });
+    assert.equal(revenue.status, 200);
+    assert.equal(revenue.json.live, false);
+    assert.equal(revenue.json.auto_spend, false);
+    assert.equal(revenue.json.policy.auto_spend, false);
+    assert.equal(revenue.json.policy.auto_merge, false);
+    assert.ok((revenue.json.proposals || []).every((p) => p.can_spend !== true && p.can_merge !== true));
+
+    const b = await register(base, "other-cycle@example.com");
+    const steal = await jsonReq(base, "/api/v1/requests/" + created.json.request.id, { token: b.token });
+    assert.equal(steal.status, 404);
+  }, { STRIPE_WEBHOOK_SECRET: secret });
 });
