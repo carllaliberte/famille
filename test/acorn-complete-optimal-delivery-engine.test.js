@@ -1,0 +1,17 @@
+import test from "node:test";import assert from "node:assert/strict";
+import {defineDelivery,completionGaps,discoverBestKnown,objectiveScore,composeDelivery,authorizeDelivery,recordDeliveryResult,proveDelivery,optimizeDelivery,createImprovementCycle,buildCompleteDelivery,assertCompleteOptimalConstitution} from "../scripts/acorn-complete-optimal-delivery-engine.mjs";
+test("constitution is explicit",()=>assert.equal(assertCompleteOptimalConstitution(),true));
+test("delivery requires objective",()=>assert.equal(completionGaps(defineDelivery({}),{}).includes("OBJECTIVE"),true));
+test("delivery requires acceptance",()=>assert.equal(completionGaps(defineDelivery({objective:"x"}),{}).includes("ACCEPTANCE_CRITERIA"),true));
+test("only measured verified candidates enter benchmark",()=>assert.equal(discoverBestKnown([{verified:false,measured:true,quality:99}]).candidates.length,0));
+test("best known is scoped, never global optimum",()=>assert.equal(discoverBestKnown([{verified:true,measured:true,quality:10}],{scope:"x"}).global_optimum,false));
+test("objective score is deterministic",()=>assert.equal(objectiveScore({QUALITY:0},{}),0));
+test("composition blocks incomplete delivery",()=>assert.equal(composeDelivery(defineDelivery({objective:"x"}),[],{}).state,"BLOCKED"));
+test("consequential action stays human gated",()=>assert.equal(authorizeDelivery("MERGE",{human_authorized:true,server_authorized:true}).authorized,false));
+test("safe execution still needs explicit server/human authorization",()=>assert.equal(authorizeDelivery("EXECUTE",{human_authorized:true,server_authorized:true}).authorized,true));
+test("payment is not execution",()=>{const r=recordDeliveryResult({payment_observed:true});assert.equal(r.executed,false)});
+test("proof needs execution delivery measurement verification and evidence",()=>assert.equal(proveDelivery({executed:true,delivered:true,measured:true,verified:true,evidence:["e"]}).proven,true));
+test("unproven result cannot optimize",()=>assert.equal(createImprovementCycle({executed:true,delivered:false,measured:true,verified:true,evidence:["e"]}).state,"BLOCKED"));
+test("optimization detects measured improvement",()=>{const r={executed:true,delivered:true,measured:true,verified:true,evidence:["e"],quality:5};const a={executed:true,delivered:true,measured:true,verified:true,evidence:["e"],quality:10};const x=createImprovementCycle(r,[a],{});assert.equal(x.optimization.improvement>0,true)});
+test("no measured improvement never becomes final",()=>{const r={executed:true,delivered:true,measured:true,verified:true,evidence:["e"],quality:5};const x=createImprovementCycle(r,[r],{});assert.equal(x.optimization.never_final,true)});
+test("complete plan never falsely claims complete or optimal",()=>{const x=buildCompleteDelivery({delivery:{objective:"x",acceptance:["ok"]}});assert.equal(x.complete,false);assert.equal(x.optimal,false)});

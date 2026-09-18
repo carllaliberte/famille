@@ -1,0 +1,16 @@
+name: ACORN Complete Optimal Delivery
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "11,41 * * * *"
+permissions:
+  contents: read
+jobs:
+  complete-optimal-delivery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: node --test test/acorn-complete-optimal-delivery-engine.test.js
+      - run: node --input-type=module -e "import('./scripts/acorn-complete-optimal-delivery-engine.mjs').then(({assertCompleteOptimalConstitution})=>console.log('ACORN_COMPLETE_OPTIMAL',assertCompleteOptimalConstitution()))"
