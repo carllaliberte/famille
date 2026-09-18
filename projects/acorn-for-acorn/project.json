@@ -1,0 +1,16 @@
+{
+  "contract":"acorn.self-project.v1",
+  "id":"ACORN-FOR-ACORN-001",
+  "name":"Acorn for Acorn — First Mega Project",
+  "customer":{"type":"INTERNAL","name":"Acorn"},
+  "objective":"Deliver Acorn itself as a complete, measurable, continuously improving reference system using its own capabilities.",
+  "scope":["product","runtime","customer-experience","capability","intelligence","connectivity","market","economics","quality","security","evidence","learning","operations","real-world"],
+  "acceptance":["single coherent system","measurable outcomes","evidence-backed capabilities","continuous optimization","human sovereignty","no fabricated LIVE state"],
+  "optimization":"BEST_KNOWN_IN_SCOPE",
+  "never_final":true,
+  "authority":"CARL",
+  "auto_merge":false,
+  "auto_spend":false,
+  "auto_contract":false,
+  "status":"DEFINED"
+}
