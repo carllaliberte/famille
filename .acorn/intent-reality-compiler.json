@@ -1,0 +1,7 @@
+{
+  "contract":"acorn.intent-reality-compiler.v1",
+  "purpose":"Compile human intent into measurable reality and measured reality into reusable capability.",
+  "reuses":["acorn.universal-value-fabric.v1","acorn.quality-fabric.v1","acorn.best-known-result.v1"],
+  "authority":{"authority":"human","auto_merge":false},
+  "loop":["INTENT","QUALIFY","DISCOVER","COMPOSE","OFFER","ORDER","PAYMENT_OBSERVED","AUTHORIZE","EXECUTE","MEASURE","DELIVER","DERIVE_CAPABILITY","ADAPT","DISCOVER_AGAIN"]
+}
