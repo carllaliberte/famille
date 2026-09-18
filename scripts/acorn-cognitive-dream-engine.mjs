@@ -47,7 +47,7 @@ export function dreamWorld({ reality, hypothesis, id = "", transition = {}, prob
   if (!hypothesis?.fingerprint) throw new Error("HYPOTHESIS_REQUIRED");
   const world = {
     id: str(id) || digest({ parent: reality.fingerprint, hypothesis: hypothesis.fingerprint, transition }),
-    kind: "PREDICTION", state: applyTransitionState(reality.state, transition.delta),,
+    kind: "PREDICTION", state: applyTransitionState(reality.state, transition.delta),
     parent: reality.fingerprint, hypothesis: hypothesis.fingerprint,
     transition: { action: str(transition.action), delta: { ...obj(transition.delta) } },
     probability: probability === null ? null : c01(probability), utility: utility === null ? null : n(utility),
