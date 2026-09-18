@@ -34,6 +34,7 @@ import { runCognitiveEcologyCycle, inventoryProbe as ecologyProbe } from "./acor
 import { buildUniversalEvolutionCycle, assertUniversalEvolutionInvariant } from "./acorn-universal-evolution.mjs";
 import { consolidate, assertLearningOrchestratorInvariant } from "./acorn-learning-orchestrator.mjs";
 import { metabolicCycle, assertCognitiveMetabolismInvariant } from "./acorn-cognitive-metabolism.mjs";
+import { runConnectionSweep, connectionConstitution } from "./acorn-connection-fabric.mjs";
 
 export const CONTINUOUS_RUNTIME_VERSION = "acorn.continuous-runtime.v1";
 
@@ -165,6 +166,8 @@ export async function runContinuousRuntime({
     auto_merge: false,
     live: false,
   };
+
+  const connections = await runConnectionSweep({ env, now: at });
 
   const inventory = await runInventory({
     root,
@@ -465,11 +468,29 @@ export async function runContinuousRuntime({
         metrics: learning.metrics,
         next: learning.next,
       },
+      connections: {
+        version: connections.version,
+        constitution: connectionConstitution(),
+        proof: connections.proof,
+        metrics: connections.metrics,
+        active: connections.active_connections,
+        local_self_test: connections.local_self_test,
+        live: false,
+      },
       metabolism: {
         phase: metabolism.metabolism?.phase || null,
         homeostasis: metabolism.homeostasis,
         next: metabolism.next,
         continue: metabolism.continue,
+      },
+      connection_fabric: {
+        version: connections.version,
+        proof: connections.proof,
+        verified: connections.proof.status === "VERIFIED",
+        active_connections: connections.metrics.active_connections,
+        measured_connections: connections.metrics.measured_connections,
+        verified_connections: connections.metrics.verified_connections,
+        external_boundary: "connector-flux",
       },
       one_organism_cycle: true,
       second_runtime: false,
