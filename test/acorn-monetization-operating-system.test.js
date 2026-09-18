@@ -1,2 +1,15 @@
-import test from"node:test";import assert from"node:assert/strict";import{REVENUE_STREAMS,createCommercialOffer,qualifyCommercialDemand,buildRevenuePortfolio,economicLedger,authorizeCommercialAction,closeCommercialLoop,assertMonetizationConstitution}from"../scripts/acorn-monetization-operating-system.mjs";
-test("constitution",()=>assert.equal(assertMonetizationConstitution(),true));test("offer is not payment",()=>assert.equal(createCommercialOffer({price:100}).truth,"OFFER_ONLY"));test("demand qualification",()=>assert.equal(qualifyCommercialDemand({objective:"x",acceptance:["a"]}).commercial_state,"QUALIFIED"));test("all revenue streams represented",()=>assert.ok(REVENUE_STREAMS.length>=12));test("measured ledger",()=>assert.deepEqual(economicLedger([{revenue:100,cost:40}]).margin,60));test("money gated",()=>assert.equal(authorizeCommercialAction("CHARGE",true).authorized,false));test("contract gated",()=>assert.equal(authorizeCommercialAction("CONTRACT",true).authorized,false));test("loop preserves truth",()=>assert.equal(closeCommercialLoop({}).truth,"OFFER != PAYMENT != EXECUTION != VALUE"));
+import test from"node:test";
+import assert from"node:assert/strict";
+import{REVENUE_STREAMS,createCommercialOffer,qualifyCommercialDemand,economicLedger,authorizeCommercialAction,commercialTruth,buildMonetizationPlan,assertMonetizationConstitution,runtimeSurface}from"../scripts/acorn-monetization-operating-system.mjs";
+test("constitution",()=>assert.equal(assertMonetizationConstitution(),true));
+test("all revenue streams represented",()=>assert.ok(REVENUE_STREAMS.length>=16));
+test("offer is not payment",()=>assert.equal(createCommercialOffer({price:100}).truth,"OFFER_ONLY"));
+test("demand requires acceptance",()=>assert.equal(qualifyCommercialDemand({objective:"x"}).commercial_state,"HOLD_INFORMATION"));
+test("measured ledger",()=>assert.equal(economicLedger([{revenue:100,cost:40}]).margin,60));
+test("money gated",()=>assert.equal(authorizeCommercialAction("CHARGE",true).authorized,false));
+test("refund gated",()=>assert.equal(authorizeCommercialAction("REFUND",true).authorized,false));
+test("contract gated",()=>assert.equal(authorizeCommercialAction("CONTRACT",true).authorized,false));
+test("unknown gated",()=>assert.equal(authorizeCommercialAction("UNKNOWN",true).authorized,false));
+test("truth separates payment execution value",()=>{const t=commercialTruth({paymentObserved:true});assert.equal(t.execution_authorized,false);assert.equal(t.value_measured,false);assert.equal(t.live,false);});
+test("full plan contains real integrations",()=>assert.ok(buildMonetizationPlan().integrations.includes("STRIPE_WEBHOOKS")));
+test("existing runtime is reused",()=>assert.ok(runtimeSurface().existing_runtime.includes("acorn-stripe-adapter")));
