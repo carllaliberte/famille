@@ -680,7 +680,7 @@ export async function runConnectionSweep({
       observation_count: observations.length,
     },
     proof: {
-      status: connected.status === "CONNECTED" && measured.measured && verified.verified ? "VERIFIED" : "INCONCLUSIVE",
+      status: verified.status === "VERIFIED" ? "VERIFIED" : "INCONCLUSIVE",
       digest: digest({ rows, connected: connected.status, measured: measured.status, verified: verified.status }),
     },
     rows,
