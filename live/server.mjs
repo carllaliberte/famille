@@ -18,6 +18,7 @@ import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futurePr
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
 import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject, loadCommercialCycle } from "./commercial.mjs";
 import { buildRealitySnapshot, customerNextAction, assertTruthContract } from "../scripts/acorn-real-world-turnkey.mjs";
+import { node, relate, graphView, observeOS, solveProblem, admitFuture } from "../scripts/acorn-capability-os.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -721,6 +722,74 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       }
       if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
         return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/os") {
+        const related = await loadTenantState(database, cid);
+        const capabilities = related.filter((s) => s.entity === "CAPABILITY").map((s) => ({ id: s.id, name: s.data?.name || s.data?.key, exists: s.data?.exists === true }));
+        const connections = related.filter((s) => s.entity === "CONNECTION").map((s) => ({ id: s.id, state: s.state, connected: s.data?.connected === true }));
+        const executions = related.filter((s) => s.entity === "EXECUTION").map((s) => ({ id: s.id, state: s.state }));
+        const evidence = await loadTenantEvidence(database, cid);
+        return send(200, {
+          ...observeOS({ capabilities, connections, executions, evidence, holds: ["AUTHORIZATION_REQUIRED"] }),
+          proof: { live: false, executable: false }
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/solve") {
+        const b = await readBody(req);
+        const latest = await database.get("SELECT id,body FROM requests WHERE customer_id=$1 ORDER BY created_at DESC LIMIT 1", [cid]);
+        const problem = String(b.request || b.problem || parseJson(latest?.body, {}).request || "").trim();
+        const solved = solveProblem({ tenantId: cid, customerId: cid, problem });
+        return await sendPersist(200, {
+          ...solved,
+          client_authorization_ignored: b.human_authorized === true || b.live === true,
+          proof: { live: false, simulated_is_not_executed: true }
+        });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/graph") {
+        const nodes = (await loadTenantState(database, cid, "GRAPH")).map((s) => ({ ...s.data, id: s.id, state: s.state, live: false }));
+        const edges = (await loadTenantState(database, cid, "RELATION")).map((s) => ({ ...s.data, id: s.id, live: false }));
+        return send(200, { ...graphView({ nodes, edges }), live: false });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/graph/nodes") {
+        const b = await readBody(req);
+        const n = node({ type: b.type, key: b.key || b.name, representation: b.representation, channel: b.channel, rights: b.rights, state: b.state });
+        if (n.error) return send(400, n);
+        await persistState(database, {
+          entity: "GRAPH",
+          id: n.id,
+          tenant_id: cid,
+          state: n.state,
+          data: { ...n, live: false }
+        });
+        return await sendPersist(201, { node: n, client_authorization_ignored: b.trusted === true || b.human_authorized === true, proof: { live: false, trusted: false } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/graph/relate") {
+        const b = await readBody(req);
+        const e = relate({ from: b.from, relation: b.relation, to: b.to, valid_until: b.valid_until });
+        await persistState(database, {
+          entity: "RELATION",
+          id: e.id,
+          tenant_id: cid,
+          state: "PROPOSED",
+          data: { ...e, live: false }
+        });
+        return await sendPersist(201, { edge: e, proof: { live: false } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/os/admit") {
+        const b = await readBody(req);
+        const admitted = admitFuture({ kind: b.kind || b.type, key: b.key });
+        await persistState(database, {
+          entity: "GRAPH",
+          id: admitted.node.id,
+          tenant_id: cid,
+          state: "DISCOVERED",
+          data: { ...admitted.node, live: false }
+        });
+        return await sendPersist(201, {
+          ...admitted,
+          client_authorization_ignored: b.trusted === true || b.authorized === true || b.live === true,
+          proof: { live: false, trusted: false, core_rewritten: false }
+        });
       }
       const commercialHandled = await handleAuthedCommercial({
         method: req.method,

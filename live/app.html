@@ -210,6 +210,11 @@
           <p class="quiet">Payment observed is not delivery. Renewal is proposed, never automatic in Acorn.</p>
           <div id="cycle" class="stack"></div>
         </div>
+        <div class="panel stack">
+          <h3>Capability OS</h3>
+          <p class="quiet">Available is not a right to use. Simulated is not executed. Unknown is admitted, not trusted.</p>
+          <div id="os" class="stack"></div>
+        </div>
       </div>
     </section>
 
@@ -250,13 +255,14 @@
 
     async function loadAccount() {
       try {
-        const [cat, ords, rights, led, ren, exp] = await Promise.all([
+        const [cat, ords, rights, led, ren, exp, os] = await Promise.all([
           call("/api/v1/catalog"),
           call("/api/v1/orders"),
           call("/api/v1/usage-rights"),
           call("/api/v1/ledger"),
           call("/api/v1/renewal"),
-          call("/api/v1/expansion")
+          call("/api/v1/expansion"),
+          call("/api/v1/os").catch(() => ({ exists: [], unknown: [] }))
         ]);
         const items = cat.catalog?.items || [];
         $("catalog").innerHTML = items.map((i) => `
@@ -301,6 +307,10 @@
           <p class="quiet">Delivered=false · execution unauthorized · auto-renew=${ren.auto_renew_in_acorn === true}</p>
           ${renewals.length ? renewals.map((r) => `<article class="req" style="cursor:default"><h4>Renewal ${esc(r.state)}</h4><p class="quiet">${esc(r.model || "")} · auto=${r.auto_renew_in_acorn === true} · live=false</p></article>`).join("") : `<p class="quiet">No renewal proposed. One-time orders do not auto-renew.</p>`}
           ${expansions.length ? expansions.map((e) => `<article class="req" style="cursor:default"><h4>Expansion ${esc(e.state)}</h4><p class="quiet">${(e.next_problems || []).length} next problems · auto_contract=${e.auto_contract === true}</p></article>`).join("") : `<p class="quiet">No expansion recommendation stored.</p>`}
+        `;
+        $("os").innerHTML = `
+          <p class="quiet">exists=${(os.exists || []).length} · unknown=${(os.unknown || []).length} · live=false · executable=0</p>
+          <p class="quiet">waiting_human=${esc((os.waiting_human || []).join(", ") || "AUTHORIZATION_REQUIRED")}</p>
         `;
       } catch (e) {
         $("catalog").innerHTML = `<p class="err">${esc(e.error || "Could not load account")}</p>`;
