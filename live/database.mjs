@@ -8,10 +8,19 @@ import crypto from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import pg from "pg";
 import { applyMigrations } from "./migrate.mjs";
 
-const { Pool } = pg;
+async function loadPgPool() {
+  try {
+    const mod = await import("pg");
+    const Pool = (mod.default || mod).Pool;
+    if (typeof Pool !== "function") throw new Error("POSTGRES_DRIVER_UNAVAILABLE");
+    return Pool;
+  } catch (error) {
+    if (String(error?.message || error) === "POSTGRES_DRIVER_UNAVAILABLE") throw error;
+    throw new Error("POSTGRES_DRIVER_UNAVAILABLE");
+  }
+}
 
 export function adaptPgToSqlite(sql, params = []) {
   const indexes = [];
@@ -113,6 +122,7 @@ export async function createLiveDatabase(options = {}) {
   const env = options.env || process.env;
   const selected = selectLiveDatabaseAdapter(env);
   if (selected.mode === "postgres") {
+    const Pool = await loadPgPool();
     const pool = new Pool({
       connectionString: selected.url,
       max: Number(env.DB_POOL_MAX || 5),

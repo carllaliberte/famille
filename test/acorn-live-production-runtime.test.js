@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import { selectLiveDatabaseAdapter } from "../live/database.mjs";
 
 test("production runtime contract", () => {
-  assert.equal(typeof process.env.NODE_ENV, "string");
-  assert.ok("postgres".length > 0);
+  assert.equal(selectLiveDatabaseAdapter({ NODE_ENV: "production", DATABASE_URL: "postgres://example.invalid/db" }).mode, "postgres");
+  assert.throws(() => selectLiveDatabaseAdapter({ NODE_ENV: "production" }), /DATABASE_URL_REQUIRED/);
+  assert.notEqual(selectLiveDatabaseAdapter({ NODE_ENV: "production", DATABASE_URL: "postgres://example.invalid/db" }).mode, "sqlite");
 });
 
 test("production refuses silent sqlite fallback", () => {
