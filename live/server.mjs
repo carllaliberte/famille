@@ -15,7 +15,7 @@ import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWo
 import { assessRuntimeStatus } from "./runtime-status.mjs";
 import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadTenantAsOf } from "./enterprise-store.mjs";
 import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt, proposeCapabilities } from "../scripts/acorn-operational-fabric.mjs";
-import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented } from "../scripts/acorn-self-build.mjs";
+import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -597,6 +597,9 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         return send(200, {
           version: "acorn.self-build.v0",
           constitution: selfBuildConstitution(),
+          how_acorn_builds: howAcornBuilds(),
+          autonomy: autonomyLevel("L1"),
+          autonomy_ceiling_without_carl: AUTONOMY_CEILING_WITHOUT_CARL,
           implemented_now: implementedNow(),
           not_yet_implemented: notYetImplemented(),
           live: false,
@@ -617,8 +620,19 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           { name: "general", exists: true, available: false, reason: "CODE_PRESENT" }
         ];
         const observed = await runSelfBuildLoop({ task, required, known, zone: "BUILD" });
-        await persistEnterpriseEvent(database, { tenantId: cid, entityId: cid, type: "SELF_BUILD_OBSERVED", payload: { task, status: observed.status, gaps: observed.detection?.gaps?.map((g) => g.capability) || [], used: false, authorized: false, live: false }, actor: "acorn-live", authority: "none" });
-        return await sendPersist(200, { result: observed, proof: { live: false, authorized: false, used: false, auto_merge: false, zone: "BUILD" } });
+        await database.tx(async (tx) => {
+          await persistEnterpriseEvent(tx, { tenantId: cid, entityId: cid, type: "SELF_BUILD_OBSERVED", payload: { task, status: observed.status, gaps: observed.detection?.gaps?.map((g) => g.capability) || [], used: false, authorized: false, live: false, learned: observed.learned?.recorded === true }, actor: "acorn-live", authority: "none" });
+          for (const gap of observed.detection?.gaps || []) {
+            await persistState(tx, { entity: "CAPABILITY", id: makeId("gap"), tenant_id: cid, state: "ABSENT", data: { name: gap.capability, exists: false, available: false, authorized: false, executed: false, verified: false, gap: true, reason: gap.reason || "GAP_DETECTED", source: "self-build" } });
+          }
+        });
+        return await sendPersist(200, { result: observed, proof: { live: false, authorized: false, used: false, auto_merge: false, zone: "BUILD", learned: observed.learned?.recorded === true, promoted: false } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/self-build/repair") {
+        const b = await readBody(req);
+        const repair = proposeRepair({ failure: b.failure || b.error || "", failure_class: b.failure_class || null, attempt: b.attempt || 0 });
+        await persistEnterpriseEvent(database, { tenantId: cid, entityId: cid, type: "SELF_REPAIR_PROPOSED", payload: { status: repair.status, deploy: false, live: false }, actor: "acorn-live", authority: "none" });
+        return await sendPersist(200, { repair, proof: { live: false, deploy: false, auto_merge: false, authorized: false } });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
         return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });

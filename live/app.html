@@ -147,7 +147,7 @@
           <ol class="steps">
             <li><span class="dot">1</span><div><strong>Qualify</strong><div class="quiet">Acorn reads the problem and names required capabilities. Missing is not existing.</div></div></li>
             <li><span class="dot">2</span><div><strong>Plan</strong><div class="quiet">A task graph and intelligence routes are persisted. No execution yet.</div></div></li>
-            <li><span class="dot">3</span><div><strong>Hold</strong><div class="quiet">Real-world action waits for an explicit human authorization.</div></div></li>
+            <li><span class="dot">3</span><div><strong>Hold</strong><div class="quiet">Real-world action waits for an explicit human authorization. Acorn may propose a sandbox build for a missing capability. It cannot authorize itself.</div></div></li>
             <li><span class="dot">4</span><div><strong>Evidence</strong><div class="quiet">Every step is dated. Expired evidence is expired, not false.</div></div></li>
           </ol>
         </aside>
@@ -235,6 +235,7 @@
           <h3>Missing capabilities</h3>
           <div class="row">${data.gaps.map((g) => `<span class="chip warn">${esc(g.capability || g.name || "unknown")}</span>`).join(" ")}</div>
           <p class="quiet" style="margin-top:8px">A gap is a detected absence. It is not a working capability and it is not permission to build in production.</p>
+          <div class="row" style="margin-top:12px"><button class="btn btn-ghost" type="button" id="proposebuild">Propose a sandbox build</button></div>
         </div>` : ""}
         ${Array.isArray(data.holds) && data.holds.length ? `<div>
           <h3>Human hold</h3>
@@ -255,6 +256,28 @@
         <p class="mono">${req.id || ""} · human authorization required · billed=${proof.billed === true} · live=${proof.live === true}</p>
       `;
       show($("current"), true);
+      const propose = $("proposebuild");
+      if (propose) {
+        propose.addEventListener("click", async () => {
+          try {
+            const gaps = (data.gaps || []).map((g) => g.capability || g.name).filter(Boolean);
+            const observed = await call("/api/v1/self-build/observe", "POST", {
+              task: req.request || req.body?.request || "missing capability",
+              required: gaps
+            });
+            const result = observed.result || {};
+            propose.replaceWith(Object.assign(document.createElement("p"), {
+              className: "quiet",
+              textContent: "Sandbox proposal recorded. Used=" + String(result.used === true) + ". Authorized=" + String(result.authorized === true) + ". Live=false. Learned, not promoted."
+            }));
+          } catch (e) {
+            propose.replaceWith(Object.assign(document.createElement("p"), {
+              className: "err",
+              textContent: e.error || "The proposal was not recorded."
+            }));
+          }
+        });
+      }
     }
 
     async function loadRequests() {
