@@ -1,0 +1,5 @@
+import test from"node:test";import assert from"node:assert/strict";import{createRoute,rankRoutes,buildRoutePortfolio,recordRouteOutcome}from"../scripts/acorn-universal-capability-router.mjs";
+const r=(id,provider,cost,quality)=>createRoute({id,provider,capabilities:["reasoning"],cost,quality,reliability:.95,freshness:1,privacy:.9,availability:.99,evidence:{observed:true}});
+test("ranks by measured multidimensional fit",()=>{const x=rankRoutes({routes:[r("a","A",10,.7),r("b","B",0,.9)],required_capabilities:["reasoning"]});assert.equal(x[0].id,"b");});
+test("portfolio explicitly scopes best-known result",()=>{const p=buildRoutePortfolio({routes:[r("a","A",1,.8)],required_capabilities:["reasoning"]});assert.equal(p.selection_scope,"BEST_KNOWN_IN_SCOPE");assert.equal(p.global_optimum,false);});
+test("outcomes feed learning without authority",()=>{const o=recordRouteOutcome({route:r("a","A",1,.8),result:"ok",metrics:{latency_ms:42}});assert.equal(o.feeds_learning,true);assert.equal(o.authority,false);});
