@@ -1,0 +1,15 @@
+import test from "node:test";import assert from "node:assert/strict";
+import{PLANES,LOOP,createWorldNode,classifyAction,compileWorldIntent,composeCapabilities,routeWorld,registerOutcome,benchmarkWorld,recoveryDecision,buildWorldPortfolio,assertWorldConstitution}from"../scripts/acorn-universal-world-infrastructure-os.mjs";
+test("world constitution",()=>assert.equal(assertWorldConstitution(),true));
+test("world coverage is maximal",()=>assert.ok(PLANES.length>=20&&LOOP.length>=20));
+test("physical and federation planes exist",()=>assert.ok(PLANES.includes("PHYSICAL")&&PLANES.includes("FEDERATION")));
+test("unknown remains unknown",()=>assert.equal(createWorldNode({id:"x"}).state,"UNKNOWN"));
+test("consequential actions are human gated",()=>assert.equal(classifyAction("MONEY",{server_authorized:true}).authorized,false));
+test("merge is never self-authorized",()=>assert.equal(classifyAction("MERGE",{server_authorized:true}).authorized,false));
+test("intent compiles end-to-end",()=>assert.equal(compileWorldIntent({objective:"x"}).stages.at(-1),"REUSE"));
+test("composition needs verified capabilities",()=>assert.equal(composeCapabilities([{state:"DISCOVERED",capabilities:["x"]}],{required:["x"]}).state,"GAP_DETECTED"));
+test("verified routing only",()=>assert.equal(routeWorld([{id:"a",state:"DISCOVERED",quality:10}],{quality:1}).length,0));
+test("verified outcome becomes candidate",()=>assert.equal(registerOutcome({id:"o",measured:true,verified:true,evidence:["e"]}).state,"REUSABLE_CAPABILITY_CANDIDATE"));
+test("best known is scoped",()=>assert.equal(benchmarkWorld([{measured:true,verified:true,q:10}],{q:1}).global_optimum,false));
+test("recovery is explicit",()=>assert.equal(recoveryDecision({id:"x",state:"DEGRADED"}).steps[0],"ISOLATE"));
+test("portfolio remains human governed",()=>assert.equal(buildWorldPortfolio({}).authority,"CARL"));
