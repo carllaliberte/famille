@@ -99,7 +99,7 @@ describe("classifyAuth worker v10", () => {
         OPENROUTER_API_KEY: "sk-or-v1-abcdefghijklmnopqrstuvwxyz",
       },
       exists: (p) => String(p).endsWith("auth.json"),
-      spawn: () => ({ status: 0, stdout: "codex-cli 0.153.4\n" }),
+      spawn: () => ({ status: 0, stdout: "codex-cli 0.153.4assert.match(wf, /inputs\\.provider \\|\\| vars\\.CODEX_PROVIDER \\|\\| 'auto'/);n" }),
     });
     const auth = classifyAuth(io);
     assert.equal(auth.provider_selected, "openai");
@@ -145,7 +145,7 @@ describe("codex wrapper routing", () => {
     const r = spawnSync(wrap, ["exec", "hello"], {
       env: {
         ...process.env,
-        PATH: `${real}:/usr/bin:/bin`,
+        PATH: `${real}:${process.env.PATH || ""}`,
         CODEX_PROVIDER: "openai",
         OPENROUTER_API_KEY: "sk-or-v1-abcdefghijklmnopqrstuvwxyz",
       },
@@ -182,7 +182,7 @@ describe("workflow restore does not skip CODEX_AUTH_JSON because an OpenRouter k
   it("writes auth.json on openai even when OPENROUTER_API_KEY is in the same step", () => {
     const wf = fs.readFileSync(new URL("../.github/workflows/codex-autonomous-worker.yml", import.meta.url), "utf8");
     assert.match(wf, /provider:/);
-    assert.match(wf, /default: "openrouter"/);
+    assert.match(wf, /default: "auto"/);
     assert.match(wf, /inputs\.provider \|\| vars\.CODEX_PROVIDER \|\| 'openrouter'/);
     assert.match(wf, /chmod 600/);
     assert.match(wf, /auth_present=/);
