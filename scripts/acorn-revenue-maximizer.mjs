@@ -21,7 +21,7 @@ const clamp=v=>Math.max(0,Math.min(1,n(v)));
 
 export const DEFAULT_REVENUE_POLICY=Object.freeze({
   objective:"MAXIMIZE_VERIFIED_NET_OWNER_VALUE",
-  priority:["ENTERPRISE","MULTINATIONAL","BUSINESS","RESEARCH","DEVELOPER","PUBLIC"],
+  priority:["MULTINATIONAL","ENTERPRISE","BUSINESS","RESEARCH","DEVELOPER","PUBLIC"],
   open_access_preserved:true,
   sell_results_not_model_tokens:true,
   measured_pricing_only:true,
@@ -222,6 +222,103 @@ export function buildTaxReadyLedger({
     reconciliation_required:true,
     tax_advice:false,
     tax_ready:true,
+    authority:"carl",
+  };
+}
+
+
+export function measureCommercialYield({
+  gross_revenue=0,
+  direct_cost=0,
+  acquisition_cost=0,
+  payment_fees=0,
+  admin_cost=0,
+  recurring_revenue=0,
+  expansion_revenue=0,
+  verified_value=0,
+  transactions=0,
+}={}) {
+  const gross=pos(gross_revenue);
+  const costs=pos(direct_cost)+pos(acquisition_cost)+pos(payment_fees)+pos(admin_cost);
+  const net=gross-costs;
+  return {
+    gross_revenue:gross,
+    total_cost:costs,
+    net_owner_value:Number(net.toFixed(8)),
+    recurring_revenue:pos(recurring_revenue),
+    expansion_revenue:pos(expansion_revenue),
+    verified_value:pos(verified_value),
+    transactions:pos(transactions),
+    net_yield_on_cost:costs?Number((net/costs).toFixed(8)):null,
+    revenue_per_transaction:transactions?Number((gross/transactions).toFixed(8)):null,
+    net_per_transaction:transactions?Number((net/transactions).toFixed(8)):null,
+    recurring_share:gross?Number((pos(recurring_revenue)/gross).toFixed(8)):0,
+    expansion_share:gross?Number((pos(expansion_revenue)/gross).toFixed(8)):0,
+    measured:true,
+  };
+}
+
+export function scoreCommercialGrowth({
+  measured_yield=0,
+  recurring_share=0,
+  expansion_share=0,
+  verified_demand=0,
+  reuse=0,
+  reliability=0,
+  admin_burden=0,
+  acquisition_friction=0,
+}={}) {
+  return Number((
+    0.28*clamp(measured_yield) +
+    0.18*clamp(recurring_share) +
+    0.16*clamp(expansion_share) +
+    0.14*clamp(verified_demand) +
+    0.10*clamp(reuse) +
+    0.08*clamp(reliability) +
+    0.03*(1-clamp(admin_burden)) +
+    0.03*(1-clamp(acquisition_friction))
+  ).toFixed(6));
+}
+
+export function buildCommercialActionPlan({
+  opportunities=[],
+  capabilities=[],
+  existing_customers=[],
+}={}) {
+  const ranked=chooseRevenueOpportunities(opportunities,{max:50});
+  const actions=[];
+  for(const opportunity of ranked){
+    const segment=String(opportunity.audience||"BUSINESS").toUpperCase();
+    const verified=opportunity.verified!==false;
+    if(!verified) continue;
+    actions.push({
+      action: existing_customers.some(c=>c?.id===opportunity.customer_id) ? "EXPAND_EXISTING_CUSTOMER" : "QUALIFY_HIGH_VALUE_DEMAND",
+      opportunity_id:opportunity.id||null,
+      segment,
+      priority:opportunity.revenue_score,
+      capability_ids:Array.isArray(opportunity.capability_ids)?opportunity.capability_ids:[],
+      measured:true,
+      requires_human_contract:segment==="ENTERPRISE"||segment==="MULTINATIONAL",
+      auto_contract:false,
+    });
+  }
+  if(capabilities.length){
+    actions.push({
+      action:"PACKAGE_REUSABLE_CAPABILITIES",
+      capability_count:capabilities.length,
+      reuse_candidates:maximizeCapabilityReuse(opportunities),
+      measured:true,
+    });
+  }
+  return {
+    version:REVENUE_MAXIMIZER_VERSION,
+    actions:actions.sort((a,b)=>(b.priority||0)-(a.priority||0)),
+    objective:"MAXIMIZE_VERIFIED_SUSTAINABLE_NET_REVENUE",
+    acquisition_order:["MULTINATIONAL","ENTERPRISE","BUSINESS","RESEARCH","DEVELOPER","PUBLIC"],
+    expansion_before_new_infrastructure:true,
+    reuse_before_new_infrastructure:true,
+    no_auto_contract:true,
+    no_auto_spend:true,
     authority:"carl",
   };
 }
