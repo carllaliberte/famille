@@ -89,7 +89,8 @@ export function canonicalWorkFromRuntime(runtime) {
   push({ id:"connection-sweep", subject:"discover, authenticate, measure and verify all available connection adapters", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:0.9, reversibility:1, cost:0.1, execution_kind:"connection-sweep" }, "connections");
   push({ id:"privacy-process-audit", subject:"minimize data, redact secrets, enforce retention and reduce human administration", information_gain:1, capability_gain:0.9, risk_reduction:1, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"privacy-audit" }, "privacy");
   push({ id:"developer-gateway-sweep", subject:"keep universal developer onboarding and connection readiness measured", information_gain:1, capability_gain:1, risk_reduction:0.8, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"developer-gateway" }, "developer");
-  push({ id:"market-engine-cycle", subject:"detect demand, diversify verified offers, and prepare measured commercial collection", information_gain:1, capability_gain:1, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.08, execution_kind:"market");
+  push({ id:"market-engine-cycle", subject:"detect demand, diversify verified offers, and prepare measured commercial collection", information_gain:1, capability_gain:1, risk_reduction:0.7, uncertainty:0.9, reversibility:1, cost:0.08, execution_kind:"market" }, "market");
+  push({ id:"contribution-economy-cycle", subject:"allocate measured contribution rewards only through verified settlement rails", information_gain:0.8, capability_gain:0.8, risk_reduction:0.9, uncertainty:0.8, reversibility:1, cost:0.05, execution_kind:"contribution-economy" }, "economy");
 
   // Compute is part of the organism metabolism: execute every currently
   // executable safe resource, while keeping remote/paid/unknown work gated.
@@ -153,18 +154,19 @@ export function workState({ previous = {}, discovered = [] } = {}) {
   const old = new Map((previous.queue || []).map((row) => [row.id, row]));
   const queue = discovered.map((row) => {
     const prior = old.get(row.id);
+    const reopen = prior?.state === "COMPLETED" && row.repeatable !== false;
     return {
       ...row,
-      state: prior?.state || row.state,
+      state: reopen ? (text(row.state) || "READY") : (prior?.state || row.state),
       attempts: Number(prior?.attempts || 0),
-      cycle_count: prior?.state === "COMPLETED" && row.repeatable !== false ? Number(prior?.cycle_count || 0) + 1 : Number(prior?.cycle_count || 0),
+      cycle_count: reopen ? Number(prior?.cycle_count || 0) + 1 : Number(prior?.cycle_count || 0),
       optimization: { basis: Array.isArray(previous.history) && previous.history.length ? "measured_history" : "initial_measurement" },
       last_error: prior?.last_error || null,
       last_completed_at: prior?.last_completed_at || null,
       priority: scoreWork(row),
     };
   });
-  return { queue: rankWork(queue, { history: previous.history || [] }), updated_at: new Date().toISOString() };
+  return { queue: rankWork(queue), updated_at: new Date().toISOString() };
 }
 
 function executeDeterministic({ root, task, env }) {

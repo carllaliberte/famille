@@ -45,7 +45,10 @@
     "runtime:run-triage": "node scripts/acorn-cognitive-run-triage.mjs",
     "runtime:developer-gateway": "node scripts/acorn-developer-gateway.mjs",
     "runtime:market": "node scripts/acorn-market-engine.mjs",
-    "runtime:contribution-economy": "node scripts/acorn-contribution-economy.mjs"
+    "runtime:contribution-economy": "node scripts/acorn-contribution-economy.mjs",
+    "runtime:value-opportunity": "node scripts/acorn-value-opportunity-fabric.mjs",
+    "runtime:connections": "node scripts/acorn-connection-fabric.mjs",
+    "runtime:privacy": "node scripts/acorn-privacy-process.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -103,7 +106,11 @@
     "./acorn-cognitive-run-triage": "./scripts/acorn-cognitive-run-triage.mjs",
     "./acorn-developer-gateway": "./scripts/acorn-developer-gateway.mjs",
     "./acorn-market-engine": "./scripts/acorn-market-engine.mjs",
-    "./acorn-contribution-economy": "./scripts/acorn-contribution-economy.mjs"
+    "./acorn-contribution-economy": "./scripts/acorn-contribution-economy.mjs",
+    "./acorn-continuous-optimization": "./docs/acorn-continuous-optimization.md",
+    "./acorn-value-opportunity-fabric": "./scripts/acorn-value-opportunity-fabric.mjs",
+    "./acorn-connection-fabric": "./scripts/acorn-connection-fabric.mjs",
+    "./acorn-privacy-process": "./scripts/acorn-privacy-process.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"

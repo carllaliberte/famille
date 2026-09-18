@@ -53,7 +53,11 @@ export function classifyRun({ exitCode = 0, reason = "", stderr = "", checks = {
   return RUN_CLASSES.REAL_REGRESSION;
 }
 
-export function workflowExitCode(result) { return result.notify ? 1 : 0; }\n\nexport function notificationDecision(classification, { recovered = false } = {}) {
+export function workflowExitCode(result) {
+  return result.notify ? 1 : 0;
+}
+
+export function notificationDecision(classification, { recovered = false } = {}) {
   if (recovered) return { notify: false, severity: "info", action: "record" };
   if ([RUN_CLASSES.SUCCESS, RUN_CLASSES.EXPECTED_FAILURE].includes(classification)) {
     return { notify: false, severity: "info", action: "record" };

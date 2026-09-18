@@ -1,0 +1,10 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {redact,pseudonymousIdentity,minimizeRecord,privacyPolicy,retentionDecision,processPolicy,privacyAudit} from "../scripts/acorn-privacy-process.mjs";
+test("privacy defaults",()=>{const p=privacyPolicy();assert.equal(p.data_minimization,true);assert.equal(p.telemetry_default,"OFF");assert.equal(p.third_party_tracking,false);});
+test("secrets redact",()=>{const x=redact({api_key:"sk-test",nested:{password:"x"},ok:"yes"});assert.equal(x.api_key,"[REDACTED]");assert.equal(x.nested.password,"[REDACTED]");assert.equal(x.ok,"yes");});
+test("pseudonymous identity",()=>{const a=pseudonymousIdentity({subject:"client@example.com",salt:"s"});const b=pseudonymousIdentity({subject:"client@example.com",salt:"s"});assert.equal(a.id,b.id);assert.equal(a.source_identity_retained,false);});
+test("allowlisted records",()=>{assert.deepEqual(minimizeRecord({email:"x",usage:4},{allowed:["usage"]}),{usage:4});});
+test("retention",()=>{assert.equal(retentionDecision({age_days:31,retention_days:30}).state,"DELETE");assert.equal(retentionDecision({data_class:"SECRET"}).state,"DELETE");});
+test("human exception",()=>{assert.equal(processPolicy({irreversible:true}).mode,"EXCEPTION");assert.equal(processPolicy({security:true}).mode,"EXCEPTION");});
+test("audit",()=>{assert.equal(privacyAudit({events:[{id:"1"}]}).status,"PASS");assert.equal(privacyAudit({events:[{id:"2",contains_secret:true}]}).status,"FAIL");});

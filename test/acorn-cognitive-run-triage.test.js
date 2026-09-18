@@ -56,7 +56,6 @@ test("bounded verification records a successful first attempt", () => {
   assert.equal(r.attempts.length, 1);
 });
 
-
 test("bare HOLD is a human gate", () => {
   const r = triageRun({ exitCode: 1, stderr: "Verdict : HOLD" });
   assert.equal(r.classification, RUN_CLASSES.WAITING_HUMAN);
