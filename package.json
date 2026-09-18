@@ -49,7 +49,8 @@
     "runtime:contribution-economy": "node scripts/acorn-contribution-economy.mjs",
     "runtime:value-opportunity": "node scripts/acorn-value-opportunity-fabric.mjs",
     "runtime:connections": "node scripts/acorn-connection-fabric.mjs",
-    "runtime:privacy": "node scripts/acorn-privacy-process.mjs"
+    "runtime:privacy": "node scripts/acorn-privacy-process.mjs",
+    "runtime:revenue": "node scripts/acorn-revenue-maximizer.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -112,7 +113,8 @@
     "./acorn-continuous-optimization": "./docs/acorn-continuous-optimization.md",
     "./acorn-value-opportunity-fabric": "./scripts/acorn-value-opportunity-fabric.mjs",
     "./acorn-connection-fabric": "./scripts/acorn-connection-fabric.mjs",
-    "./acorn-privacy-process": "./scripts/acorn-privacy-process.mjs"
+    "./acorn-privacy-process": "./scripts/acorn-privacy-process.mjs",
+    "./acorn-revenue-maximizer": "./scripts/acorn-revenue-maximizer.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
