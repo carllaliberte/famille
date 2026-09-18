@@ -28,6 +28,14 @@ export const EVOLUTION_DOMAINS = Object.freeze([
   "ECONOMICS","RESOURCE","EVIDENCE","KNOWLEDGE","OPPORTUNITY","REAL_WORLD","UNKNOWN"
 ]);
 
+export const DECLARED_EVOLUTION_SURFACES = Object.freeze([
+  "CUSTOMER","PRODUCT","MARKET","CAPABILITY","INTELLIGENCE","CONNECTOR",
+  "PROJECT","CODE","ARCHITECTURE","QUALITY","SECURITY","PERFORMANCE",
+  "ECONOMICS","RESOURCE","EVIDENCE","KNOWLEDGE","OPPORTUNITY","REAL_WORLD"
+]);
+
+const FAILED_RUN_CONCLUSIONS = new Set(["failure", "timed_out", "cancelled", "action_required"]);
+
 const text = (v) => String(v ?? "").trim();
 const finite = (v, fallback = 0) => Number.isFinite(Number(v)) ? Number(v) : fallback;
 const clamp01 = (v) => Math.max(0, Math.min(1, finite(v)));
@@ -56,11 +64,116 @@ export function evolutionConstitution() {
     build_is_not_merge: true,
     verified_is_not_live: true,
     best_known_is_scoped: true,
+    declared_is_not_observed: true,
     human_authority: "carl",
     auto_merge: false,
     auto_spend: false,
     live: false
   });
+}
+
+export function judgeCardPresence(snapshot = {}) {
+  const card = snapshot.juge || snapshot.judge || null;
+  const quelle = text(card?.quelle);
+  const temoin = text(card?.temoin);
+  const epsilon = Number(card?.epsilon);
+  const horizon = text(card?.horizon);
+  const present = Boolean(
+    quelle &&
+    temoin &&
+    Number.isFinite(epsilon) &&
+    epsilon > 0 &&
+    horizon
+  );
+  return {
+    present,
+    mode: present ? "juge" : "classique",
+    hole: present ? null : "carte juge absente — quelle / temoin / epsilon>0 / horizon jour"
+  };
+}
+
+function failedWorkflowRunCount(runs) {
+  return runs.filter((run) => FAILED_RUN_CONCLUSIONS.has(text(run.conclusion).toLowerCase())).length;
+}
+
+function notMeasuredSurface(domain, extra = {}) {
+  return normalizeObservation({
+    id: "surface:" + domain,
+    domain,
+    status: "NOT_MEASURED",
+    unknown: true,
+    measured: false,
+    verified: false,
+    expected: null,
+    observed: extra.observed ?? null,
+    evidence: extra.evidence || "DECLARED_SURFACE_ABSENT_FROM_SNAPSHOT",
+    provenance: extra.provenance || null
+  });
+}
+
+export function observeDeclaredSurfaces(snapshot = {}) {
+  const prs = Array.isArray(snapshot.pull_requests) ? snapshot.pull_requests : null;
+  const runs = Array.isArray(snapshot.workflow_runs) ? snapshot.workflow_runs : null;
+  const juge = judgeCardPresence(snapshot);
+  const provenance = { main_sha: snapshot.main_sha || snapshot.mainSha || null };
+  const failedCount = runs ? failedWorkflowRunCount(runs) : null;
+  const openPrCount = prs
+    ? prs.filter((pr) => text(pr.state).toLowerCase() !== "closed").length
+    : null;
+
+  return DECLARED_EVOLUTION_SURFACES.map((domain) => {
+    if (domain === "CODE" && runs) {
+      return normalizeObservation({
+        id: "surface:CODE",
+        domain: "CODE",
+        status: failedCount > 0 ? "FAILED" : "OBSERVED",
+        expected: { failed_count: 0 },
+        observed: { run_count: runs.length, failed_count: failedCount },
+        failed: failedCount > 0,
+        unknown: false,
+        measured: false,
+        verified: false,
+        evidence: "workflow_runs",
+        provenance
+      });
+    }
+    if (domain === "PROJECT" && prs) {
+      return normalizeObservation({
+        id: "surface:PROJECT",
+        domain: "PROJECT",
+        status: "OBSERVED",
+        expected: null,
+        observed: { open_pr_count: openPrCount, listed_count: prs.length },
+        failed: false,
+        unknown: false,
+        measured: false,
+        verified: false,
+        evidence: "pull_requests",
+        provenance
+      });
+    }
+    if (domain === "EVIDENCE") {
+      return notMeasuredSurface("EVIDENCE", {
+        observed: { juge_present: juge.present, mode: juge.mode },
+        evidence: juge.hole,
+        provenance
+      });
+    }
+    return notMeasuredSurface(domain, { provenance });
+  });
+}
+
+export function collectEvolutionObservations(snapshot = {}) {
+  const declared = observeDeclaredSurfaces(snapshot);
+  const extra = [...arr(snapshot.observations), ...arr(snapshot.frontier)]
+    .filter((row) => row && typeof row === "object");
+  const byId = new Map(declared.map((row) => [row.id, row]));
+  for (const row of extra) {
+    const normalized = normalizeObservation(row);
+    if (!normalized.id) continue;
+    byId.set(normalized.id, normalized);
+  }
+  return [...byId.values()];
 }
 
 export function normalizeObservation(row = {}) {
@@ -264,6 +377,10 @@ export function buildEvolutionMandate({ portfolio, cycle, repo = "carllaliberte/
     "WORLD → OBSERVE → GAP → DISCOVER → COMPARE → COMPOSE → SIMULATE → PROPOSE → BUILD/EXECUTE → MEASURE → FALSIFY → VERIFY → REGISTER → REUSE → OBSERVE","",
     "## Search surface",
     "Inspect customer outcome, product friction, market demand, capabilities, intelligences, connectors, code, architecture, quality, security, performance, economics, resources, evidence, knowledge, opportunities and real-world execution.","",
+    "## DECLARED ≠ OBSERVED",
+    "The 18 surfaces are observed one row each. A declaration is not an observation.",
+    "Missing snapshot evidence stays NOT_MEASURED / UNKNOWN. The hole is named. It is not filled.",
+    "Carte juge absente → MODE classique. Pas d'invention des quatre champs.","",
     "## Frontier rule",
     "Always seek the best known sufficiently demonstrated result within explicit scope. Never convert an unmeasured finite candidate set into a global-best claim.","",
     "## Learning rule",
@@ -313,8 +430,10 @@ export function runContinuousEvolution(snapshot = {}) {
     now: snapshot.observed_at || new Date().toISOString()
   });
 
+  const juge = judgeCardPresence(snapshot);
+  const observations = collectEvolutionObservations(snapshot);
   const frontier = discoverFrontier({
-    observations: snapshot.observations || snapshot.frontier || [],
+    observations,
     capabilities: snapshot.capabilities || [],
     opportunities: snapshot.opportunities || []
   });
@@ -340,6 +459,13 @@ export function runContinuousEvolution(snapshot = {}) {
   return {
     version: CONTINUOUS_EVOLUTION_VERSION,
     action,
+    mode: juge.mode,
+    juge,
+    observations,
+    declared_surface_count: DECLARED_EVOLUTION_SURFACES.length,
+    observed_surface_count: DECLARED_EVOLUTION_SURFACES.filter((domain) =>
+      observations.some((row) => row.domain === domain)
+    ).length,
     portfolio,
     mandate,
     frontier,
@@ -375,6 +501,18 @@ export function assertContinuousEvolutionContract(result = {}) {
   if (result.portfolio?.one_coherent_change && result.portfolio.no_micro_tasks !== true) {
     throw new Error("EVOLUTION_MICRO_TASK_SPLIT_FORBIDDEN");
   }
+  const observedDomains = new Set(arr(result.observations).map((row) => row.domain));
+  for (const surface of DECLARED_EVOLUTION_SURFACES) {
+    if (!observedDomains.has(surface)) {
+      throw new Error("EVOLUTION_DECLARED_SURFACE_NOT_OBSERVED:" + surface);
+    }
+  }
+  if (result.juge?.present !== true && result.mode !== "classique") {
+    throw new Error("EVOLUTION_MISSING_JUGE_MUST_STAY_CLASSIQUE");
+  }
+  if (arr(result.observations).some((row) => row.verified === true || row.measured === true)) {
+    throw new Error("EVOLUTION_FAKE_MEASURED_OR_VERIFIED_FORBIDDEN");
+  }
   return true;
 }
 
@@ -383,8 +521,7 @@ function loadEvolutionInput(path) {
   if (process.env.ACORN_EVOLUTION_SNAPSHOT) return JSON.parse(process.env.ACORN_EVOLUTION_SNAPSHOT);
   return {
     repository: process.env.GITHUB_REPOSITORY || "carllaliberte/famille",
-    main_sha: process.env.GITHUB_SHA || "UNKNOWN",
-    observations: []
+    main_sha: process.env.GITHUB_SHA || "UNKNOWN"
   };
 }
 

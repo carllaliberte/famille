@@ -1,7 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
+  DECLARED_EVOLUTION_SURFACES,
   evolutionConstitution,
+  judgeCardPresence,
+  observeDeclaredSurfaces,
+  collectEvolutionObservations,
   normalizeObservation,
   detectGap,
   scoreEvolutionCandidate,
@@ -21,6 +26,7 @@ test("constitution keeps evolution below human authority", () => {
   assert.equal(c.auto_spend, false);
   assert.equal(c.live, false);
   assert.equal(c.human_authority, "carl");
+  assert.equal(c.declared_is_not_observed, true);
 });
 
 test("unknown is a research target", () => {
@@ -94,4 +100,68 @@ test("full cycle remains bounded and truthful", () => {
   assert.equal(result.auto_spend, false);
   assert.equal(result.live, false);
   assert.equal(result.authority, "carl");
+  assert.equal(result.mode, "classique");
+  assert.equal(result.juge.present, false);
+  assert.equal(result.observed_surface_count, 18);
+});
+
+test("eighteen declared surfaces are observed, never an empty array", () => {
+  assert.equal(DECLARED_EVOLUTION_SURFACES.length, 18);
+  const rows = observeDeclaredSurfaces({
+    main_sha: "abc",
+    pull_requests: [{ number: 916, state: "open", title: "evolution" }],
+    workflow_runs: [
+      { name: "carte", conclusion: "success" },
+      { name: "nom", conclusion: "failure" }
+    ]
+  });
+  assert.equal(rows.length, 18);
+  assert.deepEqual(rows.map((row) => row.domain), [...DECLARED_EVOLUTION_SURFACES]);
+  const code = rows.find((row) => row.domain === "CODE");
+  const project = rows.find((row) => row.domain === "PROJECT");
+  const customer = rows.find((row) => row.domain === "CUSTOMER");
+  const evidence = rows.find((row) => row.domain === "EVIDENCE");
+  assert.equal(code.status, "FAILED");
+  assert.equal(code.measured, false);
+  assert.equal(code.verified, false);
+  assert.deepEqual(code.observed, { run_count: 2, failed_count: 1 });
+  assert.equal(project.status, "OBSERVED");
+  assert.deepEqual(project.observed, { open_pr_count: 1, listed_count: 1 });
+  assert.equal(customer.status, "NOT_MEASURED");
+  assert.equal(customer.unknown, true);
+  assert.equal(evidence.status, "NOT_MEASURED");
+  assert.equal(evidence.observed.mode, "classique");
+});
+
+test("missing snapshot evidence stays NOT_MEASURED and MODE classique", () => {
+  const juge = judgeCardPresence({});
+  assert.equal(juge.present, false);
+  assert.equal(juge.mode, "classique");
+  const rows = observeDeclaredSurfaces({});
+  assert.equal(rows.length, 18);
+  assert.ok(rows.every((row) => row.status === "NOT_MEASURED"));
+  assert.ok(rows.every((row) => row.unknown === true));
+  assert.ok(rows.every((row) => row.measured === false && row.verified === false));
+  const empty = collectEvolutionObservations({ observations: [] });
+  assert.equal(empty.length, 18);
+});
+
+test("empty observations array does not wipe declared surfaces", () => {
+  const result = runContinuousEvolution({
+    repository: "carllaliberte/famille",
+    main_sha: "main-sha",
+    pull_requests: [],
+    workflow_runs: [],
+    observations: []
+  });
+  assertContinuousEvolutionContract(result);
+  assert.equal(result.observations.length, 18);
+  assert.equal(result.mode, "classique");
+  assert.equal(result.observations.some((row) => row.verified === true), false);
+});
+
+test("workflow snapshots declared surfaces instead of an empty list", () => {
+  const yml = readFileSync(".github/workflows/acorn-continuous-evolution.yml", "utf8");
+  assert.equal(yml.includes("observations: []"), false);
+  assert.equal(yml.includes("observeDeclaredSurfaces"), true);
 });
