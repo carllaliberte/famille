@@ -1,0 +1,9 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {receiveSignal,contextualizeSignal,composeResponse,proposeNextBestAction,recordOutcome,learnFromOutcome,buildContinuousLoop,assertCortexOperatingConstitution} from "../scripts/acorn-cortex-operating-loop.mjs";
+test("cortex receives typed world signals",()=>{assert.equal(receiveSignal({type:"DEMAND",payload:{x:1},source:"test"}).state,"RECEIVED");});
+test("signals gain shared context",()=>{const s=contextualizeSignal(receiveSignal({type:"OPPORTUNITY",payload:{},source:"t"}),{knowledge:["k"],capabilities:["c"]});assert.equal(s.state,"CONTEXTUALIZED");assert.deepEqual(s.context.knowledge_ids,["k"]);});
+test("composition evaluates value cost and risk",()=>{const c=composeResponse({options:[{id:"a",expected_value:10,cost:2,risk:1},{id:"b",expected_value:20,cost:5,risk:1}]});assert.equal(c.options[0].id,"b");});
+test("next action remains proposal",()=>{const c=composeResponse({options:[{id:"a",expected_value:10,cost:1,risk:0}]});const p=proposeNextBestAction(c);assert.equal(p.state,"PROPOSED");assert.equal(p.requires_authorization,true);});
+test("outcomes become learning signals",()=>{const o=recordOutcome({proposal:{signal_id:"s"},actual_value:100,actual_cost:40,evidence:["e"]});assert.equal(learnFromOutcome(o).net_value,60);});
+test("continuous loop joins the cortex pieces",()=>{const s=receiveSignal({type:"WORLD_CHANGE",payload:{},source:"t"});assert.equal(buildContinuousLoop({signals:[s],options:[]}).continuous,true);});
+test("authority and Breaker remain protected",()=>{assert.equal(assertCortexOperatingConstitution(),true);assert.throws(()=>assertCortexOperatingConstitution({breaker_touched:true}),/BREAKER/);assert.throws(()=>assertCortexOperatingConstitution({auto_authorize:true}),/AUTHORIZATION/);assert.throws(()=>assertCortexOperatingConstitution({hidden_learning:true}),/TRACEABLE/);});
