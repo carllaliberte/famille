@@ -16,6 +16,7 @@ import {
   revenueMaximizerBounded,
   developerSurface,
   commercialTruth,
+  advanceAfterPayment,
   PRICE_CATALOG,
   PRICING_VERSION
 } from "../scripts/acorn-commercial-runtime.mjs";
@@ -159,6 +160,91 @@ export async function persistCommercialProject(db, commercial, { tenantId, reque
   }
 }
 
+export async function persistAfterPayment(db, { order, entry, capabilities = [], gaps = [] }) {
+  const cycle = advanceAfterPayment({
+    order,
+    entry,
+    project: { id: order.project_id },
+    capabilities,
+    gaps
+  });
+  const tenantId = order.tenant_id;
+  await persistState(db, {
+    entity: "DELIVERY",
+    id: cycle.delivery.id,
+    tenant_id: tenantId,
+    state: cycle.delivery.state,
+    data: { ...cycle.delivery, paid: false, live: false, delivered: false }
+  });
+  await persistState(db, {
+    entity: "VALUE",
+    id: "val_" + order.id,
+    tenant_id: tenantId,
+    state: cycle.value.epistemic || "OBSERVED",
+    data: { ...cycle.value, paid: false, live: false, verified: false, project_id: order.project_id }
+  });
+  await persistState(db, {
+    entity: "RENEWAL",
+    id: "ren_" + order.id,
+    tenant_id: tenantId,
+    state: cycle.renewal.state,
+    data: { ...cycle.renewal, project_id: order.project_id, live: false, auto: false }
+  });
+  await persistState(db, {
+    entity: "EXPANSION",
+    id: "exp_" + order.project_id,
+    tenant_id: tenantId,
+    state: cycle.expansion.state,
+    data: { ...cycle.expansion, live: false, auto_contract: false }
+  });
+  await persistState(db, {
+    entity: "PROJECT",
+    id: order.project_id,
+    tenant_id: tenantId,
+    state: cycle.stage,
+    data: {
+      request_id: order.project_id,
+      customer_id: order.customer_id,
+      stage: cycle.stage,
+      delivered: false,
+      payment_observed: order.state === "PAYMENT_OBSERVED",
+      live: false,
+      paid: false,
+      mode: "PLAN"
+    }
+  });
+  return cycle;
+}
+
+export async function loadCommercialCycle(db, tenantId, projectId) {
+  const orders = (await db.all(
+    "SELECT * FROM commercial_orders WHERE tenant_id=$1 AND project_id=$2 ORDER BY created_at DESC",
+    [tenantId, projectId]
+  )).map(rowOrder);
+  const ledger = (await db.all(
+    "SELECT * FROM economic_ledger WHERE tenant_id=$1 AND project_id=$2 ORDER BY measured_at",
+    [tenantId, projectId]
+  )).map((r) => ({ ...r, payload: parseJson(r.payload, {}), billed: false, paid: false, live: false }));
+  const related = await loadTenantState(db, tenantId);
+  const ofProject = (entity) => related.filter((s) => s.entity === entity && (s.data?.project_id === projectId || s.id === "exp_" + projectId || s.id === projectId));
+  const deliveries = ofProject("DELIVERY").map((s) => ({ ...s.data, id: s.id, state: s.state, delivered: false, live: false }));
+  const values = ofProject("VALUE").map((s) => ({ ...s.data, id: s.id, state: s.state, verified: false, live: false }));
+  const renewals = ofProject("RENEWAL").map((s) => ({ ...s.data, id: s.id, state: s.state, auto: false, live: false }));
+  const expansions = ofProject("EXPANSION").map((s) => ({ ...s.data, id: s.id, state: s.state, auto_contract: false, live: false }));
+  return {
+    orders,
+    ledger,
+    delivery: deliveries[0] || null,
+    value: values[0] || null,
+    renewal: renewals[0] || null,
+    expansion: expansions[0] || null,
+    delivered: false,
+    execution_authorized: false,
+    live: false,
+    paid: false
+  };
+}
+
 export async function processStripeWebhook({ db, env, rawBody, signature }) {
   const secret = String(env.STRIPE_WEBHOOK_SECRET || "").trim();
   const verified = verifyWebhookSignature({ rawBody, signature, secret });
@@ -220,6 +306,7 @@ export async function processStripeWebhook({ db, env, rawBody, signature }) {
     }
     const confirmed = confirmPaymentFromEvent({ event, order, tenantId });
     await persistLedger(tx, confirmed.entry);
+    let cycle = null;
     if (confirmed.order) {
       await persistOrder(tx, confirmed.order);
       await persistState(tx, {
@@ -263,6 +350,14 @@ export async function processStripeWebhook({ db, env, rawBody, signature }) {
           margin: 0.1,
           validUntil: new Date(Date.now() + 30 * 86400000).toISOString()
         }, confirmed.order.project_id);
+        const related = await loadTenantState(tx, tenantId || confirmed.order.tenant_id);
+        const projectCaps = related.filter((s) => s.entity === "CAPABILITY" && s.data?.request_id === confirmed.order.project_id);
+        cycle = await persistAfterPayment(tx, {
+          order: confirmed.order,
+          entry: confirmed.entry,
+          capabilities: projectCaps.map((s) => ({ ...s.data, id: s.id, exists: s.data?.exists === true })),
+          gaps: projectCaps.filter((s) => s.data?.exists !== true).map((s) => ({ capability: s.data?.name, reason: s.data?.reason || "GAP_DETECTED" }))
+        });
       }
     }
     await tx.run(
@@ -276,9 +371,11 @@ export async function processStripeWebhook({ db, env, rawBody, signature }) {
       epistemic: confirmed.entry.epistemic,
       reconciliation: confirmed.entry.reconciliation,
       execution_authorized: false,
+      delivered: false,
       live: false,
       verified: false,
-      stripe_livemode: event.livemode === true
+      stripe_livemode: event.livemode === true,
+      cycle: cycle ? { stage: cycle.stage, delivered: false, execution_authorized: false, live: false } : null
     };
   });
   return { status: 200, body: { ok: true, ...result, paid: false, live: false } };
@@ -329,7 +426,18 @@ export async function handleAuthedCommercial({
   }
 
   if (method === "GET" && pathname === "/api/v1/revenue") {
-    return send(200, revenueMaximizerBounded([]));
+    const orders = (await db.all("SELECT * FROM commercial_orders WHERE tenant_id=$1", [cid])).map(rowOrder);
+    const opportunities = orders
+      .filter((o) => o.state === "PAYMENT_OBSERVED")
+      .map((o) => ({
+        audience: "BUSINESS",
+        model: o.model,
+        gross_revenue: o.amount_cents,
+        verified: false,
+        source: "observed_order",
+        order_id: o.id
+      }));
+    return send(200, { ...revenueMaximizerBounded(opportunities), live: false, auto_spend: false });
   }
 
   const projectOffers = pathname.match(/^\/api\/v1\/projects\/([^/]+)\/offers$/);
@@ -559,14 +667,41 @@ export async function handleAuthedCommercial({
 
   if (method === "GET" && pathname === "/api/v1/renewal") {
     const orders = (await db.all("SELECT * FROM commercial_orders WHERE tenant_id=$1", [cid])).map(rowOrder);
-    return send(200, { renewals: orders.map((o) => proposeRenewal({ order: o })), live: false });
+    const stored = (await loadTenantState(db, cid, "RENEWAL")).map((s) => ({ ...s.data, id: s.id, state: s.state, auto: false, live: false }));
+    const computed = orders.map((o) => proposeRenewal({ order: o }));
+    return send(200, {
+      renewals: stored.length ? stored : computed,
+      auto_renew_in_acorn: false,
+      live: false
+    });
   }
 
   if (method === "GET" && pathname === "/api/v1/expansion") {
-    return send(200, proposeExpansion({ project: { id: cid } }));
+    const related = await loadTenantState(db, cid);
+    const stored = related.filter((s) => s.entity === "EXPANSION");
+    if (stored.length) {
+      return send(200, {
+        expansions: stored.map((s) => ({ ...s.data, id: s.id, state: s.state, auto_contract: false, live: false })),
+        live: false,
+        auto_contract: false
+      });
+    }
+    const gaps = related
+      .filter((s) => s.entity === "CAPABILITY" && s.data?.exists !== true)
+      .map((s) => s.data?.name)
+      .filter(Boolean);
+    const assets = related
+      .filter((s) => s.entity === "ASSET" || s.entity === "PRODUCT")
+      .map((s) => ({ id: s.id, name: s.data?.name || s.id }));
+    const proposed = proposeExpansion({
+      project: { id: cid },
+      assets,
+      nextProblems: gaps
+    });
+    return send(200, { ...proposed, live: false, auto_contract: false });
   }
 
   return null;
 }
 
-export { createCommercialProject, PRICE_CATALOG, PRICING_VERSION };
+export { createCommercialProject, PRICE_CATALOG, PRICING_VERSION, rowOrder };

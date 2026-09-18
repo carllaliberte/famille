@@ -16,7 +16,7 @@ import { assessRuntimeStatus } from "./runtime-status.mjs";
 import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadTenantAsOf } from "./enterprise-store.mjs";
 import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt, proposeCapabilities } from "../scripts/acorn-operational-fabric.mjs";
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
-import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject } from "./commercial.mjs";
+import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject, loadCommercialCycle } from "./commercial.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -561,6 +561,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         const state = await database.get("SELECT * FROM acorn_state WHERE id=$1 AND tenant_id=$2", [row.id, cid]);
         const evidence = await database.all("SELECT * FROM acorn_evidence WHERE request_id=$1 AND tenant_id=$2", [row.id, cid]);
         const related = await loadTenantState(database, cid);
+        const commercial = await loadCommercialCycle(database, cid, row.id);
         return send(200, {
           request: publicRequest(row),
           project: state ? { id: state.id, entity: state.entity, state: state.state } : null,
@@ -571,9 +572,23 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           tasks: related.filter((s) => s.entity === "TASK" && s.data?.project_id === row.id),
           economic: related.filter((s) => s.entity === "MONEY_CLAIM").map((s) => ({ ...s.data, billed: false, paid: false, live: false })),
           offers: related.filter((s) => s.entity === "OFFER" && (s.data?.project_id === row.id || s.data?.request_id === row.id)).map((s) => ({ ...s.data, id: s.id, state: s.state, paid: false, live: false })),
+          orders: commercial.orders,
+          ledger: commercial.ledger,
+          delivery: commercial.delivery,
+          value: commercial.value,
+          renewal: commercial.renewal,
+          expansion: commercial.expansion,
           events: events.map((e) => ({ ...e, payload: parseJson(e.payload, {}) })),
           evidence: evidence.map((e) => ({ id: e.id, claim: e.claim, source: e.source || e.origin, status: e.status, measured_at: e.measured_at, valid_until: e.valid_until })),
-          proof: { live: false, delivered: false, billed: false, verified: false }
+          proof: {
+            live: false,
+            delivered: false,
+            billed: false,
+            verified: false,
+            paid: false,
+            execution_authorized: false,
+            payment_is_not_delivery: true
+          }
         });
       }
       if (req.method === "POST" && u.pathname === "/api/v1/intelligences/discover") {

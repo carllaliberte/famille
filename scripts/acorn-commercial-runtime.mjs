@@ -441,6 +441,55 @@ export function measureProjectValue({ order, entry, deliveryCostCents = null, cu
   };
 }
 
+export function advanceAfterPayment({
+  order,
+  entry = null,
+  project = null,
+  capabilities = [],
+  gaps = []
+} = {}) {
+  const observed = order?.state === "PAYMENT_OBSERVED";
+  const value = measureProjectValue({ order, entry });
+  const renewal = proposeRenewal({ order });
+  const expansion = proposeExpansion({
+    project: project || { id: order?.project_id || null },
+    assets: (capabilities || []).filter((c) => c && (c.exists === true || c.available === true)),
+    nextProblems: (gaps || []).map((g) => g.capability || g.name || g).filter(Boolean)
+  });
+  const delivery = {
+    id: order?.id ? "del_" + order.id : uid("del"),
+    order_id: order?.id || null,
+    project_id: order?.project_id || null,
+    tenant_id: order?.tenant_id || null,
+    state: observed ? "WAITING_HUMAN" : "NOT_STARTED",
+    delivered: false,
+    reason: observed ? "PAYMENT_IS_NOT_DELIVERY" : "PAYMENT_NOT_OBSERVED",
+    execution_authorized: false,
+    human_authorization_required: true,
+    live: false,
+    verified: false
+  };
+  return {
+    stage: observed ? "EXECUTION_HOLD" : (order?.state || "ORDER"),
+    execution_authorized: false,
+    delivered: false,
+    billed: false,
+    paid: false,
+    live: false,
+    verified: false,
+    delivery,
+    value,
+    renewal,
+    expansion,
+    proof: {
+      payment_is_not_execution: true,
+      payment_is_not_delivery: true,
+      payment_is_not_live: true,
+      human_authorization_required: true
+    }
+  };
+}
+
 export function proposeRenewal({ order, usage } = {}) {
   if (!order || order.model !== "SUBSCRIPTION") {
     return { state: "NOT_APPLICABLE", reason: "RENEWAL_FOR_SUBSCRIPTIONS", live: false, auto: false };
