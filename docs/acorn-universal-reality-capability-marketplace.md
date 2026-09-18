@@ -1,0 +1,4 @@
+# ACORN — UNIVERSAL REALITY CAPABILITY MARKETPLACE
+Demand becomes verified capabilities, composed solutions and measurable outcomes across digital and physical domains. Verified outcomes become reusable capability and new market supply.
+Loop: OBSERVE → DETECT NEED → DISCOVER CAPABILITY → QUALIFY → COMPARE → COMPOSE → SIMULATE → PRICE → OFFER → ORDER → AUTHORIZE → EXECUTE → VERIFY → DELIVER → MEASURE VALUE → BENCHMARK → LEARN → REGISTER → REUSE → PRODUCTIZE → MATCH NEW DEMAND → EXPAND → SCALE → RECOMPOSE → REOBSERVE.
+Truth: OFFER != ORDER != PAYMENT != EXECUTION != VALUE != LIVE. Consequential authority remains human/server controlled.
