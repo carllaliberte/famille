@@ -50,7 +50,9 @@ test("work discovery is unified and rankable", () => {
     },
   };
   const rows = canonicalWorkFromRuntime(runtime);
-  assert.equal(rows.length, 3);
+  assert.equal(rows.length, 5);
+  assert.ok(rows.some((row) => row.execution_kind === "connection-sweep"));
+  assert.ok(rows.some((row) => row.execution_kind === "compute-sweep"));
   assert.equal(rankWork(rows)[0].priority >= rankWork(rows)[1].priority, true);
 });
 
@@ -136,4 +138,18 @@ test("continuous optimization reopens recurring work and records measured schedu
   assert.equal(graph.queue[0].state, "READY");
   assert.equal(graph.queue[0].cycle_count, 1);
   assert.equal(graph.queue[0].optimization.basis, "measured_history");
+});
+
+
+test("continuous work executes the canonical connection sweep", async () => {
+  const rows = canonicalWorkFromRuntime({ unified: { evolution: {}, learning: {}, metabolism: {} }, coverage: {} });
+  const sweep = rows.find((row) => row.execution_kind === "connection-sweep");
+  assert.ok(sweep);
+  const execution = await executeWorkTask({ root: process.cwd(), task: sweep, env: { ...process.env, ACORN_ALLOW_REMOTE_EXECUTION: "false" } });
+  assert.equal(execution.executor, "connection-fabric");
+  assert.ok(execution.connections);
+  assert.equal(execution.connections.constitution.external_boundary, "connector-flux");
+  assert.equal(execution.connections.auto_spend, false);
+  assert.equal(execution.connections.live, false);
+  assert.equal(execution.connections.proof.status, "VERIFIED");
 });
