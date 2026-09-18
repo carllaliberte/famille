@@ -12,7 +12,7 @@ test("real-world bridge requires configured credentials but never exposes them",
  process.env.ACORN_TEST_SECRET="secret";
  const c={id:"write-api",provider:"test",base_url:"https://example.test/",effect:"WRITE",credential_env:"ACORN_TEST_SECRET"};
  const call=buildExternalCall({connector:c,path:"write",method:"POST",body:{ok:true},human_authorized:true});
- assert.equal(call.state,"AUTHORIZED"); assert.equal(call.credential_present,true); assert.equal(call.credential_env,"ACORN_TEST_SECRET"); assert.equal(call.credential,"undefined"===typeof call.credential);
+ assert.equal(call.state,"AUTHORIZED"); assert.equal(call.credential_present,true); assert.equal(call.credential_env,"ACORN_TEST_SECRET"); assert.equal("credential" in call,false);
  delete process.env.ACORN_TEST_SECRET;
 });
 test("read connector can be measured and externally observed",async()=>{
