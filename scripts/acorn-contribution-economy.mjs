@@ -63,6 +63,20 @@ export function measureContribution({contributorId,usage=0,successfulOperations=
   };
 }
 
+export function contributionSettlementReadiness({ paymentRail = null, destination = null } = {}) {
+  const verifiedRail = paymentRail?.verified === true;
+  const publicDestination = destination?.type === "PUBLIC_ADDRESS" || destination?.type === "PAYMENT_ENDPOINT";
+  return {
+    ready: verifiedRail && publicDestination,
+    state: verifiedRail && publicDestination ? "READY" : "HOLD_HUMAN",
+    verified_rail: verifiedRail,
+    public_destination: publicDestination,
+    no_custody: true,
+    private_keys_in_acorn: false,
+    authority: "carl",
+  };
+}
+
 export function allocateRevenue({grossRevenue=0,contributions=[],policy=DEFAULT_ECONOMY_POLICY}={}) {
   const gross=Math.max(0,num(grossRevenue));
   const poolRatio=clamp(policy.contributor_pool_ratio);
