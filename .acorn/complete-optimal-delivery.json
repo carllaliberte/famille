@@ -1,0 +1,10 @@
+{
+  "contract":"acorn.complete-optimal-delivery.v1",
+  "status":"CODE_PRESENT",
+  "truth":"BEST_KNOWN_IN_SCOPE_ONLY",
+  "never_final":true,
+  "authority":"HUMAN",
+  "auto_merge":false,
+  "auto_spend":false,
+  "auto_contract":false
+}
