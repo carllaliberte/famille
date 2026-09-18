@@ -1,0 +1,15 @@
+{
+  "contract":"acorn.self-project.architecture.v1",
+  "planes":{
+    "intent":"human objective and acceptance",
+    "capability":"discover and compose measured capabilities",
+    "intelligence":"provider-neutral cognitive roles",
+    "connection":"external systems and future surfaces",
+    "execution":"authorized operational actions",
+    "evidence":"provenance, measurement, verification and expiry",
+    "value":"customer outcome and economic measurement",
+    "evolution":"continuous improvement and reuse"
+  },
+  "canonical_loop":"INTENT→CAPABILITY→COMPOSITION→EXECUTION→EVIDENCE→VALUE→LEARNING→REUSE→EVOLUTION",
+  "truth":"DEFINED != CODE_PRESENT != TESTED != EXECUTED != MEASURED != VERIFIED != LIVE"
+}
