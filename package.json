@@ -61,7 +61,8 @@
     "runtime:client-ready": "node scripts/acorn-client-ready.mjs",
     "runtime:customer-service": "node scripts/acorn-customer-service.mjs",
     "live:server": "node live/server.mjs",
-    "runtime:enterprise": "node scripts/acorn-real-world-enterprise-os.mjs"
+    "runtime:enterprise": "node scripts/acorn-real-world-enterprise-os.mjs",
+    "runtime:execution": "node scripts/acorn-execution-fabric.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -135,7 +136,8 @@
     "./acorn-asset-product-factory": "./scripts/acorn-asset-product-factory.mjs",
     "./acorn-client-ready": "./scripts/acorn-client-ready.mjs",
     "./acorn-customer-service": "./scripts/acorn-customer-service.mjs",
-    "./acorn-real-world-enterprise-os": "./scripts/acorn-real-world-enterprise-os.mjs"
+    "./acorn-real-world-enterprise-os": "./scripts/acorn-real-world-enterprise-os.mjs",
+    "./acorn-execution-fabric": "./scripts/acorn-execution-fabric.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
