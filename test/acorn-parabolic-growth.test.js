@@ -1,0 +1,14 @@
+import test from"node:test";import assert from"node:assert/strict";
+import{VECTORS,FLYWHEEL,LEVERAGE,leverageScore,rankGrowthLevers,compoundOutcome,buildParabolicPortfolio,nextParabolicChantier,assertParabolicConstitution}from"../scripts/acorn-parabolic-growth-engine.mjs";
+import{multiplyProject}from"../scripts/acorn-universal-project-multiplier.mjs";import{networkEffect,findReuseHubs}from"../scripts/acorn-network-effect-fabric.mjs";
+test("parabolic constitution",()=>assert.equal(assertParabolicConstitution(),true));
+test("broad optimization surface",()=>assert.ok(VECTORS.length>=20&&FLYWHEEL.length>=18&&LEVERAGE.length>=6));
+test("leverage rewards reuse and value",()=>assert.ok(leverageScore({reuse:10,customer_value:10,composition:10})>0));
+test("blocked work is excluded",()=>assert.equal(rankGrowthLevers([{blocked:true,reuse:100}]).length,0));
+test("unverified outcomes do not compound",()=>assert.equal(compoundOutcome({verified:false,measured:true,evidence:["e"]}).state,"NO_COMPOUNDING"));
+test("verified outcomes compound",()=>assert.equal(compoundOutcome({verified:true,measured:true,evidence:["e"]}).state,"COMPOUNDABLE"));
+test("highest leverage scope is selected",()=>assert.equal(nextParabolicChantier({work:[{id:"a",reuse:10},{id:"b",reuse:1}]}).target.id,"a"));
+test("portfolio preserves authority",()=>assert.equal(buildParabolicPortfolio({}).human_authority,"CARL"));
+test("project multiplication requires evidence",()=>assert.equal(multiplyProject({verified:true,measured:true,evidence:["e"]}).state,"MULTIPLIABLE"));
+test("network effects do not create authority",()=>assert.equal(networkEffect([{id:"a"}],[]).authority,"UNCHANGED"));
+test("reuse hubs rank",()=>assert.equal(findReuseHubs([{id:"a",network_degree:2},{id:"b",network_degree:1}])[0].id,"a"));
