@@ -44,7 +44,9 @@
     "runtime:quantum": "node scripts/acorn-quantum-interop.mjs",
     "runtime:run-triage": "node scripts/acorn-cognitive-run-triage.mjs",
     "runtime:value-opportunity": "node scripts/acorn-value-opportunity-fabric.mjs",
-    "runtime:connections": "node scripts/acorn-connection-fabric.mjs"
+    "runtime:connections": "node scripts/acorn-connection-fabric.mjs",
+    "runtime:human-attention": "node scripts/acorn-human-attention-fabric.mjs",
+    "runtime:settlement": "node scripts/acorn-settlement-fabric.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -102,7 +104,9 @@
     "./acorn-cognitive-run-triage": "./scripts/acorn-cognitive-run-triage.mjs",
     "./acorn-continuous-optimization": "./docs/acorn-continuous-optimization.md",
     "./acorn-value-opportunity-fabric": "./scripts/acorn-value-opportunity-fabric.mjs",
-    "./acorn-connection-fabric": "./scripts/acorn-connection-fabric.mjs"
+    "./acorn-connection-fabric": "./scripts/acorn-connection-fabric.mjs",
+    "./acorn-human-attention-fabric": "./scripts/acorn-human-attention-fabric.mjs",
+    "./acorn-settlement-fabric": "./scripts/acorn-settlement-fabric.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
