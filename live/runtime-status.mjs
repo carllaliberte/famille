@@ -30,7 +30,9 @@ const FORBIDDEN_FROM_LOCAL_FACTS = new Set([
   "LIVE_MEASURED",
   "VERIFIED",
   "LIVE_VERIFIED",
-  "EXECUTED"
+  "EXECUTED",
+  "CONNECTED",
+  "DEPLOYED"
 ]);
 
 export function isSelfSource(source) {
@@ -74,6 +76,10 @@ export function assessRuntimeStatus({
     status,
     live: status === "LIVE_MEASURED" || status === "VERIFIED",
     verified: status === "VERIFIED",
+    process: processBound ? "PROCESS_RUNNING" : "CODE_PRESENT",
+    database: dbHealthy ? "READY" : "UNAVAILABLE",
+    application: processBound && dbHealthy ? "READY" : (processBound ? "DEGRADED" : "CODE_PRESENT"),
+    external: has("EXTERNALLY_REACHABLE") || has("LIVE_MEASURED") ? "OBSERVED" : "NOT_OBSERVED",
     independent_evidence: currentIndependent.length,
     proof: "measured_only",
     external_deployment_evidence: has("LIVE_MEASURED") || has("EXTERNALLY_REACHABLE") ? "OBSERVED" : "NOT_OBSERVED",

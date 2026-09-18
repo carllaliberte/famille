@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { selectLiveDatabaseAdapter, createLiveDatabase, now } from "../live/database.mjs";
+import { applyMigrations, listMigrations } from "../live/migrate.mjs";
 import { assessRuntimeStatus, localFactsCannotProve, RUNTIME_STATES } from "../live/runtime-status.mjs";
 import { persistState, persistEvidence, loadTenantState, loadTenantEvidence, getTenantState } from "../live/enterprise-store.mjs";
 import { registerEvidence, evidenceIsCurrent, proofGate } from "../scripts/acorn-evidence-registry.mjs";
@@ -23,11 +24,12 @@ async function withDb(fn) {
   finally { await db.close(); }
 }
 
-async function withServer(fn) {
+async function withServer(fn, extraEnv = {}) {
   const dir = mkdtempSync(join(tmpdir(), "acorn-live-http-"));
   const path = join(dir, "state.db");
-  const db = await createLiveDatabase({ env: dbEnv(path), path });
-  const { server } = await createLiveServer({ env: dbEnv(path), db });
+  const env = { ...dbEnv(path), ...extraEnv };
+  const db = await createLiveDatabase({ env, path });
+  const { server } = await createLiveServer({ env, db });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const port = server.address().port;
   const base = `http://127.0.0.1:${port}`;
@@ -133,7 +135,7 @@ test("unauthorized connector execution remains BLOCKED", async () => {
     const spoof = await jsonReq(base, "/api/v1/connectors/execute", { method: "POST", token: auth.json.token, body: { connection_id: "crm", provider: "example", kind: "crm", human_authorized: true } });
     assert.equal(spoof.status, 403);
     assert.equal(spoof.json.result.state, "BLOCKED");
-    const run = await jsonReq(base, "/api/v1/runtime/run", { method: "POST", token: auth.json.token, body: { request_id: "r1", problem: "x", human_authorized: true } });
+    const run = await jsonReq(base, "/api/v1/runtime/run", { method: "POST", token: auth.json.token, body: { problem: "x", human_authorized: true } });
     assert.equal(run.json.run.human_authorized, false);
     assert.equal(run.json.proof.external_effect, false);
   });
@@ -212,3 +214,87 @@ test("existing capability/authority constitution remains intact", () => {
   const r = assertCapabilityAuthoritySeparation();
   assert.equal(r.status, "VERIFIED");
 });
+
+test("migrations are deterministic and repeatable", async () => {
+  await withDb(async (db) => {
+    const listed = listMigrations("sqlite");
+    assert.ok(listed.some((row) => row.id === "0001_init"));
+    const rows = await db.all("SELECT id FROM schema_migrations");
+    assert.ok(rows.some((row) => row.id === "0001_init"));
+    const second = await applyMigrations(db);
+    assert.deepEqual(second.applied, []);
+  });
+});
+
+test("logout revokes the session", async () => {
+  await withServer(async ({ base }) => {
+    const created = await jsonReq(base, "/api/v1/register", { method: "POST", body: { name: "Ada", email: "ada-logout@example.com", password: "correct-horse" } });
+    const out = await jsonReq(base, "/api/v1/logout", { method: "POST", token: created.json.token });
+    assert.equal(out.status, 200);
+    assert.equal(out.json.revoked, true);
+    const me = await jsonReq(base, "/api/v1/me", { token: created.json.token });
+    assert.equal(me.status, 401);
+  });
+});
+
+test("oversized request is rejected", async () => {
+  await withServer(async ({ base }) => {
+    const created = await jsonReq(base, "/api/v1/register", { method: "POST", body: { name: "Ada", email: "ada-size@example.com", password: "correct-horse" } });
+    const res = await fetch(base + "/api/v1/requests", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer " + created.json.token },
+      body: "{\"request\":\"" + "x".repeat(400) + "\"}"
+    });
+    const json = await res.json();
+    assert.equal(res.status, 413);
+    assert.equal(json.error, "BODY_TOO_LARGE");
+  }, { MAX_BODY_BYTES: "256" });
+});
+
+test("database unavailable is not READY and is not LIVE", async () => {
+  const down = {
+    mode: "sqlite",
+    async health() { throw new Error("down"); },
+    async get() { return null; },
+    async all() { return []; },
+    async run() { return {}; },
+    async close() {}
+  };
+  const { server } = await createLiveServer({ env: { NODE_ENV: "test", ACORN_DB_ADAPTER: "sqlite" }, db: down });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const base = "http://127.0.0.1:" + server.address().port;
+  try {
+    const health = await jsonReq(base, "/healthz");
+    const ready = await jsonReq(base, "/readyz");
+    assert.equal(health.status, 503);
+    assert.equal(ready.status, 503);
+    assert.notEqual(health.json.status, "LIVE");
+    assert.notEqual(health.json.status, "READY");
+    assert.equal(health.json.live, false);
+    assert.equal(health.json.database, "UNAVAILABLE");
+    assert.equal(ready.json.db, false);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("tenant cannot plan or execute another tenant request", async () => {
+  await withServer(async ({ base }) => {
+    const a = await jsonReq(base, "/api/v1/register", { method: "POST", body: { name: "A", email: "own-a@example.com", password: "correct-horse" } });
+    const b = await jsonReq(base, "/api/v1/register", { method: "POST", body: { name: "B", email: "own-b@example.com", password: "correct-horse" } });
+    const created = await jsonReq(base, "/api/v1/requests", { method: "POST", token: a.json.token, body: { request: "A problem" } });
+    const plan = await jsonReq(base, "/api/v1/runtime/plan", { method: "POST", token: b.json.token, body: { request_id: created.json.request.id, problem: "steal" } });
+    assert.equal(plan.status, 404);
+    const run = await jsonReq(base, "/api/v1/runtime/run", { method: "POST", token: b.json.token, body: { request_id: created.json.request.id, human_authorized: true } });
+    assert.equal(run.status, 404);
+  });
+});
+
+test("Dockerfile is production-shaped and does not claim a container measurement", () => {
+  const df = readFileSync(new URL("../live/Dockerfile", import.meta.url), "utf8");
+  assert.match(df, /USER node/);
+  assert.match(df, /NODE_ENV=production/);
+  assert.match(df, /live\/server.mjs/);
+  assert.match(df, /npm install --omit=dev/);
+});
+

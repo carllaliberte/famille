@@ -17,6 +17,12 @@ build:
 	node --check scripts/swarm-ci-matrix.mjs
 	node --check scripts/discover-cycle.mjs
 	node --check scripts/official-seal.mjs
+	node --check live/server.mjs
+	node --check live/database.mjs
+	node --check live/migrate.mjs
+	node --check live/worker.mjs
+	node --check live/enterprise-store.mjs
+	node --check live/runtime-status.mjs
 
 test:
 	npm test

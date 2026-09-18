@@ -24,7 +24,7 @@ services:
     runtime: node
     region: ohio
     plan: free
-    buildCommand: npm install --include=dev
+    buildCommand: npm install --ignore-scripts
     startCommand: node live/worker.mjs
     maxShutdownDelaySeconds: 60
     envVars:
