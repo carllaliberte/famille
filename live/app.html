@@ -367,15 +367,33 @@
       const delivery = data.delivery || null;
       const value = data.value || null;
       const renewal = data.renewal || null;
+      const cycle = data.cycle || data;
+      const customer = cycle.customer || {};
+      const steps = [
+        ["My problem", customer.problem || req.request],
+        ["My solution", customer.solution],
+        ["My offer", customer.offer],
+        ["My payment", customer.payment],
+        ["My project", customer.project],
+        ["My result", customer.result],
+        ["My proof", customer.proof],
+        ["My value", customer.value]
+      ];
       $("current").innerHTML = `
         <div class="row">
-          <span class="chip hold">${label(req.status || data.cycle?.stage)}</span>
+          <span class="chip hold">${label(cycle.stage || req.status || data.cycle?.stage)}</span>
           <span class="chip">Not live</span>
           <span class="chip">Not a receipt</span>
         </div>
         <div>
-          <h2>What Acorn will do</h2>
-          <p class="lede">${esc(req.request || req.body?.request || "Qualified request persisted.")}</p>
+          <h2>${cycle.stage === "WAITING_INFORMATION" ? "Acorn needs a clearer problem" : "What Acorn will do"}</h2>
+          <p class="lede">${esc(req.request || req.body?.request || data.demand?.intent || "Qualified request persisted.")}</p>
+          ${cycle.blocked_reason ? `<p class="quiet">${esc(cycle.blocked_reason)}</p>` : ""}
+        </div>
+        <div>
+          <h3>Where this stands</h3>
+          <div class="row">${steps.map(([name, on]) => `<span class="chip ${on ? "ok" : ""}">${esc(name)}</span>`).join("")}</div>
+          <p class="quiet" style="margin-top:8px">Paid is not delivered. Delivered is not verified. Value is not invented.</p>
         </div>
         <div>
           <h3>Capabilities named</h3>
@@ -472,7 +490,9 @@
         $("list").querySelectorAll(".req").forEach((el) => {
           el.addEventListener("click", async () => {
             const d = await call("/api/v1/requests/" + el.dataset.id);
-            renderCurrent(d);
+            let state = {};
+            try { state = await call("/api/v1/projects/" + el.dataset.id + "/state"); } catch (e) { state = {}; }
+            renderCurrent({ ...d, cycle: state });
             window.scrollTo({ top: $("current").offsetTop - 24, behavior: "smooth" });
           });
         });
@@ -511,8 +531,8 @@
       ev.preventDefault();
       show($("workerr"), false);
       try {
-        const j = await call("/api/v1/requests", "POST", { request: $("request").value });
-        renderCurrent(j);
+        const j = await call("/api/v1/customer/demand", "POST", { problem: $("request").value });
+        renderCurrent({ ...j, request: j.request || { id: j.demand?.id, request: j.demand?.intent, status: j.cycle?.stage } });
         $("request").value = "";
         loadRequests();
       } catch (e) {

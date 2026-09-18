@@ -16,8 +16,9 @@ import { assessRuntimeStatus } from "./runtime-status.mjs";
 import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadTenantAsOf } from "./enterprise-store.mjs";
 import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt, proposeCapabilities } from "../scripts/acorn-operational-fabric.mjs";
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
-import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject, loadCommercialCycle } from "./commercial.mjs";
+import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject, loadCommercialCycle, humanMoneyAuthorized } from "./commercial.mjs";
 import { buildRealitySnapshot, customerNextAction, assertTruthContract } from "../scripts/acorn-real-world-turnkey.mjs";
+import { receiveDemand, projectCycleState, recordDelivery, recordOutcome } from "../scripts/acorn-customer-value.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -721,6 +722,178 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       }
       if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
         return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/customer/demand") {
+        const b = await readBody(req);
+        const intent = String(b.problem || b.intent || b.request || "").trim();
+        if (!intent && !b.organization) return send(400, { error: "DEMAND_REQUIRED" });
+        const received = receiveDemand({
+          id: makeId("req"),
+          tenantId: cid,
+          customerId: cid,
+          intent,
+          objective: b.objective,
+          organization: b.organization,
+          constraints: b.constraints,
+          deadline: b.deadline,
+          budget: b.budget,
+          data: b.data,
+          preferences: b.preferences,
+          authorization_level: b.authorization_level,
+          paid: b.paid,
+          human_authorized: b.human_authorized,
+          live: b.live,
+          intelligences: intelligences(),
+          connectors: connections()
+        });
+        const rid = received.demand.id;
+        const t = now();
+        const commercial = received.commercial;
+        const persisted = await database.tx(async (tx) => {
+          await tx.run(
+            "INSERT INTO requests(id,customer_id,body,status,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6)",
+            [rid, cid, encodeJson(tx.mode, { request: intent, customer_id: cid, demand: true }), received.stage, t, t]
+          );
+          await persistState(tx, {
+            entity: "DEMAND",
+            id: rid,
+            tenant_id: cid,
+            state: received.demand.status,
+            data: { ...received.demand, authorized: false, paid: false, live: false }
+          });
+          await persistState(tx, {
+            entity: "PROJECT",
+            id: rid,
+            tenant_id: cid,
+            state: received.stage,
+            data: { request_id: rid, customer_id: cid, stage: received.stage, delivered: false, payment: false, live: false, mode: "PLAN" }
+          });
+          if (commercial) {
+            for (const task of commercial.execution?.tasks || []) {
+              await persistState(tx, { entity: "TASK", id: task.id, tenant_id: cid, state: task.state, data: { execution_id: commercial.execution.id, project_id: rid, kind: task.kind, title: task.title } });
+            }
+            for (const cap of commercial.capabilities || []) {
+              await persistState(tx, { entity: "CAPABILITY", id: cap.id, tenant_id: cid, state: cap.state, data: { name: cap.name, exists: cap.exists === true, available: cap.available === true, authorized: false, executed: false, verified: false, gap: cap.exists !== true, request_id: rid } });
+            }
+            await persistState(tx, { entity: "EXECUTION", id: commercial.execution.id, tenant_id: cid, state: commercial.execution.state, data: { request_id: rid, mode: "PLAN", human_authorized: false, external_effect: false } });
+            await persistCommercialProject(tx, commercial, { tenantId: cid, requestId: rid });
+          }
+          await persistEnterpriseEvent(tx, { tenantId: cid, entityId: rid, type: "DEMAND_RECEIVED", payload: { stage: received.stage, waiting: received.qualification.waiting_information === true }, actor: "acorn-live", authority: "none" });
+          const evidence = await persistEvidence(tx, {
+            tenantId: cid,
+            claim: "demand_persisted",
+            source: "acorn-live",
+            kind: "OBSERVATION",
+            epistemic: "OBSERVED",
+            strength: 1,
+            margin: 0.1,
+            validUntil: new Date(Date.now() + 86400000).toISOString()
+          }, rid);
+          const row = await tx.get("SELECT * FROM requests WHERE id=$1 AND customer_id=$2", [rid, cid]);
+          return { row, evidence };
+        });
+        const view = projectCycleState({
+          demand: received.demand,
+          qualification: received.qualification,
+          project: { id: rid, state: received.stage },
+          offers: received.offers
+        });
+        return await sendPersist(201, {
+          demand: received.demand,
+          qualification: received.qualification,
+          request: publicRequest(persisted.row),
+          offers: received.offers,
+          cycle: view,
+          proof: {
+            live: false,
+            delivered: false,
+            paid: false,
+            billed: false,
+            client_authorization_ignored: b.human_authorized === true || b.paid === true || b.live === true,
+            waiting_information: received.qualification.waiting_information === true
+          }
+        });
+      }
+      const projectState = u.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/state$/);
+      if (req.method === "GET" && projectState) {
+        const pid = decodeURIComponent(projectState[1]);
+        const row = await database.get("SELECT * FROM requests WHERE id=$1 AND customer_id=$2", [pid, cid]);
+        if (!row) return send(404, { error: "NOT_FOUND" });
+        const related = await loadTenantState(database, cid);
+        const commercial = await loadCommercialCycle(database, cid, pid);
+        const demandRow = related.find((s) => s.entity === "DEMAND" && s.id === pid);
+        const body = parseJson(row.body, {});
+        const demand = demandRow?.data || { id: pid, tenant_id: cid, customer_id: cid, intent: body.request || "", status: row.status };
+        const qualification = { waiting_information: row.status === "WAITING_INFORMATION", qualified: row.status !== "WAITING_INFORMATION" && row.status !== "BLOCKED" };
+        const view = projectCycleState({
+          demand,
+          qualification,
+          project: { id: pid, state: row.status },
+          offers: related.filter((s) => s.entity === "OFFER" && (s.data?.project_id === pid || s.data?.request_id === pid)).map((s) => s.data),
+          order: commercial.orders?.[0] || null,
+          payment: commercial.orders?.[0] || null,
+          execution: related.find((s) => s.entity === "EXECUTION" && s.data?.request_id === pid) || null,
+          delivery: commercial.delivery,
+          evidence: await loadTenantEvidence(database, cid, pid),
+          outcome: commercial.value || related.find((s) => s.entity === "OUTCOME" && s.data?.project_id === pid)?.data || null,
+          renewal: commercial.renewal
+        });
+        return send(200, { ...view, proof: { ...view.proof, live: false } });
+      }
+      const projectDeliver = u.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/deliver$/);
+      if (req.method === "POST" && projectDeliver) {
+        const pid = decodeURIComponent(projectDeliver[1]);
+        const row = await database.get("SELECT * FROM requests WHERE id=$1 AND customer_id=$2", [pid, cid]);
+        if (!row) return send(404, { error: "NOT_FOUND" });
+        const b = await readBody(req);
+        const commercial = await loadCommercialCycle(database, cid, pid);
+        const related = await loadTenantState(database, cid);
+        const authorized = humanMoneyAuthorized(env, req);
+        const delivery = recordDelivery({
+          projectId: pid,
+          order: commercial.orders?.[0] || null,
+          execution: related.find((s) => s.entity === "EXECUTION" && s.data?.request_id === pid),
+          evidence: await loadTenantEvidence(database, cid, pid),
+          authorized,
+          paid: b.paid === true
+        });
+        await persistState(database, {
+          entity: "DELIVERY",
+          id: delivery.id,
+          tenant_id: cid,
+          state: delivery.state,
+          data: { ...delivery, live: false }
+        });
+        return await sendPersist(authorized && delivery.delivered ? 200 : 403, {
+          delivery,
+          client_authorization_ignored: b.human_authorized === true || b.authorized === true || b.paid === true || b.live === true,
+          proof: { live: false, delivered: delivery.delivered === true, payment_is_not_delivery: true }
+        });
+      }
+      const projectOutcome = u.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/outcome$/);
+      if (req.method === "POST" && projectOutcome) {
+        const pid = decodeURIComponent(projectOutcome[1]);
+        const row = await database.get("SELECT * FROM requests WHERE id=$1 AND customer_id=$2", [pid, cid]);
+        if (!row) return send(404, { error: "NOT_FOUND" });
+        const b = await readBody(req);
+        const commercial = await loadCommercialCycle(database, cid, pid);
+        const outcome = recordOutcome({
+          delivery: commercial.delivery,
+          order: commercial.orders?.[0] || null,
+          entry: commercial.ledger?.[0] || null,
+          measurements: b.measurements || null
+        });
+        await persistState(database, {
+          entity: "OUTCOME",
+          id: "out_" + pid,
+          tenant_id: cid,
+          state: outcome.state,
+          data: { ...outcome, project_id: pid, live: false, verified: false }
+        });
+        return await sendPersist(200, {
+          outcome,
+          proof: { live: false, verified: false, value_invented: false }
+        });
       }
       const commercialHandled = await handleAuthedCommercial({
         method: req.method,
