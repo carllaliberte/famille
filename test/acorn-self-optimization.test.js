@@ -1,0 +1,8 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {defineObjective,observePerformance,scoreOptimization,proposeOptimization,compareOutcomes,acceptOptimization,learnOptimization,assertSelfOptimizationConstitution} from "../scripts/acorn-self-optimization.mjs";
+test("Acorn can define what good means",()=>{const o=defineObjective({name:"RELIABILITY",weight:2});assert.equal(o.state,"DEFINED");});
+test("Acorn measures improvement",()=>{const m=observePerformance({objective:"QUALITY",baseline:70,current:85,evidence:["test"]});assert.equal(m.delta,15);});
+test("Acorn scores multi-objective improvement",()=>{const o=[defineObjective({name:"QUALITY",weight:2}),defineObjective({name:"COST_EFFICIENCY"})];const s=scoreOptimization({objectives:o,measurements:[{objective:"QUALITY",delta:10},{objective:"COST_EFFICIENCY",delta:5}]});assert.equal(s.score,25);});
+test("Acorn proposes before acting",()=>{const p=proposeOptimization({current_state:"A",objectives:[defineObjective({name:"QUALITY"})],candidate:"B",expected_gain:10,expected_cost:2});assert.equal(p.state,"PROPOSED");assert.equal(p.requires_human_authorization,true);});
+test("Acorn learns from outcomes",()=>{const x=acceptOptimization({proposal:proposeOptimization({candidate:"B"}),measured_gain:8,minimum_gain:1});const l=learnOptimization({history:[x]});assert.equal(l.successful_count,1);});
+test("Acorn never converts optimization into authority",()=>{assert.equal(assertSelfOptimizationConstitution(),true);assert.throws(()=>assertSelfOptimizationConstitution({breaker_touched:true}),/BREAKER/);assert.throws(()=>assertSelfOptimizationConstitution({auto_merge:true}),/MERGE/);assert.throws(()=>assertSelfOptimizationConstitution({authority_transfer:true}),/AUTHORITY/);});
