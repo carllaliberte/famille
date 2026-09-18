@@ -16,6 +16,20 @@ const c01 = (v) => Math.max(0, Math.min(1, n(v)));
 const digest = (v) => createHash("sha256").update(JSON.stringify(v)).digest("hex");
 const sorted = (v) => Object.entries(obj(v)).sort(([a], [b]) => a.localeCompare(b));
 
+function applyTransitionState(state, delta) {
+  const base = obj(state);
+  const change = obj(delta);
+  const keys = new Set([...Object.keys(base), ...Object.keys(change)]);
+  return Object.fromEntries([...keys].map((key) => {
+    const hasBase = Object.prototype.hasOwnProperty.call(base, key);
+    const hasChange = Object.prototype.hasOwnProperty.call(change, key);
+    if (hasBase && hasChange && Number.isFinite(Number(base[key])) && Number.isFinite(Number(change[key]))) {
+      return [key, Number(base[key]) + Number(change[key])];
+    }
+    return [key, hasChange ? change[key] : base[key]];
+  }));
+}
+
 export function createDreamReality({ state = {}, at = "", source = "unknown" } = {}) {
   return Object.freeze({
     kind: "REALITY", state: Object.freeze({ ...obj(state) }), at: str(at), source: str(source),
@@ -33,7 +47,7 @@ export function dreamWorld({ reality, hypothesis, id = "", transition = {}, prob
   if (!hypothesis?.fingerprint) throw new Error("HYPOTHESIS_REQUIRED");
   const world = {
     id: str(id) || digest({ parent: reality.fingerprint, hypothesis: hypothesis.fingerprint, transition }),
-    kind: "PREDICTION", state: Object.fromEntries(Array.from(new Set([...Object.keys(obj(reality.state)), ...Object.keys(transition.delta || {})])).map((key) => [key, Number.isFinite(Number(obj(reality.state)[key])) && Number.isFinite(Number(transition.delta || {})[key]) ? Number(obj(reality.state)[key]) + Number((transition.delta || {})[key]) : (key in (transition.delta || {}) ? (transition.delta || {})[key] : obj(reality.state)[key])])),
+    kind: "PREDICTION", state: applyTransitionState(reality.state, transition.delta),,
     parent: reality.fingerprint, hypothesis: hypothesis.fingerprint,
     transition: { action: str(transition.action), delta: { ...obj(transition.delta) } },
     probability: probability === null ? null : c01(probability), utility: utility === null ? null : n(utility),
