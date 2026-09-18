@@ -16,7 +16,7 @@ test("organism cycle is ordered and measurement claims are inventory-derived", a
   });
 
   assert.deepEqual(result.unified.cycle_order, [
-    "REAL_STATE", "INVENTORY", "DEFENSE", "CORTEX",
+    "REAL_STATE", "INVENTORY", "CONNECTIONS", "DEFENSE", "CORTEX",
     "EVOLUTION", "LEARNING", "METABOLISM", "EVIDENCE", "CONTINUE",
   ]);
 
