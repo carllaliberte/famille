@@ -22,6 +22,7 @@ import { runContinuousRuntime } from "./acorn-continuous-runtime.mjs";
 import { executeComputeTask, snapshotComputeFabric } from "./acorn-compute-fabric.mjs";
 import { runUniversalComputeSweep } from "./acorn-universal-compute-sweep.mjs";
 import { runValueOpportunityCycle } from "./acorn-value-opportunity-fabric.mjs";
+import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
   limitsFromEnv,
@@ -80,6 +81,8 @@ export function canonicalWorkFromRuntime(runtime) {
   for (const row of runtime?.unified?.metabolism?.next || []) push(row, "metabolism");
 
   push({ id:"value-opportunity-cycle", subject:"measure public access, business value, and commercial recovery opportunities", information_gain:1, capability_gain:0.8, risk_reduction:0.6, uncertainty:0.8, reversibility:1, cost:0.1, execution_kind:"value-opportunity" }, "value");
+
+  push({ id:"connection-sweep", subject:"discover, authenticate, measure and verify all available connection adapters", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:0.9, reversibility:1, cost:0.1, execution_kind:"connection-sweep" }, "connections");
 
   // Compute is part of the organism metabolism: execute every currently
   // executable safe resource, while keeping remote/paid/unknown work gated.
@@ -186,6 +189,18 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
     const result = runValueOpportunityCycle({ opportunities: task.opportunities || [], observations: task.observations || [] });
     return { status:"COMPLETED", duration_ms:Date.now()-started, executor:"value-opportunity-fabric", value:result, stdout_tail:"", stderr_tail:"" };
   }
+  if (kind === "connection-sweep") {
+    const started = Date.now();
+    const result = await runConnectionSweep({ env, now: new Date().toISOString() });
+    return {
+      status: result.proof?.status === "VERIFIED" ? "COMPLETED" : "FAILED",
+      duration_ms: Date.now() - started,
+      executor: "connection-fabric",
+      connections: result,
+      stdout_tail: "",
+      stderr_tail: result.proof?.status === "VERIFIED" ? "" : "CONNECTION_SWEEP_NOT_VERIFIED",
+    };
+  }
   if (kind === "compute-sweep") {
     const started = Date.now();
     const result = await runUniversalComputeSweep({ env, human_authorization: task.human_authorization === true, policy: task.policy || "FREE_FIRST" });
@@ -243,6 +258,9 @@ export function executorPolicy({ env = process.env } = {}) {
 
 function defaultTaskFor(row, env = process.env) {
   if (row.execution_kind === "value-opportunity") return { ...row, execution_kind:"value-opportunity", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "connection-sweep") {
+    return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
+  }
   if (row.execution_kind === "compute-sweep") {
     return { ...row, execution_kind: "compute-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
