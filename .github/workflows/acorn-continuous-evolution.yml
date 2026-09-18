@@ -64,8 +64,8 @@ jobs:
             echo "ACORN evolution action: $ACTION"
             exit 0
           fi
-          MARKER="<!-- ACORN_CONTINUOUS_EVOLUTION_PORTFOLIO"
-          EXISTING="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number,body --jq '.[] | select(.body | contains("'"$MARKER"'")) | .number' | head -n1)"
+          export MARKER="<!-- ACORN_CONTINUOUS_EVOLUTION_PORTFOLIO"
+          EXISTING="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number,body | node -e 'const fs=require("fs"); const marker=process.env.MARKER; const rows=JSON.parse(fs.readFileSync(0,"utf8")); const hit=rows.find(x=>String(x.body||"").includes(marker)); if(hit) process.stdout.write(String(hit.number));' )"
           if [ -n "$EXISTING" ]; then
             echo "Existing evolution portfolio issue #$EXISTING"
             exit 0
