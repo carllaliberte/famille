@@ -1,0 +1,12 @@
+import test from "node:test";import assert from "node:assert/strict";
+import {auditOpenWork,classifyWork,recoverPlan,gateAction,reconcile,buildMegaPortfolio,assertMegaConstitution} from "../scripts/acorn-mega-convergence.mjs";
+test("mega constitution",()=>assert.equal(assertMegaConstitution(),true));
+test("all open work is auditable",()=>assert.equal(auditOpenWork({sha:"main"},[{number:941}]).source_prs.length>=6,true));
+test("security work is classified",()=>assert.equal(classifyWork({title:"harden bridge authority"}),"SECURITY_RELIABILITY"));
+test("market work is classified",()=>assert.equal(classifyWork({title:"market revenue"}),"MARKET_VALUE"));
+test("evolution work is classified",()=>assert.equal(classifyWork({title:"continuous evolution"}),"CONTINUOUS_EVOLUTION"));
+test("stale work is recovered not directly merged",()=>assert.equal(recoverPlan([{number:873,merged:false}])[0].action,"RECOVER_USEFUL_INTENT"));
+test("merge remains human gated",()=>assert.equal(gateAction("MERGE",{human_authorized:true,server_authorized:true}).authorized,false));
+test("unknown remains blocked",()=>assert.equal(gateAction("UNKNOWN").authorized,false));
+test("reconciliation preserves unknowns",()=>assert.equal(reconcile([{state:"UNKNOWN"}]).unknowns.length,1));
+test("portfolio keeps authority human",()=>assert.equal(buildMegaPortfolio({}).authority,"CARL"));
