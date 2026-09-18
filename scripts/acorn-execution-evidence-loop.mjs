@@ -11,7 +11,7 @@ const uid=p=>`${p}_${crypto.randomUUID()}`;
 
 export function createExecutionRun({requestId,plan,authorized=false}={}){
  if(!requestId||!plan) throw new Error("REQUEST_AND_PLAN_REQUIRED");
- return {id:uid("run"),request_id:requestId,plan_id:plan.id,state:"PLANNED",
+ return {id:uid("run"),request_id:requestId,plan_id:plan.id,plan,state:"PLANNED",
    human_authorized:Boolean(authorized),authority:false,external_effect:false,
    steps:[],evidence:[],value:null,created_at:ISO()};
 }
@@ -19,13 +19,13 @@ export async function executeRun(run,{intelligenceAdapters={},connectorAdapters=
  const out={...run,steps:[],evidence:[...(run.evidence||[])]};
  if(!run.human_authorized) return {...out,state:"BLOCKED",blockers:["HUMAN_AUTHORIZATION_REQUIRED"],measured_at:ISO()};
  out.state="RUNNING";
- for(const route of run.plan.routes?.intelligences||[]){
+ for(const route of run.plan?.routes?.intelligences||[]){
    const adapter=intelligenceAdapters[route.id];
    const result=await invokeAdapter({id:uid("inv"),task_id:run.plan.request_id,intelligence_id:route.id,human_authorized:true},{adapter});
    out.steps.push({kind:"intelligence",route,result});
    if(result.state==="SUCCEEDED") out.evidence.push({id:uid("ev"),kind:"INTELLIGENCE_EXECUTION",status:"MEASURED",origin:route.id,strength:1,margin:1,measured_at:ISO(),payload:{external_effect:false}});
  }
- for(const route of run.plan.routes?.connectors||[]){
+ for(const route of run.plan?.routes?.connectors||[]){
    const adapter=connectorAdapters[route.id];
    const result=await executeRegisteredConnector({id:uid("cx"),task_id:run.plan.request_id,connector_id:route.id,human_authorized:true},{adapter});
    out.steps.push({kind:"connector",route,result});

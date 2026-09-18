@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import http from "node:http";
 import crypto from "node:crypto";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { customerServiceCycle } from "../scripts/acorn-customer-service.mjs";
@@ -10,61 +11,17 @@ import { createLiveDatabase, now, makeId, parseJson, encodeJson } from "./databa
 import { buildRuntimePlan, verifyRuntimePlan } from "../scripts/acorn-runtime-orchestrator.mjs";
 import { createExecutionRun, executionLoopSnapshot } from "../scripts/acorn-execution-evidence-loop.mjs";
 import { createConnectorExecutor, executeConnector } from "../scripts/acorn-connector-execution-fabric.mjs";
-import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot } from "../scripts/acorn-real-world-bridge.mjs";
+import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot, isConsequentialEffect, publicExternalResult } from "../scripts/acorn-real-world-bridge.mjs";
 import { assessRuntimeStatus } from "./runtime-status.mjs";
-import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence } from "./enterprise-store.mjs";
+import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadTenantAsOf } from "./enterprise-store.mjs";
+import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt } from "../scripts/acorn-operational-fabric.mjs";
 
-const APP_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ACORN LIVE</title><style>body{font-family:system-ui;margin:0;background:#0d0d0d;color:#f4ead7}main{max-width:760px;margin:auto;padding:32px}section{background:#171717;padding:22px;border-radius:16px;margin:16px 0}input,textarea,button{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:9px;border:1px solid #555;background:#111;color:#fff}button{cursor:pointer;background:#c9a86a;color:#111;font-weight:700}pre{white-space:pre-wrap}p.note{opacity:.8;font-size:.95rem}.row{display:flex;gap:8px}small{opacity:.7}</style></head><body><main><h1>ACORN</h1><p class="note">Customer entry. HTTP availability is not LIVE proof. Plans are not delivery. Payment and contracts are not claimed.</p><section id="auth"><h2>Start</h2><input id="name" placeholder="Name"><input id="email" placeholder="Email"><input id="password" type="password" placeholder="Password (10+ characters)"><button onclick="register()">Create account</button><button onclick="login()">Sign in</button><pre id="authout"></pre></section><section id="work" style="display:none"><div class="row"><button onclick="logout()">Sign out</button></div><h2>New request</h2><textarea id="request" rows="6" placeholder="Describe the problem you want Acorn to solve…"></textarea><button onclick="submitRequest()">Send to Acorn</button><button onclick="loadRequests()">Refresh</button><p class="note">Status values come from persisted state: received, awaiting human authorization, planned, blocked. Delivered/verified/LIVE only appear with evidence.</p><pre id="out"></pre></section><script>
-let T=localStorage.acornToken||"";
-const out=x=>document.getElementById("out").textContent=JSON.stringify(x,null,2);
-function label(status){
-  if(status==="HOLD_HUMAN_AUTHORIZATION") return "received / awaiting human authorization";
-  if(status==="HOLD_HUMAN") return "received / human hold";
-  if(status==="INTAKE"||status==="QUALIFY") return "received";
-  if(status==="PLANNED"||status==="READY") return "planned";
-  if(status==="BLOCKED") return "blocked";
-  return status||"received";
-}
-async function call(path,method="GET",body){
-  const r=await fetch(path,{method,headers:{"content-type":"application/json",...(T?{authorization:"Bearer "+T}:{})},body:body?JSON.stringify(body):undefined});
-  const j=await r.json();
-  if(!r.ok) throw j;
-  return j;
-}
-async function register(){
-  try{
-    const j=await call("/api/v1/register","POST",{name:name.value,email:email.value,password:password.value});
-    T=j.token; localStorage.acornToken=T; auth.style.display="none"; work.style.display="block"; loadRequests();
-  }catch(e){authout.textContent=JSON.stringify(e,null,2)}
-}
-async function login(){
-  try{
-    const j=await call("/api/v1/login","POST",{email:email.value,password:password.value});
-    T=j.token; localStorage.acornToken=T; auth.style.display="none"; work.style.display="block"; loadRequests();
-  }catch(e){authout.textContent=JSON.stringify(e,null,2)}
-}
-async function logout(){
-  try{ await call("/api/v1/logout","POST"); }catch(e){}
-  T=""; localStorage.removeItem("acornToken"); auth.style.display="block"; work.style.display="none";
-}
-async function submitRequest(){
-  try{
-    const j=await call("/api/v1/requests","POST",{request:document.getElementById("request").value});
-    out({...j, display_status:label(j.request&&j.request.status), live:false, delivered:false});
-  }catch(e){out(e)}
-}
-async function loadRequests(){
-  try{
-    const j=await call("/api/v1/requests");
-    out({...j, requests:(j.requests||[]).map(r=>({id:r.id,status:r.status,display_status:label(r.status),created_at:r.created_at,request:r.request})), live:false});
-  }catch(e){out(e)}
-}
-if(T){auth.style.display="none";work.style.display="block";loadRequests()}
-</script></main></body></html>`;
+const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
 function logEvent(entry) {
   const row = {
     request_id: entry.request_id,
+    tenant_id: entry.tenant_id || null,
     method: entry.method,
     path: entry.path,
     status: entry.status,
@@ -77,6 +34,9 @@ function logEvent(entry) {
 export async function createLiveServer({ env = process.env, db } = {}) {
   const database = db || await createLiveDatabase({ env });
   const MAX_BODY = Number(env.MAX_BODY_BYTES || process.env.MAX_BODY_BYTES || 262144);
+  const RATE_MAX = Number(env.RATE_LIMIT_MAX || 180);
+  const RATE_WINDOW = Number(env.RATE_LIMIT_WINDOW_MS || 60000);
+  const hits = new Map();
   const json = (res, status, body, headers = {}) => {
     const data = JSON.stringify(body);
     res.writeHead(status, {
@@ -143,6 +103,27 @@ export async function createLiveServer({ env = process.env, db } = {}) {
     if (!requestId) return null;
     return database.get("SELECT id FROM requests WHERE id=$1 AND customer_id=$2", [requestId, cid]);
   };
+  const rateLimited = (req) => {
+    const path = String(req.url || "").split("?")[0];
+    if (path === "/healthz" || path === "/readyz") return false;
+    const ip = String((req.headers["x-forwarded-for"] || "").toString().split(",")[0] || req.socket?.remoteAddress || "unknown").trim();
+    const t = Date.now();
+    const next = (hits.get(ip) || []).filter((x) => t - x < RATE_WINDOW);
+    next.push(t);
+    hits.set(ip, next);
+    return next.length > RATE_MAX;
+  };
+  const readIdempotency = async (cid, key) => {
+    if (!cid || !key) return null;
+    return database.get("SELECT status,body FROM idempotency_keys WHERE tenant_id=$1 AND key=$2", [cid, key]);
+  };
+  const writeIdempotency = async (cid, key, method, path, status, body) => {
+    if (!cid || !key) return;
+    await database.run(
+      "INSERT INTO idempotency_keys(tenant_id,key,method,path,status,body,created_at) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(tenant_id,key) DO NOTHING",
+      [cid, key, method, path, status, encodeJson(database.mode, body), now()]
+    );
+  };
 
   async function register(b) {
     const email = String(b.email || "").trim().toLowerCase();
@@ -159,6 +140,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       await tx.run("INSERT INTO customers(id,email,name,password_hash,created_at) VALUES($1,$2,$3,$4,$5)", [cid, email, name, ph, created]);
       await tx.run("INSERT INTO sessions(token_hash,customer_id,expires_at,created_at) VALUES($1,$2,$3,$4)", [tokenHash(t), cid, expires, created]);
       await persistState(tx, { entity: "CUSTOMER", id: cid, tenant_id: cid, state: "ACTIVE", data: { email, name }, created_at: created, provenance: "acorn" });
+      await persistState(tx, { entity: "ORGANIZATION", id: "org_" + cid, tenant_id: cid, state: "ACTIVE", data: { name, owner: cid }, created_at: created, provenance: "acorn" });
       await persistEnterpriseEvent(tx, { tenantId: cid, entityId: cid, type: "CUSTOMER_CREATED", payload: { email, name }, actor: "acorn-live", authority: "none" });
     });
     return { status: 201, body: { customer: { id: cid, email, name }, token: t, expires_at: expires } };
@@ -181,7 +163,15 @@ export async function createLiveServer({ env = process.env, db } = {}) {
     return {
       projects: projects.concat(fromRequests),
       offers: states.filter((s) => s.entity === "OFFER"),
-      ledger: { currency_default: "CAD", entries: [], balance: 0, reserved: 0, available: 0 },
+      ledger: {
+        currency_default: "CAD",
+        entries: states.filter((s) => s.entity === "MONEY_CLAIM"),
+        balance: 0,
+        reserved: 0,
+        available: 0,
+        billed: false,
+        paid: false
+      },
       connections: connections(),
       intelligences: intelligences(),
       assets: states.filter((s) => s.entity === "ASSET"),
@@ -194,13 +184,21 @@ export async function createLiveServer({ env = process.env, db } = {}) {
     const requestId = String(req.headers["x-request-id"] || makeId("http"));
     let statusCode = 500;
     let errorClass = null;
+    let tenantId = null;
     const send = (code, body) => {
       statusCode = code;
       return json(res, code, body, { "x-request-id": requestId });
     };
     try {
+      if (rateLimited(req)) return send(429, { error: "RATE_LIMITED" });
       const u = new URL(req.url, "http://localhost");
       if (req.method === "GET" && u.pathname === "/") {
+        const accept = String(req.headers.accept || "");
+        if (/\btext\/html\b/.test(accept)) {
+          statusCode = 200;
+          res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff", "x-frame-options": "DENY", "x-request-id": requestId, "content-security-policy": "default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'" });
+          return res.end(APP_HTML);
+        }
         const status = await runtimeStatus();
         return send(200, {
           service: "ACORN LIVE",
@@ -239,7 +237,15 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       }
       if (req.method === "GET" && u.pathname === "/app") {
         statusCode = 200;
-        res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff", "x-frame-options": "DENY", "x-request-id": requestId });
+        res.writeHead(200, {
+          "content-type": "text/html; charset=utf-8",
+          "cache-control": "no-store",
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "no-referrer",
+          "x-frame-options": "DENY",
+          "x-request-id": requestId,
+          "content-security-policy": "default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+        });
         return res.end(APP_HTML);
       }
       if (req.method === "POST" && u.pathname === "/api/v1/register") {
@@ -253,6 +259,23 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       const session = await requireAuth(req);
       if (!session) return send(401, { error: "UNAUTHORIZED" });
       const cid = session.customer_id;
+      tenantId = cid;
+      const idem = String(req.headers["idempotency-key"] || "").trim().slice(0, 200);
+      if (req.method === "POST" && idem) {
+        const prev = await readIdempotency(cid, idem);
+        if (prev) {
+          statusCode = Number(prev.status);
+          return json(res, statusCode, parseJson(prev.body, {}), { "x-request-id": requestId, "x-idempotent-replay": "true" });
+        }
+      }
+      const sendPersist = async (code, body) => {
+        try {
+          if (req.method === "POST" && idem) await writeIdempotency(cid, idem, req.method, u.pathname, code, body);
+        } catch {
+          /* idempotency persistence must not fail a committed mutation */
+        }
+        return send(code, body);
+      };
       if (req.method === "POST" && u.pathname === "/api/v1/logout") {
         await database.run("DELETE FROM sessions WHERE token_hash=$1 AND customer_id=$2", [session.token_hash, cid]);
         return send(200, { ok: true, revoked: true });
@@ -322,23 +345,35 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         const connectors = loadRealWorldConnectors(env.ACORN_REAL_WORLD_CONNECTORS);
         const connector = connectors.find((x) => x.id === String(b.connector_id || ""));
         if (!connector) return send(404, { error: "CONNECTOR_NOT_CONFIGURED" });
-        const call = buildExternalCall({
+        const effect = String(connector.effect || "UNKNOWN").toUpperCase();
+        const clientTriedAuthority = b.human_authorized === true || b.authorized === true || Boolean(b.authority);
+        const locked = isConsequentialEffect(effect);
+        const call = locked ? {
+          id: makeId("ext"),
+          state: "BLOCKED",
+          reason: "HUMAN_AUTHORIZATION_REQUIRED",
+          effect,
+          external_effect: false,
+          human_authorized: false,
+          authority: false,
+          client_authorization_ignored: true
+        } : buildExternalCall({
           connector,
           path: String(b.path || ""),
           method: String(b.method || "GET"),
-          body: b.body ?? null,
+          body: null,
+          source: "http",
           human_authorized: false,
-          idempotency_key: b.idempotency_key || null
+          idempotency_key: typeof b.idempotency_key === "string" ? b.idempotency_key : null
         });
-        const credential = connector.credential_env ? env[connector.credential_env] || process.env[connector.credential_env] || null : null;
-        const result = await executeExternalCall(call, { credential });
-        const publicResult = { ...result };
-        delete publicResult.credential;
+        const credential = (!locked && connector.credential_env) ? env[connector.credential_env] || process.env[connector.credential_env] || null : null;
+        const result = locked ? call : await executeExternalCall(call, { credential });
+        const publicResult = publicExternalResult(result);
         await persistEnterpriseEvent(database, {
           tenantId: cid,
           entityId: requestId,
           type: "REAL_WORLD_EXECUTION",
-          payload: { execution_id: result.id, connector_id: connector.id, state: result.state, effect: connector.effect, external_effect: result.external_effect === true, reason: result.reason || null },
+          payload: { execution_id: result.id, connector_id: connector.id, state: result.state, effect: connector.effect, external_effect: result.external_effect === true, reason: result.reason || null, client_authorization_ignored: true },
           actor: "acorn-live",
           authority: "none"
         });
@@ -348,6 +383,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
             claim: "external_http_observed",
             source: "external_http",
             kind: "EXTERNAL_EXECUTION",
+            epistemic: "OBSERVED",
             strength: 1,
             margin: 0.1,
             validUntil: new Date(Date.now() + 86400000).toISOString()
@@ -358,15 +394,18 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           id: result.id,
           tenant_id: cid,
           state: result.state,
-          data: { request_id: requestId, connector_id: connector.id, effect: connector.effect, human_authorized: false, external_effect: result.external_effect === true, client_authorization_ignored: true }
+          data: { request_id: requestId, connector_id: connector.id, effect: connector.effect, human_authorized: false, external_effect: result.external_effect === true, client_authorization_ignored: true, client_tried_authority: clientTriedAuthority }
         });
         return send(result.state === "SUCCEEDED" ? 200 : (result.state === "BLOCKED" ? 403 : 502), {
           result: publicResult,
           proof: {
             live: false,
+            verified: false,
             secret_custody: false,
             human_authorization_required: true,
             client_authorization_ignored: true,
+            http_cannot_grant_authority: true,
+            untrusted_client_fields: ["base_url", "path", "method", "human_authorized", "authority", "authorized"],
             external_call_measured: result.state === "SUCCEEDED",
             external_effect: result.external_effect === true,
             measured_at: now()
@@ -425,38 +464,48 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         for (const k of ["password", "token", "authorization", "secret", "connectionString", "database_url", "DATABASE_URL"]) delete safeBody[k];
         const rid = makeId("req");
         const t = now();
-        const cycle = customerServiceCycle({
-          customer: { customer_id: cid },
-          request,
-          capabilities: ["general"],
-          solution: "Acorn intake and qualification",
-          deliverables: ["qualified request", "execution plan"],
-          evidence_plan: ["runtime evidence", "automated tests"],
-          usage_rights: ["CUSTOMER_USE_PENDING_HUMAN_AUTHORIZATION"],
-          tasks: ["qualify", "plan", "verify"],
-          intelligence: ["acorn"],
-          human_authorized: false
+        const operated = operateProblem({
+          tenantId: cid,
+          customerId: cid,
+          problem: request,
+          requestId: rid,
+          intelligences: intelligences(),
+          connectors: connections()
         });
+        const cycle = operated.cycle;
         const persisted = await database.tx(async (tx) => {
           await tx.run(
             "INSERT INTO requests(id,customer_id,body,status,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6)",
             [rid, cid, encodeJson(tx.mode, { ...safeBody, request, customer_id: cid }), cycle.stage, t, t]
           );
-          await tx.run("INSERT INTO events(request_id,type,payload,created_at) VALUES($1,$2,$3,$4)", [rid, "REQUEST_CREATED", encodeJson(tx.mode, { stage: cycle.stage }), t]);
+          await tx.run("INSERT INTO events(request_id,type,payload,created_at) VALUES($1,$2,$3,$4)", [rid, "REQUEST_CREATED", encodeJson(tx.mode, { stage: cycle.stage, capabilities: operated.qualification.proposed_capabilities }), t]);
           await persistState(tx, {
             entity: "PROJECT",
             id: rid,
             tenant_id: cid,
             state: cycle.stage,
-            data: { request_id: rid, customer_id: cid, stage: cycle.stage, delivered: false, payment: false, live: false }
+            data: { request_id: rid, customer_id: cid, stage: cycle.stage, delivered: false, payment: false, live: false, mode: "PLAN" }
           });
-          await persistEnterpriseEvent(tx, { tenantId: cid, entityId: rid, type: "REQUEST_CREATED", payload: { stage: cycle.stage }, actor: "acorn-live", authority: "none" });
+          for (const task of operated.execution.tasks || []) {
+            await persistState(tx, { entity: "TASK", id: task.id, tenant_id: cid, state: task.state, data: { execution_id: operated.execution.id, project_id: rid, kind: task.kind, title: task.title } });
+          }
+          for (const cap of operated.capabilities) {
+            await persistState(tx, { entity: "CAPABILITY", id: cap.id, tenant_id: cid, state: cap.state, data: { name: cap.name, exists: cap.exists, available: cap.available, authorized: false, executed: false, verified: false, request_id: rid } });
+          }
+          for (const route of operated.intelligence_routes) {
+            await persistState(tx, { entity: "INTELLIGENCE", id: "route_" + rid + "_" + route.id, tenant_id: cid, state: "SELECTABLE", data: { ...route, request_id: rid, authority: false, authorized: false } });
+          }
+          await persistState(tx, { entity: "MONEY_CLAIM", id: operated.economic.id, tenant_id: cid, state: "ESTIMATED", data: { ...operated.economic, billed: false, paid: false, live: false } });
+          await persistState(tx, { entity: "TEMPORAL", id: "tmp_" + rid, tenant_id: cid, state: "OBSERVED", data: operated.temporal[0] || { epistemic: "OBSERVED", request_id: rid } });
+          await persistState(tx, { entity: "EXECUTION", id: operated.execution.id, tenant_id: cid, state: operated.execution.state, data: { request_id: rid, mode: "PLAN", human_authorized: false, external_effect: false } });
+          await persistEnterpriseEvent(tx, { tenantId: cid, entityId: rid, type: "REQUEST_CREATED", payload: { stage: cycle.stage, mode: "PLAN" }, actor: "acorn-live", authority: "none" });
           const horizon = new Date(Date.now() + 86400000).toISOString();
           const evidence = await persistEvidence(tx, {
             tenantId: cid,
             claim: "request_persisted",
             source: "acorn-live",
             kind: "OBSERVATION",
+            epistemic: "OBSERVED",
             strength: 1,
             margin: 0.1,
             validUntil: horizon
@@ -464,11 +513,16 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           const row = await tx.get("SELECT * FROM requests WHERE id=$1 AND customer_id=$2", [rid, cid]);
           return { row, evidence };
         });
-        return send(201, {
+        return await sendPersist(201, {
           request: publicRequest(persisted.row),
           cycle: { stage: cycle.stage, live: false, delivered: false },
+          qualification: operated.qualification,
+          capabilities: operated.capabilities,
+          intelligence_routes: operated.intelligence_routes,
+          execution: { id: operated.execution.id, mode: "PLAN", state: operated.execution.state, tasks: operated.execution.tasks, snapshot: operated.execution.snapshot },
+          economic: operated.economic,
           evidence: { id: persisted.evidence.id, claim: persisted.evidence.claim, status: persisted.evidence.status, source: persisted.evidence.source, measured_at: persisted.evidence.measured_at, valid_until: persisted.evidence.valid_until },
-          proof: { live: false, verified: false, delivered: false, storage: database.mode, measured_at: t, human_authorization_required: true }
+          proof: { live: false, verified: false, delivered: false, billed: false, paid: false, storage: database.mode, measured_at: t, human_authorization_required: true, capability_is_not_authority: true }
         });
       }
       const m = u.pathname.match(/^\/api\/v1\/requests\/([^/]+)$/);
@@ -478,22 +532,78 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         const events = await database.all("SELECT type,payload,created_at FROM events WHERE request_id=$1 ORDER BY id", [row.id]);
         const state = await database.get("SELECT * FROM acorn_state WHERE id=$1 AND tenant_id=$2", [row.id, cid]);
         const evidence = await database.all("SELECT * FROM acorn_evidence WHERE request_id=$1 AND tenant_id=$2", [row.id, cid]);
+        const related = await loadTenantState(database, cid);
         return send(200, {
           request: publicRequest(row),
           project: state ? { id: state.id, entity: state.entity, state: state.state } : null,
+          capabilities: related.filter((s) => s.entity === "CAPABILITY" && s.data?.request_id === row.id),
+          intelligence_routes: related.filter((s) => s.entity === "INTELLIGENCE" && s.data?.request_id === row.id).map((s) => ({ ...s.data, authority: false })),
+          execution: related.find((s) => s.entity === "EXECUTION" && s.data?.request_id === row.id) || null,
+          tasks: related.filter((s) => s.entity === "TASK" && s.data?.project_id === row.id),
+          economic: related.filter((s) => s.entity === "MONEY_CLAIM").map((s) => ({ ...s.data, billed: false, paid: false, live: false })),
           events: events.map((e) => ({ ...e, payload: parseJson(e.payload, {}) })),
           evidence: evidence.map((e) => ({ id: e.id, claim: e.claim, source: e.source || e.origin, status: e.status, measured_at: e.measured_at, valid_until: e.valid_until })),
-          proof: { live: false, delivered: false }
+          proof: { live: false, delivered: false, billed: false, verified: false }
         });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/intelligences/discover") {
+        const b = await readBody(req);
+        let discovered;
+        try { discovered = discoverUnknownIntelligence(b); }
+        catch { return send(400, { error: "INTELLIGENCE_PROVIDER_MODEL_REQUIRED" }); }
+        await persistState(database, { entity: "INTELLIGENCE", id: discovered.id, tenant_id: cid, state: discovered.state, data: { ...discovered, authority: false, authorized: false } });
+        return await sendPersist(201, { intelligence: { ...discovered, authority: false, authorized: false }, proof: { live: false, executed: false, authorized: false } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/runtime/simulate") {
+        const b = await readBody(req);
+        const requestId = String(b.request_id || "");
+        if (requestId && !(await ownRequest(cid, requestId))) return send(404, { error: "NOT_FOUND" });
+        const simulated = runExecutionMode("SIMULATION", { projectId: requestId || "sim", authorized: false });
+        await persistState(database, { entity: "EXECUTION", id: makeId("sim"), tenant_id: cid, state: "SIMULATED", data: { request_id: requestId || null, mode: "SIMULATION", realm: "SIMULATION", contaminates_reality: false, human_authorized: false } });
+        return await sendPersist(200, { simulation: simulated, proof: { live: false, external_effect: false, contaminates_reality: false, simulation_is_not_execution: true } });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/runtime/dry-run") {
+        const b = await readBody(req);
+        const requestId = String(b.request_id || "");
+        if (requestId && !(await ownRequest(cid, requestId))) return send(404, { error: "NOT_FOUND" });
+        const dry = runExecutionMode("DRY_RUN", { projectId: requestId || "dry", authorized: false });
+        return await sendPersist(200, { dry_run: dry, proof: { live: false, external_effect: false, contaminates_reality: false } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/as-of") {
+        const at = u.searchParams.get("at") || now();
+        const snapshot = await loadTenantAsOf(database, cid, at);
+        return send(200, { ...snapshot, proof: { live: false, as_of: snapshot.at } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/capabilities") {
+        const caps = (await loadTenantState(database, cid, "CAPABILITY")).map((s) => ({ id: s.id, name: s.data?.name, exists: s.data?.exists === true, available: s.data?.available === true, authorized: false, executed: false, verified: false, state: s.state }));
+        return send(200, { capabilities: caps, proof: { live: false, authorized: false } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/economy") {
+        const claims = (await loadTenantState(database, cid, "MONEY_CLAIM")).map((s) => economicRecord({ ...s.data, tenant_id: cid, status: "ESTIMATED" }));
+        return send(200, { records: claims, billed: false, paid: false, live: false, proof: { billed: false, paid: false, live: false } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/organization") {
+        const orgs = await loadTenantState(database, cid, "ORGANIZATION");
+        return send(200, { organization: orgs[0] || { id: "org_" + cid, tenant_id: cid, state: "ACTIVE" }, proof: { live: false } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/future-proof") {
+        return send(200, { contract: futureProofContract(), live: false });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
+        return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });
       }
       return send(404, { error: "NOT_FOUND" });
     } catch (e) {
+      if (res.headersSent) {
+        errorClass = e.code || "INTERNAL_ERROR";
+        return;
+      }
       const status = e.status || 500;
       errorClass = e.code || (status === 413 ? "BODY_TOO_LARGE" : (status >= 500 ? "INTERNAL_ERROR" : "BAD_REQUEST"));
-      if (status >= 500) console.error("LIVE_INTERNAL_ERROR");
+      if (status >= 500) console.error("LIVE_INTERNAL_ERROR", errorClass, String(e?.message || e));
       return send(status, { error: status === 413 ? "BODY_TOO_LARGE" : (e.code || (status === 400 ? "BAD_REQUEST" : "INTERNAL_ERROR")) });
     } finally {
-      logEvent({ request_id: requestId, method: req.method, path: (req.url || "").split("?")[0], status: statusCode, duration_ms: Date.now() - started, error_class: errorClass });
+      logEvent({ request_id: requestId, tenant_id: tenantId, method: req.method, path: (req.url || "").split("?")[0], status: statusCode, duration_ms: Date.now() - started, error_class: errorClass });
     }
   });
   return { server, db: database };
@@ -516,7 +626,7 @@ if (isMain) {
   const { server, db, port, host } = await startLiveServer();
   console.log("ACORN LIVE listening on " + host + ":" + port);
   async function shutdown() {
-    server.close();
+    await new Promise((resolve) => server.close(() => resolve()));
     await db.close();
     process.exit(0);
   }

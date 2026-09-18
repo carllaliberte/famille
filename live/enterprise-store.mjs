@@ -141,4 +141,26 @@ export async function getTenantState(db, id, tenantId) {
   return record;
 }
 
+export async function loadTenantAsOf(db, tenantId, at) {
+  const ts = new Date(at).toISOString();
+  const [events, evidence, state] = await Promise.all([
+    db.all("SELECT * FROM acorn_events WHERE tenant_id=$1 AND measured_at<=$2 ORDER BY measured_at", [tenantId, ts]),
+    db.all("SELECT * FROM acorn_evidence WHERE tenant_id=$1 AND measured_at<=$2 ORDER BY measured_at", [tenantId, ts]),
+    db.all("SELECT * FROM acorn_state WHERE tenant_id=$1 AND created_at<=$2", [tenantId, ts])
+  ]);
+  return {
+    at: ts,
+    tenant_id: tenantId,
+    events: events.map((e) => ({ ...e, payload: parseJson(e.payload, {}) })),
+    evidence: evidence.map((row) => {
+      const rec = rowEvidence(row);
+      const expired = rec.valid_until && Date.parse(rec.valid_until) < Date.parse(ts);
+      return { ...rec, epistemic: expired ? "EXPIRED" : (rec.payload?.epistemic || rec.status), expired: Boolean(expired), false_because_expired: false };
+    }),
+    state: state.map(rowState),
+    live: false,
+    proof: "as_of_is_historical_not_truth"
+  };
+}
+
 export { evidenceRecord, evidenceIsCurrent, registerEvidence, assertTenantAccess };

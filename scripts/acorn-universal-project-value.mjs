@@ -14,6 +14,8 @@
  *          -> VALUE -> REUSE -> PRODUCT -> REVENUE -> LEARNING
  */
 
+import { buildProjectValueLedger, buildAssetEconomics, buildEconomicProof } from "./acorn-project-value-ledger.mjs";
+
 export const UNIVERSAL_PROJECT_VALUE_VERSION = "acorn.universal-project-value.v1";
 
 const str = (v) => String(v ?? "").trim();

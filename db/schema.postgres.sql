@@ -88,3 +88,16 @@ CREATE INDEX IF NOT EXISTS idx_acorn_state_tenant_entity ON acorn_state(tenant_i
 CREATE INDEX IF NOT EXISTS idx_acorn_events_entity ON acorn_events(tenant_id, entity_id);
 CREATE INDEX IF NOT EXISTS idx_acorn_jobs_claim ON acorn_jobs(state, created_at);
 CREATE INDEX IF NOT EXISTS idx_acorn_jobs_tenant ON acorn_jobs(tenant_id, state);
+CREATE TABLE IF NOT EXISTS idempotency_keys (
+  tenant_id TEXT NOT NULL,
+  key TEXT NOT NULL,
+  method TEXT NOT NULL,
+  path TEXT NOT NULL,
+  status INTEGER NOT NULL,
+  body JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  PRIMARY KEY (tenant_id, key)
+);
+CREATE INDEX IF NOT EXISTS idx_idempotency_created ON idempotency_keys(created_at);
+CREATE INDEX IF NOT EXISTS idx_acorn_events_time ON acorn_events(tenant_id, measured_at);
+CREATE INDEX IF NOT EXISTS idx_acorn_state_created ON acorn_state(tenant_id, created_at);

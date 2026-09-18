@@ -32,7 +32,7 @@ export function buildProductCandidate({name,problemClass,outcomes=[],deliverable
   const verified=outcomes.filter(o=>o.verified);
   return {id:id("product"),name,problem_class:problemClass,outcome_count:outcomes.length,
     verified_outcomes:verified.length,deliverables,price_basis:priceBasis,
-    usage_rights, support_model:supportModel,score, state:verified.length?"CANDIDATE":"INSUFFICIENT_EVIDENCE",
+    usage_rights: usageRights, support_model:supportModel,score, state:verified.length?"CANDIDATE":"INSUFFICIENT_EVIDENCE",
     publication:"HUMAN_REQUIRED",created_at:ISO()};
 }
 export function createOfferTemplate(product,{price,currency="CAD",scope=[],acceptanceCriteria=[],
