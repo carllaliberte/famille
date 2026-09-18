@@ -25,6 +25,7 @@ import { runValueOpportunityCycle } from "./acorn-value-opportunity-fabric.mjs";
 import { privacyPolicy, privacyAudit } from "./acorn-privacy-process.mjs";
 import { gatewayPolicy, buildDeveloperConnectManifest } from "./acorn-developer-gateway.mjs";
 import { runMarketCycle } from "./acorn-market-engine.mjs";
+import { contributionSettlementReadiness, economyPolicy } from "./acorn-contribution-economy.mjs";
 import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
@@ -198,6 +199,11 @@ export async function executeWorkTask({ root, task, env = process.env, computeDi
   if (kind === "privacy-audit") { const started=Date.now(); const result=privacyAudit({events:task.events||[],records:task.records||[]}); return {status:result.status==="PASS"?"COMPLETED":"FAILED",duration_ms:Date.now()-started,executor:"privacy-process-fabric",privacy:{policy:privacyPolicy(),audit:result},stdout_tail:"",stderr_tail:result.status==="PASS"?"":"PRIVACY_AUDIT_FAILED"}; }
   if (kind === "developer-gateway") { const started=Date.now(); const manifest=buildDeveloperConnectManifest({capabilities:task.capabilities||[],protocols:["connector-flux"]}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"developer-gateway-fabric",developer:{policy:gatewayPolicy(),manifest},stdout_tail:"",stderr_tail:""}; }
   if (kind === "market") { const started=Date.now(); const result=runMarketCycle({signals:task.signals||[],capabilityIndex:task.capabilityIndex||[]}); return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"market-engine",market:result,stdout_tail:"",stderr_tail:""}; }
+  if (kind === "contribution-economy") {
+    const started=Date.now();
+    const readiness=contributionSettlementReadiness({paymentRail:task.paymentRail||null,destination:task.destination||null});
+    return {status:"COMPLETED",duration_ms:Date.now()-started,executor:"contribution-economy",economy:{policy:economyPolicy(),settlement:readiness},stdout_tail:"",stderr_tail:""};
+  }
   if (kind === "connection-sweep") {
     const started = Date.now();
     const result = await runConnectionSweep({ env, now: new Date().toISOString() });
@@ -270,6 +276,7 @@ function defaultTaskFor(row, env = process.env) {
   if (row.execution_kind === "privacy-audit") return { ...row, execution_kind:"privacy-audit", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "developer-gateway") return { ...row, execution_kind:"developer-gateway", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "market") return { ...row, execution_kind:"market", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "contribution-economy") return { ...row, execution_kind:"contribution-economy", resource_cost:{actions:1,cpu_ms:10000} };
   if (row.execution_kind === "connection-sweep") {
     return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
