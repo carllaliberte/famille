@@ -98,7 +98,21 @@ test("routing prefers confidence", () => {
 
 test("expired knowledge is excluded", () => {
   const k = sample({ predicate: "p", source: "a", value: 1, expires_at: "2000-01-01T00:00:00Z" });
-  assert.equal(expireKnowledge({ knowledge: [k] })[0].state, "EXPIRED");
+  const expired = expireKnowledge({ knowledge: [k] })[0];
+  assert.equal(expired.state, "EXPIRED");
+  assert.throws(() => validateKnowledge(k), /EXPIRED_KNOWLEDGE/);
+  assert.throws(() => validateKnowledge(expired), /EXPIRED_KNOWLEDGE/);
+  assert.equal(routeKnowledge({ knowledge: [k] }).length, 0);
+  assert.equal(buildKnowledgeGraph([k]).nodes.length, 0);
+  assert.equal(shareKnowledge(k).shared, false);
+  assert.equal(shareKnowledge(sample()).shared, false);
+});
+
+test("local FNV id includes value and is not a clock", () => {
+  const a = sample({ value: 1, source: "a" });
+  const b = sample({ value: 999, source: "a" });
+  assert.notEqual(a.id, b.id);
+  assert.equal(/^\d+$/.test(a.id.split(":")[1]), false);
 });
 
 test("constitution fails closed and executes A to B without authority", () => {

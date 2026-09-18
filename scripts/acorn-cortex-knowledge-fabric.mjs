@@ -73,6 +73,21 @@ function evidenceList(knowledge) {
   return A(knowledge?.evidence).map(S).filter(Boolean);
 }
 
+export function isExpired(knowledge, at = Date.now()) {
+  if (!knowledge) return false;
+  if (knowledge.state === "EXPIRED") return true;
+  if (knowledge.expires_at && Date.parse(knowledge.expires_at) <= at) return true;
+  return false;
+}
+
+function currentKnowledge(knowledge, at = Date.now()) {
+  return Boolean(knowledge) && !isExpired(knowledge, at);
+}
+
+function contentKey({ subject, predicate, value, source, scope, type }) {
+  return [subject, predicate, JSON.stringify(value), source, scope, type].join("|");
+}
+
 export function createKnowledge({
   subject,
   predicate,
@@ -87,7 +102,7 @@ export function createKnowledge({
   if (!S(subject) || !S(predicate) || !S(source)) throw new Error("KNOWLEDGE_IDENTITY_REQUIRED");
   if (!KNOWLEDGE_TYPES.includes(type)) throw new Error("KNOWLEDGE_TYPE_UNSUPPORTED");
   const items = A(evidence).map(S).filter(Boolean);
-  const id = `knowledge:${localFnv1a32([subject, predicate, source, scope, type].join("|"))}`;
+  const id = `knowledge:${localFnv1a32(contentKey({ subject, predicate, value, source, scope, type }))}`;
   return {
     id,
     subject,
@@ -111,6 +126,7 @@ export function validateKnowledge(k) {
   if (!S(k.source)) throw new Error("KNOWLEDGE_IDENTITY_REQUIRED");
   const evidence = evidenceList(k);
   if (!evidence.length) throw new Error("EVIDENCE_REQUIRED");
+  if (isExpired(k)) throw new Error("EXPIRED_KNOWLEDGE");
   if (Object.hasOwn(k, "evidence_hash") && k.evidence_hash) {
     throw new Error("LOCAL_FNV_IS_NOT_EVIDENCE_HASH");
   }
@@ -130,6 +146,19 @@ export function shareKnowledge(k, { recipient_scope = "ecosystem", consent = tru
     return { shared: false, reason: "KNOWLEDGE_REQUIRED", authority: false, live: false };
   }
   if (!consent) return { ...k, shared: false, reason: "CONSENT_REQUIRED", authority: false, live: false };
+  if (isExpired(k)) {
+    return { knowledge_id: k.id, shared: false, reason: "EXPIRED_KNOWLEDGE", state: "EXPIRED", live: false };
+  }
+  if (!["OBSERVED", "MEASURED", "VERIFIED"].includes(k.state)) {
+    return {
+      knowledge_id: k.id,
+      shared: false,
+      reason: "KNOWLEDGE_NOT_TRUSTED",
+      state: k.state,
+      authority: false,
+      live: false
+    };
+  }
   return {
     knowledge_id: k.id,
     recipient_scope,
@@ -163,7 +192,7 @@ export function transferKnowledge({ from, to, knowledge } = {}) {
 }
 
 export function buildKnowledgeGraph(items = []) {
-  const valid = A(items).filter((k) => k && k.state !== "EXPIRED");
+  const valid = A(items).filter((k) => currentKnowledge(k));
   const nodes = valid.map((k) => ({
     id: k.id,
     type: k.type,
@@ -192,7 +221,10 @@ export function buildKnowledgeGraph(items = []) {
 
 export function deriveInsight({ knowledge = [], goal, minimum_confidence = 0.5 } = {}) {
   const usable = A(knowledge).filter(
-    (k) => ["VERIFIED", "MEASURED", "OBSERVED"].includes(k.state) && Number(k.confidence) >= minimum_confidence
+    (k) =>
+      currentKnowledge(k) &&
+      ["VERIFIED", "MEASURED", "OBSERVED"].includes(k.state) &&
+      Number(k.confidence) >= minimum_confidence
   );
   return {
     goal,
@@ -206,15 +238,13 @@ export function deriveInsight({ knowledge = [], goal, minimum_confidence = 0.5 }
 
 export function routeKnowledge({ knowledge = [], need } = {}) {
   return A(knowledge)
-    .filter((k) => k.state !== "EXPIRED" && (!need || k.subject === need || k.predicate === need))
+    .filter((k) => currentKnowledge(k) && (!need || k.subject === need || k.predicate === need))
     .sort((a, b) => Number(b.confidence) - Number(a.confidence))
     .map((k) => k.id);
 }
 
 export function expireKnowledge({ knowledge = [], at = Date.now() } = {}) {
-  return A(knowledge).map((k) =>
-    k.expires_at && Date.parse(k.expires_at) <= at ? { ...k, state: "EXPIRED" } : k
-  );
+  return A(knowledge).map((k) => (isExpired(k, at) ? { ...k, state: "EXPIRED" } : k));
 }
 
 export function cortexSnapshot({ knowledge = [], participants = [], capabilities = [], outcomes = [] } = {}) {

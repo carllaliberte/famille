@@ -16,7 +16,9 @@ These are functions. They are not a live run. `validateKnowledge` is a local gat
 
 `validateKnowledge` stays `PROVISIONAL` unless evidence tokens are present. Empty evidence throws `EVIDENCE_REQUIRED`. A count of tokens is not a measured proof. This rail therefore does not mint `VERIFIED` from `evidence.length`. Presence of tokens is `OBSERVED`. `VERIFIED` remains a named state, unused by this gate.
 
-The object `id` is FNV-1a 32 (`id_algo: fnv1a-32`). That fingerprint is not SHA-256 and not `claim.v0` `evidence_hash`. LU still needs the hash of the content actually read. This rail does not mint that hash.
+The object `id` is FNV-1a 32 (`id_algo: fnv1a-32`) of subject|predicate|value|source|scope|type. That fingerprint is not SHA-256 and not `claim.v0` `evidence_hash`. LU still needs the hash of the content actually read. This rail does not mint that hash.
+
+`expires_at` in the past, or `state: EXPIRED`, cannot be re-validated, routed, graphed, or shared as current. `expireKnowledge` is not the only reader of the date.
 
 ## Transfer
 
