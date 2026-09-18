@@ -78,8 +78,8 @@ test("paid QPU never bypasses human authorization", () => {
 
 test("quantum advantage remains unproven without comparative evidence", () => {
   const benchmark = quantumBenchmarkContract({
-    baseline: { latency_ms: 100 },
-    candidate: { latency_ms: 50 },
+    baseline: { latency_ms: 100, correctness: 1 },
+    candidate: { latency_ms: 50, correctness: 1 },
     task: { type: "optimization" },
   });
   assert.equal(benchmark.quantum_advantage, false);
