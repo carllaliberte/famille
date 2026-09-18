@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   canonicalWorkFromRuntime,
   rankWork,
+  workState,
   runContinuousWorkEngine,
   executeWorkTask,
 } from "../scripts/acorn-work-engine.mjs";
@@ -49,7 +50,9 @@ test("work discovery is unified and rankable", () => {
     },
   };
   const rows = canonicalWorkFromRuntime(runtime);
-  assert.equal(rows.length, 3);
+  assert.equal(rows.length, 5);
+  assert.ok(rows.some((row) => row.execution_kind === "connection-sweep"));
+  assert.ok(rows.some((row) => row.execution_kind === "compute-sweep"));
   assert.equal(rankWork(rows)[0].priority >= rankWork(rows)[1].priority, true);
 });
 
@@ -112,4 +115,41 @@ test("continuous work engine includes universal compute metabolism", async () =>
   assert.equal(execution.compute.auto_spend, false);
   assert.equal(execution.compute.live, false);
   assert.ok(execution.compute.executed_count > 0 || execution.compute.held_count > 0);
+});
+
+
+test("continuous optimization reopens recurring work and records measured scheduling basis", () => {
+  const previous = {
+    queue: [{ id: "work:repeat", state: "COMPLETED", attempts: 1, cycle_count: 0 }],
+    history: [{ work_id: "work:repeat", state: "COMPLETED", duration_ms: 1000 }],
+  };
+  const discovered = [{
+    id: "work:repeat",
+    source: "learning",
+    subject: "repeat",
+    state: "READY",
+    information_gain: 1,
+    capability_gain: 1,
+    risk_reduction: 1,
+    cost: 0.1,
+    repeatable: true,
+  }];
+  const graph = workState({ previous, discovered });
+  assert.equal(graph.queue[0].state, "READY");
+  assert.equal(graph.queue[0].cycle_count, 1);
+  assert.equal(graph.queue[0].optimization.basis, "measured_history");
+});
+
+
+test("continuous work executes the canonical connection sweep", async () => {
+  const rows = canonicalWorkFromRuntime({ unified: { evolution: {}, learning: {}, metabolism: {} }, coverage: {} });
+  const sweep = rows.find((row) => row.execution_kind === "connection-sweep");
+  assert.ok(sweep);
+  const execution = await executeWorkTask({ root: process.cwd(), task: sweep, env: { ...process.env, ACORN_ALLOW_REMOTE_EXECUTION: "false" } });
+  assert.equal(execution.executor, "connection-fabric");
+  assert.ok(execution.connections);
+  assert.equal(execution.connections.constitution.external_boundary, "connector-flux");
+  assert.equal(execution.connections.auto_spend, false);
+  assert.equal(execution.connections.live, false);
+  assert.equal(execution.connections.proof.status, "VERIFIED");
 });

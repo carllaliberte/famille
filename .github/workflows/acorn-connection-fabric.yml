@@ -1,0 +1,32 @@
+name: acorn-connection-fabric
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify connection fabric syntax
+        run: |
+          node --check scripts/acorn-connection-fabric.mjs
+          node --check scripts/acorn-continuous-runtime.mjs
+          node --check scripts/acorn-work-engine.mjs
+      - name: Verify canonical connection lifecycle
+        run: node --test test/acorn-connection-fabric.test.js
+      - name: Verify continuous work integration
+        run: node --test test/acorn-continuous-work-engine.test.js
+      - name: Execute measured connection proof
+        run: node scripts/acorn-connection-fabric.mjs
+      - name: Execute canonical runtime connection path
+        run: node scripts/acorn-continuous-runtime.mjs

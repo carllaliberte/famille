@@ -21,6 +21,8 @@ import { spawnSync } from "node:child_process";
 import { runContinuousRuntime } from "./acorn-continuous-runtime.mjs";
 import { executeComputeTask, snapshotComputeFabric } from "./acorn-compute-fabric.mjs";
 import { runUniversalComputeSweep } from "./acorn-universal-compute-sweep.mjs";
+import { runValueOpportunityCycle } from "./acorn-value-opportunity-fabric.mjs";
+import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
   limitsFromEnv,
@@ -28,7 +30,7 @@ import {
   reserve,
 } from "./acorn-resource-governor.mjs";
 
-export const CONTINUOUS_WORK_ENGINE_VERSION = "acorn.continuous-work-engine.v1";
+export const CONTINUOUS_WORK_ENGINE_VERSION = "acorn.continuous-work-engine.v2";
 
 const TERMINAL = new Set(["COMPLETED", "REJECTED", "QUARANTINED"]);
 const ACTIVE = new Set(["READY", "RUNNING", "VERIFYING", "BLOCKED_BUDGET", "WAITING_HUMAN"]);
@@ -77,6 +79,10 @@ export function canonicalWorkFromRuntime(runtime) {
   for (const row of runtime?.unified?.evolution?.next_work || []) push(row, "evolution");
   for (const row of runtime?.unified?.learning?.next || []) push(row, "learning");
   for (const row of runtime?.unified?.metabolism?.next || []) push(row, "metabolism");
+
+  push({ id:"value-opportunity-cycle", subject:"measure public access, business value, and commercial recovery opportunities", information_gain:1, capability_gain:0.8, risk_reduction:0.6, uncertainty:0.8, reversibility:1, cost:0.1, execution_kind:"value-opportunity" }, "value");
+
+  push({ id:"connection-sweep", subject:"discover, authenticate, measure and verify all available connection adapters", information_gain:1, capability_gain:1, risk_reduction:0.9, uncertainty:0.9, reversibility:1, cost:0.1, execution_kind:"connection-sweep" }, "connections");
 
   // Compute is part of the organism metabolism: execute every currently
   // executable safe resource, while keeping remote/paid/unknown work gated.
@@ -144,12 +150,14 @@ export function workState({ previous = {}, discovered = [] } = {}) {
       ...row,
       state: prior?.state || row.state,
       attempts: Number(prior?.attempts || 0),
+      cycle_count: prior?.state === "COMPLETED" && row.repeatable !== false ? Number(prior?.cycle_count || 0) + 1 : Number(prior?.cycle_count || 0),
+      optimization: { basis: Array.isArray(previous.history) && previous.history.length ? "measured_history" : "initial_measurement" },
       last_error: prior?.last_error || null,
       last_completed_at: prior?.last_completed_at || null,
       priority: scoreWork(row),
     };
   });
-  return { queue: rankWork(queue), updated_at: new Date().toISOString() };
+  return { queue: rankWork(queue, { history: previous.history || [] }), updated_at: new Date().toISOString() };
 }
 
 function executeDeterministic({ root, task, env }) {
@@ -176,6 +184,23 @@ function executeDeterministic({ root, task, env }) {
 
 export async function executeWorkTask({ root, task, env = process.env, computeDiscovery = null } = {}) {
   const kind = text(task.execution_kind || "deterministic").toLowerCase();
+  if (kind === "value-opportunity") {
+    const started = Date.now();
+    const result = runValueOpportunityCycle({ opportunities: task.opportunities || [], observations: task.observations || [] });
+    return { status:"COMPLETED", duration_ms:Date.now()-started, executor:"value-opportunity-fabric", value:result, stdout_tail:"", stderr_tail:"" };
+  }
+  if (kind === "connection-sweep") {
+    const started = Date.now();
+    const result = await runConnectionSweep({ env, now: new Date().toISOString() });
+    return {
+      status: result.proof?.status === "VERIFIED" ? "COMPLETED" : "FAILED",
+      duration_ms: Date.now() - started,
+      executor: "connection-fabric",
+      connections: result,
+      stdout_tail: "",
+      stderr_tail: result.proof?.status === "VERIFIED" ? "" : "CONNECTION_SWEEP_NOT_VERIFIED",
+    };
+  }
   if (kind === "compute-sweep") {
     const started = Date.now();
     const result = await runUniversalComputeSweep({ env, human_authorization: task.human_authorization === true, policy: task.policy || "FREE_FIRST" });
@@ -232,6 +257,10 @@ export function executorPolicy({ env = process.env } = {}) {
 }
 
 function defaultTaskFor(row, env = process.env) {
+  if (row.execution_kind === "value-opportunity") return { ...row, execution_kind:"value-opportunity", resource_cost:{actions:1,cpu_ms:10000} };
+  if (row.execution_kind === "connection-sweep") {
+    return { ...row, execution_kind: "connection-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
+  }
   if (row.execution_kind === "compute-sweep") {
     return { ...row, execution_kind: "compute-sweep", resource_cost: { actions: 1, cpu_ms: 30_000 } };
   }
