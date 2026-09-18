@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { classifyRun, notificationDecision, triageRun, RUN_CLASSES } from "../scripts/acorn-cognitive-run-triage.mjs";
+import { classifyRun, notificationDecision, triageRun, runBoundedVerification, RUN_CLASSES } from "../scripts/acorn-cognitive-run-triage.mjs";
 
 test("successful automation is silent", () => {
   const r = triageRun({ exitCode: 0 });
@@ -42,4 +42,16 @@ test("real regression remains visible", () => {
 test("recovered transient failure stays silent", () => {
   const r = notificationDecision(RUN_CLASSES.TRANSIENT_FAILURE, { recovered: true });
   assert.equal(r.notify, false);
+});
+
+
+test("bounded verification records a successful first attempt", () => {
+  const r = runBoundedVerification({
+    command: process.execPath,
+    args: ["-e", "process.exit(0)"],
+    maxRetries: 2,
+  });
+  assert.equal(r.classification, RUN_CLASSES.SUCCESS);
+  assert.equal(r.recovered, false);
+  assert.equal(r.attempts.length, 1);
 });
