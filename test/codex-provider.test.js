@@ -184,7 +184,7 @@ describe("workflow restore does not skip CODEX_AUTH_JSON because an OpenRouter k
     const wf = fs.readFileSync(new URL("../.github/workflows/codex-autonomous-worker.yml", import.meta.url), "utf8");
     assert.match(wf, /provider:/);
     assert.match(wf, /default: "auto"/);
-    assert.match(wf, /inputs\.provider \|\| vars\.CODEX_PROVIDER \|\| 'openrouter'/);
+    assert.match(wf, /inputs\.provider \|\| vars\.CODEX_PROVIDER \|\| 'auto'/);
     assert.match(wf, /chmod 600/);
     assert.match(wf, /auth_present=/);
     assert.match(wf, /openai\|chatgpt\|codex/);
