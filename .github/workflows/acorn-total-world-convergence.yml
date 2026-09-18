@@ -1,0 +1,23 @@
+name: ACORN Total World Convergence
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/acorn-total-world-convergence.mjs"
+      - "scripts/acorn-total-convergence-conductor.mjs"
+      - "scripts/acorn-total-open-work-reconciler.mjs"
+      - "test/acorn-total-world-convergence.test.js"
+permissions:
+  contents: read
+jobs:
+  convergence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test test/acorn-total-world-convergence.test.js
+      - run: node --input-type=module -e "import('./scripts/acorn-total-world-convergence.mjs').then(({assertTotalConvergence})=>assertTotalConvergence())"
