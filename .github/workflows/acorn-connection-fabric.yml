@@ -23,10 +23,18 @@ jobs:
           node --check scripts/acorn-continuous-runtime.mjs
           node --check scripts/acorn-work-engine.mjs
       - name: Verify canonical connection lifecycle
+        env:
+          ACORN_SYSTEM_MODE: RUN
         run: node --test test/acorn-connection-fabric.test.js
       - name: Verify continuous work integration
+        env:
+          ACORN_SYSTEM_MODE: RUN
         run: node --test test/acorn-continuous-work-engine.test.js
       - name: Execute measured connection proof
+        env:
+          ACORN_SYSTEM_MODE: RUN
         run: node scripts/acorn-connection-fabric.mjs
       - name: Execute canonical runtime connection path
+        env:
+          ACORN_SYSTEM_MODE: RUN
         run: node scripts/acorn-continuous-runtime.mjs
