@@ -74,7 +74,8 @@
     "runtime:total-os": "node scripts/acorn-total-operating-system.mjs",
     "runtime:real-world": "node -e \"import('./scripts/acorn-real-world-bridge.mjs').then(({realWorldBridgeSnapshot,loadRealWorldConnectors})=>console.log(JSON.stringify(realWorldBridgeSnapshot(loadRealWorldConnectors()),null,2)))\"",
     "runtime:self-build": "node scripts/acorn-self-build.mjs",
-    "runtime:quality": "node scripts/acorn-quality-fabric.mjs"
+    "runtime:quality": "node scripts/acorn-quality-fabric.mjs",
+    "runtime:value-fabric": "node scripts/acorn-universal-value-fabric.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -172,7 +173,8 @@
     "./acorn-commercial-runtime": "./scripts/acorn-commercial-runtime.mjs",
     "./acorn-real-world-turnkey": "./scripts/acorn-real-world-turnkey.mjs",
     "./acorn-quality-trace": "./scripts/acorn-quality-trace.mjs",
-    "./acorn-quality-fabric": "./scripts/acorn-quality-fabric.mjs"
+    "./acorn-quality-fabric": "./scripts/acorn-quality-fabric.mjs",
+    "./acorn-universal-value-fabric": "./scripts/acorn-universal-value-fabric.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
