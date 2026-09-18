@@ -6,7 +6,7 @@ const uid=p=>`${p}_${crypto.randomUUID?.()||Math.random().toString(36).slice(2)}
 export const STATE_ENTITIES=Object.freeze([
   "CUSTOMER","ORGANIZATION","PROJECT","OFFER","TASK","EXECUTION","CONNECTION","INTELLIGENCE",
   "CAPABILITY","EVIDENCE","MONEY_CLAIM","ASSET","PRODUCT","EVENT","TEMPORAL",
-  "DELIVERY","VALUE","RENEWAL","EXPANSION"
+  "DELIVERY","VALUE","RENEWAL","EXPANSION","DEMAND","OUTCOME"
 ]);
 export function stateRecord(entity,data={}){
  if(!STATE_ENTITIES.includes(entity)) throw new Error("UNKNOWN_STATE_ENTITY");
