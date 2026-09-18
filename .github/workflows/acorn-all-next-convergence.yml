@@ -1,0 +1,16 @@
+name: ACORN All Next Convergence
+on:
+  workflow_dispatch:
+  push:
+    paths: ["scripts/acorn-all-next-convergence.mjs","scripts/acorn-all-next-convergence-conductor.mjs","test/acorn-all-next-convergence.test.js"]
+permissions: {contents: read}
+jobs:
+  convergence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci
+      - run: node --test test/acorn-all-next-convergence.test.js
+      - run: node --input-type=module -e "import('./scripts/acorn-all-next-convergence.mjs').then(({assertAllNextConstitution})=>assertAllNextConstitution())"
