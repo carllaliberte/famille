@@ -1,0 +1,4 @@
+# ACORN — ALL NEXT CONVERGENCE
+All mutually dependent next work is designed as one coherent convergence: customer, intent, market, product, project, capability, intelligence, connectivity, data, compute, software, physical reality, identity, consent, security, quality, evidence, execution, outcomes, value, economics, operations, environments, learning, reuse, network, federation, developer access, opportunities and future surfaces.
+Loop: OBSERVE → AUDIT → UNDERSTAND → DETECT GAP → DISCOVER → QUALIFY → COMPARE → COMPOSE → SIMULATE → ESTIMATE → OFFER → ORDER → AUTHORIZE → EXECUTE → VERIFY → DELIVER → MEASURE → BENCHMARK → LEARN → REGISTER → REUSE → PRODUCTIZE → DISTRIBUTE → RENEW → EXPAND → SCALE → RECOVER → RECOMPOSE → REOBSERVE.
+Permanent optimization: maximize coherent leverage and reuse; never fragment work merely to create features. Verified outcomes compound; authority does not.
