@@ -128,6 +128,7 @@ test("universal cycle composes intake, planning, delivery, productization, monet
     reusable_components:["orchestrator"],
     similar_projects:9,
     price:5000,
+    payment_rail:{verified:true},
     revenue_streams:["PROJECT","LICENSE","SUBSCRIPTION"],
     growth:{qualified_leads:1,reusable_products:1},
   });
