@@ -1,0 +1,16 @@
+name: ACORN Universal Reality Capability Marketplace
+on:
+  workflow_dispatch:
+  push:
+    paths: ["scripts/acorn-universal-reality-capability-marketplace.mjs","scripts/acorn-reality-market-conductor.mjs","test/acorn-universal-reality-capability-marketplace.test.js"]
+permissions:
+  contents: read
+jobs:
+  marketplace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci
+      - run: node --test test/acorn-universal-reality-capability-marketplace.test.js

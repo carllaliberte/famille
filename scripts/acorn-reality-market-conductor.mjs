@@ -1,0 +1,1 @@
+import{buildMarketplace,assertMarketplaceConstitution}from"./acorn-universal-reality-capability-marketplace.mjs";export const conductRealityMarketplace=buildMarketplace;export const assertRealityMarketplace=assertMarketplaceConstitution;
