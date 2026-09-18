@@ -2,16 +2,15 @@
 /**
  * ACORN COGNITIVE RUN TRIAGE
  *
- * Turns raw GitHub Actions outcomes into Acorn operational states.
- * It does not disable GitHub notifications. It prevents expected,
- * transient, or recovered automation failures from becoming noisy
- * workflow failures; genuine regressions and human/security gates remain
- * visible.
+ * Turns raw automation outcomes into Acorn operational states and performs
+ * bounded retry/recovery for transient failures.
  *
  * CAPABILITY != AUTHORITY.
  */
 
-export const COGNITIVE_RUN_TRIAGE_VERSION = "acorn.cognitive-run-triage.v1";
+import { spawnSync } from "node:child_process";
+
+export const COGNITIVE_RUN_TRIAGE_VERSION = "acorn.cognitive-run-triage.v2";
 
 export const RUN_CLASSES = Object.freeze({
   SUCCESS: "SUCCESS",
@@ -43,28 +42,18 @@ export function classifyRun({ exitCode = 0, reason = "", stderr = "", checks = {
   if (SECURITY.has(String(reason).toUpperCase()) || [...SECURITY].some((x) => haystack.includes(x))) {
     return RUN_CLASSES.SECURITY;
   }
-  if (
-    HUMAN.has(String(reason).toUpperCase()) ||
-    [...HUMAN].some((x) => haystack.includes(x)) ||
-    haystack.includes("WAITING_HUMAN") ||
-    /\bHOLD\b/.test(haystack)
-  ) {
+  if (HUMAN.has(String(reason).toUpperCase()) || [...HUMAN].some((x) => haystack.includes(x)) || haystack.includes("WAITING_HUMAN") || /\\bHOLD\\b/.test(haystack)) {
     return RUN_CLASSES.WAITING_HUMAN;
   }
   if (Number(exitCode) === 0) return RUN_CLASSES.SUCCESS;
   if ([...RETRYABLE].some((x) => haystack.includes(x))) return RUN_CLASSES.TRANSIENT_FAILURE;
-  if (/EXPECTED|SKIP(?:PED)?|NO_RESOURCE|NOT_PRESENT|NOT_IMPLEMENTED|UNAVAILABLE/.test(haystack)) {
+  if (/EXPECTED(?:_[A-Z0-9_]+)?|SKIPPED|NO_RESOURCE|NOT_PRESENT|NOT_IMPLEMENTED|GPU_RUNTIME_NOT_PRESENT/.test(haystack)) {
     return RUN_CLASSES.EXPECTED_FAILURE;
   }
   return RUN_CLASSES.REAL_REGRESSION;
 }
 
-/** Workflow / CLI contract: notify means the step stays visible (non-zero). */
-export function workflowExitCode(result) {
-  return result.notify ? 1 : 0;
-}
-
-export function notificationDecision(classification, { recovered = false } = {}) {
+export function workflowExitCode(result) { return result.notify ? 1 : 0; }\n\nexport function notificationDecision(classification, { recovered = false } = {}) {
   if (recovered) return { notify: false, severity: "info", action: "record" };
   if ([RUN_CLASSES.SUCCESS, RUN_CLASSES.EXPECTED_FAILURE].includes(classification)) {
     return { notify: false, severity: "info", action: "record" };
@@ -94,6 +83,72 @@ export function triageRun(input = {}) {
     ...decision,
     raw_exit_code: Number(input.exitCode ?? 0),
     reason: String(input.reason ?? ""),
+  };
+}
+
+export function runBoundedVerification({
+  command,
+  args = [],
+  cwd = process.cwd(),
+  env = process.env,
+  maxRetries = 2,
+  timeoutMs = 90_000,
+} = {}) {
+  if (!command) throw new Error("VERIFICATION_COMMAND_REQUIRED");
+  const attempts = [];
+  const limit = Math.max(0, Math.min(3, Number(maxRetries) || 0));
+
+  for (let attempt = 0; attempt <= limit; attempt += 1) {
+    const started = Date.now();
+    const result = spawnSync(command, args, {
+      cwd,
+      env: { ...env, CI: "true" },
+      encoding: "utf8",
+      timeout: Math.max(5_000, Number(timeoutMs) || 90_000),
+      maxBuffer: 4 * 1024 * 1024,
+    });
+    const stdout = String(result.stdout ?? "");
+    const stderr = String(result.stderr ?? "");
+    const exitCode = result.status === null ? 1 : Number(result.status);
+    const triage = triageRun({
+      exitCode,
+      stderr: [result.error?.code || "", stderr].join(" "),
+      reason: result.error?.code || "",
+    });
+    attempts.push({
+      attempt: attempt + 1,
+      exit_code: exitCode,
+      signal: result.signal || null,
+      duration_ms: Date.now() - started,
+      classification: triage.classification,
+      stdout_tail: stdout.slice(-4000),
+      stderr_tail: stderr.slice(-4000),
+    });
+
+    if (exitCode === 0) {
+      return {
+        ...triageRun({ exitCode: 0 }),
+        classification: attempt > 0 ? RUN_CLASSES.RECOVERED : RUN_CLASSES.SUCCESS,
+        notify: false,
+        action: "record",
+        attempts,
+        recovered: attempt > 0,
+      };
+    }
+    if (triage.classification !== RUN_CLASSES.TRANSIENT_FAILURE) {
+      return { ...triage, attempts, recovered: false };
+    }
+  }
+
+  const last = attempts.at(-1);
+  return {
+    ...triageRun({
+      exitCode: last?.exit_code ?? 1,
+      stderr: last?.stderr_tail ?? "",
+      reason: "RETRY_EXHAUSTED",
+    }),
+    attempts,
+    recovered: false,
   };
 }
 
