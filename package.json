@@ -66,7 +66,8 @@
     "runtime:enterprise-state": "node scripts/acorn-enterprise-state.mjs",
     "runtime:evidence": "node scripts/acorn-evidence-registry.mjs",
     "runtime:connector-execution": "node scripts/acorn-connector-execution-fabric.mjs",
-    "runtime:growth": "node scripts/acorn-commercial-growth-fabric.mjs"
+    "runtime:growth": "node scripts/acorn-commercial-growth-fabric.mjs",
+    "runtime:operations": "node scripts/acorn-operations-resilience-fabric.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -145,7 +146,8 @@
     "./acorn-enterprise-state": "./scripts/acorn-enterprise-state.mjs",
     "./acorn-evidence-registry": "./scripts/acorn-evidence-registry.mjs",
     "./acorn-connector-execution-fabric": "./scripts/acorn-connector-execution-fabric.mjs",
-    "./acorn-commercial-growth-fabric": "./scripts/acorn-commercial-growth-fabric.mjs"
+    "./acorn-commercial-growth-fabric": "./scripts/acorn-commercial-growth-fabric.mjs",
+    "./acorn-operations-resilience-fabric": "./scripts/acorn-operations-resilience-fabric.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
