@@ -136,7 +136,6 @@ test("connection sweep proves the mechanism with a local self-test without inven
   const result = await runConnectionSweep();
   assert.equal(result.local_self_test.connected, true);
   assert.equal(result.local_self_test.measured, "MEASURED");
-  console.log("CONNECTION_SWEEP_DEBUG", JSON.stringify(result.local_self_test));
   assert.equal(result.local_self_test.verified, "VERIFIED");
   assert.equal(result.constitution.external_boundary, "connector-flux");
   assert.equal(result.proof.status, "VERIFIED");
