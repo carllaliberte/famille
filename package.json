@@ -87,7 +87,9 @@
     "runtime:capability-router": "node scripts/acorn-universal-capability-router.mjs",
     "runtime:developer-access": "node scripts/acorn-universal-developer-access.mjs",
     "runtime:monetization": "node scripts/acorn-monetization-operating-system.mjs",
-    "runtime:network-convergence": "node scripts/acorn-network-convergence.mjs"
+    "runtime:network-convergence": "node scripts/acorn-network-convergence.mjs",
+    "runtime:ai-api-discovery": "node scripts/acorn-ai-api-auto-discovery.mjs",
+    "runtime:connector-debug": "node scripts/acorn-connector-debug-loop.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -202,7 +204,9 @@
     "./acorn-monetization-operating-system": "./scripts/acorn-monetization-operating-system.mjs",
     "./acorn-network-convergence": "./scripts/acorn-network-convergence.mjs",
     "./acorn-universal-outcome-learning-fabric": "./scripts/acorn-universal-outcome-learning-fabric.mjs",
-    "./acorn-outcome-learning-conductor": "./scripts/acorn-outcome-learning-conductor.mjs"
+    "./acorn-outcome-learning-conductor": "./scripts/acorn-outcome-learning-conductor.mjs",
+    "./acorn-ai-api-auto-discovery": "./scripts/acorn-ai-api-auto-discovery.mjs",
+    "./acorn-connector-debug-loop": "./scripts/acorn-connector-debug-loop.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
