@@ -129,11 +129,24 @@ export function countPresence(rows) {
 export function intelligenceAdapter(partial = {}) {
   const caps = partial.capabilities || [];
   const unknown = caps.length === 0;
+  const cost = partial.cost && typeof partial.cost === "object"
+    ? { amount: partial.cost.amount ?? "NOT_MEASURED", currency: partial.cost.currency || "UNKNOWN", class: partial.cost.class || "UNKNOWN" }
+    : { amount: "NOT_MEASURED", currency: "UNKNOWN", class: "UNKNOWN" };
   const self = {
     id: partial.id || "future-x", provider: partial.provider || "UNKNOWN", version: partial.version || "UNKNOWN",
+    model: partial.model || null, channel: partial.channel || null,
     capabilities: unknown ? ["CAPABILITY_UNKNOWN"] : caps, protocol: partial.protocol || "open-intelligence.v0",
     presence: "DECLARED", authority: false, live: false,
-    discover() { return { id: this.id, presence: this.presence, trusted: false }; },
+    timeout_ms: Number.isFinite(Number(partial.timeout_ms)) ? Number(partial.timeout_ms) : null,
+    cost_metadata: cost, _cancelled: false, _retries: 0, _evidence: [],
+    transport: typeof partial.transport === "function" ? partial.transport : undefined,
+    discover() { return { id: this.id, presence: this.presence, trusted: false, authority: false }; },
+    declare() {
+      return {
+        id: this.id, capabilities: [...this.capabilities], presence: this.presence,
+        declared: true, authorized: false, authority: false, live: false,
+      };
+    },
     describe() {
       return {
         identity: this.id,
@@ -143,9 +156,12 @@ export function intelligenceAdapter(partial = {}) {
         protocol: this.protocol,
         capabilities: [...this.capabilities],
         presence: this.presence,
+        cost: this.cost_metadata,
+        timeout_ms: this.timeout_ms,
         authority: false,
         live: false,
         identity_is_not_model: this.id !== (this.model || this.id),
+        provider_is_not_foundation: true,
       };
     },
     handshake() {
@@ -153,35 +169,73 @@ export function intelligenceAdapter(partial = {}) {
       return { compatible: ok, trusted: false, verified: false };
     },
     invoke(req) {
+      if (this._cancelled) return { invoked: false, reason: "CANCELLED", live: false, authority: false };
       if (this.presence === "REVOKED" || this.presence === "DISCONNECTED") {
         return { invoked: false, reason: this.presence, live: false };
       }
       if (breakerBlocks(req && req.capability)) return { invoked: false, reason: "SAFE_STOP", live: false };
+      if (req && Number(req.timeout_ms) === 0) return { invoked: false, reason: "TIMEOUT", live: false, authority: false };
       if (typeof this.transport === "function") {
         const out = this.transport(req);
-        return { invoked: out?.invoked !== false, reason: out?.reason || null, live: false, authority: false, ...out, live: false };
+        return { invoked: out?.invoked !== false, reason: out?.reason || null, live: false, authority: false, ...out, live: false, authority: false };
       }
       return { invoked: false, reason: "CHANNEL_NOT_PRESENT", live: false };
     },
     observe(x) { return { kind: "OBSERVATION", x, established: false }; },
     measure() { return { status: "NOT_MEASURED" }; },
-    provenance() { return { source: this.id, invented: false }; },
-    health() { return { presence: this.presence, live: false }; },
+    cost() { return { ...this.cost_metadata, live: false }; },
+    evidence() { return this._evidence.slice(); },
+    fail(reason = "FAILED") { return { status: "FAILED", reason: String(reason), live: false, authority: false }; },
+    retry(req, { max = 3 } = {}) {
+      if (this._cancelled) return { invoked: false, reason: "CANCELLED", retries: this._retries, live: false };
+      let last = this.invoke(req);
+      this._retries = 1;
+      while (!last.invoked && last.reason === "CHANNEL_NOT_PRESENT" && this._retries < max) {
+        this._retries += 1;
+        last = this.invoke(req);
+      }
+      return { ...last, retries: this._retries, live: false, authority: false };
+    },
+    cancel() { this._cancelled = true; return { status: "CANCELLED", live: false, authority: false }; },
+    provenance() {
+      return {
+        source: this.id, provider: this.provider, version: this.version,
+        invented: false, authority: false, live: false,
+      };
+    },
+    health() { return { presence: this.presence, live: false, authority: false }; },
     disconnect() { this.presence = "DISCONNECTED"; return { presence: "DISCONNECTED", live: false }; },
     revoke() { this.presence = "REVOKED"; return { presence: "REVOKED", live: false, history_kept: true }; },
   };
   return self;
 }
-export function routeByCapability(task, adapters) {
-  return (adapters || []).filter((a) => {
-    if (breakerBlocks(task && task.need)) return false;
+export function routeByCapability(task, adapters, policy = {}) {
+  const need = task && (task.need || (Array.isArray(task.required_capabilities) ? task.required_capabilities[0] : null));
+  const rows = (adapters || []).filter((a) => {
+    if (breakerBlocks(need)) return false;
     if (a.presence === "REVOKED" || a.presence === "DISCONNECTED") return false;
     const caps = a.capabilities || [];
     if (caps.includes("CAPABILITY_UNKNOWN")) {
-      return !task.need || task.need === "CAPABILITY_UNKNOWN" || task.need === "CAPABILITY_NEW";
+      return !need || need === "CAPABILITY_UNKNOWN" || need === "CAPABILITY_NEW";
     }
-    return !task.need || caps.includes(task.need);
-  }).map((a) => ({ id: a.id, authority: false, live: false, role: a.role || "node" }));
+    if (Array.isArray(task?.required_capabilities) && task.required_capabilities.length) {
+      return task.required_capabilities.some((cap) => caps.includes(cap));
+    }
+    return !need || caps.includes(need);
+  });
+  const paidForbidden = policy.policy === "PAID_FORBIDDEN" || policy.PAID_FORBIDDEN === true;
+  const filtered = rows.filter((a) => {
+    if (paidForbidden && (a.cost_metadata?.class === "PAID" || a.cost?.class === "PAID")) return false;
+    return true;
+  });
+  return filtered.map((a) => ({
+    id: a.id,
+    authority: false,
+    live: false,
+    role: a.role || "node",
+    selection_is_not_authority: true,
+    provider_preference: null,
+  }));
 }
 export function executionRequest(p = {}) {
   return { request_id: p.request_id || "req-1", requester: p.requester, capability: p.capability, input: p.input, context: p.context || "fabric", permissions: p.permissions || ["READ"], risk: p.risk || "low", provenance: p.provenance || { source: p.requester }, timestamp: p.timestamp || new Date().toISOString() };

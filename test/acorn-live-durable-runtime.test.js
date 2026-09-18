@@ -331,3 +331,22 @@ test("HTTP client path cannot steer a READ connector off-scope", async () => {
   }, { ACORN_REAL_WORLD_CONNECTORS: connectors });
 });
 
+test("capabilities and compose APIs ignore client authority and never claim LIVE", async () => {
+  await withServer(async ({ base }) => {
+    const auth = await jsonReq(base, "/api/v1/register", { method: "POST", body: { name: "Cap", email: "cap@example.com", password: "correct-horse" } });
+    const caps = await jsonReq(base, "/api/v1/capabilities", { token: auth.json.token });
+    assert.equal(caps.status, 200);
+    assert.equal(caps.json.proof.live, false);
+    assert.equal(caps.json.snapshot.constitution.capability_neq_authority, true);
+    const compose = await jsonReq(base, "/api/v1/compose", {
+      method: "POST",
+      token: auth.json.token,
+      body: { problem: "17 * 23", required_capabilities: ["arithmetic"], human_authorized: true, authority: true, live: true },
+    });
+    assert.equal(compose.status, 200);
+    assert.equal(compose.json.plan.executed, false);
+    assert.equal(compose.json.proof.client_authorization_ignored, true);
+    assert.equal(compose.json.proof.live, false);
+  });
+});
+

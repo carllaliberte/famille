@@ -36,6 +36,12 @@ import {
 } from "../scripts/acorn-commercial-runtime.mjs";
 import { persistOffer, persistOrder, applyVerifiedStripeEvent, persistStripeEvent, loadTenantCommerce } from "./commerce-store.mjs";
 import { authorizeCustomerOrder } from "../scripts/acorn-customer-service.mjs";
+import {
+  composeProblem,
+  fabricSnapshot,
+  ignoreClientAuthority,
+  publicContract,
+} from "../scripts/acorn-universal-infrastructure.mjs";
 
 const APP_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ACORN LIVE</title><style>body{font-family:system-ui;margin:0;background:#0d0d0d;color:#f4ead7}main{max-width:760px;margin:auto;padding:32px}section{background:#171717;padding:22px;border-radius:16px;margin:16px 0}input,textarea,button{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:9px;border:1px solid #555;background:#111;color:#fff}button{cursor:pointer;background:#c9a86a;color:#111;font-weight:700}pre{white-space:pre-wrap}p.note{opacity:.8;font-size:.95rem}.row{display:flex;gap:8px}small{opacity:.7}</style></head><body><main><h1>ACORN</h1><p class="note">Customer entry. HTTP availability is not LIVE proof. Plans are not delivery. Payment and contracts are not claimed.</p><section id="auth"><h2>Start</h2><input id="name" placeholder="Name"><input id="email" placeholder="Email"><input id="password" type="password" placeholder="Password (10+ characters)"><button onclick="register()">Create account</button><button onclick="login()">Sign in</button><pre id="authout"></pre></section><section id="work" style="display:none"><div class="row"><button onclick="logout()">Sign out</button></div><h2>New request</h2><textarea id="request" rows="6" placeholder="Describe the problem you want Acorn to solve…"></textarea><button onclick="submitRequest()">Send to Acorn</button><button onclick="loadRequests()">Refresh</button><p class="note">Status values come from persisted state: received, awaiting human authorization, planned, blocked. Delivered/verified/LIVE only appear with evidence.</p><pre id="out"></pre></section><script>
 let T=localStorage.acornToken||"";
@@ -343,6 +349,34 @@ export async function createLiveServer({ env = process.env, db, stripeFetch } = 
       }
       if (req.method === "GET" && u.pathname === "/api/v1/intelligences") {
         return send(200, { intelligences: intelligences().map((i) => ({ ...i, authority: false })), proof: { executed: false, live: false } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/capabilities") {
+        return send(200, {
+          contract: publicContract(),
+          snapshot: fabricSnapshot({ env }),
+          proof: { live: false, verified: false, executed: false, authority: false },
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/compose") {
+        const raw = await readBody(req);
+        const b = ignoreClientAuthority(raw).sanitized;
+        const plan = composeProblem({
+          problem: String(b.problem || ""),
+          required: Array.isArray(b.required_capabilities) ? b.required_capabilities : [],
+          policy: "FREE_FIRST",
+          human_authorization: false,
+          mode: b.mode === "SIMULATION" || b.mode === "DRY_RUN" || b.mode === "PLAN" ? b.mode : "PLAN",
+        });
+        return send(200, {
+          plan,
+          proof: {
+            live: false,
+            executed: false,
+            verified: false,
+            client_authorization_ignored: true,
+            human_authorization_required: true,
+          },
+        });
       }
       if (req.method === "POST" && u.pathname === "/api/v1/connections/measure") {
         const b = await readBody(req);
