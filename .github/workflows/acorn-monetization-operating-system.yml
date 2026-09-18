@@ -18,3 +18,4 @@ jobs:
       - run: npm ci
       - run: node --test test/acorn-monetization-operating-system.test.js
       - run: node --input-type=module -e "import('./scripts/acorn-monetization-operating-system.mjs').then(({assertMonetizationConstitution})=>assertMonetizationConstitution())"
+      - run: node scripts/acorn-monetization-smoke.mjs
