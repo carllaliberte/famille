@@ -53,7 +53,8 @@
     "runtime:developer-gateway": "node scripts/acorn-developer-gateway.mjs",
     "runtime:market": "node scripts/acorn-market-engine.mjs",
     "runtime:contribution-economy": "node scripts/acorn-contribution-economy.mjs",
-    "runtime:revenue": "node scripts/acorn-revenue-maximizer.mjs"
+    "runtime:revenue": "node scripts/acorn-revenue-maximizer.mjs",
+    "runtime:project-value": "node scripts/acorn-universal-project-value.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -120,7 +121,8 @@
     "./acorn-developer-gateway": "./scripts/acorn-developer-gateway.mjs",
     "./acorn-market-engine": "./scripts/acorn-market-engine.mjs",
     "./acorn-contribution-economy": "./scripts/acorn-contribution-economy.mjs",
-    "./acorn-revenue-maximizer": "./scripts/acorn-revenue-maximizer.mjs"
+    "./acorn-revenue-maximizer": "./scripts/acorn-revenue-maximizer.mjs",
+    "./acorn-universal-project-value": "./scripts/acorn-universal-project-value.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
