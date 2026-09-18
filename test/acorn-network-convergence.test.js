@@ -1,0 +1,12 @@
+import test from"node:test";import assert from"node:assert/strict";import{CONTRACT,INITIAL_MEMBRANE,buildNetworkGraph,discoverRoutes,chooseFluidRoute,createCapabilityEnvelope,buildFlowPlan,advanceFlow,networkSnapshot,assertNetworkConvergence}from"../scripts/acorn-network-convergence.mjs";
+test("starts at original connector membrane",()=>assert.equal(INITIAL_MEMBRANE,"acorn-connector-registry"));
+test("graph connects compatible capabilities",()=>{const g=buildNetworkGraph([{id:"a",provider:"A",capabilities:["x"],state:"READY"},{id:"b",provider:"B",capabilities:["x","y"],state:"READY"}]);assert.equal(g.edges.length,2);assert.equal(g.breaker_touched,false);});
+test("routes preserve capability end to end",()=>{const g=buildNetworkGraph([{id:"a",capabilities:["x"],state:"READY"},{id:"b",capabilities:["x"],state:"READY"},{id:"c",capabilities:["x"],state:"READY"}]);const r=discoverRoutes(g,{capability:"x",source:"a",targets:["c"]});assert.equal(r[0].path.join(">"),"a>b>c");});
+test("fluid route selection is measured and scoped",()=>{const g=buildNetworkGraph([{id:"a",capabilities:["x"],state:"READY"},{id:"b",capabilities:["x"],state:"READY"},{id:"c",capabilities:["x"],state:"READY"}]);const r=discoverRoutes(g,{capability:"x",source:"a",targets:["c"]});assert.equal(chooseFluidRoute(r,{c:{latency_ms:5,reliability:1}}).route.target,"c");});
+test("envelope carries one trace",()=>{const e=createCapabilityEnvelope({task_id:"t",capability:"x",source:"a"});assert.equal(e.authority,false);assert.ok(e.trace_id);});
+test("flow has bounded transport",()=>{const e=createCapabilityEnvelope({task_id:"t",capability:"x",source:"a"});const p=buildFlowPlan({envelope:e,route:{path:["a","b","c"]}});assert.equal(p.hops,2);assert.equal(p.max_inflight,4);});
+test("measured success is flowing",()=>assert.equal(advanceFlow({state:"PLANNED"},{result:{ok:true}}).state,"FLOWING"));
+test("failure does not become live",()=>assert.equal(advanceFlow({state:"PLANNED"},{result:{ok:false}}).state,"STALLED"));
+test("breaker remains untouched",()=>assert.doesNotThrow(()=>assertNetworkConvergence({contract:CONTRACT,breaker_touched:false})));
+test("breaker mutation is rejected",()=>assert.throws(()=>assertNetworkConvergence({contract:CONTRACT,breaker_touched:true}),/BREAKER/));
+test("snapshot exposes friction",()=>assert.equal(networkSnapshot({nodes:[{state:"READY"}],edges:[]},[{state:"FLOWING"}]).friction,0));
