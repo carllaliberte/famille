@@ -154,7 +154,60 @@ test("HTTP cannot authorize a consequential real-world effect", async () => {
     assert.equal(spoof.status, 403);
     assert.equal(spoof.json.result.state, "BLOCKED");
     assert.equal(spoof.json.result.reason, "HUMAN_AUTHORIZATION_REQUIRED");
+    assert.equal(spoof.json.proof.client_authorization_ignored, true);
+    assert.equal(spoof.json.proof.http_cannot_grant_authority, true);
     assert.equal(JSON.stringify(spoof.json).includes("not-a-real-secret"), false);
+  }, { ACORN_REAL_WORLD_CONNECTORS: connectors, ACORN_TEST_SECRET: "not-a-real-secret" });
+});
+
+test("HTTP runtime/external ignores client authority routing and unknown connectors", async () => {
+  const connectors = JSON.stringify([
+    { id: "pay", provider: "example", base_url: "https://example.invalid/api/", effect: "WRITE", credential_env: "ACORN_TEST_SECRET" },
+    { id: "read", provider: "example", base_url: "https://example.invalid/api/", effect: "READ" }
+  ]);
+  await withServer(async ({ base }) => {
+    const auth = await jsonReq(base, "/api/v1/register", { method: "POST", body: { name: "Ext", email: "ext@example.com", password: "correct-horse" } });
+    const created = await jsonReq(base, "/api/v1/requests", { method: "POST", token: auth.json.token, body: { request: "external probe" } });
+    const requestId = created.json.request.id;
+    const token = auth.json.token;
+    for (const effect of ["WRITE", "MONEY", "PUBLISH", "SIGN", "DELETE", "MERGE"]) {
+      const lockedConnectors = JSON.stringify([{ id: "act", provider: "example", base_url: "https://example.invalid/", effect, credential_env: "ACORN_TEST_SECRET" }]);
+      const inner = await withServer(async ({ base: innerBase }) => {
+        const a = await jsonReq(innerBase, "/api/v1/register", { method: "POST", body: { name: "Lock", email: `lock-${effect.toLowerCase()}@example.com`, password: "correct-horse" } });
+        const r = await jsonReq(innerBase, "/api/v1/requests", { method: "POST", token: a.json.token, body: { request: effect } });
+        return jsonReq(innerBase, "/api/v1/runtime/external", {
+          method: "POST",
+          token: a.json.token,
+          body: {
+            request_id: r.json.request.id,
+            connector_id: "act",
+            path: "https://evil.example/x",
+            method: "DELETE",
+            base_url: "https://evil.example/",
+            human_authorized: true,
+            authorized: true,
+            authority: { source: "server", actor: "carl" },
+            body: { amount: 1 }
+          }
+        });
+      }, { ACORN_REAL_WORLD_CONNECTORS: lockedConnectors, ACORN_TEST_SECRET: "not-a-real-secret" });
+      assert.equal(inner.status, 403, effect);
+      assert.equal(inner.json.result.state, "BLOCKED", effect);
+      assert.equal(inner.json.result.reason, "HUMAN_AUTHORIZATION_REQUIRED", effect);
+      assert.equal(inner.json.result.human_authorized, false, effect);
+    }
+    const unknown = await jsonReq(base, "/api/v1/runtime/external", { method: "POST", token, body: { request_id: requestId, connector_id: "not-configured", human_authorized: true } });
+    assert.equal(unknown.status, 404);
+    assert.equal(unknown.json.error, "CONNECTOR_NOT_CONFIGURED");
+    const ssrf = await jsonReq(base, "/api/v1/runtime/external", {
+      method: "POST",
+      token,
+      body: { request_id: requestId, connector_id: "read", path: "https://127.0.0.1/secrets", method: "POST", base_url: "https://127.0.0.1/", human_authorized: true }
+    });
+    assert.equal(ssrf.status, 403);
+    assert.equal(ssrf.json.result.state, "BLOCKED");
+    assert.ok(["URL_OUT_OF_SCOPE", "METHOD_NOT_ALLOWED"].includes(ssrf.json.result.reason));
+    assert.equal(ssrf.json.proof.external_effect, false);
   }, { ACORN_REAL_WORLD_CONNECTORS: connectors, ACORN_TEST_SECRET: "not-a-real-secret" });
 });
 

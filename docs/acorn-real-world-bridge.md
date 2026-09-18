@@ -10,8 +10,11 @@ Secrets are referenced by environment-variable name only. Raw credentials are ne
 
 ## Execution contract
 
-- READ connectors may perform read-only external observation when configured.
-- WRITE/MONEY/PUBLISH/SIGN/DELETE/MERGE and other consequential effects require explicit human authorization.
+- READ connectors may perform read-only external observation when configured. HTTP methods for READ are GET/HEAD only.
+- WRITE/MONEY/PUBLISH/SIGN/DELETE/MERGE stay locked on the server. A client payload cannot authorize them.
+- `human_authorized: true`, `authorized: true`, or a forged `{source:"server",actor:"carl"}` object is ignored. Only `grantServerAuthority({actor:"carl"})` minted in-process counts.
+- `/api/v1/runtime/external` never mints that grant. HTTP remains untrusted.
+- `base_url`, `path`, and `method` from the client are not routing. The connector comes from `ACORN_REAL_WORLD_CONNECTORS`. The path must stay on that public HTTPS origin and prefix. Absolute URLs, protocol-relative URLs, private/loopback/link-local hosts, and metadata addresses stay `URL_OUT_OF_SCOPE`.
 - Every call gets an execution ID and idempotency key.
 - External status, output hash and timestamp become dated evidence.
 - Failed or missing credentials remain `BLOCKED` / `CREDENTIAL_NOT_CONFIGURED`.

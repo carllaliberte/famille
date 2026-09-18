@@ -10,7 +10,7 @@ import { createLiveDatabase, now, makeId, parseJson, encodeJson } from "./databa
 import { buildRuntimePlan, verifyRuntimePlan } from "../scripts/acorn-runtime-orchestrator.mjs";
 import { createExecutionRun, executionLoopSnapshot } from "../scripts/acorn-execution-evidence-loop.mjs";
 import { createConnectorExecutor, executeConnector } from "../scripts/acorn-connector-execution-fabric.mjs";
-import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot } from "../scripts/acorn-real-world-bridge.mjs";
+import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot, isConsequentialEffect, CONSEQUENTIAL_EFFECTS } from "../scripts/acorn-real-world-bridge.mjs";
 import { assessRuntimeStatus } from "./runtime-status.mjs";
 import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence } from "./enterprise-store.mjs";
 
@@ -322,23 +322,37 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         const connectors = loadRealWorldConnectors(env.ACORN_REAL_WORLD_CONNECTORS);
         const connector = connectors.find((x) => x.id === String(b.connector_id || ""));
         if (!connector) return send(404, { error: "CONNECTOR_NOT_CONFIGURED" });
-        const call = buildExternalCall({
+        const effect = String(connector.effect || "UNKNOWN").toUpperCase();
+        const clientTriedAuthority = b.human_authorized === true || b.authorized === true || Boolean(b.authority);
+        const locked = isConsequentialEffect(effect) || CONSEQUENTIAL_EFFECTS.includes(effect);
+        const call = locked ? {
+          id: makeId("ext"),
+          state: "BLOCKED",
+          reason: "HUMAN_AUTHORIZATION_REQUIRED",
+          effect,
+          external_effect: false,
+          human_authorized: false,
+          authority: false,
+          client_authorization_ignored: true
+        } : buildExternalCall({
           connector,
           path: String(b.path || ""),
           method: String(b.method || "GET"),
           body: b.body ?? null,
+          source: "http",
+          authority: null,
           human_authorized: false,
-          idempotency_key: b.idempotency_key || null
+          idempotency_key: typeof b.idempotency_key === "string" ? b.idempotency_key : null
         });
-        const credential = connector.credential_env ? env[connector.credential_env] || process.env[connector.credential_env] || null : null;
-        const result = await executeExternalCall(call, { credential });
+        const credential = (!locked && connector.credential_env) ? env[connector.credential_env] || process.env[connector.credential_env] || null : null;
+        const result = locked ? call : await executeExternalCall(call, { credential });
         const publicResult = { ...result };
         delete publicResult.credential;
         await persistEnterpriseEvent(database, {
           tenantId: cid,
           entityId: requestId,
           type: "REAL_WORLD_EXECUTION",
-          payload: { execution_id: result.id, connector_id: connector.id, state: result.state, effect: connector.effect, external_effect: result.external_effect === true, reason: result.reason || null },
+          payload: { execution_id: result.id, connector_id: connector.id, state: result.state, effect: connector.effect, external_effect: result.external_effect === true, reason: result.reason || null, client_authorization_ignored: true },
           actor: "acorn-live",
           authority: "none"
         });
@@ -358,7 +372,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           id: result.id,
           tenant_id: cid,
           state: result.state,
-          data: { request_id: requestId, connector_id: connector.id, effect: connector.effect, human_authorized: false, external_effect: result.external_effect === true, client_authorization_ignored: true }
+          data: { request_id: requestId, connector_id: connector.id, effect: connector.effect, human_authorized: false, external_effect: result.external_effect === true, client_authorization_ignored: true, client_tried_authority: clientTriedAuthority }
         });
         return send(result.state === "SUCCEEDED" ? 200 : (result.state === "BLOCKED" ? 403 : 502), {
           result: publicResult,
@@ -367,6 +381,8 @@ export async function createLiveServer({ env = process.env, db } = {}) {
             secret_custody: false,
             human_authorization_required: true,
             client_authorization_ignored: true,
+            http_cannot_grant_authority: true,
+            untrusted_client_fields: ["base_url", "path", "method", "human_authorized", "authority", "authorized"],
             external_call_measured: result.state === "SUCCEEDED",
             external_effect: result.external_effect === true,
             measured_at: now()
