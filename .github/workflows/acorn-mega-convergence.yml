@@ -1,0 +1,16 @@
+name: ACORN Mega Convergence
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "19,49 * * * *"
+permissions:
+  contents: read
+jobs:
+  convergence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: node --test test/acorn-mega-convergence.test.js
+      - run: node --input-type=module -e "import('./scripts/acorn-mega-convergence.mjs').then(({assertMegaConstitution})=>console.log('ACORN_MEGA_CONVERGENCE',assertMegaConstitution()))"
