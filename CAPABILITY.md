@@ -30,6 +30,10 @@ by discovery and measurement — the cognitive core does not change.
 The inventory of Acorn's own scripts ([capability inventory](scripts/acorn-capability-inventory.mjs))
 is a different object: lifecycle of *this repo's modules*. The Global
 Capability Registry is the map of *the world Cortex can discover*.
+Construction of a missing capability is a third object that is not a third
+architecture: [self-build](scripts/acorn-self-build.mjs) detects a
+`CAPABILITY_GAP`, runs the existing loop in a safe zone, and never treats a
+gap as an existing capability. GAP DETECTED ≠ EXISTS. READY ≠ AUTHORIZED.
 
 ## Honest states
 

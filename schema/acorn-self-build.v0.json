@@ -1,0 +1,64 @@
+{
+  "$id": "https://github.com/carllaliberte/famille/schema/acorn-self-build.v0.json",
+  "title": "famille.acorn-self-build.v0",
+  "description": "Self-build loop over existing inventory/registry/evidence. GAP DETECTED ≠ CAPABILITY EXISTS. CAPABILITY ≠ AUTHORITY. TEST GENERATED ≠ TEST PASSED. READY ≠ AUTHORIZED. LEARN ≠ PROMOTE. L6/L7 remain HUMAN_HOLD. Documentation is never LIVE. Not a second architecture.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "status"],
+  "properties": {
+    "version": { "const": "acorn.self-build.v0" },
+    "status": {
+      "enum": [
+        "UNKNOWN",
+        "GAP_DETECTED",
+        "MISSING",
+        "EXISTS",
+        "AVAILABLE",
+        "PROPOSED",
+        "REUSE",
+        "NO_GAP",
+        "HUMAN_HOLD",
+        "INSUFFICIENT_EVIDENCE",
+        "CYCLE_DETECTED",
+        "FALSIFIED_OR_INCOMPLETE",
+        "NOT_FALSIFIED",
+        "MEASURED",
+        "PRODUCT_CANDIDATE"
+      ]
+    },
+    "lifecycle": {
+      "enum": [
+        "UNKNOWN",
+        "DISCOVERED",
+        "PROPOSED",
+        "DESIGNED",
+        "BUILT",
+        "TESTED",
+        "MEASURED",
+        "VERIFIED",
+        "READY",
+        "AVAILABLE",
+        "DEPRECATED",
+        "EXPIRED"
+      ]
+    },
+    "zone": {
+      "enum": ["BUILD", "TEST", "EXPERIMENT", "STAGING", "PRODUCTION"]
+    },
+    "autonomy_level": {
+      "enum": ["L0", "L1", "L2", "L3", "L4", "L5", "L6", "L7"]
+    },
+    "classification": {
+      "enum": ["IMPLEMENT_NOW", "FOUNDATION_NOW", "FUTURE", "HUMAN_HOLD"]
+    },
+    "live": { "const": false },
+    "auto_merge": { "const": false },
+    "authorized": { "const": false },
+    "authority": { "const": "carl" },
+    "capability_neq_authority": { "const": true },
+    "gap_detected_neq_exists": { "const": true },
+    "test_generated_neq_test_passed": { "const": true },
+    "product_candidate_neq_product": { "const": true },
+    "autonomy_cannot_self_escalate": { "const": true }
+  }
+}

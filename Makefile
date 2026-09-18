@@ -24,6 +24,8 @@ build:
 	node --check live/enterprise-store.mjs
 	node --check live/runtime-status.mjs
 	node --check scripts/acorn-operational-fabric.mjs
+	node --check scripts/acorn-self-build.mjs
+	node --check examples/self-build-extension.mjs
 
 test:
 	npm test

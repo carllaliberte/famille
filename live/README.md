@@ -18,6 +18,9 @@ Production customer runtime for FAMILLE.
 - `GET /api/v1/capabilities` capability catalog for the tenant (exists/available ≠ authorized)
 - `GET /api/v1/economy` estimated records only; never BILLED/PAID/LIVE
 - `GET /api/v1/future-proof` contract that named futures are not architecturally blocked
+- `GET /api/v1/self-build` self-build constitution, howAcornBuilds transfer contract, autonomy ceiling L2, implemented-now, and not-yet-implemented. Never LIVE.
+- `POST /api/v1/self-build/observe` detect capability gaps for a task in the BUILD zone. LEARN records observations and does not promote. Does not write production, merge, or authorize.
+- `POST /api/v1/self-build/repair` propose a repair. Never deploys, never merges.
 - `Idempotency-Key` on authenticated POSTs
 - Rate limit (default 180/min/IP; `/healthz` and `/readyz` excluded)
 
