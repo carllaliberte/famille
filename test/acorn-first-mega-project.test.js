@@ -1,0 +1,13 @@
+import test from "node:test";import assert from "node:assert/strict";
+import {createMegaProject,observeProject,findGaps,buildPortfolio,authorize,verifyAcceptance,benchmarkSelf,deriveCapability,closeSelfLoop,assertSelfProjectConstitution} from "../scripts/acorn-first-mega-project.mjs";
+test("self project constitution",()=>assert.equal(assertSelfProjectConstitution(),true));
+test("project identifies Acorn as customer",()=>assert.equal(createMegaProject({}).customer,"Acorn"));
+test("all major workstreams are present",()=>assert.equal(createMegaProject({}).workstreams.length,14));
+test("unknown surfaces remain unknown",()=>assert.equal(observeProject({surfaces:[{id:"x",state:"UNKNOWN"}]}).surfaces[0].state,"UNKNOWN"));
+test("gaps become portfolio work",()=>assert.equal(buildPortfolio(createMegaProject({acceptance:["value"]}),observeProject({})).state,"GAPS_IDENTIFIED"));
+test("consequential authority stays human",()=>assert.equal(authorize("MERGE",{human_authorized:true,server_authorized:true}).authorized,false));
+test("verification requires measured evidence",()=>assert.equal(verifyAcceptance([{verified:true,measured:false,evidence:["x"]}]).verified,false));
+test("benchmark never claims global optimum",()=>assert.equal(benchmarkSelf([{verified:true,measured:true,quality:10}],{quality:1}).global_optimum,false));
+test("unsupported outcomes cannot become capabilities",()=>assert.equal(deriveCapability({verified:false}).state,"REJECTED"));
+test("verified outcome can feed capability learning",()=>assert.equal(deriveCapability({id:"r",verified:true,measured:true,evidence:["e"]}).state,"CAPABILITY_CANDIDATE"));
+test("closed self loop never becomes final",()=>assert.equal(closeSelfLoop({results:[{verified:true,measured:true,evidence:["e"],quality:10}]}).never_final,true));
