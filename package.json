@@ -194,7 +194,9 @@
     "./acorn-developer-hall": "./scripts/acorn-developer-hall.mjs",
     "./acorn-universal-connection-mesh": "./scripts/acorn-universal-connection-mesh.mjs",
     "./acorn-universal-capability-router": "./scripts/acorn-universal-capability-router.mjs",
-    "./acorn-universal-developer-access": "./scripts/acorn-universal-developer-access.mjs"
+    "./acorn-universal-developer-access": "./scripts/acorn-universal-developer-access.mjs",
+    "./acorn-parabolic-universal-reality-convergence": "./scripts/acorn-parabolic-universal-reality-convergence.mjs",
+    "./acorn-parabolic-convergence-conductor": "./scripts/acorn-parabolic-convergence-conductor.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"

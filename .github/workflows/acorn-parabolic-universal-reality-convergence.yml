@@ -1,0 +1,23 @@
+name: ACORN Parabolic Universal Reality Convergence
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    paths:
+      - scripts/acorn-parabolic-universal-reality-convergence.mjs
+      - scripts/acorn-parabolic-convergence-conductor.mjs
+      - test/acorn-parabolic-universal-reality-convergence.test.js
+jobs:
+  convergence:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test test/acorn-parabolic-universal-reality-convergence.test.js
+      - run: node --input-type=module -e "import('./scripts/acorn-parabolic-universal-reality-convergence.mjs').then(({assertConstitution})=>assertConstitution())"
