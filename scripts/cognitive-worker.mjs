@@ -103,7 +103,7 @@ export function executeDispatch(fronts, run = execFileSync, env = process.env) {
           reversibility: "PARTIAL",
           epistemic: "MEASURED",
         },
-        operation: `POST /repos/${env.GITHUB_REPOSITORY}/issues/${front.number}/comments`,
+        operation: `POST /repos/${env.GITHUB_REPOSITORY || "carllaliberte/famille"}/issues/${front.number}/comments`,
         risk: 0,
         blastRadius: 0,
         evidence: { measured: true, verified: false, source: "known-github-api-path" },
@@ -114,7 +114,7 @@ export function executeDispatch(fronts, run = execFileSync, env = process.env) {
         results.push({ number: front.number, sha: front.sha, state: "BLOCKED_INTERPOSITION", phase: "BLOCKED", interposition });
         continue;
       }
-      const raw = run("gh", ["api", `repos/${env.GITHUB_REPOSITORY}/issues/${front.number}/comments`, "--method", "POST", "-f", "body=/swarm"], { stdio: "pipe", encoding: "utf8" });
+      const raw = run("gh", ["api", `repos/${env.GITHUB_REPOSITORY || "carllaliberte/famille"}/issues/${front.number}/comments`, "--method", "POST", "-f", "body=/swarm"], { stdio: "pipe", encoding: "utf8" });
       const created = parseCommentPayload(raw);
       if (!created?.id) {
         results.push({ number: front.number, sha: front.sha, state: "DISPATCH_FAILED", phase: "ATTEMPTED", error: "no comment id in response", interposition });
@@ -130,7 +130,7 @@ export function executeDispatch(fronts, run = execFileSync, env = process.env) {
         interposition,
       };
       try {
-        const read = run("gh", ["api", `repos/${env.GITHUB_REPOSITORY}/issues/comments/${created.id}`], { stdio: "pipe", encoding: "utf8" });
+        const read = run("gh", ["api", `repos/${env.GITHUB_REPOSITORY || "carllaliberte/famille"}/issues/comments/${created.id}`], { stdio: "pipe", encoding: "utf8" });
         const back = parseCommentPayload(read);
         if (back && String(back.id) === String(created.id)) {
           row.state = "VERIFIED";

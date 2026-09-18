@@ -84,9 +84,20 @@ export function canonicalWorkFromRuntime(runtime) {
     });
   };
 
-  for (const row of runtime?.unified?.evolution?.next_work || []) push(row, "evolution");
-  for (const row of runtime?.unified?.learning?.next || []) push(row, "learning");
-  for (const row of runtime?.unified?.metabolism?.next || []) push(row, "metabolism");
+  const workRows = (value, keys = []) => {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== "object") return [];
+    for (const key of keys) {
+      if (Array.isArray(value[key])) return value[key];
+    }
+    return Object.keys(value).some((key) => key === "id" || key === "subject")
+      ? [value]
+      : [];
+  };
+
+  for (const row of workRows(runtime?.unified?.evolution?.next_work, ["items", "next", "next_work"])) push(row, "evolution");
+  for (const row of workRows(runtime?.unified?.learning?.next, ["items", "next", "next_work"])) push(row, "learning");
+  for (const row of workRows(runtime?.unified?.metabolism?.next, ["items", "next", "next_work"])) push(row, "metabolism");
 
   push({ id:"value-opportunity-cycle", subject:"measure public access, business value, and commercial recovery opportunities", information_gain:1, capability_gain:0.8, risk_reduction:0.6, uncertainty:0.8, reversibility:1, cost:0.1, execution_kind:"value-opportunity" }, "value");
 

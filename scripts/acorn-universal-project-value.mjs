@@ -241,7 +241,7 @@ export function buildCommercialOffer({
   subscription = null,
 } = {}) {
   const validPrice = price == null ? null : pos(price);
-  const delivered = delivery?.deliverable_ready === true;
+  const delivered = delivery?.deliverable_ready === true || str(delivery?.state).toUpperCase() === "DELIVERED";
   const streams = [...new Set((Array.isArray(revenue_streams) ? revenue_streams : ["PROJECT"])
     .map(str).filter((x) => REVENUE_STREAMS.includes(x.toUpperCase()))
     .map((x) => x.toUpperCase()))];

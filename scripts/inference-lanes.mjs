@@ -47,6 +47,7 @@ export function classifyLane(spec = {}) {
 }
 
 export function secretAvailable(spec = {}, env = {}) {
+  if (spec.id === "cortex-local") return true;
   if (isRetired(spec)) return false;
   if (present(env, spec.secret)) return true;
   if (present(env, "OPENROUTER_API_KEY") && isFreeModel(spec) && spec.secret === "OPENROUTER_API_KEY") return true;

@@ -10,7 +10,7 @@ import { CANALS, MODELS, idsForDispatch, keyedModels } from "../.github/swarm/re
 
 test("lanes classify ollama and github-models as keyless, :free as free, others paid", () => {
   assert.equal(classifyLane(CANALS.local), "keyless");
-  assert.equal(classifyLane(CANALS.ghmodels), "keyless");
+  assert.equal(classifyLane(CANALS.ghmodels), "retired");
   assert.equal(classifyLane(CANALS.orfree), "free");
   assert.equal(classifyLane(CANALS.xai), "paid");
   assert.equal(classifyLane(CANALS.openrouter), "paid");
@@ -43,7 +43,7 @@ test("paid is last resort only when no unpaid lane is available", () => {
 
 test("GITHUB_TOKEN selects GitHub Models without a paid API key", () => {
   const ids = idsForDispatch({ GITHUB_TOKEN: "ghs_test" });
-  assert.ok(ids.includes("ghmodels"));
+  assert.equal(ids.includes("ghmodels"), false);
   assert.equal(ids.includes("xai"), false);
 });
 

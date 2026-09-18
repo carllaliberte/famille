@@ -316,7 +316,7 @@ export function quantumBenchmarkContract({ baseline = {}, candidate = {}, task =
     measured,
     evidence,
     quantum_advantage: false,
-    quantum_advantage_status: evidence.measured_count >= 2 ? "MEASURABLE_BUT_NOT_PROVEN" : "INSUFFICIENT_DATA",
+    quantum_advantage_status: evidence.measured_count >= 1 ? "MEASURABLE_BUT_NOT_PROVEN" : "INSUFFICIENT_DATA",
     live: false,
   };
 }

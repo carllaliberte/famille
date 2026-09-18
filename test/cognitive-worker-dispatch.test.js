@@ -17,7 +17,7 @@ test("worker dispatch continues across fronts and records exact failures", () =>
   const results = executeDispatch([
     { number: 456, sha: "goodsha" },
     { number: 455, sha: "badsha" },
-  ], run);
+  ], run, { ACORN_SYSTEM_MODE: "RUN", GITHUB_REPOSITORY: "carllaliberte/famille" });
 
   assert.ok(calls.length >= 2);
   assert.equal(results[0].state, "VERIFIED");
