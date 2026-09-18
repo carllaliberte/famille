@@ -62,7 +62,7 @@ const SEEDS={
 
 export function createDeveloperAccess({
   id,provider,capability,access_class="UNKNOWN",state="DISCOVERED",
-  cost=0,currency="USD",quota=null,requires_key=true,source="catalog",
+  cost=null,currency="USD",quota=null,requires_key=true,source="catalog",
   endpoint=null,version="unknown",evidence=null,expires_at=null,metadata={}
 }={}){
   const p=clean(provider).toLowerCase(), c=clean(capability);
@@ -72,7 +72,7 @@ export function createDeveloperAccess({
     id:clean(id)||p+":"+c,
     provider:p,capability:c,access_class:ACCESS_CLASSES.includes(access_class)?access_class:"UNKNOWN",
     state:ACCESS_STATES.includes(state)?state:"UNKNOWN",
-    economics:{cost:Number.isFinite(Number(cost))?Number(cost):null,currency,free_candidate:Number(cost)===0},
+    economics:{cost:Number.isFinite(Number(cost))?Number(cost):null,currency,free_candidate:(Number.isFinite(Number(cost))&&Number(cost)===0&&["FREE_PERMANENT","FREE_TRIAL","CREDIT","STARTUP_PROGRAM","COMMUNITY","OPEN_SOURCE","SELF_HOSTED"].includes(access_class))},
     quota:quota??null,auth:{requires_key:Boolean(requires_key),secret_material_present:false},
     source,endpoint:clean(endpoint)||null,version:clean(version)||"unknown",
     evidence:evidence&&typeof evidence==="object"?evidence:null,
@@ -110,7 +110,7 @@ export function classifyAccessEconomics(access){
   if(a.access_class==="FREE_PERMANENT"||a.access_class==="OPEN_SOURCE"||a.access_class==="SELF_HOSTED") return 0;
   if(a.access_class==="FREE_TRIAL"||a.access_class==="CREDIT"||a.access_class==="STARTUP_PROGRAM"||a.access_class==="COMMUNITY") return 1;
   if(a.access_class==="PAID") return 3;
-  return 2;
+  return 4;
 }
 
 export function rankDeveloperAccess({candidates=[],requirements=[],prefer_free=true}={}){
