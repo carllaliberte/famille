@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://acorn.local/schema/enterprise-agreement.v0.json",
+  "title": "ACORN enterprise-agreement.v0",
+  "description": "Draft commercial instrument. DRAFT is not SIGNED. SIGNED is not LIVE. auto_contract stays false.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "id", "party_a", "party_b", "kind", "phase", "state", "signed", "live", "auto_contract", "authority", "optimization_target"],
+  "properties": {
+    "contract": { "const": "acorn.enterprise-agreement.v0" },
+    "id": { "type": "string", "minLength": 3, "maxLength": 80 },
+    "party_a": { "const": "acorn" },
+    "party_b": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,24}$" },
+    "kind": { "enum": ["MOU", "PILOT", "ROUTE_ACORN", "ORDER_FORM", "DPA", "MSA"] },
+    "phase": { "enum": ["MOU", "PILOT", "ROUTE_ACORN", "ORDER_FORM"] },
+    "state": { "enum": ["DRAFT", "PROPOSED", "HOLD_HUMAN", "SIGNED", "ACTIVE", "MEASURED", "OPTIMIZED_TOWARD_ACORN", "REJECTED"] },
+    "signed": { "const": false },
+    "live": { "const": false },
+    "auto_contract": { "const": false },
+    "auto_spend": { "const": false },
+    "auto_merge": { "const": false },
+    "authority": { "const": false },
+    "price": { "const": "UNPRICED_UNTIL_MEASURED" },
+    "optimization_target": { "const": "acorn" },
+    "signer": { "enum": [null, "carl"] },
+    "note": { "type": "string" }
+  }
+}
