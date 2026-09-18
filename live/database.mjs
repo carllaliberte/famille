@@ -14,11 +14,11 @@ async function loadPgPool() {
   try {
     const mod = await import("pg");
     const Pool = (mod.default || mod).Pool;
-    if (typeof Pool !== "function") throw new Error("POSTGRES_DRIVER_UNAVAILABLE");
+    if (typeof Pool !== "function") throw new Error("POSTGRES_UNAVAILABLE");
     return Pool;
   } catch (error) {
-    if (String(error?.message || error) === "POSTGRES_DRIVER_UNAVAILABLE") throw error;
-    throw new Error("POSTGRES_DRIVER_UNAVAILABLE");
+    if (String(error?.message || error) === "POSTGRES_UNAVAILABLE") throw error;
+    throw new Error("POSTGRES_UNAVAILABLE");
   }
 }
 
