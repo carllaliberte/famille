@@ -169,7 +169,8 @@
     "./acorn-economic-ledger": "./scripts/acorn-economic-ledger.mjs",
     "./acorn-usage-rights": "./scripts/acorn-usage-rights.mjs",
     "./acorn-commercial-runtime": "./scripts/acorn-commercial-runtime.mjs",
-    "./acorn-real-world-turnkey": "./scripts/acorn-real-world-turnkey.mjs"
+    "./acorn-real-world-turnkey": "./scripts/acorn-real-world-turnkey.mjs",
+    "./acorn-quality-trace": "./scripts/acorn-quality-trace.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"

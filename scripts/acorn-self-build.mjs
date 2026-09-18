@@ -28,6 +28,7 @@ import { createHash } from "node:crypto";
 import { catalogTools, resolveTool } from "./tool-resolve.mjs";
 import { assertCapabilityAuthoritySeparation } from "./acorn-constitution.mjs";
 import { registerEvidence, evidenceIsCurrent, proofGate } from "./acorn-evidence-registry.mjs";
+import { qualityTrace } from "./acorn-quality-trace.mjs";
 
 export const SELF_BUILD_VERSION = "acorn.self-build.v0";
 
@@ -1026,9 +1027,25 @@ export function registerQualified(record = {}, { evidence = [], now = Date.now()
       authority: "carl",
     };
   }
+  const quality = qualityTrace({
+    project_id: record.project_id || record.id || record.capability,
+    project_name: record.name || record.capability || record.id,
+    project_version: record.version || SELF_BUILD_VERSION,
+    source_revision: record.source_revision || record.commit || record.sha || "UNKNOWN",
+    valid_until: current[0]?.valid_until || null,
+    gates: {
+      truth_contract: true,
+      tests: Array.isArray(record.tests) && record.tests.length > 0,
+      security: record.security_verified === true || record.security_ok === true,
+      provenance: true,
+      human_authority: true,
+    },
+    evidence: current,
+  });
   return {
     registered: true,
     identity: record.capability || record.id,
+    quality_trace: quality,
     version: record.version || SELF_BUILD_VERSION,
     provenance: record.source || "self-build",
     implementation: record.implementation || null,
