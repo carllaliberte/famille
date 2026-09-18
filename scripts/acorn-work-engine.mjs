@@ -26,7 +26,7 @@ import { privacyPolicy, privacyAudit } from "./acorn-privacy-process.mjs";
 import { runConnectionSweep } from "./acorn-connection-fabric.mjs";
 import { snapshotFreeFirstCloud, createResource, buildFreeFirstPlan } from "./acorn-free-first-cloud-fabric.mjs";
 import { economicPolicy, measureUnitEconomics, economicAllocation } from "./acorn-economic-optimizer.mjs";
-import { commercialFunnel, rankRevenuePipeline, maximizeCapabilityReuse } from "./acorn-revenue-maximization.mjs";
+import { revenuePolicy, commercialFunnel, rankRevenuePipeline, maximizeCapabilityReuse } from "./acorn-revenue-maximization.mjs";
 import {
   RESOURCE_GOVERNOR_VERSION,
   limitsFromEnv,
