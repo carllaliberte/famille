@@ -1,0 +1,9 @@
+export const CONTRACT="acorn.verified-market-value.v1";
+const arr=v=>Array.isArray(v)?v:[];
+const finite=v=>Number.isFinite(v);
+export function qualifyDemand(d={}){const evidence=arr(d.evidence);const verified=d.verified===true&&evidence.length>0;return{state:verified?"EVIDENCE_BACKED":"EXPLORATORY",verified,evidence_count:evidence.length,demand_id:d.id??null};}
+export function qualifyOffer(o={}){const evidence=arr(o.evidence);const verified=o.verified===true&&evidence.length>0;return{state:verified?"VERIFIED":"UNVERIFIED",verified,evidence_count:evidence.length,offer_id:o.id??null};}
+export function chooseVerifiedOpportunities(xs=[]){return arr(xs).filter(o=>o&&o.verified===true&&arr(o.evidence).length>0&&o.auto_spend!==true&&o.auto_contract!==true).map(o=>({...o,economic_state:"EVIDENCE_BACKED",authority:"HUMAN_REQUIRED"}));}
+export function measureUnitEconomics(x={}){if(!finite(x.revenue)||!finite(x.cost))return{state:"NOT_MEASURED",margin:null};const margin=x.revenue-x.cost;return{state:"MEASURED",revenue:x.revenue,cost:x.cost,margin,margin_rate:x.revenue===0?null:margin/x.revenue};}
+export function rankVerifiedValue(xs=[]){return arr(xs).filter(x=>x&&x.verified===true&&arr(x.evidence).length>0&&finite(x.value)&&finite(x.cost)).map(x=>({...x,value_per_cost:x.cost>0?x.value/x.cost:null})).sort((a,b)=>(b.value_per_cost??-Infinity)-(a.value_per_cost??-Infinity));}
+export function createCommercialDecision(x={}){return{contract:CONTRACT,state:"WAITING_HUMAN",verified:x.verified===true&&arr(x.evidence).length>0,evidence:arr(x.evidence),offer_id:x.offer_id??null,customer_value:x.customer_value??null,economic_measurement:x.economic_measurement??null,authority:"HUMAN_REQUIRED",auto_spend:false,auto_contract:false,auto_merge:false};}
