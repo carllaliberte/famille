@@ -20,6 +20,7 @@ async function reclaimStale() {
 }
 async function ingest() {
   await pool.query("INSERT INTO acorn_jobs(id,tenant_id,kind,payload,state,attempts,max_attempts,created_at,updated_at) SELECT 'job_'||r.id,r.customer_id,'CUSTOMER_REQUEST',jsonb_build_object('request_id',r.id),'QUEUED',0,3,r.created_at,r.updated_at FROM requests r LEFT JOIN acorn_jobs j ON j.id='job_'||r.id WHERE j.id IS NULL ON CONFLICT DO NOTHING");
+  await pool.query("INSERT INTO acorn_jobs(id,tenant_id,kind,payload,state,attempts,max_attempts,created_at,updated_at) SELECT 'job_order_'||o.id,o.tenant_id,'COMMERCIAL_ORDER',jsonb_build_object('order_id',o.id,'project_id',o.project_id,'live',false,'paid',false),'QUEUED',0,5,o.created_at,o.updated_at FROM commercial_orders o LEFT JOIN acorn_jobs j ON j.id='job_order_'||o.id WHERE j.id IS NULL ON CONFLICT DO NOTHING");
 }
 async function claim() {
   const c = await pool.connect();
@@ -41,6 +42,20 @@ async function claim() {
   }
 }
 async function execute(job) {
+  if (job.kind === "COMMERCIAL_ORDER" || job.kind === "COMMERCIAL_RECONCILE") {
+    const orderId = job.payload?.order_id;
+    const t = now();
+    if (orderId) {
+      const o = await pool.query("SELECT id,state,tenant_id FROM commercial_orders WHERE id=$1 AND tenant_id=$2", [orderId, job.tenant_id]);
+      if (!o.rows[0]) {
+        await pool.query("UPDATE acorn_jobs SET state='FAILED',error=$1,updated_at=$2,finished_at=$2 WHERE id=$3", ["ORDER_NOT_FOUND", t, job.id]);
+        return;
+      }
+      await pool.query("INSERT INTO events(request_id,type,payload,created_at) VALUES($1,$2,$3,$4)", [o.rows[0].id, "COMMERCIAL_JOB_OBSERVED", JSON.stringify({ job_id: job.id, worker_id: WORKER_ID, order_state: o.rows[0].state, live: false, paid: false, execution_authorized: false }), t]).catch(() => {});
+    }
+    await pool.query("UPDATE acorn_jobs SET state='SUCCEEDED',result=$1,updated_at=$2,finished_at=$2 WHERE id=$3", [JSON.stringify({ kind: job.kind, live: false, paid: false, execution_authorized: false }), t, job.id]);
+    return;
+  }
   const requestId = job.payload.request_id;
   const r = await pool.query("SELECT * FROM requests WHERE id=$1 AND customer_id=$2", [requestId, job.tenant_id]);
   if (!r.rows[0]) {

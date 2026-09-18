@@ -16,6 +16,7 @@ import { assessRuntimeStatus } from "./runtime-status.mjs";
 import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadTenantAsOf } from "./enterprise-store.mjs";
 import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt, proposeCapabilities } from "../scripts/acorn-operational-fabric.mjs";
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
+import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject } from "./commercial.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -23,6 +24,10 @@ function logEvent(entry) {
   const row = {
     request_id: entry.request_id,
     tenant_id: entry.tenant_id || null,
+    customer_id: entry.customer_id || null,
+    project_id: entry.project_id || null,
+    order_id: entry.order_id || null,
+    stripe_event_id: entry.stripe_event_id || null,
     method: entry.method,
     path: entry.path,
     status: entry.status,
@@ -51,7 +56,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
     });
     res.end(data);
   };
-  const readBody = async (req) => {
+  const readRaw = async (req) => {
     let n = 0;
     const chunks = [];
     for await (const c of req) {
@@ -59,8 +64,12 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       if (n > MAX_BODY) throw Object.assign(new Error("BODY_TOO_LARGE"), { status: 413, code: "BODY_TOO_LARGE" });
       chunks.push(c);
     }
-    if (!chunks.length) return {};
-    try { return JSON.parse(Buffer.concat(chunks).toString("utf8")); }
+    return Buffer.concat(chunks);
+  };
+  const readBody = async (req) => {
+    const raw = await readRaw(req);
+    if (!raw.length) return {};
+    try { return JSON.parse(raw.toString("utf8")); }
     catch { throw Object.assign(new Error("INVALID_JSON"), { status: 400, code: "INVALID_JSON" }); }
   };
   const hashPassword = (p, s = crypto.randomBytes(16)) => new Promise((ok, bad) => crypto.scrypt(p, s, 64, (e, k) => e ? bad(e) : ok(s.toString("hex") + ":" + k.toString("hex"))));
@@ -256,6 +265,19 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       if (req.method === "POST" && u.pathname === "/api/v1/login") {
         const r = await login(await readBody(req));
         return send(r.status, r.body);
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/billing/webhook") {
+        const raw = await readRaw(req);
+        const signature = String(req.headers["stripe-signature"] || "");
+        const result = await processStripeWebhook({ db: database, env, rawBody: raw, signature });
+        return send(result.status, result.body);
+      }
+      if (req.method === "GET" && (u.pathname === "/pay/success" || u.pathname === "/pay/cancel")) {
+        statusCode = 200;
+        const cancelled = u.pathname === "/pay/cancel";
+        const html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acorn</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet"><body style="margin:0;min-height:100dvh;background:#0c1210;color:#e8efe6;font-family:Figtree,system-ui,sans-serif;display:grid;place-items:center;padding:32px"><main style="max-width:36rem"><p style="letter-spacing:.08em;text-transform:uppercase;color:#8a9588;font-size:.78rem;font-weight:600">Acorn</p><h1 style="font-family:Fraunces,serif;font-weight:500;font-size:2.1rem;letter-spacing:-.03em">${cancelled ? "Checkout cancelled" : "Checkout returned"}</h1><p style="color:#8a9588;line-height:1.5">${cancelled ? "No payment was recorded. Nothing changed in Acorn." : "This page is not a receipt. Acorn records payment only after a verified Stripe webhook. Checkout created is not paid. Test Stripe is not Stripe Live."}</p><p><a href="/app" style="color:#c5d5c0">Back to Acorn</a></p></main></body></html>`;
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff", "x-frame-options": "DENY", "x-request-id": requestId });
+        return res.end(html);
       }
       const session = await requireAuth(req);
       if (!session) return send(401, { error: "UNAUTHORIZED" });
@@ -465,7 +487,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         for (const k of ["password", "token", "authorization", "secret", "connectionString", "database_url", "DATABASE_URL"]) delete safeBody[k];
         const rid = makeId("req");
         const t = now();
-        const operated = operateProblem({
+        const commercial = createCommercialProject({
           tenantId: cid,
           customerId: cid,
           problem: request,
@@ -473,6 +495,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           intelligences: intelligences(),
           connectors: connections()
         });
+        const operated = commercial;
         const cycle = operated.cycle;
         const persisted = await database.tx(async (tx) => {
           await tx.run(
@@ -499,6 +522,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           await persistState(tx, { entity: "MONEY_CLAIM", id: operated.economic.id, tenant_id: cid, state: "ESTIMATED", data: { ...operated.economic, billed: false, paid: false, live: false } });
           await persistState(tx, { entity: "TEMPORAL", id: "tmp_" + rid, tenant_id: cid, state: "OBSERVED", data: operated.temporal[0] || { epistemic: "OBSERVED", request_id: rid } });
           await persistState(tx, { entity: "EXECUTION", id: operated.execution.id, tenant_id: cid, state: operated.execution.state, data: { request_id: rid, mode: "PLAN", human_authorized: false, external_effect: false } });
+          await persistCommercialProject(tx, commercial, { tenantId: cid, requestId: rid });
           await persistEnterpriseEvent(tx, { tenantId: cid, entityId: rid, type: "REQUEST_CREATED", payload: { stage: cycle.stage, mode: "PLAN" }, actor: "acorn-live", authority: "none" });
           const horizon = new Date(Date.now() + 86400000).toISOString();
           const evidence = await persistEvidence(tx, {
@@ -524,8 +548,9 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           intelligence_routes: operated.intelligence_routes,
           execution: { id: operated.execution.id, mode: "PLAN", state: operated.execution.state, tasks: operated.execution.tasks, snapshot: operated.execution.snapshot },
           economic: operated.economic,
+          offers: commercial.offers,
           evidence: { id: persisted.evidence.id, claim: persisted.evidence.claim, status: persisted.evidence.status, source: persisted.evidence.source, measured_at: persisted.evidence.measured_at, valid_until: persisted.evidence.valid_until },
-          proof: { live: false, verified: false, delivered: false, billed: false, paid: false, storage: database.mode, measured_at: t, human_authorization_required: true, capability_is_not_authority: true }
+          proof: { live: false, verified: false, delivered: false, billed: false, paid: false, storage: database.mode, measured_at: t, human_authorization_required: true, capability_is_not_authority: true, checkout_created: false, payment_observed: false }
         });
       }
       const m = u.pathname.match(/^\/api\/v1\/requests\/([^/]+)$/);
@@ -545,6 +570,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           execution: related.find((s) => s.entity === "EXECUTION" && s.data?.request_id === row.id) || null,
           tasks: related.filter((s) => s.entity === "TASK" && s.data?.project_id === row.id),
           economic: related.filter((s) => s.entity === "MONEY_CLAIM").map((s) => ({ ...s.data, billed: false, paid: false, live: false })),
+          offers: related.filter((s) => s.entity === "OFFER" && (s.data?.project_id === row.id || s.data?.request_id === row.id)).map((s) => ({ ...s.data, id: s.id, state: s.state, paid: false, live: false })),
           events: events.map((e) => ({ ...e, payload: parseJson(e.payload, {}) })),
           evidence: evidence.map((e) => ({ id: e.id, claim: e.claim, source: e.source || e.origin, status: e.status, measured_at: e.measured_at, valid_until: e.valid_until })),
           proof: { live: false, delivered: false, billed: false, verified: false }
@@ -637,6 +663,18 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
         return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });
       }
+      const commercialHandled = await handleAuthedCommercial({
+        method: req.method,
+        pathname: u.pathname,
+        url: u,
+        req,
+        body: req.method === "GET" || req.method === "HEAD" ? null : await readBody(req),
+        cid,
+        env,
+        db: database,
+        sendPersist
+      });
+      if (commercialHandled) return commercialHandled;
       return send(404, { error: "NOT_FOUND" });
     } catch (e) {
       if (res.headersSent) {

@@ -2,7 +2,8 @@
  * PostgreSQL is the production backend when DATABASE_URL is present.
  * SQLite is an explicit local/test adapter only. Production never falls back silently.
  * Schema (via live/migrate.mjs): customers, sessions, requests, events,
- * acorn_state, acorn_events, acorn_evidence, acorn_jobs, schema_migrations.
+ * acorn_state, acorn_events, acorn_evidence, acorn_jobs, schema_migrations,
+ * idempotency_keys, stripe_events, commercial_orders, economic_ledger, usage_rights.
  */
 import crypto from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
