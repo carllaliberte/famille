@@ -14,7 +14,8 @@ import { createConnectorExecutor, executeConnector } from "../scripts/acorn-conn
 import { loadRealWorldConnectors, buildExternalCall, executeExternalCall, realWorldBridgeSnapshot, isConsequentialEffect, publicExternalResult } from "../scripts/acorn-real-world-bridge.mjs";
 import { assessRuntimeStatus } from "./runtime-status.mjs";
 import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState, loadTenantEvidence, loadTenantAsOf } from "./enterprise-store.mjs";
-import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt } from "../scripts/acorn-operational-fabric.mjs";
+import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt, proposeCapabilities } from "../scripts/acorn-operational-fabric.mjs";
+import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented } from "../scripts/acorn-self-build.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -490,7 +491,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
             await persistState(tx, { entity: "TASK", id: task.id, tenant_id: cid, state: task.state, data: { execution_id: operated.execution.id, project_id: rid, kind: task.kind, title: task.title } });
           }
           for (const cap of operated.capabilities) {
-            await persistState(tx, { entity: "CAPABILITY", id: cap.id, tenant_id: cid, state: cap.state, data: { name: cap.name, exists: cap.exists, available: cap.available, authorized: false, executed: false, verified: false, request_id: rid } });
+            await persistState(tx, { entity: "CAPABILITY", id: cap.id, tenant_id: cid, state: cap.state, data: { name: cap.name, exists: cap.exists === true, available: cap.available === true, authorized: false, executed: false, verified: false, gap: cap.exists !== true, reason: cap.state === "ABSENT" ? "GAP_DETECTED" : null, request_id: rid } });
           }
           for (const route of operated.intelligence_routes) {
             await persistState(tx, { entity: "INTELLIGENCE", id: "route_" + rid + "_" + route.id, tenant_id: cid, state: "SELECTABLE", data: { ...route, request_id: rid, authority: false, authorized: false } });
@@ -518,6 +519,8 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           cycle: { stage: cycle.stage, live: false, delivered: false },
           qualification: operated.qualification,
           capabilities: operated.capabilities,
+          gaps: operated.gaps,
+          holds: operated.holds,
           intelligence_routes: operated.intelligence_routes,
           execution: { id: operated.execution.id, mode: "PLAN", state: operated.execution.state, tasks: operated.execution.tasks, snapshot: operated.execution.snapshot },
           economic: operated.economic,
@@ -537,6 +540,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           request: publicRequest(row),
           project: state ? { id: state.id, entity: state.entity, state: state.state } : null,
           capabilities: related.filter((s) => s.entity === "CAPABILITY" && s.data?.request_id === row.id),
+          gaps: related.filter((s) => s.entity === "CAPABILITY" && s.data?.request_id === row.id && s.data?.exists !== true).map((s) => ({ capability: s.data?.name, status: s.state, reason: s.data?.reason || "GAP_DETECTED", exists: false, available: false })),
           intelligence_routes: related.filter((s) => s.entity === "INTELLIGENCE" && s.data?.request_id === row.id).map((s) => ({ ...s.data, authority: false })),
           execution: related.find((s) => s.entity === "EXECUTION" && s.data?.request_id === row.id) || null,
           tasks: related.filter((s) => s.entity === "TASK" && s.data?.project_id === row.id),
@@ -588,6 +592,33 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       }
       if (req.method === "GET" && u.pathname === "/api/v1/future-proof") {
         return send(200, { contract: futureProofContract(), live: false });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/self-build") {
+        return send(200, {
+          version: "acorn.self-build.v0",
+          constitution: selfBuildConstitution(),
+          implemented_now: implementedNow(),
+          not_yet_implemented: notYetImplemented(),
+          live: false,
+          auto_merge: false,
+          authority: "carl",
+          proof: { live: false, authorized: false, auto_merge: false }
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/self-build/observe") {
+        const b = await readBody(req);
+        const task = String(b.task || b.request || "").trim();
+        if (!task) return send(400, { error: "TASK_REQUIRED" });
+        const required = Array.isArray(b.required) && b.required.length ? b.required.map(String) : proposeCapabilities(task);
+        const known = [
+          { name: "analysis", exists: true, available: false, reason: "CODE_PRESENT" },
+          { name: "planning", exists: true, available: false, reason: "CODE_PRESENT" },
+          { name: "verification", exists: true, available: false, reason: "CODE_PRESENT" },
+          { name: "general", exists: true, available: false, reason: "CODE_PRESENT" }
+        ];
+        const observed = await runSelfBuildLoop({ task, required, known, zone: "BUILD" });
+        await persistEnterpriseEvent(database, { tenantId: cid, entityId: cid, type: "SELF_BUILD_OBSERVED", payload: { task, status: observed.status, gaps: observed.detection?.gaps?.map((g) => g.capability) || [], used: false, authorized: false, live: false }, actor: "acorn-live", authority: "none" });
+        return await sendPersist(200, { result: observed, proof: { live: false, authorized: false, used: false, auto_merge: false, zone: "BUILD" } });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
         return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });

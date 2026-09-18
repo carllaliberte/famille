@@ -12,6 +12,7 @@ import { customerServiceCycle, qualifyRequest, createCustomerRequest, createCust
 import { createTask, buildExecutionPlan, runSyntheticExecution, executionSnapshot } from "./acorn-execution-fabric.mjs";
 import { createIntelligence, routeIntelligence, measureIntelligence } from "./acorn-intelligence-fabric.mjs";
 import { CONNECTOR_STATES } from "./acorn-connector-execution-fabric.mjs";
+import { detectGaps } from "./acorn-self-build.mjs";
 
 const ISO = () => new Date().toISOString();
 const unique = (xs) => [...new Set((Array.isArray(xs) ? xs : []).map((x) => String(x || "").trim()).filter(Boolean))];
@@ -73,7 +74,7 @@ export function describeCapability({
   id,
   name,
   description = "",
-  exists = true,
+  exists = false,
   available = false,
   authorized = false,
   executed = false,
@@ -390,14 +391,29 @@ export function operateProblem({
     tasks: [qualifyTask, planTask, verifyTask],
     authorized: false
   });
-  const capRecords = proposed.map((name) => describeCapability({
-    id: "cap_" + projectId + "_" + name,
-    name,
-    exists: true,
-    available: true,
-    authorized: false,
-    tenant_id: tenantId
-  }));
+  const known = [
+    { name: "analysis", exists: true, available: false, reason: "CODE_PRESENT", source: "acorn-operational-fabric" },
+    { name: "planning", exists: true, available: false, reason: "CODE_PRESENT", source: "acorn-execution-fabric" },
+    { name: "verification", exists: true, available: false, reason: "CODE_PRESENT", source: "acorn-evidence-registry" },
+    { name: "general", exists: true, available: false, reason: "CODE_PRESENT", source: "acorn-operational-fabric" }
+  ];
+  const detection = detectGaps({
+    task: text,
+    required: proposed,
+    known,
+    connectors
+  });
+  const capRecords = proposed.map((name) => {
+    const hit = [...detection.found, ...detection.gaps, ...detection.holds].find((row) => row.capability === name);
+    return describeCapability({
+      id: "cap_" + projectId + "_" + name,
+      name,
+      exists: hit?.exists === true,
+      available: hit?.available === true,
+      authorized: false,
+      tenant_id: tenantId
+    });
+  });
   const qualifiedIntelligences = intelligences.map((i) => markIntelligenceSelectable(i));
   const routes = routeByCapability(
     { id: plan.id, required_capabilities: proposed },
@@ -436,6 +452,8 @@ export function operateProblem({
       live: false
     },
     capabilities: capRecords,
+    gaps: detection.gaps,
+    holds: detection.holds,
     intelligence_routes: routes,
     connectors: connectors.map(configuredIsNotConnected),
     execution: { mode: "PLAN", ...plan, snapshot: executionSnapshot(plan) },
@@ -491,7 +509,7 @@ export function futureProofContract() {
     "nouveau modele": "identity is data (provider, model); createIntelligence has no closed set",
     "nouveau fournisseur": "provider is a string field; routeByCapability is capability-based",
     "nouveau connecteur": "generic connector contract; CONFIGURED ≠ READY; no closed integration list",
-    "nouveau type de capacite": "describeCapability accepts any name; proposeCapabilities is heuristic not exclusive",
+    "nouveau type de capacite": "describeCapability accepts any name; admitExtension on acorn-self-build registers a future kind without modifying the core; proposeCapabilities is heuristic not exclusive",
     "nouveau workflow": "task graph is data (kind, dependsOn); operateProblem composes existing cycle",
     "tache longue": "acorn_jobs + worker; task state machine allows RUNNING across processes",
     "execution distribuee": "execution ids, jobs, tenant-scoped workers; no single-process assumption in records",
@@ -531,7 +549,8 @@ export function classifyCapability(name) {
   const now = new Set([
     "intake", "qualify", "plan", "persist", "tenant-isolation", "auth",
     "evidence", "health", "capability-lifecycle", "intelligence-discover",
-    "simulation", "as-of", "economic-estimate", "rate-limit", "idempotency"
+    "simulation", "as-of", "economic-estimate", "rate-limit", "idempotency",
+    "self-build", "capability-gap"
   ]);
   const foundation = new Set([
     "webhooks", "m2m-auth", "marketplace", "digital-twin-full", "i18n",
