@@ -2,7 +2,7 @@
 
 Acorn treats OpenAI as a first-class **capability provider**, never as an authority.
 
-The bridge covers the current documented developer surfaces that matter to Acorn: Responses, Agents, MCP, built-in tools, tool discovery and future/unknown surfaces. OpenAI documents MCP as a way to connect models to external tools and data, and its developer tooling includes web search, file search, computer use, shell, code interpreter, image generation, function calling, tool search and programmatic tool calling. citeturn0search1turn0search5
+The bridge covers the current documented developer surfaces that matter to Acorn: Responses, Agents, MCP, built-in tools, tool discovery and future/unknown surfaces. OpenAI documents MCP as a way to connect models to external tools and data, and its developer tooling includes web search, file search, computer use, shell, code interpreter, image generation, function calling, tool search and programmatic tool calling.
 
 ## Contract
 
@@ -18,7 +18,7 @@ A developer API key is a credential. It is **not** human authority.
 
 ## MCP
 
-MCP is a strategic bridge for Acorn because OpenAI supports remote MCP servers and controlled tool access. Acorn defaults consequential MCP calls to explicit approval and keeps effect authorization in Acorn's existing human-controlled governance. OpenAI's documentation likewise distinguishes tool access from authorization and recommends approval for consequential actions. citeturn0search1turn0search6
+MCP is a strategic bridge for Acorn because OpenAI supports remote MCP servers and controlled tool access. Acorn defaults consequential MCP calls to explicit approval and keeps effect authorization in Acorn's existing human-controlled governance. OpenAI's documentation likewise distinguishes tool access from authorization and recommends approval for consequential actions.
 
 ## Future
 
@@ -30,7 +30,7 @@ After the bridge is proven, build a **Developer Hall of Capability**: a living s
 
 No invented partnership, endorsement, sponsorship, usage, revenue, or certification.
 
-OpenAI's official developer documentation remains the source of truth for OpenAI surface details. citeturn0search0turn0search8
+OpenAI's official developer documentation remains the source of truth for OpenAI surface details.
 
 ## Invariants
 
