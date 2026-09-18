@@ -2,7 +2,7 @@
 import crypto from "node:crypto";
 import { economicEngineSnapshot, INFINITE_ECONOMIC_POLICY } from "./acorn-infinite-economic-engine.mjs";
 import { buildRuntimePlan, verifyRuntimePlan } from "./acorn-runtime-orchestrator.mjs";
-import { intelligenceSnapshot } from "./acorn-intelligence-fabric.mjs";
+import { intelligenceSnapshot, validateIntelligenceParity } from "./acorn-intelligence-fabric.mjs";
 import { connectorSnapshot } from "./acorn-connector-registry.mjs";
 import { executionLoopSnapshot } from "./acorn-execution-evidence-loop.mjs";
 import { buildCommercialCommandCenter } from "./acorn-commercial-control-plane.mjs";
@@ -52,7 +52,7 @@ export function composeTotalRuntime({requestId,problem,requiredCapabilities=[],i
  const plan=buildRuntimePlan({requestId,problem,intelligences,connectors,requiredCapabilities});
  return {id:uid("total"),version:TOTAL_OS_VERSION,state:"COMPOSED",measured_at:ISO(),
   pyramids:buildPyramidMap(),plan,plan_verification:verifyRuntimePlan(plan),
-  intelligence:intelligenceSnapshot(intelligences),connector:connectorSnapshot(connectors),
+  intelligence:intelligenceSnapshot(intelligences),intelligence_parity:validateIntelligenceParity(intelligences),connector:connectorSnapshot(connectors),
   execution:executionLoopSnapshot(execution),commercial:buildCommercialCommandCenter(commercial),
   economics:economicEngineSnapshot(economic),control:TOTAL_POLICY,
   authority:{acorn:"ANALYZE_PROPOSE_ROUTE_MEASURE",human:"AUTHORIZE_DECIDE_ACCEPT_MERGE"}};
