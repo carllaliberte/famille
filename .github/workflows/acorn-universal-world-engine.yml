@@ -1,0 +1,16 @@
+name: ACORN Universal World Engine
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "7,37 * * * *"
+permissions:
+  contents: read
+jobs:
+  world-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: node --test test/acorn-universal-world-engine.test.js
+      - run: node --input-type=module -e "import('./scripts/acorn-universal-world-engine.mjs').then(({assertWorldConstitution})=>console.log('ACORN_WORLD_CONSTITUTION',assertWorldConstitution()))"
