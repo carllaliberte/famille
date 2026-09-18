@@ -17,6 +17,7 @@ import { persistState, persistEnterpriseEvent, persistEvidence, loadTenantState,
 import { operateProblem, discoverUnknownIntelligence, runExecutionMode, futureProofContract, economicRecord, configuredIsNotConnected, providerFailureDoesNotHalt, proposeCapabilities } from "../scripts/acorn-operational-fabric.mjs";
 import { runSelfBuildLoop, selfBuildConstitution, implementedNow, notYetImplemented, howAcornBuilds, proposeRepair, autonomyLevel, AUTONOMY_CEILING_WITHOUT_CARL } from "../scripts/acorn-self-build.mjs";
 import { persistCommercialProject, processStripeWebhook, handleAuthedCommercial, createCommercialProject } from "./commercial.mjs";
+import { architecturalLeverage, admitUnknown } from "../scripts/acorn-capability-composition.mjs";
 
 const APP_HTML = readFileSync(new URL("./app.html", import.meta.url), "utf8");
 
@@ -508,13 +509,13 @@ export async function createLiveServer({ env = process.env, db } = {}) {
             id: rid,
             tenant_id: cid,
             state: cycle.stage,
-            data: { request_id: rid, customer_id: cid, stage: cycle.stage, delivered: false, payment: false, live: false, mode: "PLAN" }
+            data: { request_id: rid, customer_id: cid, stage: cycle.stage, delivered: false, payment: false, live: false, mode: "PLAN", composition: operated.composition || null }
           });
           for (const task of operated.execution.tasks || []) {
             await persistState(tx, { entity: "TASK", id: task.id, tenant_id: cid, state: task.state, data: { execution_id: operated.execution.id, project_id: rid, kind: task.kind, title: task.title } });
           }
           for (const cap of operated.capabilities) {
-            await persistState(tx, { entity: "CAPABILITY", id: cap.id, tenant_id: cid, state: cap.state, data: { name: cap.name, exists: cap.exists === true, available: cap.available === true, authorized: false, executed: false, verified: false, gap: cap.exists !== true, reason: cap.state === "ABSENT" ? "GAP_DETECTED" : null, request_id: rid } });
+            await persistState(tx, { entity: "CAPABILITY", id: cap.id, tenant_id: cid, state: cap.state, data: { name: cap.name, type: cap.type || "CAPABILITY", exists: cap.exists === true, available: cap.available === true, authorized: false, executed: false, verified: false, gap: cap.exists !== true, reason: cap.state === "ABSENT" ? "GAP_DETECTED" : null, request_id: rid, provider_independent: true, providers: [], live: false } });
           }
           for (const route of operated.intelligence_routes) {
             await persistState(tx, { entity: "INTELLIGENCE", id: "route_" + rid + "_" + route.id, tenant_id: cid, state: "SELECTABLE", data: { ...route, request_id: rid, authority: false, authorized: false } });
@@ -546,6 +547,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           gaps: operated.gaps,
           holds: operated.holds,
           intelligence_routes: operated.intelligence_routes,
+          composition: operated.composition || null,
           execution: { id: operated.execution.id, mode: "PLAN", state: operated.execution.state, tasks: operated.execution.tasks, snapshot: operated.execution.snapshot },
           economic: operated.economic,
           offers: commercial.offers,
@@ -571,6 +573,7 @@ export async function createLiveServer({ env = process.env, db } = {}) {
           tasks: related.filter((s) => s.entity === "TASK" && s.data?.project_id === row.id),
           economic: related.filter((s) => s.entity === "MONEY_CLAIM").map((s) => ({ ...s.data, billed: false, paid: false, live: false })),
           offers: related.filter((s) => s.entity === "OFFER" && (s.data?.project_id === row.id || s.data?.request_id === row.id)).map((s) => ({ ...s.data, id: s.id, state: s.state, paid: false, live: false })),
+          composition: state ? parseJson(state.data, state.data)?.composition || null : null,
           events: events.map((e) => ({ ...e, payload: parseJson(e.payload, {}) })),
           evidence: evidence.map((e) => ({ id: e.id, claim: e.claim, source: e.source || e.origin, status: e.status, measured_at: e.measured_at, valid_until: e.valid_until })),
           proof: { live: false, delivered: false, billed: false, verified: false }
@@ -605,8 +608,8 @@ export async function createLiveServer({ env = process.env, db } = {}) {
         return send(200, { ...snapshot, proof: { live: false, as_of: snapshot.at } });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/capabilities") {
-        const caps = (await loadTenantState(database, cid, "CAPABILITY")).map((s) => ({ id: s.id, name: s.data?.name, exists: s.data?.exists === true, available: s.data?.available === true, authorized: false, executed: false, verified: false, state: s.state }));
-        return send(200, { capabilities: caps, proof: { live: false, authorized: false } });
+        const caps = (await loadTenantState(database, cid, "CAPABILITY")).map((s) => ({ id: s.id, name: s.data?.name, type: s.data?.type || "CAPABILITY", exists: s.data?.exists === true, available: s.data?.available === true, authorized: false, executed: false, verified: false, provider_independent: true, providers: s.data?.providers || [], state: s.state }));
+        return send(200, { capabilities: caps, proof: { live: false, authorized: false, capability_is_not_authority: true } });
       }
       if (req.method === "GET" && u.pathname === "/api/v1/economy") {
         const claims = (await loadTenantState(database, cid, "MONEY_CLAIM")).map((s) => economicRecord({ ...s.data, tenant_id: cid, status: "ESTIMATED" }));
@@ -662,6 +665,52 @@ export async function createLiveServer({ env = process.env, db } = {}) {
       }
       if (req.method === "GET" && u.pathname === "/api/v1/resilience") {
         return send(200, { resilience: providerFailureDoesNotHalt({ failedId: "grok", intelligences: intelligences(), connectors: connections().map(configuredIsNotConnected), required: ["analysis"] }), proof: { live: false, grok_unavailable_is_not_acorn_unavailable: true } });
+      }
+      if (req.method === "GET" && u.pathname === "/api/v1/composition") {
+        const projects = await loadTenantState(database, cid, "PROJECT");
+        const compositions = projects.map((s) => s.data?.composition).filter(Boolean);
+        return send(200, {
+          compositions,
+          leverage: architecturalLeverage(),
+          selected_path: null,
+          live: false,
+          authorized: false,
+          executable: false
+        });
+      }
+      if (req.method === "POST" && u.pathname === "/api/v1/capabilities/admit") {
+        const b = await readBody(req);
+        const admitted = admitUnknown({
+          kind: b.kind || b.type,
+          id: b.id,
+          adapter: b.adapter && typeof b.adapter === "object" ? {} : {}
+        });
+        if (admitted.admitted) {
+          await persistState(database, {
+            entity: "CAPABILITY",
+            id: makeId("adm"),
+            tenant_id: cid,
+            state: "DISCOVERED",
+            data: {
+              name: admitted.id,
+              type: admitted.kind,
+              exists: false,
+              available: false,
+              authorized: false,
+              executed: false,
+              verified: false,
+              provider_independent: true,
+              providers: [],
+              request_id: null,
+              live: false
+            }
+          });
+        }
+        return await sendPersist(admitted.admitted ? 201 : 403, {
+          admission: { ...admitted, authorized: false, live: false },
+          client_authorization_ignored: b.human_authorized === true || b.authorized === true || b.live === true,
+          proof: { live: false, authorized: false, core_modified: false }
+        });
       }
       const commercialHandled = await handleAuthedCommercial({
         method: req.method,

@@ -13,6 +13,7 @@ import { createTask, buildExecutionPlan, runSyntheticExecution, executionSnapsho
 import { createIntelligence, routeIntelligence, measureIntelligence } from "./acorn-intelligence-fabric.mjs";
 import { CONNECTOR_STATES } from "./acorn-connector-execution-fabric.mjs";
 import { detectGaps } from "./acorn-self-build.mjs";
+import { composeFromIntent } from "./acorn-capability-composition.mjs";
 
 const ISO = () => new Date().toISOString();
 const unique = (xs) => [...new Set((Array.isArray(xs) ? xs : []).map((x) => String(x || "").trim()).filter(Boolean))];
@@ -80,10 +81,27 @@ export function describeCapability({
   executed = false,
   verified = false,
   version = "0",
-  tenant_id = null
+  tenant_id = null,
+  type = "CAPABILITY",
+  input = {},
+  output = {},
+  constraints = [],
+  cost = null,
+  latency = null,
+  availability = "UNKNOWN",
+  provenance = "acorn",
+  evidence = [],
+  measurement = null,
+  owner = null,
+  authority_boundary = "HUMAN",
+  valid_from = null,
+  valid_until = null,
+  execution_interface = null,
+  economic_interface = null
 } = {}) {
   const capName = String(name || id || "").trim();
   if (!capName) throw new Error("CAPABILITY_NAME_REQUIRED");
+  const measured = ISO();
   return {
     id: id || ("cap_" + capName),
     name: capName,
@@ -97,7 +115,26 @@ export function describeCapability({
     tenant_id,
     authority: false,
     state: authorized ? "BLOCKED_IMPLICIT_AUTHORITY" : (available ? "AVAILABLE" : (exists ? "EXISTS" : "ABSENT")),
-    measured_at: ISO()
+    measured_at: measured,
+    type: String(type || "CAPABILITY"),
+    input: input && typeof input === "object" ? input : {},
+    output: output && typeof output === "object" ? output : {},
+    constraints: Array.isArray(constraints) ? constraints : [],
+    cost: cost == null ? null : cost,
+    latency: latency == null ? null : latency,
+    availability: String(availability || "UNKNOWN"),
+    provenance: String(provenance || "acorn"),
+    evidence: Array.isArray(evidence) ? evidence : [],
+    measurement: measurement == null ? null : measurement,
+    owner,
+    authority_boundary: String(authority_boundary || "HUMAN"),
+    valid_from: valid_from || measured,
+    valid_until: valid_until || null,
+    execution_interface,
+    economic_interface,
+    providers: [],
+    provider_independent: true,
+    live: false
   };
 }
 
@@ -419,6 +456,13 @@ export function operateProblem({
     { id: plan.id, required_capabilities: proposed },
     { intelligences: qualifiedIntelligences, connectors }
   );
+  const composition = composeFromIntent({
+    intent: text,
+    tenantId,
+    capabilities: capRecords,
+    intelligences: qualifiedIntelligences,
+    connectors
+  });
   const economic = economicRecord({
     tenant_id: tenantId,
     related_id: projectId,
@@ -455,6 +499,7 @@ export function operateProblem({
     gaps: detection.gaps,
     holds: detection.holds,
     intelligence_routes: routes,
+    composition,
     connectors: connectors.map(configuredIsNotConnected),
     execution: { mode: "PLAN", ...plan, snapshot: executionSnapshot(plan) },
     economic,

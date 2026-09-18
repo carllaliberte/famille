@@ -345,6 +345,7 @@
       const routes = data.intelligence_routes || [];
       const evidence = data.evidence || [];
       const offers = data.offers || [];
+      const composition = data.composition || null;
       const order = data.order || null;
       const checkout = data.checkout || null;
       $("current").innerHTML = `
@@ -385,6 +386,12 @@
           ${checkout ? `<p class="quiet">Checkout ${checkout.configured === false ? "rail is not connected" : "created"}. This is not a receipt.</p>` : ""}
           ${order ? `<p class="mono">order ${esc(order.id)} · ${esc(order.state)} · paid=false</p>` : ""}
         </div>
+        ${composition ? `<div>
+          <h3>Capability path</h3>
+          <p class="quiet">A named capability is not a provider. A path is not selected. A path is not authorized.</p>
+          <div class="row">${(composition.demand?.capabilities || []).map((c) => `<span class="chip">${esc(c)}</span>`).join(" ") || ""}</div>
+          <p class="quiet" style="margin-top:8px">executable=${composition.executable === true} · selected=${composition.selected_path != null} · live=false</p>
+        </div>` : ""}
         <div>
           <h3>Task graph</h3>
           <div class="stack">${(tasks.length ? tasks : ["Qualify", "Plan", "Verify"]).map((t) => `<div class="chip">${t}</div>`).join("")}</div>
