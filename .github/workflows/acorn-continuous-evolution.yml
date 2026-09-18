@@ -33,7 +33,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          MAIN_SHA="$(git rev-parse HEAD)"
+          export MAIN_SHA="$(git rev-parse HEAD)"
           gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 100             --json number,title,state,draft,mergeable,headRefName,baseRefName,headRefOid,baseRefOid,labels,url             > /tmp/prs.json
           gh run list --repo "$GITHUB_REPOSITORY" --limit 50             --json databaseId,name,status,conclusion,headSha,url,displayTitle             > /tmp/runs.json
           node --input-type=module <<'EOF'
@@ -52,7 +52,7 @@ jobs:
         env:
           ACORN_EVOLUTION_OUTPUT: /tmp/acorn-continuous-evolution.json
         run: |
-          node scripts/acorn-continuous-evolution.mjs /tmp/acorn-evolution-snapshot.json > /tmp/evolution.stdout.json
+          ACORN_EVOLUTION_OUTPUT=/tmp/acorn-continuous-evolution.json node scripts/acorn-continuous-evolution.mjs /tmp/acorn-evolution-snapshot.json > /tmp/evolution.stdout.json
           cat /tmp/evolution.stdout.json
 
       - name: Hand one coherent evolution portfolio to existing worker
