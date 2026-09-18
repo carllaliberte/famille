@@ -1,0 +1,10 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {ingestSignal,correlateSignals,writeMemory,retrieveContext,buildPrediction,closeLearningLoop,prioritizeSignals,cortexCycle,assertActiveCortexConstitution} from "../scripts/acorn-cortex-active-memory.mjs";
+test("signals enter with provenance",()=>{const s=ingestSignal({source:"env",kind:"demand",payload:{x:1}});assert.equal(s.state,"RECEIVED");assert.equal(s.authority,false);});
+test("signals correlate with memory",()=>{const s=ingestSignal({source:"env",kind:"demand",payload:{x:1}});const m=writeMemory({type:"EVENT",subject:"demand",value:1,source:"obs",scope:"ecosystem"});assert.equal(correlateSignals([s],[m])[0].state,"CORRELATED");});
+test("context retrieval ranks confidence",()=>{const a=writeMemory({type:"KNOWLEDGE",subject:"robotics",value:"a",source:"a",confidence:.2});const b=writeMemory({type:"KNOWLEDGE",subject:"robotics",value:"b",source:"b",confidence:.9});assert.equal(retrieveContext({query:"robotics",memory:[a,b]})[0].id,b.id);});
+test("prediction remains provisional",()=>{const p=buildPrediction({goal:"g",expected_outcome:100});assert.equal(p.state,"PROVISIONAL");assert.equal(p.requires_measurement,true);});
+test("learning measures prediction error",()=>{const p=buildPrediction({goal:"g",expected_outcome:100});const l=closeLearningLoop({prediction:p,outcome:{value:120},evidence:["obs"]});assert.equal(l.prediction_error,20);});
+test("cortex prioritizes signals",()=>{const s=prioritizeSignals({signals:[{id:"a",kind:"x",priority:1},{id:"b",kind:"x",priority:3}],objectives:[{name:"x",weight:2}]});assert.equal(s[0].id,"b");});
+test("continuous cycle is measured",()=>{const x=cortexCycle({signals:[],memory:[]});assert.equal(x.state,"MEASURED");});
+test("hard boundaries remain",()=>{assert.equal(assertActiveCortexConstitution(),true);assert.throws(()=>assertActiveCortexConstitution({breaker_touched:true}),/BREAKER/);assert.throws(()=>assertActiveCortexConstitution({auto_action:true}),/AUTO_ACT/);assert.throws(()=>assertActiveCortexConstitution({hidden_memory:true}),/TRACEABLE/);});
