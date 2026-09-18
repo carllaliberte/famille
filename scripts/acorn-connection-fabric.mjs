@@ -310,7 +310,7 @@ export async function cancel(connection_id, operation_id = null, options = {}) {
 export async function connect({
   adapter_id,
   identity = "UNKNOWN",
-  capability = UNKNOWN,
+  capability = "UNKNOWN",
   provenance = null,
   authenticated = false,
   credential_present = false,
