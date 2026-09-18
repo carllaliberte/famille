@@ -1,0 +1,18 @@
+name: ACORN Continuous Evolution Reality Fabric
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17,47 * * * *"
+permissions:
+  contents: read
+  issues: write
+jobs:
+  evolve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: npm test -- --test-reporter=dot
+        continue-on-error: true
+      - run: node --input-type=module -e "import('./scripts/acorn-evolution-conductor.mjs').then(({conductEvolution})=>console.log(JSON.stringify(conductEvolution({CODE:{state:'OBSERVED'}}),null,2)))"
