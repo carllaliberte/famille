@@ -66,7 +66,8 @@ jobs:
             node --check scripts/acorn-continuous-runtime.mjs 2>&1 && \
             node --check scripts/acorn-developer-gateway.mjs 2>&1 && \
             node --check scripts/acorn-market-engine.mjs 2>&1 && \
-            node --test test/acorn-continuous-work-engine.test.js test/acorn-developer-market-engine.test.js 2>&1)"
+            node --check scripts/acorn-contribution-economy.mjs 2>&1 && \
+            node --test test/acorn-continuous-work-engine.test.js test/acorn-developer-market-engine.test.js test/acorn-contribution-economy.test.js 2>&1)"
           code=$?
           printf '%s\n' "$output"
           ACORN_RUN_EXIT_CODE="$code" ACORN_RUN_STDERR="$output" \
