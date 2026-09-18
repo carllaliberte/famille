@@ -76,7 +76,8 @@
     "runtime:self-build": "node scripts/acorn-self-build.mjs",
     "runtime:quality": "node scripts/acorn-quality-fabric.mjs",
     "runtime:value-fabric": "node scripts/acorn-universal-value-fabric.mjs",
-    "runtime:best-known": "node scripts/acorn-best-known-result.mjs"
+    "runtime:best-known": "node scripts/acorn-best-known-result.mjs",
+    "runtime:intent-reality": "node scripts/acorn-intent-reality-compiler.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -176,7 +177,8 @@
     "./acorn-quality-trace": "./scripts/acorn-quality-trace.mjs",
     "./acorn-quality-fabric": "./scripts/acorn-quality-fabric.mjs",
     "./acorn-universal-value-fabric": "./scripts/acorn-universal-value-fabric.mjs",
-    "./acorn-best-known-result": "./scripts/acorn-best-known-result.mjs"
+    "./acorn-best-known-result": "./scripts/acorn-best-known-result.mjs",
+    "./acorn-intent-reality-compiler": "./scripts/acorn-intent-reality-compiler.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
