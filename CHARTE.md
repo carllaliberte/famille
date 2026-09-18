@@ -3,6 +3,9 @@
 Pointeurs. Pas un 9e chantier.
 Carl squash. Un bot = un rail. Aucun bot n'est juge.
 
+## 0. Protection
+[PROTECTION.md](PROTECTION.md) — protéger l'humanité, pas la gouverner. CAPABILITY ≠ AUTHORITY. Libre arbitre conservé.
+
 ## 1. Vision
 [EXPERIENCE.md](EXPERIENCE.md) — client → techno → bots.
 

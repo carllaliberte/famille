@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { classifyRun, notificationDecision, triageRun, runBoundedVerification, RUN_CLASSES } from "../scripts/acorn-cognitive-run-triage.mjs";
+import { classifyRun, notificationDecision, triageRun, runBoundedVerification, workflowExitCode, RUN_CLASSES } from "../scripts/acorn-cognitive-run-triage.mjs";
 
 test("successful automation is silent", () => {
   const r = triageRun({ exitCode: 0 });
@@ -54,4 +54,17 @@ test("bounded verification records a successful first attempt", () => {
   assert.equal(r.classification, RUN_CLASSES.SUCCESS);
   assert.equal(r.recovered, false);
   assert.equal(r.attempts.length, 1);
+});
+
+test("bare HOLD is a human gate", () => {
+  const r = triageRun({ exitCode: 1, stderr: "Verdict : HOLD" });
+  assert.equal(r.classification, RUN_CLASSES.WAITING_HUMAN);
+  assert.equal(r.notify, true);
+  assert.equal(workflowExitCode(r), 1);
+});
+
+test("WAITING_HUMAN remains visible", () => {
+  const r = triageRun({ exitCode: 0, stderr: "WAITING_HUMAN" });
+  assert.equal(r.classification, RUN_CLASSES.WAITING_HUMAN);
+  assert.equal(workflowExitCode(r), 1);
 });

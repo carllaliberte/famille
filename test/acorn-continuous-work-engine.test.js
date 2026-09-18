@@ -153,3 +153,30 @@ test("continuous work executes the canonical connection sweep", async () => {
   assert.equal(execution.connections.live, false);
   assert.equal(execution.connections.proof.status, "VERIFIED");
 });
+
+
+test("continuous work includes universal access, market, contribution and revenue metabolism", async () => {
+  const rows = canonicalWorkFromRuntime({ unified: { evolution: {}, learning: {}, metabolism: {} }, coverage: {} });
+  const kinds = new Set(rows.map((row) => row.execution_kind));
+  assert.ok(kinds.has("developer-gateway"));
+  assert.ok(kinds.has("market"));
+  assert.ok(kinds.has("contribution-economy"));
+  assert.ok(kinds.has("revenue-maximization"));
+  const gateway = rows.find((row) => row.execution_kind === "developer-gateway");
+  const market = rows.find((row) => row.execution_kind === "market");
+  const economy = rows.find((row) => row.execution_kind === "contribution-economy");
+  const revenue = rows.find((row) => row.execution_kind === "revenue-maximization");
+  const g = await executeWorkTask({ root: process.cwd(), task: gateway, env: process.env });
+  assert.equal(g.executor, "developer-gateway-fabric");
+  assert.equal(g.developer.manifest.live, false);
+  const mm = await executeWorkTask({ root: process.cwd(), task: market, env: process.env });
+  assert.equal(mm.executor, "market-engine");
+  assert.equal(mm.market.no_auto_contract, true);
+  const e = await executeWorkTask({ root: process.cwd(), task: economy, env: process.env });
+  assert.equal(e.executor, "contribution-economy");
+  assert.equal(e.economy.settlement.state, "HOLD_HUMAN");
+  const r = await executeWorkTask({ root: process.cwd(), task: revenue, env: process.env });
+  assert.equal(r.executor, "revenue-maximizer");
+  assert.equal(r.revenue.policy.auto_spend, false);
+  assert.equal(r.revenue.tax_ready.tax_ready, true);
+});

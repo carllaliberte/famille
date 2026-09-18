@@ -42,7 +42,7 @@ export function classifyRun({ exitCode = 0, reason = "", stderr = "", checks = {
   if (SECURITY.has(String(reason).toUpperCase()) || [...SECURITY].some((x) => haystack.includes(x))) {
     return RUN_CLASSES.SECURITY;
   }
-  if (HUMAN.has(String(reason).toUpperCase()) || [...HUMAN].some((x) => haystack.includes(x))) {
+  if (HUMAN.has(String(reason).toUpperCase()) || [...HUMAN].some((x) => haystack.includes(x)) || haystack.includes("WAITING_HUMAN") || /\bHOLD\b/.test(haystack)) {
     return RUN_CLASSES.WAITING_HUMAN;
   }
   if (Number(exitCode) === 0) return RUN_CLASSES.SUCCESS;
@@ -51,6 +51,10 @@ export function classifyRun({ exitCode = 0, reason = "", stderr = "", checks = {
     return RUN_CLASSES.EXPECTED_FAILURE;
   }
   return RUN_CLASSES.REAL_REGRESSION;
+}
+
+export function workflowExitCode(result) {
+  return result.notify ? 1 : 0;
 }
 
 export function notificationDecision(classification, { recovered = false } = {}) {
@@ -159,5 +163,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     stderr: process.env.ACORN_RUN_STDERR || "",
   });
   console.log(JSON.stringify(result, null, 2));
-  process.exitCode = result.notify && result.classification === RUN_CLASSES.REAL_REGRESSION ? 1 : 0;
+  process.exitCode = workflowExitCode(result);
 }
