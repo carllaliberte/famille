@@ -62,7 +62,10 @@
     "runtime:customer-service": "node scripts/acorn-customer-service.mjs",
     "live:server": "node live/server.mjs",
     "runtime:enterprise": "node scripts/acorn-real-world-enterprise-os.mjs",
-    "runtime:execution": "node scripts/acorn-execution-fabric.mjs"
+    "runtime:execution": "node scripts/acorn-execution-fabric.mjs",
+    "runtime:enterprise-state": "node scripts/acorn-enterprise-state.mjs",
+    "runtime:evidence": "node scripts/acorn-evidence-registry.mjs",
+    "runtime:connector-execution": "node scripts/acorn-connector-execution-fabric.mjs"
   },
   "exports": {
     "./peut-dire": "./sdk/peut-dire.js",
@@ -137,12 +140,18 @@
     "./acorn-client-ready": "./scripts/acorn-client-ready.mjs",
     "./acorn-customer-service": "./scripts/acorn-customer-service.mjs",
     "./acorn-real-world-enterprise-os": "./scripts/acorn-real-world-enterprise-os.mjs",
-    "./acorn-execution-fabric": "./scripts/acorn-execution-fabric.mjs"
+    "./acorn-execution-fabric": "./scripts/acorn-execution-fabric.mjs",
+    "./acorn-enterprise-state": "./scripts/acorn-enterprise-state.mjs",
+    "./acorn-evidence-registry": "./scripts/acorn-evidence-registry.mjs",
+    "./acorn-connector-execution-fabric": "./scripts/acorn-connector-execution-fabric.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
   },
   "engines": {
     "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
   }
 }
