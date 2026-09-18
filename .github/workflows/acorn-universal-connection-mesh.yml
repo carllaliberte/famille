@@ -1,0 +1,16 @@
+name: ACORN — Universal Connection Mesh
+on:
+  schedule:
+    - cron: "11 */6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22}
+      - run: node --test test/acorn-universal-connection-mesh.test.js
+      - run: node -e "import('./scripts/acorn-universal-connection-mesh.mjs').then(({seedConnectionMesh,snapshotConnectionMesh})=>console.log(JSON.stringify(snapshotConnectionMesh({surfaces:seedConnectionMesh()}),null,2)))"
