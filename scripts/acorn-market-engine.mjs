@@ -39,15 +39,35 @@ export function discoverDemand({ signals = [] } = {}) {
   })).filter((row) => row.problem);
 }
 
+function matchedIdsFor(row, capabilityIndex) {
+  return capabilityIndex.filter((cap) => {
+    const tags = Array.isArray(cap.tags) ? cap.tags.map(str) : [];
+    return tags.some((tag) => row.problem.toLowerCase().includes(tag.toLowerCase()));
+  }).map((cap) => str(cap.id || cap.name));
+}
+
+function matchedCapabilitiesHaveProof({ matchedCapabilities = [], matchedIds = [] } = {}) {
+  const byId = new Map(matchedCapabilities.map((cap) => [str(cap.id || cap.name), cap]));
+  return matchedIds.length > 0 && matchedIds.every((id) => {
+    const cap = byId.get(id);
+    const evidence = Array.isArray(cap?.evidence) ? cap.evidence : [];
+    return cap?.verified === true || cap?.proven === true ||
+      evidence.some((item) => item && (item.verified === true || item.proven === true || item.status === "VERIFIED" || item.status === "PROVEN"));
+  });
+}
+
+function evidenceIsVerified(evidence = []) {
+  return Array.isArray(evidence) && evidence.length > 0 && evidence.every((item) =>
+    item && (item.verified === true || item.proven === true || item.status === "VERIFIED" || item.status === "PROVEN")
+  );
+}
+
 export function qualifyDemand({ demand = [], capabilityIndex = [] } = {}) {
   const known = new Set(capabilityIndex.map((x) => str(x.id || x.name)));
   return demand.map((row) => ({
     ...row,
-    matched_capabilities: capabilityIndex.filter((cap) => {
-      const tags = Array.isArray(cap.tags) ? cap.tags.map(str) : [];
-      return tags.some((tag) => row.problem.toLowerCase().includes(tag.toLowerCase()));
-    }).map((cap) => str(cap.id || cap.name)),
-    capability_proven: known.has(row.problem),
+    matched_capabilities: matchedIdsFor(row, capabilityIndex),
+    capability_proven: matchedCapabilitiesHaveProof({ matchedCapabilities: capabilityIndex, matchedIds: matchedIdsFor(row, capabilityIndex) }),
     qualification: row.observed && row.evidence.length > 0 ? "EVIDENCE_BACKED" : "EXPLORATORY",
   }));
 }
@@ -69,7 +89,7 @@ export function buildOffer({ demand, offer, capabilityEvidence = [], usage = 0, 
     pricing_basis: price == null ? "UNPRICED_UNTIL_MEASURED" : "PUBLISHED_METER",
     billable: commercial && usage > 0 && price != null,
     automatic_collection: commercial && usage > 0 && price != null,
-    verified: capabilityEvidence.length > 0,
+    verified: evidenceIsVerified(capabilityEvidence),
     evidence_required: true,
     auto_contract: false,
     auto_spend: false,
@@ -80,7 +100,7 @@ export function buildOffer({ demand, offer, capabilityEvidence = [], usage = 0, 
 export function diversifyOffer({ demand, capabilityIds = [], evidence = [] } = {}) {
   return OFFER_CATALOG
     .filter((template) => !template.audience.length || template.audience.includes(str(demand?.audience || "DEVELOPER").toUpperCase()))
-    .map((template) => buildOffer({ demand, offer: template.id, capabilityEvidence: evidence.length ? evidence : capabilityIds }));
+    .map((template) => buildOffer({ demand, offer: template.id, capabilityEvidence: evidence }));
 }
 
 export function billingFromMeasuredUsage({ offer, units = 0, unit_price = null, currency = "USD", paymentRail = null } = {}) {
