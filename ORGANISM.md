@@ -20,7 +20,7 @@ Carte des **organes déjà présents** dans FAMILLE, plus quelques adaptateurs m
 
 | Organe | Responsabilité | Où c’est déjà |
 |---|---|---|
-| Cœur | constitution, invariants, souveraineté | `AGENTS.md` · FILE.md · CHARTE si présent |
+| Cœur | constitution, protection de l'humanité, souveraineté | `AGENTS.md` · `CHARTE.md` · `PROTECTION.md` · `scripts/acorn-constitution.mjs` · `scripts/acorn-humanity-protection.mjs` |
 | Cerveau | COLLECTIVE_COGNITION | `COGNITION.md` · `schema/cognition.v0.json` · `cognition.mjs` |
 | Nerf | signaux, synapses, routage | `NERVE.md` · `schema/nerve.v0.json` · `sdk/nerve.js` |
 | Perception | qualifier une entrée | `sdk/organism.js` `perceive` (nouveau, mince) |
