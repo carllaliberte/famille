@@ -1,0 +1,12 @@
+import test from "node:test";import assert from "node:assert/strict";
+import {observeWorld,detectGaps,classifyFindings,composePlan,authorizeEvolution,buildPortfolio,closeEvolution,assertEvolutionConstitution} from "../scripts/acorn-continuous-evolution-reality-fabric.mjs";
+test("constitutional loop is explicit",()=>assert.equal(assertEvolutionConstitution(),true));
+test("all declared surfaces are observed even when unknown",()=>assert.equal(observeWorld({}).observations.length,19));
+test("unknown becomes research target",()=>assert.equal(detectGaps([{surface:"MARKET",state:"UNKNOWN"}])[0].action,"RESEARCH"));
+test("measured surfaces are not reopened as gaps",()=>assert.equal(detectGaps([{surface:"CODE",state:"MEASURED"}]).length,0));
+test("findings are classified without hiding human gates",()=>assert.equal(classifyFindings([{kind:"SECURITY_BOUNDARY"}])[0].human_gate,true));
+test("composition requires evidence-backed candidates",()=>assert.equal(composePlan([{kind:"MISSING_CAPABILITY"}],[{id:"a",verified:false,evidence:["e"],score:10}]).state,"RESEARCH_REQUIRED"));
+test("terminal evolution effects remain human gated",()=>assert.equal(authorizeEvolution("MERGE",{human_authorized:true,server_authorized:true}).authorized,false));
+test("portfolio never grants authority",()=>{const p=buildPortfolio({CUSTOMER:{state:"UNKNOWN"}},[]);assert.equal(p.authority,"HUMAN_REQUIRED");assert.equal(p.auto_merge,false)});
+test("unverified outcomes stay open",()=>assert.equal(closeEvolution({measured:true,verified:false,evidence:["e"]}).state,"OPEN"));
+test("verified measured outcomes become candidates",()=>assert.equal(closeEvolution({measured:true,verified:true,evidence:["e"],capability_id:"c"}).state,"REGISTERABLE"));
