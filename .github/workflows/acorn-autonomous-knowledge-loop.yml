@@ -1,0 +1,14 @@
+name: Acorn Autonomous Knowledge Loop
+on:
+  push:
+    paths: ["scripts/acorn-autonomous-knowledge-loop.mjs","test/acorn-autonomous-knowledge-loop.test.js",".github/workflows/acorn-autonomous-knowledge-loop.yml"]
+  pull_request:
+    paths: ["scripts/acorn-autonomous-knowledge-loop.mjs","test/acorn-autonomous-knowledge-loop.test.js",".github/workflows/acorn-autonomous-knowledge-loop.yml"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --test test/acorn-autonomous-knowledge-loop.test.js
