@@ -1,0 +1,8 @@
+/** ACORN MEGA 089 — Evidence Freshness Fabric. */
+export const CONTRACT='acorn.mega.evidence-freshness.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createFreshness2({id,label,freshness=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'freshness2-'+Date.now()),label:String(label||'UNKNOWN'),freshness:N(freshness),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureFreshness2(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{freshness:N(r.freshness)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function reconcileFreshness2(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.freshness)-N(a.freshness)).slice(0,16);}
+export function evolveFreshness2(row,{delta=0,verified=false}={}){return verified?{...row,freshness:N(row.freshness)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createFreshness2({id:'test',freshness:1,evidence:['e']});return measureFreshness2([r]).count===1&&assertConstitution({}).valid;}
