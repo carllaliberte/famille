@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 /**
  * ACORN Nervous System
  * Transport, perception, routing, bounded action channels, feedback and recovery.
