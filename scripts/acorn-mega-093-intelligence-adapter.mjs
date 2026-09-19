@@ -1,0 +1,8 @@
+/** ACORN MEGA 093 — Universal Intelligence Adapter Fabric. */
+export const CONTRACT='acorn.mega.intelligence-adapter.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createAdapter({id,label,compatibility=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'adapter-'+Date.now()),label:String(label||'UNKNOWN'),compatibility:N(compatibility),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureAdapter(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{compatibility:N(r.compatibility)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeAdapter(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.compatibility)-N(a.compatibility)).slice(0,12);}
+export function evolveAdapter(row,{delta=0,verified=false}={}){return verified?{...row,compatibility:N(row.compatibility)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createAdapter({id:'test',compatibility:1,evidence:['e']});return measureAdapter([r]).count===1&&assertConstitution({}).valid;}
