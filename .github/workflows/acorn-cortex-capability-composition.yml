@@ -1,0 +1,17 @@
+name: acorn-cortex-capability-composition
+on:
+  pull_request:
+    paths:
+      - "scripts/acorn-cortex-capability-composition.mjs"
+      - "test/acorn-cortex-capability-composition.test.js"
+      - "docs/acorn-cortex-capability-composition.md"
+      - ".github/workflows/acorn-cortex-capability-composition.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm test
