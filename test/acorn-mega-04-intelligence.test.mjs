@@ -1,0 +1,1 @@
+import assert from "node:assert/strict";import{selfTest,CAPABILITIES,assertConstitution}from "../scripts/acorn-mega-04-intelligence.mjs";assert.equal(CAPABILITIES.length,20);assert.equal(selfTest(),true);assert.equal(assertConstitution({auto_execute:true}).valid,false);
