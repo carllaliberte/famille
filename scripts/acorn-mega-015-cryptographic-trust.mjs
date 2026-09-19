@@ -1,0 +1,8 @@
+/** ACORN MEGA 015 — Cryptographic Trust Fabric. */
+export const CONTRACT='acorn.mega.cryptographic-trust.v1'; const A=v=>Array.isArray(v)?v:[]; const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createTrust({id,label,integrity=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'trust-'+Date.now()),label:String(label||'UNKNOWN'),integrity:N(integrity),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureTrust(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{integrity:N(r.integrity)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeTrust(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.integrity)-N(a.integrity)).slice(0,8);}
+export function evolveTrust(row,{delta=0,verified=false}={}){return verified?{...row,integrity:N(row.integrity)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];if(x.authority===true)v.push('AUTHORITY_ESCALATION');if(x.auto_authorize===true)v.push('AUTO_AUTHORIZATION');if(x.auto_execute===true)v.push('AUTO_EXECUTION');if(x.fake_live===true)v.push('FAKE_LIVE');if(x.breaker_bypass===true)v.push('BREAKER_BYPASS');return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createTrust({id:'test',integrity:1,evidence:['e']});return measureTrust([r]).count===1&&assertConstitution({}).valid;}
