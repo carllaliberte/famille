@@ -1,0 +1,8 @@
+/** ACORN MEGA 078 — Semantic Memory Fabric. */
+export const CONTRACT='acorn.mega.semantic-memory.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createSemanticmemory({id,label,meaning=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'semanticmemory-'+Date.now()),label:String(label||'UNKNOWN'),meaning:N(meaning),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureSemanticmemory(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{meaning:N(r.meaning)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function retrieveSemanticmemory(rows=[],limit=8){return A(rows).filter(r=>r.state!=='EXPIRED'&&r.state!=='REVOKED').sort((a,b)=>N(b.meaning)-N(a.meaning)).slice(0,Math.max(0,Math.min(100,limit)));}
+export function consolidateSemanticmemory(row,{delta=0,verified=false}={}){return verified?{...row,meaning:N(row.meaning)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createSemanticmemory({id:'test',meaning:1,evidence:['e']});return measureSemanticmemory([r]).count===1&&assertConstitution({}).valid;}
