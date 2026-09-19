@@ -8,6 +8,7 @@ import {
 } from "../scripts/acorn-developer-gateway.mjs";
 import {
   runMarketCycle,
+  qualifyDemand,
   diversifyOffer,
   billingFromMeasuredUsage,
 } from "../scripts/acorn-market-engine.mjs";
@@ -63,4 +64,54 @@ test("commercial settlement is based on measured published usage", () => {
   assert.equal(billing.amount_due, 5);
   assert.equal(billing.automatic_collection_requested, true);
   assert.equal(billing.no_custody, true);
+});
+
+test("developer session without verified proof stays DISCOVERED and never LIVE", () => {
+  const session = negotiateDeveloperSession({
+    capabilities:["evidence"],
+    proof:{ verified:false },
+  });
+  assert.equal(session.state, "DISCOVERED");
+  assert.equal(session.live, false);
+  assert.equal(session.no_authority_transfer, true);
+  const publicMeter = createUsageMeter({ audience:"PUBLIC", units:9 });
+  assert.equal(publicMeter.billable, false);
+  assert.equal(publicMeter.verified, false);
+  const policy = gatewayPolicy();
+  assert.equal(policy.auto_contract, false);
+  assert.equal(policy.auto_spend, false);
+  assert.equal(policy.auto_merge, false);
+  assert.equal(policy.live, false);
+});
+
+test("unverified demand and unproven capabilities stay exploratory", () => {
+  const qualified = qualifyDemand({
+    demand:[{
+      id:"d-unverified",
+      problem:"evidence verification",
+      audience:"BUSINESS",
+      observed:true,
+      evidence:[{id:"raw-note"}],
+    }],
+    capabilityIndex:[{id:"evidence",name:"evidence",tags:["evidence","verification"]}],
+  });
+  assert.equal(qualified[0].qualification, "EXPLORATORY");
+  assert.equal(qualified[0].capability_proven, false);
+
+  const result = runMarketCycle({
+    signals:[{
+      id:"d-unverified",
+      problem:"evidence verification",
+      audience:"business",
+      observed:true,
+      evidence:[{id:"raw-note"}],
+      confidence:0.9,
+    }],
+    capabilityIndex:[{id:"evidence",name:"evidence",tags:["evidence","verification"]}],
+  });
+  assert.equal(result.live, false);
+  assert.equal(result.no_auto_contract, true);
+  assert.equal(result.no_auto_spend, true);
+  assert.ok(result.offers.every((offer) => offer.verified === false));
+  assert.ok(result.offers.every((offer) => offer.auto_contract === false));
 });
