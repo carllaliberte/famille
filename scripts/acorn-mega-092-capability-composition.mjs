@@ -1,0 +1,8 @@
+/** ACORN MEGA 092 — Capability Composition Fabric. */
+export const CONTRACT='acorn.mega.capability-composition.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createComposition({id,label,fit=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'composition-'+Date.now()),label:String(label||'UNKNOWN'),fit:N(fit),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureComposition(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{fit:N(r.fit)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeComposition(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.fit)-N(a.fit)).slice(0,12);}
+export function evolveComposition(row,{delta=0,verified=false}={}){return verified?{...row,fit:N(row.fit)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createComposition({id:'test',fit:1,evidence:['e']});return measureComposition([r]).count===1&&assertConstitution({}).valid;}
