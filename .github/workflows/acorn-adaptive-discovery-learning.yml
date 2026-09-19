@@ -1,0 +1,25 @@
+name: learning
+on:
+  push:
+    paths:
+      - "scripts/acorn-adaptive-discovery-learning.mjs"
+      - "tests/acorn-adaptive-discovery-learning.test.mjs"
+      - "docs/acorn-adaptive-discovery-learning.md"
+      - "docs/acorn-adaptive-discovery-learning.contract.md"
+      - ".github/workflows/acorn-adaptive-discovery-learning.yml"
+  pull_request:
+    paths:
+      - "scripts/acorn-adaptive-discovery-learning.mjs"
+      - "tests/acorn-adaptive-discovery-learning.test.mjs"
+      - "docs/acorn-adaptive-discovery-learning.md"
+      - "docs/acorn-adaptive-discovery-learning.contract.md"
+      - ".github/workflows/acorn-adaptive-discovery-learning.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tests/acorn-adaptive-discovery-learning.test.mjs
