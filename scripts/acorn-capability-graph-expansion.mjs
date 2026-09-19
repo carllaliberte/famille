@@ -1,0 +1,7 @@
+/** ACORN Capability Graph Expansion Fabric: system-level growth fabric. */
+export const CONTRACT="acorn.capability-graph-expansion.v1";
+export const CYCLE=Object.freeze(["INGEST","DISCOVER","COMPOSE","SIMULATE","MEASURE","VERIFY","LEARN","REUSE","REOBSERVE"]);
+const A=x=>Array.isArray(x)?x:[];
+export function buildCapabilityGraphExpansion({items=[],evidence=[],constraints=[],outcomes=[]}={}){const result=A(items).map((item,index)=>({id:`capability-graph-expansion-${index}`,item,evidence:A(evidence),constraints:A(constraints),outcomes:A(outcomes),state:"CANDIDATE",authority:false}));return{contract:CONTRACT,cycle:CYCLE,items:result,state:result.length?"CANDIDATES_BUILT":"NO_CANDIDATES",authority:false,live:false};}
+export function evaluateCapabilityGraphExpansion({candidate={},measurement={}}={}){const valid=measurement.measured===true&&measurement.verified===true&&A(measurement.evidence).length>0;return{candidate_id:candidate.id,score:Number(measurement.score)||0,measured:measurement.measured===true,verified:measurement.verified===true,reusable:valid,state:valid?"REUSE_ELIGIBLE":"EVIDENCE_REQUIRED",authority:false,live:false};}
+export function assertCapabilityGraphExpansionConstitution(x={}){const bad=["authority","auto_authorize","auto_execute","auto_adopt","auto_spend","breaker_bypass","fake_live","hidden_learning"].filter(k=>x[k]===true);return{contract:CONTRACT,valid:bad.length===0,violations:bad};}
