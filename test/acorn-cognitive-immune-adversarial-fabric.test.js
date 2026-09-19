@@ -1,0 +1,10 @@
+import test from "node:test"; import assert from "node:assert/strict";
+import {createThreat,detectAnomalies,assessTrust,containThreat,evaluateCognitivePath,analyzeDrift,learnThreatSignal,buildImmuneSnapshot,assertImmuneConstitution} from "../scripts/acorn-cognitive-immune-adversarial-fabric.mjs";
+test("threat contract is typed and non-authoritative",()=>{const t=createThreat({type:"INJECTION",source:"external"}); assert.equal(t.authority,false);});
+test("anomaly detection is explicit",()=>{const x=detectAnomalies({baseline:100,observations:[{value:100},{value:180}]}); assert.equal(x[0].anomaly,false); assert.equal(x[1].anomaly,true);});
+test("trust requires measured verified evidence",()=>{assert.equal(assessTrust({evidence:[1],measured:true,verified:true}).trust,1); assert.equal(assessTrust({evidence:[1]}).trust,.5); assert.equal(assessTrust({}).trust,0);});
+test("containment does not authorize",()=>{const t=containThreat(createThreat({type:"REPLAY",source:"x"})); assert.equal(t.state,"CONTAINED"); assert.equal(t.authority,false);});
+test("untrusted or severe paths are blocked",()=>{assert.equal(evaluateCognitivePath({}).state,"BLOCKED"); const t=createThreat({type:"ANOMALY",source:"x",severity:.9}); assert.equal(evaluateCognitivePath({evidence:[1],measured:true,verified:true,threats:[t]}).state,"BLOCKED");});
+test("drift is observable",()=>{const x=analyzeDrift({previous:{a:1},current:{a:2},keys:["a"]}); assert.equal(x.drifted,true); assert.deepEqual(x.changes,["a"]);});
+test("learning requires measured verified outcome",()=>{assert.equal(learnThreatSignal({signal:"x",outcome:{measured:true,verified:true}}).state,"LEARNED"); assert.equal(learnThreatSignal({signal:"x",outcome:{measured:true,verified:false}}).state,"NO_LEARNING");});
+test("snapshot and constitutional guards",()=>{assert.equal(assertImmuneConstitution(buildImmuneSnapshot()),true); assert.throws(()=>assertImmuneConstitution({auto_authorize:true}),/CANNOT_AUTHORIZE/);});
