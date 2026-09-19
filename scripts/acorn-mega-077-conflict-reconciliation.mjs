@@ -1,0 +1,8 @@
+/** ACORN MEGA 077 — Universal Conflict Reconciliation Fabric. */
+export const CONTRACT='acorn.mega.conflict-reconciliation.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createConflict({id,label,resolution=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'conflict-'+Date.now()),label:String(label||'UNKNOWN'),resolution:N(resolution),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureConflict(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{resolution:N(r.resolution)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeConflict(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.resolution)-N(a.resolution)).slice(0,8);}
+export function evolveConflict(row,{delta=0,verified=false}={}){return verified?{...row,resolution:N(row.resolution)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createConflict({id:'test',resolution:1,evidence:['e']});return measureConflict([r]).count===1&&assertConstitution({}).valid;}
