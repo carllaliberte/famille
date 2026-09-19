@@ -1,0 +1,8 @@
+/** ACORN MEGA 082 — Prospective Memory Fabric. */
+export const CONTRACT='acorn.mega.prospective-memory.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createProspective({id,label,readiness=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'prospective-'+Date.now()),label:String(label||'UNKNOWN'),readiness:N(readiness),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureProspective(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{readiness:N(r.readiness)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function retrieveProspective(rows=[],limit=8){return A(rows).filter(r=>r.state!=='EXPIRED'&&r.state!=='REVOKED').sort((a,b)=>N(b.readiness)-N(a.readiness)).slice(0,Math.max(0,Math.min(100,limit)));}
+export function consolidateProspective(row,{delta=0,verified=false}={}){return verified?{...row,readiness:N(row.readiness)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createProspective({id:'test',readiness:1,evidence:['e']});return measureProspective([r]).count===1&&assertConstitution({}).valid;}
