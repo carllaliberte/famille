@@ -1,0 +1,3 @@
+import {recordInterventionOutcome,evaluateInterventionOutcome,buildInterventionLearning} from "./acorn-intervention-outcome-loop.mjs";
+export const CONTRACT="acorn.intervention-outcome-conductor.v1";
+export function runInterventionOutcomeLoop({actions=[],observations=[],targets={}}={}){const outcomes=observations.map((o,i)=>recordInterventionOutcome({action:actions[i]||{},...o}));return {contract:CONTRACT,outcomes,evaluations:outcomes.map(o=>evaluateInterventionOutcome({outcome:o,targets})),learning:buildInterventionLearning({outcomes}),next:"RETEST_OR_REOBSERVE",human_gate:true,authority:false,auto_adopt:false,auto_execute:false,live:false}}
