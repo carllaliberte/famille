@@ -1,0 +1,23 @@
+name: acorn-environmental-perception-world-model
+on:
+  push:
+    paths:
+      - "scripts/acorn-environmental-perception-world-model.mjs"
+      - "test/acorn-environmental-perception-world-model.test.js"
+      - "docs/acorn-environmental-perception-world-model.md"
+      - ".github/workflows/acorn-environmental-perception-world-model.yml"
+  pull_request:
+    paths:
+      - "scripts/acorn-environmental-perception-world-model.mjs"
+      - "test/acorn-environmental-perception-world-model.test.js"
+      - "docs/acorn-environmental-perception-world-model.md"
+      - ".github/workflows/acorn-environmental-perception-world-model.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --test test/acorn-environmental-perception-world-model.test.js
