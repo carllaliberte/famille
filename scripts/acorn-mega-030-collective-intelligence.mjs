@@ -1,0 +1,8 @@
+/** ACORN MEGA 030 — Collective Intelligence Protocol. */
+export const CONTRACT='acorn.mega.collective-intelligence.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createCollective({id,label,agreement=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'collective-'+Date.now()),label:String(label||'UNKNOWN'),agreement:N(agreement),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureCollective(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{agreement:N(r.agreement)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeCollective(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.agreement)-N(a.agreement)).slice(0,8);}
+export function evolveCollective(row,{delta=0,verified=false}={}){return verified?{...row,agreement:N(row.agreement)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createCollective({id:'test',agreement:1,evidence:['e']});return measureCollective([r]).count===1&&assertConstitution({}).valid;}
