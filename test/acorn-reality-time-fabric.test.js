@@ -1,0 +1,2 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import {observeTime,compareTime,buildTemporalContext,assertRealityTime} from '../scripts/acorn-reality-time-fabric.mjs';
+test('temporal observation remains bounded',()=>{const a=observeTime({timestamp:'2026-01-01T00:00:00Z'}),b=observeTime({timestamp:'2026-01-01T00:00:01Z'});assert.equal(compareTime(a,b).delta_ms,1000);assert.equal(buildTemporalContext([a,b]).current.timestamp,b.timestamp);assert.equal(assertRealityTime({authority:false,fake_live:false}).valid,true);});
