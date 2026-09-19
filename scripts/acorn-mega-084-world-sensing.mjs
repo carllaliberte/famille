@@ -1,0 +1,8 @@
+/** ACORN MEGA 084 — World Sensing Fabric. */
+export const CONTRACT='acorn.mega.world-sensing.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createSensing({id,label,coverage=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'sensing-'+Date.now()),label:String(label||'UNKNOWN'),coverage:N(coverage),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureSensing(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{coverage:N(r.coverage)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function reconcileSensing(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.coverage)-N(a.coverage)).slice(0,16);}
+export function evolveSensing(row,{delta=0,verified=false}={}){return verified?{...row,coverage:N(row.coverage)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createSensing({id:'test',coverage:1,evidence:['e']});return measureSensing([r]).count===1&&assertConstitution({}).valid;}
