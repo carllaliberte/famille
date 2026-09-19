@@ -1,0 +1,23 @@
+name: acorn-real-world-connectivity-fabric
+
+on:
+  pull_request:
+    paths:
+      - "scripts/acorn-real-world-connectivity-fabric.mjs"
+      - "test/acorn-real-world-connectivity-fabric.test.js"
+      - "docs/acorn-real-world-connectivity-fabric.md"
+      - ".github/workflows/acorn-real-world-connectivity-fabric.yml"
+  push:
+    paths:
+      - "scripts/acorn-real-world-connectivity-fabric.mjs"
+      - "test/acorn-real-world-connectivity-fabric.test.js"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --test test/acorn-real-world-connectivity-fabric.test.js
