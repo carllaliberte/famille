@@ -1,0 +1,12 @@
+import test from "node:test";import assert from "node:assert/strict";
+import {buildSemanticForest,semanticHealth,assertSemanticForestConstitution} from "../scripts/acorn-semantic-forest.mjs";
+import {buildProofGraph,proofHealth} from "../scripts/acorn-proof-observability-fabric.mjs";
+import {summarizeReliability,recordObservation} from "../scripts/acorn-observability-reliability-fabric.mjs";
+import {buildSystemGenome,genomeDiff} from "../scripts/acorn-system-genome.mjs";
+import {runMeasuredClosure,assertMeasuredClosureConstitution} from "../scripts/acorn-measured-closure-conductor.mjs";
+test("semantic forest measures source relationships",()=>{const g=buildSemanticForest({root:process.cwd()});assert.ok(g.edges.length);assert.equal(g.live,false);assert.equal(semanticHealth(g).evidence,"SOURCE_INSPECTION_ONLY")});
+test("proof graph exposes unsupported claims",()=>{const g=buildProofGraph({claims:[{id:"c1"}]});assert.equal(g.summary.unsupported_claims.length,1);assert.equal(proofHealth(g).state,"PROOF_GAPS")});
+test("reliability uses only measured verified observations",()=>{const o=recordObservation({success:true,measured:true,verified:true,latency_ms:10});const s=summarizeReliability([o]);assert.equal(s.success_rate,1);assert.equal(s.verified_samples,1)});
+test("genome diff is descriptive",()=>{const a=buildSystemGenome({version:"a"}),b=buildSystemGenome({version:"b"});assert.equal(genomeDiff(a,b).structure_delta,0)});
+test("closure never invents completion",()=>{const r=runMeasuredClosure({root:process.cwd(),claims:[{id:"c"}]});assert.equal(r.authority,false);assert.equal(r.auto_execute,false);assert.ok(["CLOSURE_GAPS_MEASURED","REOBSERVE_SYSTEM"].includes(r.state))});
+test("constitutions reject escalation",()=>{assert.equal(assertSemanticForestConstitution({live:true}).valid,false);assert.equal(assertMeasuredClosureConstitution({auto_execute:true}).valid,false)});

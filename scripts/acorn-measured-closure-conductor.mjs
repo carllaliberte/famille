@@ -1,0 +1,6 @@
+import { buildSemanticForest } from "./acorn-semantic-forest.mjs";
+import { buildProofGraph } from "./acorn-proof-observability-fabric.mjs";
+import { buildSystemGenome } from "./acorn-system-genome.mjs";
+export const CONTRACT="acorn.measured-closure-conductor.v1";
+export function runMeasuredClosure({root=process.cwd(),claims=[],evidence=[],reliability=[],version="unknown"}={}){const semanticForest=buildSemanticForest({root,evidence}),proofGraph=buildProofGraph({claims,evidence}),genome=buildSystemGenome({semanticForest,proofGraph,reliability,version}),gaps=[...(semanticForest.gaps?.orphan_runtime||[]).map(id=>({kind:"ORPHAN_RUNTIME",id})),...(semanticForest.gaps?.disconnected_nodes||[]).map(id=>({kind:"DISCONNECTED_NODE",id})),...(proofGraph.summary?.unsupported_claims||[]).map(id=>({kind:"UNSUPPORTED_CLAIM",id}))];return {contract:CONTRACT,state:gaps.length?"CLOSURE_GAPS_MEASURED":"REOBSERVE_SYSTEM",next_actions:gaps.slice(0,50),semanticForest,proofGraph,genome,authority:false,auto_authorize:false,auto_execute:false,live:false}}
+export function assertMeasuredClosureConstitution(x={}){const v=[];if(x.authority===true)v.push("AUTHORITY_ESCALATION");if(x.auto_authorize===true)v.push("AUTO_AUTHORIZATION");if(x.auto_execute===true)v.push("AUTO_EXECUTION");if(x.live===true)v.push("FAKE_LIVE");return {contract:CONTRACT,valid:!v.length,violations:v}}
