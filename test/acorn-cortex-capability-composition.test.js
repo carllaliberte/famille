@@ -11,7 +11,8 @@ const intel=[
 test("composes multiple provider-neutral intelligences by capability",()=>{
   const team=composeCapabilityTeam({goal:"solve",required_capabilities:["reasoning","coding"],intelligences:intel,min_evidence:1});
   assert.equal(team.complete,true);
-  assert.equal(team.assignments.length,2);\n  assert.deepEqual(team.assignments.map(a=>a.capability),["reasoning","coding"]);
+  assert.equal(team.assignments.length,2);
+  assert.deepEqual(team.assignments.map(a=>a.capability),["reasoning","coding"]);
 });
 
 test("composition exposes capability gaps instead of inventing coverage",()=>{
