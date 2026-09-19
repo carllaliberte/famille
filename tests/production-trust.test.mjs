@@ -1,0 +1,1 @@
+import assert from "node:assert/strict";import*as m from "../scripts/production-trust.mjs";assert.ok(m.CONTRACT);const k=Object.keys(m).find(x=>x.startsWith("assert"));assert.equal(m[k]({auto_execute:true}).valid,false);console.log("trust: constitution passed");
