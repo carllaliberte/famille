@@ -1,0 +1,4 @@
+import {buildInteroperabilitySnapshot} from "./acorn-neural-interoperability-fabric.mjs";
+export const CONTRACT="acorn.neural-learning-loop.v1";
+export function learnFromNetwork({snapshot={},signals=[],outcomes=[]}={}){const verified=outcomes.filter(o=>o?.measured===true&&o?.verified===true&&o?.evidence);const reusable=verified.map(o=>({outcome_id:o.id||null,learning_state:"CANDIDATE",authority_unchanged:true}));return {contract:CONTRACT,network_state:snapshot.state,verified_outcomes:verified.length,reusable_learning:reusable,next:verified.length?"RETEST_AND_REOBSERVE":"COLLECT_EVIDENCE",authority:false,auto_adopt:false,auto_execute:false,live:false}}
+export function buildNeuralLearningSnapshot(input={}){return {contract:CONTRACT,interoperability:buildInteroperabilitySnapshot(input),learning:learnFromNetwork(input)}}
