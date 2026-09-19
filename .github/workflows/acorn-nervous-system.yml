@@ -1,0 +1,23 @@
+name: acorn-nervous-system
+
+on:
+  pull_request:
+    paths:
+      - "scripts/acorn-nervous-system.mjs"
+      - "test/acorn-nervous-system.test.js"
+      - "docs/acorn-nervous-system.md"
+      - ".github/workflows/acorn-nervous-system.yml"
+  push:
+    paths:
+      - "scripts/acorn-nervous-system.mjs"
+      - "test/acorn-nervous-system.test.js"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --test test/acorn-nervous-system.test.js
