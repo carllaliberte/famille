@@ -1,0 +1,8 @@
+/** ACORN MEGA 012 — Universal Tool Fabric. */
+export const CONTRACT='acorn.mega.universal-tool.v1'; const A=v=>Array.isArray(v)?v:[]; const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createTool({id,label,utility=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'tool-'+Date.now()),label:String(label||'UNKNOWN'),utility:N(utility),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureTool(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{utility:N(r.utility)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeTool(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.utility)-N(a.utility)).slice(0,8);}
+export function evolveTool(row,{delta=0,verified=false}={}){return verified?{...row,utility:N(row.utility)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];if(x.authority===true)v.push('AUTHORITY_ESCALATION');if(x.auto_authorize===true)v.push('AUTO_AUTHORIZATION');if(x.auto_execute===true)v.push('AUTO_EXECUTION');if(x.fake_live===true)v.push('FAKE_LIVE');if(x.breaker_bypass===true)v.push('BREAKER_BYPASS');return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createTool({id:'test',utility:1,evidence:['e']});return measureTool([r]).count===1&&assertConstitution({}).valid;}
