@@ -1,0 +1,8 @@
+/** ACORN MEGA 017 — Safety Containment Fabric. */
+export const CONTRACT='acorn.mega.safety-containment.v1'; const A=v=>Array.isArray(v)?v:[]; const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createSafety({id,label,containment=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'safety-'+Date.now()),label:String(label||'UNKNOWN'),containment:N(containment),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureSafety(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{containment:N(r.containment)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeSafety(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.containment)-N(a.containment)).slice(0,8);}
+export function evolveSafety(row,{delta=0,verified=false}={}){return verified?{...row,containment:N(row.containment)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];if(x.authority===true)v.push('AUTHORITY_ESCALATION');if(x.auto_authorize===true)v.push('AUTO_AUTHORIZATION');if(x.auto_execute===true)v.push('AUTO_EXECUTION');if(x.fake_live===true)v.push('FAKE_LIVE');if(x.breaker_bypass===true)v.push('BREAKER_BYPASS');return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createSafety({id:'test',containment:1,evidence:['e']});return measureSafety([r]).count===1&&assertConstitution({}).valid;}
