@@ -1,0 +1,11 @@
+import test from "node:test";import assert from "node:assert/strict";
+import {buildSystemIntelligence,rankObservations,assertSystemIntelligenceConstitution} from "../scripts/acorn-system-intelligence.mjs";
+import {buildCausalDependencyGraph,blastRadius} from "../scripts/acorn-causal-dependency-fabric.mjs";
+import {deriveOpportunities} from "../scripts/acorn-system-opportunity-engine.mjs";
+import {buildDecisionQueue} from "../scripts/acorn-system-decision-queue.mjs";
+test("system intelligence exposes measured gaps without completion fiction",()=>{const x=buildSystemIntelligence({semanticForest:{nodes:[{id:"a"}],edges:[],gaps:{orphan_runtime:["a"]}},proofGraph:{summary:{unsupported_claims:["c"]}},reliability:{},resources:[{id:"cpu",state:"EXHAUSTED"}],capabilities:[{id:"x",qualified:false}]});assert.equal(x.state,"GAPS_PRESENT");assert.equal(x.live,false);assert.ok(x.gaps.count>=3)});
+test("observation ranking is bounded",()=>assert.ok(rankObservations({gaps:["a","b"]}).length===2));
+test("causal graph distinguishes observed causality",()=>{const g=buildCausalDependencyGraph({nodes:[{id:"a"},{id:"b"}],edges:[],observations:[{cause:"a",effect:"b",evidence:"e1"}]});assert.equal(g.summary.observed_causal_edges,1);assert.deepEqual(blastRadius({graph:g,start:["a"]}).targets,["a","b"])});
+test("opportunities require measurement",()=>assert.ok(deriveOpportunities({intelligence:{gaps:{items:["a"]}}}).opportunities[0].requires_measurement));
+test("decision queue keeps human gate",()=>assert.equal(buildDecisionQueue({opportunities:[{priority:5}]}).human_gate,true));
+test("constitution rejects escalation",()=>assert.equal(assertSystemIntelligenceConstitution({authority:true}).valid,false));
