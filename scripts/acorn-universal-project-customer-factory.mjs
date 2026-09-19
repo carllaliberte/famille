@@ -1,0 +1,7 @@
+import crypto from 'node:crypto';\nexport const CONTRACT="acorn.universal-project-customer-factory.v1";
+export const CYCLE=Object.freeze(["INTAKE","DIAGNOSE","ARCHITECT","ESTIMATE","PROPOSE","AUTHORIZE","BUILD","DELIVER","MEASURE","VERIFY","MAINTAIN","REUSE"]);
+const A=v=>Array.isArray(v)?v:[];
+export function defineCustomerProject({customer=null,problem=null,requirements=[],constraints=[],context={}}={}){return {contract:CONTRACT,id:crypto.randomUUID(),customer,problem,requirements:A(requirements),constraints:A(constraints),context,state:"INTAKE",authority:false};}
+export function buildProjectPlan(project,{capabilities=[],resources=[]}={}){return {...project,plan:{capabilities:A(capabilities),resources:A(resources),steps:["DIAGNOSE","ARCHITECT","BUILD","DELIVER","MEASURE"]},state:"PROPOSED",human_authorization_required:true,auto_contract:false,auto_spend:false,auto_publish:false,auto_execute:false};}
+export function recordDeliveryOutcome(project,outcome={}){const verified=outcome.measured===true&&outcome.verified===true;return {...project,state:verified?"MEASURED":"DELIVERED",outcome,verified,authority:false};}
+export function assertProjectFactoryConstitution(x={}){const violations=[];for(const[k,v]of Object.entries({auto_contract:x.auto_contract,auto_spend:x.auto_spend,auto_publish:x.auto_publish,auto_execute:x.auto_execute,authority:x.authority}))if(v===true)violations.push(k.toUpperCase());return {contract:CONTRACT,valid:!violations.length,violations};}
