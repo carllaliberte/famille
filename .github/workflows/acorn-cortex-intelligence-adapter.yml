@@ -1,0 +1,19 @@
+name: acorn-cortex-intelligence-adapter
+
+on:
+  pull_request:
+    paths:
+      - "scripts/acorn-cortex-intelligence-adapter.mjs"
+      - "test/acorn-cortex-intelligence-adapter.test.js"
+      - "docs/acorn-cortex-intelligence-adapter.md"
+      - ".github/workflows/acorn-cortex-intelligence-adapter.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm test
