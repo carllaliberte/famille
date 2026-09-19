@@ -1,0 +1,3 @@
+import {identifyInterventions,buildInterventionPlan,compareInterventionPlans} from "./acorn-measured-intervention-planner.mjs";
+export const CONTRACT="acorn.intervention-conductor.v1";
+export function runInterventionPlanning({gaps=[],drift=[],opportunities=[],resources=[],evidenceSet=[]}={}){const identified=identifyInterventions({gaps,drift,opportunities});const plans=identified.interventions.map(i=>buildInterventionPlan({intervention:i,resources,evidenceSet}));return {contract:CONTRACT,identified,plans,comparison:compareInterventionPlans({plans}),human_gate:true,authority:false,auto_authorize:false,auto_execute:false,live:false}}
