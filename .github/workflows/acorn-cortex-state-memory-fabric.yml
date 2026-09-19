@@ -1,0 +1,25 @@
+name: Acorn Cortex State Memory Fabric
+on:
+  push:
+    paths:
+      - "scripts/acorn-cortex-state-memory-fabric.mjs"
+      - "scripts/acorn-cortex-mission-conductor.mjs"
+      - "scripts/acorn-universal-outcome-learning-fabric.mjs"
+      - "test/acorn-cortex-state-memory-fabric.test.js"
+      - ".github/workflows/acorn-cortex-state-memory-fabric.yml"
+  pull_request:
+    paths:
+      - "scripts/acorn-cortex-state-memory-fabric.mjs"
+      - "scripts/acorn-cortex-mission-conductor.mjs"
+      - "scripts/acorn-universal-outcome-learning-fabric.mjs"
+      - "test/acorn-cortex-state-memory-fabric.test.js"
+      - ".github/workflows/acorn-cortex-state-memory-fabric.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --test test/acorn-cortex-state-memory-fabric.test.js
