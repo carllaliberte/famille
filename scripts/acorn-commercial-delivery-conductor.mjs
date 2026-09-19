@@ -1,0 +1,5 @@
+import {defineProductRuntime,buildDeliveryPlan} from "./acorn-real-world-product-runtime.mjs";
+import {measureCustomerValue,buildCustomerReobservation} from "./acorn-customer-value-loop.mjs";
+export const CONTRACT="acorn.commercial-delivery-conductor.v1";
+export function runCommercialDelivery({project={},capabilities=[],connectors=[],outcomes=[],observations=[],value_gaps=[]}={}){const runtime=defineProductRuntime({project,capabilities,connectors,outcomes}),plan=buildDeliveryPlan({product:project,capabilities,connectors}),value=measureCustomerValue({observations,outcomes}),reobserve=buildCustomerReobservation({value,gaps:value_gaps});return {contract:CONTRACT,runtime,plan,value,reobserve,human_gate:true,authority:false,auto_contract:false,auto_spend:false,auto_execute:false,live:false}}
+export function assertCommercialDeliveryConstitution(x={}){const v=[];if(x.auto_contract===true)v.push("AUTO_CONTRACT");if(x.auto_spend===true)v.push("AUTO_SPEND");if(x.auto_execute===true)v.push("AUTO_EXECUTION");return {contract:CONTRACT,valid:!v.length,violations:v}}
