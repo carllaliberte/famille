@@ -1,0 +1,8 @@
+/** ACORN MEGA 029 — Federated Acorn Network. */
+export const CONTRACT='acorn.mega.federated-network.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createNetwork({id,label,connectivity=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'network-'+Date.now()),label:String(label||'UNKNOWN'),connectivity:N(connectivity),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureNetwork(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{connectivity:N(r.connectivity)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeNetwork(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.connectivity)-N(a.connectivity)).slice(0,8);}
+export function evolveNetwork(row,{delta=0,verified=false}={}){return verified?{...row,connectivity:N(row.connectivity)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createNetwork({id:'test',connectivity:1,evidence:['e']});return measureNetwork([r]).count===1&&assertConstitution({}).valid;}
