@@ -1,0 +1,28 @@
+name: Acorn Cortex Mission Conductor
+
+on:
+  push:
+    paths:
+      - "scripts/acorn-cortex-mission-conductor.mjs"
+      - "scripts/acorn-cortex-capability-composition.mjs"
+      - "scripts/acorn-cortex-intelligence-adapter.mjs"
+      - "scripts/acorn-cortex-action-outcome-fabric.mjs"
+      - "test/acorn-cortex-mission-conductor.test.js"
+      - ".github/workflows/acorn-cortex-mission-conductor.yml"
+  pull_request:
+    paths:
+      - "scripts/acorn-cortex-mission-conductor.mjs"
+      - "scripts/acorn-cortex-capability-composition.mjs"
+      - "scripts/acorn-cortex-intelligence-adapter.mjs"
+      - "scripts/acorn-cortex-action-outcome-fabric.mjs"
+      - "test/acorn-cortex-mission-conductor.test.js"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --test test/acorn-cortex-mission-conductor.test.js
