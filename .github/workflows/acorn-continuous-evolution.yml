@@ -38,13 +38,14 @@ jobs:
           gh run list --repo "$GITHUB_REPOSITORY" --limit 50             --json databaseId,name,status,conclusion,headSha,url,displayTitle             > /tmp/runs.json
           node --input-type=module <<'EOF'
           import { readFileSync, writeFileSync } from "node:fs";
+          import { observeDeclaredSurfaces } from "./scripts/acorn-continuous-evolution.mjs";
           const snapshot = {
             repository: process.env.GITHUB_REPOSITORY,
             main_sha: process.env.MAIN_SHA,
             pull_requests: JSON.parse(readFileSync("/tmp/prs.json","utf8")),
-            workflow_runs: JSON.parse(readFileSync("/tmp/runs.json","utf8")),
-            observations: []
+            workflow_runs: JSON.parse(readFileSync("/tmp/runs.json","utf8"))
           };
+          snapshot.observations = observeDeclaredSurfaces(snapshot);
           writeFileSync("/tmp/acorn-evolution-snapshot.json", JSON.stringify(snapshot,null,2));
           EOF
 
