@@ -159,4 +159,5 @@ See [INTERDIT.md](INTERDIT.md) · [JUGE.md](JUGE.md) · [CURSOR.md](CURSOR.md) �
 
 © 2026 Carl Laliberté. FAMILLE map (this repository) is MIT. See LICENSE. Estoc stays off the file. QUANTUM stays off Git.
 Marks: see [NOTICE](NOTICE). Regimes: see [COPYRIGHT.md](COPYRIGHT.md).
+Paths in this repository whose names contain Acorn follow LICENSE. The distinct Acorn work is the private repository carllaliberte/acorn, not this tree.
 Reading an idea is not a licence to the Acorn work. Provenance is the commit SHA.
