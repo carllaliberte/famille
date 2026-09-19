@@ -1,0 +1,8 @@
+/** ACORN MEGA 025 — Autonomous Project Lifecycle Fabric. */
+export const CONTRACT='acorn.mega.autonomous-project-lifecycle.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createProject({id,label,progress=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'project-'+Date.now()),label:String(label||'UNKNOWN'),progress:N(progress),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureProject(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{progress:N(r.progress)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeProject(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.progress)-N(a.progress)).slice(0,8);}
+export function evolveProject(row,{delta=0,verified=false}={}){return verified?{...row,progress:N(row.progress)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createProject({id:'test',progress:1,evidence:['e']});return measureProject([r]).count===1&&assertConstitution({}).valid;}
