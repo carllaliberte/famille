@@ -1,0 +1,16 @@
+name: acorn-cognitive-metabolism-resource-fabric
+on:
+  pull_request:
+    paths:
+      - scripts/acorn-cognitive-metabolism-resource-fabric.mjs
+      - test/acorn-cognitive-metabolism-resource-fabric.test.js
+      - docs/acorn-cognitive-metabolism-resource-fabric.md
+      - .github/workflows/acorn-cognitive-metabolism-resource-fabric.yml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --test test/acorn-cognitive-metabolism-resource-fabric.test.js
