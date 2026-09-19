@@ -1,0 +1,23 @@
+name: Acorn Live World Activation Fabric
+
+on:
+  push:
+    paths:
+      - "scripts/acorn-live-world-activation-fabric.mjs"
+      - "test/acorn-live-world-activation-fabric.test.js"
+      - ".github/workflows/acorn-live-world-activation-fabric.yml"
+  pull_request:
+    paths:
+      - "scripts/acorn-live-world-activation-fabric.mjs"
+      - "test/acorn-live-world-activation-fabric.test.js"
+      - ".github/workflows/acorn-live-world-activation-fabric.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --test test/acorn-live-world-activation-fabric.test.js
