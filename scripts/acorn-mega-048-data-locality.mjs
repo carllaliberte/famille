@@ -1,0 +1,8 @@
+/** ACORN MEGA 048 — Data Locality Fabric. */
+export const CONTRACT='acorn.mega.data-locality.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createLocality({id,label,compliance=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'locality-'+Date.now()),label:String(label||'UNKNOWN'),compliance:N(compliance),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureLocality(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{compliance:N(r.compliance)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeLocality(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.compliance)-N(a.compliance)).slice(0,8);}
+export function evolveLocality(row,{delta=0,verified=false}={}){return verified?{...row,compliance:N(row.compliance)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createLocality({id:'test',compliance:1,evidence:['e']});return measureLocality([r]).count===1&&assertConstitution({}).valid;}
