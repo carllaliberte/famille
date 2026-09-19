@@ -1,0 +1,23 @@
+name: acorn-universal-capability-mesh
+on:
+  push:
+    paths:
+      - "scripts/acorn-universal-capability-mesh.mjs"
+      - "tests/acorn-universal-capability-mesh.test.mjs"
+      - "docs/acorn-universal-capability-mesh*"
+      - ".github/workflows/acorn-universal-capability-mesh.yml"
+  pull_request:
+    paths:
+      - "scripts/acorn-universal-capability-mesh.mjs"
+      - "tests/acorn-universal-capability-mesh.test.mjs"
+      - "docs/acorn-universal-capability-mesh*"
+      - ".github/workflows/acorn-universal-capability-mesh.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tests/acorn-universal-capability-mesh.test.mjs
