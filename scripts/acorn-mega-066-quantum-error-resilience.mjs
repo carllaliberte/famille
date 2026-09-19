@@ -1,0 +1,8 @@
+/** ACORN MEGA 066 — Quantum-Inspired Error Resilience. */
+export const CONTRACT='acorn.mega.quantum-error-resilience.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createError({id,label,recovery=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'error-'+Date.now()),label:String(label||'UNKNOWN'),recovery:N(recovery),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureError(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{recovery:N(r.recovery)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeError(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.recovery)-N(a.recovery)).slice(0,8);}
+export function evolveError(row,{delta=0,verified=false}={}){return verified?{...row,recovery:N(row.recovery)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createError({id:'test',recovery:1,evidence:['e']});return measureError([r]).count===1&&assertConstitution({}).valid;}
