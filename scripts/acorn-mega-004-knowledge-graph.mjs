@@ -1,0 +1,8 @@
+/** ACORN MEGA 004 — Knowledge Graph Fabric. Durable substrate, not authority. */
+export const CONTRACT='acorn.mega.knowledge-graph.v1';
+const A=v=>Array.isArray(v)?v:[]; const S=v=>String(v??'').trim(); const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createRecord({id,label,source='unknown',value=0,evidence=[],timestamp=new Date().toISOString(),state='PROPOSED'}={}){return {contract:CONTRACT,id:S(id)||'record-'+Date.now(),label:S(label)||'UNKNOWN',source:S(source)||'unknown',value:N(value),evidence:A(evidence),timestamp,state,measured:false,verified:false,authority:false,live:false};}
+export function measureRecords(records=[]){const rows=A(records).map(r=>({...r,measured:true,measurement:{coverage:N(r.value)},authority:false,live:false}));return {contract:CONTRACT,records:rows,count:rows.length,mean:rows.length?rows.reduce((a,r)=>a+r.value,0)/rows.length:0};}
+export function buildKnowledgeState(records=[]){const m=measureRecords(records);const verified=m.records.filter(r=>r.verified===true&&r.evidence.length>0).length;return {...m,verified_count:verified,coverage_coverage:m.count?verified/m.count:0,authority:false,live:false};}
+export function selectNext(records=[]){return A(records).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.value)-N(a.value))[0]||null;}
+export function assertConstitution(x={}){const violations=[];if(x.authority===true)violations.push('AUTHORITY_ESCALATION');if(x.auto_authorize===true)violations.push('AUTO_AUTHORIZATION');if(x.auto_execute===true)violations.push('AUTO_EXECUTION');if(x.fake_live===true)violations.push('FAKE_LIVE');return {contract:CONTRACT,valid:!violations.length,violations};}
