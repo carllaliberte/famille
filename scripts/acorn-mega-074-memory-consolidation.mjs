@@ -1,0 +1,8 @@
+/** ACORN MEGA 074 — Memory Consolidation Fabric. */
+export const CONTRACT='acorn.mega.memory-consolidation.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createConsolidation({id,label,retention=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'consolidation-'+Date.now()),label:String(label||'UNKNOWN'),retention:N(retention),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureConsolidation(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{retention:N(r.retention)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeConsolidation(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.retention)-N(a.retention)).slice(0,8);}
+export function evolveConsolidation(row,{delta=0,verified=false}={}){return verified?{...row,retention:N(row.retention)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createConsolidation({id:'test',retention:1,evidence:['e']});return measureConsolidation([r]).count===1&&assertConstitution({}).valid;}
