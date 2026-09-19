@@ -1,0 +1,16 @@
+name: acorn-cognitive-immune-adversarial-fabric
+on:
+  pull_request:
+    paths:
+      - scripts/acorn-cognitive-immune-adversarial-fabric.mjs
+      - test/acorn-cognitive-immune-adversarial-fabric.test.js
+      - docs/acorn-cognitive-immune-adversarial-fabric.md
+      - .github/workflows/acorn-cognitive-immune-adversarial-fabric.yml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --test test/acorn-cognitive-immune-adversarial-fabric.test.js
