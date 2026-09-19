@@ -1,0 +1,3 @@
+import test from "node:test";import assert from "node:assert/strict";import {buildMeasuredActionQueue,reconcileActionQueue} from "../scripts/acorn-measured-action-queue-convergence.mjs";
+test("queue is derived from interventions and critical paths",()=>{const q=buildMeasuredActionQueue({interventions:[{id:"i",target:"a",evidence:2}],criticalPaths:[{node:"a",structural_depth:3,blast_radius:2}]});assert.equal(q.actions[0].structural_depth,3)});
+test("completed actions are reconciled",()=>{const r=reconcileActionQueue({actions:[{id:"a"},{id:"b"}],completed:[{id:"a"}]});assert.equal(r.pending.length,1);assert.equal(r.completed.length,1)});
