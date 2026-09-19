@@ -1,0 +1,23 @@
+name: acorn-dynamic-synaptic-cognitive-fabric
+on:
+  push:
+    paths:
+      - "scripts/acorn-dynamic-synaptic-cognitive-fabric.mjs"
+      - "test/acorn-dynamic-synaptic-cognitive-fabric.test.js"
+      - "docs/acorn-dynamic-synaptic-cognitive-fabric.md"
+      - ".github/workflows/acorn-dynamic-synaptic-cognitive-fabric.yml"
+  pull_request:
+    paths:
+      - "scripts/acorn-dynamic-synaptic-cognitive-fognitive-fabric.mjs"
+      - "scripts/acorn-dynamic-synaptic-cognitive-fabric.mjs"
+      - "test/acorn-dynamic-synaptic-cognitive-fabric.test.js"
+      - "docs/acorn-dynamic-synaptic-cognitive-fabric.md"
+      - ".github/workflows/acorn-dynamic-synaptic-cognitive-fabric.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --test test/acorn-dynamic-synaptic-cognitive-fabric.test.js
