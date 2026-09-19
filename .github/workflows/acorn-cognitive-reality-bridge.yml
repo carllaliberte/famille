@@ -1,0 +1,14 @@
+name: Acorn Cognitive Reality Bridge
+on:
+  push:
+    paths: ["scripts/acorn-cognitive-reality-bridge.mjs","test/acorn-cognitive-reality-bridge.test.js",".github/workflows/acorn-cognitive-reality-bridge.yml"]
+  pull_request:
+    paths: ["scripts/acorn-cognitive-reality-bridge.mjs","test/acorn-cognitive-reality-bridge.test.js",".github/workflows/acorn-cognitive-reality-bridge.yml"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --test test/acorn-cognitive-reality-bridge.test.js
