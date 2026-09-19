@@ -1,0 +1,14 @@
+name: Acorn Cognitive Autopilot
+on:
+  push:
+    paths: ["scripts/acorn-cognitive-autopilot.mjs","test/acorn-cognitive-autopilot.test.js",".github/workflows/acorn-cognitive-autopilot.yml"]
+  pull_request:
+    paths: ["scripts/acorn-cognitive-autopilot.mjs","test/acorn-cognitive-autopilot.test.js",".github/workflows/acorn-cognitive-autopilot.yml"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --test test/acorn-cognitive-autopilot.test.js
