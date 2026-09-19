@@ -1,0 +1,14 @@
+name: Acorn Self Optimization Conductor
+on:
+  push:
+    paths: ["scripts/acorn-self-optimization-conductor.mjs","test/acorn-self-optimization-conductor.test.js",".github/workflows/acorn-self-optimization-conductor.yml"]
+  pull_request:
+    paths: ["scripts/acorn-self-optimization-conductor.mjs","test/acorn-self-optimization-conductor.test.js",".github/workflows/acorn-self-optimization-conductor.yml"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 20}
+      - run: node --test test/acorn-self-optimization-conductor.test.js
