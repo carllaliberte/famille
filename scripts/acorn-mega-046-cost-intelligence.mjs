@@ -1,0 +1,8 @@
+/** ACORN MEGA 046 — Cost Intelligence Fabric. */
+export const CONTRACT='acorn.mega.cost-intelligence.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createCost({id,label,efficiency=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'cost-'+Date.now()),label:String(label||'UNKNOWN'),efficiency:N(efficiency),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureCost(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{efficiency:N(r.efficiency)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeCost(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.efficiency)-N(a.efficiency)).slice(0,8);}
+export function evolveCost(row,{delta=0,verified=false}={}){return verified?{...row,efficiency:N(row.efficiency)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createCost({id:'test',efficiency:1,evidence:['e']});return measureCost([r]).count===1&&assertConstitution({}).valid;}
