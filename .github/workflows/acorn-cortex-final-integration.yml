@@ -1,0 +1,26 @@
+name: ACORN Cortex Final Integration
+
+on:
+  pull_request:
+    paths:
+      - "scripts/acorn-cortex-final-integration.mjs"
+      - "scripts/acorn-cortex-*.mjs"
+      - "scripts/acorn-universal-outcome-learning-fabric.mjs"
+      - "test/acorn-cortex-final-integration.test.js"
+      - "docs/acorn-cortex-final-integration.md"
+      - ".github/workflows/acorn-cortex-final-integration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/acorn-cortex-final-integration.mjs"
+      - "test/acorn-cortex-final-integration.test.js"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --test test/acorn-cortex-final-integration.test.js
