@@ -1,0 +1,8 @@
+/** ACORN MEGA 043 — Universal Proof Graph Fabric. */
+export const CONTRACT='acorn.mega.proof-graph.v1';const A=v=>Array.isArray(v)?v:[];const N=v=>Number.isFinite(Number(v))?Number(v):0;
+export function createProof({id,label,support=0,evidence=[],source='unknown'}={}){return {contract:CONTRACT,id:String(id||'proof-'+Date.now()),label:String(label||'UNKNOWN'),support:N(support),evidence:A(evidence),source:String(source),state:'PROPOSED',measured:false,verified:false,authority:false,live:false};}
+export function measureProof(rows=[]){const records=A(rows).map(r=>({...r,measured:true,measurement:{support:N(r.support)},authority:false,live:false}));return {contract:CONTRACT,records,count:records.length,verified_count:records.filter(r=>r.verified===true&&r.evidence.length>0).length,authority:false,live:false};}
+export function routeProof(rows=[]){return A(rows).filter(r=>r.state!=='REVOKED'&&r.state!=='EXPIRED').sort((a,b)=>N(b.support)-N(a.support)).slice(0,8);}
+export function evolveProof(row,{delta=0,verified=false}={}){return verified?{...row,support:N(row.support)+N(delta),state:'MEASURED_CANDIDATE',authority:false}:{...row,state:'HUMAN_REVIEW_REQUIRED',authority:false};}
+export function assertConstitution(x={}){const v=[];for(const [k,n] of [['authority','AUTHORITY_ESCALATION'],['auto_authorize','AUTO_AUTHORIZATION'],['auto_execute','AUTO_EXECUTION'],['fake_live','FAKE_LIVE'],['breaker_bypass','BREAKER_BYPASS']])if(x[k]===true)v.push(n);return {contract:CONTRACT,valid:v.length===0,violations:v};}
+export function selfTest(){const r=createProof({id:'test',support:1,evidence:['e']});return measureProof([r]).count===1&&assertConstitution({}).valid;}
