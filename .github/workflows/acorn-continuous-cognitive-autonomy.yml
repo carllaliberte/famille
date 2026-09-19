@@ -1,0 +1,25 @@
+name: autonomy
+on:
+  push:
+    paths:
+      - "scripts/acorn-continuous-cognitive-autonomy.mjs"
+      - "tests/acorn-continuous-cognitive-autonomy.test.mjs"
+      - "docs/acorn-continuous-cognitive-autonomy.md"
+      - "docs/acorn-continuous-cognitive-autonomy.contract.md"
+      - ".github/workflows/acorn-continuous-cognitive-autonomy.yml"
+  pull_request:
+    paths:
+      - "scripts/acorn-continuous-cognitive-autonomy.mjs"
+      - "tests/acorn-continuous-cognitive-autonomy.test.mjs"
+      - "docs/acorn-continuous-cognitive-autonomy.md"
+      - "docs/acorn-continuous-cognitive-autonomy.contract.md"
+      - ".github/workflows/acorn-continuous-cognitive-autonomy.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tests/acorn-continuous-cognitive-autonomy.test.mjs
