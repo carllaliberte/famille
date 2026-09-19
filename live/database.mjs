@@ -3,7 +3,7 @@
  * SQLite is an explicit local/test adapter only. Production never falls back silently.
  * Schema (via live/migrate.mjs): customers, sessions, requests, events,
  * acorn_state, acorn_events, acorn_evidence, acorn_jobs, schema_migrations,
- * idempotency_keys, stripe_events, commercial_orders, economic_ledger, usage_rights.
+ * idempotency_keys, acorn_idempotency, stripe_events, commercial_orders, economic_ledger, usage_rights.
  */
 import crypto from "node:crypto";
 import { DatabaseSync } from "node:sqlite";

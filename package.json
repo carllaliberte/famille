@@ -73,6 +73,8 @@
     "runtime:infinite-economy": "node scripts/acorn-infinite-economic-engine.mjs",
     "runtime:total-os": "node scripts/acorn-total-operating-system.mjs",
     "runtime:real-world": "node -e \"import('./scripts/acorn-real-world-bridge.mjs').then(({realWorldBridgeSnapshot,loadRealWorldConnectors})=>console.log(JSON.stringify(realWorldBridgeSnapshot(loadRealWorldConnectors()),null,2)))\"",
+    "runtime:commerce": "node scripts/acorn-commercial-runtime.mjs",
+    "runtime:stripe": "node scripts/acorn-stripe-adapter.mjs",
     "runtime:self-build": "node scripts/acorn-self-build.mjs",
     "runtime:quality": "node scripts/acorn-quality-fabric.mjs",
     "runtime:value-fabric": "node scripts/acorn-universal-value-fabric.mjs",

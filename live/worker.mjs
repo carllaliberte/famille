@@ -2,25 +2,21 @@ import crypto from "node:crypto";
 import { customerServiceCycle } from "../scripts/acorn-customer-service.mjs";
 import { registerEvidence } from "../scripts/acorn-evidence-registry.mjs";
 import { createLiveDatabase } from "./database.mjs";
+import { ingestPersistedRequests, jobRetryState, reclaimStaleJobs, STALE_RUNNING_MS } from "./worker-jobs.mjs";
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL_REQUIRED");
 const db = await createLiveDatabase();
 if (db.mode !== "postgres" || !db.pool) throw new Error("DATABASE_URL_REQUIRED");
 const pool = db.pool;
 const WORKER_ID = process.env.WORKER_ID || ("acorn-worker-" + crypto.randomUUID());
 const POLL_MS = Math.max(250, Number(process.env.WORKER_POLL_MS || 1000));
-const STALE_MS = Math.max(5000, Number(process.env.WORKER_STALE_MS || 120000));
+const STALE_MS = Math.max(5000, Number(process.env.WORKER_STALE_MS || STALE_RUNNING_MS));
 const now = () => new Date().toISOString();
 let stopping = false;
 async function reclaimStale() {
-  const stale = new Date(Date.now() - STALE_MS).toISOString();
-  await pool.query(
-    "UPDATE acorn_jobs SET state='QUEUED',worker_id=NULL,updated_at=$1 WHERE state='RUNNING' AND updated_at<$2",
-    [now(), stale]
-  );
+  await reclaimStaleJobs((sql, params) => pool.query(sql, params), { nowIso: now(), staleMs: STALE_MS });
 }
 async function ingest() {
-  await pool.query("INSERT INTO acorn_jobs(id,tenant_id,kind,payload,state,attempts,max_attempts,created_at,updated_at) SELECT 'job_'||r.id,r.customer_id,'CUSTOMER_REQUEST',jsonb_build_object('request_id',r.id),'QUEUED',0,3,r.created_at,r.updated_at FROM requests r LEFT JOIN acorn_jobs j ON j.id='job_'||r.id WHERE j.id IS NULL ON CONFLICT DO NOTHING");
-  await pool.query("INSERT INTO acorn_jobs(id,tenant_id,kind,payload,state,attempts,max_attempts,created_at,updated_at) SELECT 'job_order_'||o.id,o.tenant_id,'COMMERCIAL_ORDER',jsonb_build_object('order_id',o.id,'project_id',o.project_id,'live',false,'paid',false),'QUEUED',0,5,o.created_at,o.updated_at FROM commercial_orders o LEFT JOIN acorn_jobs j ON j.id='job_order_'||o.id WHERE j.id IS NULL ON CONFLICT DO NOTHING");
+  await ingestPersistedRequests((sql, params) => pool.query(sql, params));
 }
 async function claim() {
   const c = await pool.connect();
@@ -51,9 +47,13 @@ async function execute(job) {
         await pool.query("UPDATE acorn_jobs SET state='FAILED',error=$1,updated_at=$2,finished_at=$2 WHERE id=$3", ["ORDER_NOT_FOUND", t, job.id]);
         return;
       }
-      await pool.query("INSERT INTO events(request_id,type,payload,created_at) VALUES($1,$2,$3,$4)", [o.rows[0].id, "COMMERCIAL_JOB_OBSERVED", JSON.stringify({ job_id: job.id, worker_id: WORKER_ID, order_state: o.rows[0].state, live: false, paid: false, execution_authorized: false }), t]).catch(() => {});
+      await db.tx(async (tx) => {
+        await tx.run("INSERT INTO events(request_id,type,payload,created_at) VALUES($1,$2,$3,$4)", [o.rows[0].id, "COMMERCIAL_JOB_OBSERVED", JSON.stringify({ job_id: job.id, worker_id: WORKER_ID, order_state: o.rows[0].state, live: false, paid: false, execution_authorized: false }), t]).catch(() => {});
+        await tx.run("UPDATE acorn_jobs SET state='SUCCEEDED',result=$1,updated_at=$2,finished_at=$2 WHERE id=$3", [JSON.stringify({ kind: job.kind, live: false, paid: false, execution_authorized: false }), t, job.id]);
+      });
+    } else {
+      await pool.query("UPDATE acorn_jobs SET state='SUCCEEDED',result=$1,updated_at=$2,finished_at=$2 WHERE id=$3", [JSON.stringify({ kind: job.kind, live: false, paid: false, execution_authorized: false }), t, job.id]);
     }
-    await pool.query("UPDATE acorn_jobs SET state='SUCCEEDED',result=$1,updated_at=$2,finished_at=$2 WHERE id=$3", [JSON.stringify({ kind: job.kind, live: false, paid: false, execution_authorized: false }), t, job.id]);
     return;
   }
   const requestId = job.payload.request_id;
@@ -86,15 +86,17 @@ async function execute(job) {
       margin: 0.1,
       validUntil: new Date(Date.now() + 86400000).toISOString()
     });
-    await pool.query("UPDATE requests SET status=$1,updated_at=$2 WHERE id=$3 AND customer_id=$4", [cycle.stage, t, requestId, job.tenant_id]);
-    await pool.query("INSERT INTO events(request_id,type,payload,created_at) VALUES($1,$2,$3,$4)", [requestId, "WORKER_EXECUTION_COMPLETED", JSON.stringify({ job_id: job.id, worker_id: WORKER_ID, stage: cycle.stage, human_authorized: false, external_effect: false, live: false }), t]);
-    await pool.query("INSERT INTO acorn_evidence(id,tenant_id,request_id,claim,source,kind,status,origin,measured_at,valid_until,strength,margin,confidence,payload) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT (id) DO NOTHING", [evidence.id, job.tenant_id, requestId, evidence.claim, evidence.source, evidence.kind, evidence.status, evidence.source, evidence.measured_at, evidence.valid_until, evidence.strength, evidence.margin, evidence.strength, JSON.stringify({ job_id: job.id, worker_id: WORKER_ID, stage: cycle.stage, authority: false, external_effect: false, live: false })]);
-    await pool.query("INSERT INTO acorn_state(id,entity,version,state,tenant_id,provenance,data,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO UPDATE SET state=$4,data=$7,updated_at=$9", [requestId, "PROJECT", 1, cycle.stage, job.tenant_id, "acorn-live-worker", JSON.stringify({ request_id: requestId, stage: cycle.stage, delivered: false, live: false }), t, t]);
-    await pool.query("UPDATE acorn_jobs SET state='SUCCEEDED',result=$1,evidence=$2,updated_at=$3,finished_at=$3 WHERE id=$4", [JSON.stringify({ stage: cycle.stage, external_effect: false, live: false }), JSON.stringify([{ kind: "runtime", claim: "worker_execution", status: evidence.status, measured_at: t, worker_id: WORKER_ID, external_effect: false }]), t, job.id]);
+    await db.tx(async (tx) => {
+      await tx.run("UPDATE requests SET status=$1,updated_at=$2 WHERE id=$3 AND customer_id=$4", [cycle.stage, t, requestId, job.tenant_id]);
+      await tx.run("INSERT INTO events(request_id,type,payload,created_at) VALUES($1,$2,$3,$4)", [requestId, "WORKER_EXECUTION_COMPLETED", JSON.stringify({ job_id: job.id, worker_id: WORKER_ID, stage: cycle.stage, human_authorized: false, external_effect: false, live: false }), t]);
+      await tx.run("INSERT INTO acorn_evidence(id,tenant_id,request_id,claim,source,kind,status,origin,measured_at,valid_until,strength,margin,confidence,payload) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT (id) DO NOTHING", [evidence.id, job.tenant_id, requestId, evidence.claim, evidence.source, evidence.kind, evidence.status, evidence.source, evidence.measured_at, evidence.valid_until, evidence.strength, evidence.margin, evidence.strength, JSON.stringify({ job_id: job.id, worker_id: WORKER_ID, stage: cycle.stage, authority: false, external_effect: false, live: false })]);
+      await tx.run("INSERT INTO acorn_state(id,entity,version,state,tenant_id,provenance,data,created_at,updated_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO UPDATE SET state=$4,data=$7,updated_at=$9", [requestId, "PROJECT", 1, cycle.stage, job.tenant_id, "acorn-live-worker", JSON.stringify({ request_id: requestId, stage: cycle.stage, delivered: false, live: false }), t, t]);
+      await tx.run("UPDATE acorn_jobs SET state='SUCCEEDED',result=$1,evidence=$2,updated_at=$3,finished_at=$3 WHERE id=$4", [JSON.stringify({ stage: cycle.stage, external_effect: false, live: false }), JSON.stringify([{ kind: "runtime", claim: "worker_execution", status: evidence.status, measured_at: t, worker_id: WORKER_ID, external_effect: false }]), t, job.id]);
+    });
   } catch (e) {
     const t = now();
-    const retry = job.attempts < job.max_attempts;
-    await pool.query("UPDATE acorn_jobs SET state=$1,error=$2,updated_at=$3,finished_at=$4 WHERE id=$5", [retry ? "QUEUED" : "FAILED", String(e?.message || e), t, retry ? null : t, job.id]);
+    const next = jobRetryState(job);
+    await pool.query("UPDATE acorn_jobs SET state=$1,error=$2,updated_at=$3,finished_at=$4 WHERE id=$5", [next, String(e?.message || e), t, next === "FAILED" ? t : null, job.id]);
   }
 }
 async function shutdown() {
