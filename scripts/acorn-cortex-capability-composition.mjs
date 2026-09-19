@@ -1,5 +1,5 @@
 /** ACORN — CORTEX ADAPTIVE CAPABILITY COMPOSITION */
-import { routeByCapability } from "./acorn-cortex-intelligence-adapter.mjs";
+import { routeByCapability, selectRoute } from "./acorn-cortex-intelligence-adapter.mjs";
 
 export const CONTRACT="acorn.cortex-capability-composition.v1";
 const A=v=>Array.isArray(v)?v:[];
@@ -14,7 +14,7 @@ export function composeCapabilityTeam({
 }={}) {
   if(!goal) throw new Error("GOAL_REQUIRED");
   const routes=A(required_capabilities).map(capability =>
-    routeByCapability({capability,intelligences,constraints,required_evidence:min_evidence})
+    selectRoute(routeByCapability({capability,intelligences,constraints,required_evidence:min_evidence}))
   );
   const gaps=routes.filter(r=>r.state==="NO_MATCH").map(r=>r.capability);
   const assignments=routes
