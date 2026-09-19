@@ -1,0 +1,25 @@
+name: projects
+on:
+  push:
+    paths:
+      - "scripts/acorn-universal-project-customer-factory.mjs"
+      - "tests/acorn-universal-project-customer-factory.test.mjs"
+      - "docs/acorn-universal-project-customer-factory.md"
+      - "docs/acorn-universal-project-customer-factory.contract.md"
+      - ".github/workflows/acorn-universal-project-customer-factory.yml"
+  pull_request:
+    paths:
+      - "scripts/acorn-universal-project-customer-factory.mjs"
+      - "tests/acorn-universal-project-customer-factory.test.mjs"
+      - "docs/acorn-universal-project-customer-factory.md"
+      - "docs/acorn-universal-project-customer-factory.contract.md"
+      - ".github/workflows/acorn-universal-project-customer-factory.yml"
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tests/acorn-universal-project-customer-factory.test.mjs
