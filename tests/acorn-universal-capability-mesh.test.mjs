@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import {declareCapability,qualifyCapability,routeCapabilities,composeCapabilities,learnCapability,expireCapability,buildCapabilityMesh,assertCapabilityMeshConstitution} from "../scripts/acorn-universal-capability-mesh.mjs";
+const raw=declareCapability({id:"search",kind:"KNOWLEDGE",name:"Search",evidence:["obs-1"]});
+assert.equal(raw.state,"DECLARED");
+const q=qualifyCapability(raw,{verified:true,measured:true});
+assert.equal(q.state,"QUALIFIED");
+const routes=routeCapabilities({capabilities:[q],required:["search"]});
+assert.equal(routes.length,1);
+assert.equal(composeCapabilities({capabilities:[q],requirements:["search"]}).state,"COMPOSITION_CANDIDATE");
+assert.equal(learnCapability({capability:q,outcome:{id:"o1",capability_id:"search",measured:true,verified:true}}).learning.state,"LEARNED");
+assert.equal(expireCapability(q,{expired:true}).state,"EXPIRED");
+const mesh=buildCapabilityMesh({capabilities:[q],requirements:["search"]});
+assert.equal(mesh.counts.qualified,1);
+assert.equal(mesh.authority,false);
+assert.equal(assertCapabilityMeshConstitution(mesh).valid,true);
+assert.equal(assertCapabilityMeshConstitution({auto_execute:true}).valid,false);
+console.log("acorn-universal-capability-mesh: 9 assertions passed");
