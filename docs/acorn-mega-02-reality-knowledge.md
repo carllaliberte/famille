@@ -1,0 +1,3 @@
+# ACORN MEGA 02 — Reality, Identity, Memory & Knowledge Mesh
+
+**14 capability domains in one interoperable substrate.** This replaces the former micro-chantiers for this domain. It composes existing Cortex, Protocol, Event Spine, Context, Capability Mesh, Computation, Evidence and Governance rather than creating parallel brains. Structural optimization creates candidates only; adoption and consequential effects remain governed. LIVE is never inferred. 
